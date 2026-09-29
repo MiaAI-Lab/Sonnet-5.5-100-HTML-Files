@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0d2b3e">
+<meta name="description" content="Cape Verity Light: a lighthouse at dusk drawn entirely in CSS. Hover the lantern to sharpen the beam, pull the brass lever to light the lamp.">
+<title>Cape Verity Light — a lighthouse in pure CSS</title>
+<style>
+/* =====================================================================
+   CAPE VERITY LIGHT  ·  pure CSS, no script
+   Sizes use --u (1vmin); horizontal anchors use %, vertical anchors use --H.
+   ===================================================================== */
+:root{
+  --H:100vh;
+  --u:1vmin;
+  --tx:61%;
+  --hz:calc(var(--H) * .645);
+  --base:calc(var(--H) * .262);
+  --lh:calc(var(--u) * 38.8);
+  --ly:calc(var(--H) - var(--base) - var(--lh));
+  --slow:1;
+  --teal:#0d2b3e;
+  --coral:#ff9a76;
+  --cream:#f1e6cf;
+  --red:#d64933;
+  --ink:#16212b;
+  --band:calc(var(--u) * 4.25);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+@supports (height:100dvh){:root{--H:100dvh}}
+@media (max-aspect-ratio:1/1){:root{--u:calc(1vmin * 1.32);--tx:56%}}
+@media (max-aspect-ratio:2/3){:root{--u:calc(1vmin * 1.7);--tx:57%;--base:calc(var(--H) * .27)}}
+@media (prefers-reduced-motion:reduce){:root{--slow:4}}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0d2b3e;overflow:hidden}
+body{font-family:var(--serif);color:var(--cream);-webkit-tap-highlight-color:transparent}
+.defs{position:absolute;width:0;height:0}
+
+/* night toggle: a real checkbox, kept focusable but invisible */
+.toggle{position:fixed;left:0;top:0;width:1px;height:1px;margin:0;opacity:0;pointer-events:none}
+
+/* ===================== the scene ===================== */
+.scene{position:fixed;left:0;top:0;width:100vw;height:100vh;height:var(--H);overflow:hidden;isolation:isolate;
+  --night:0;--boost:0;background:#0d2b3e}
+#lamp:checked ~ .scene{--night:1}
+.lantern-hit:hover ~ .scene,.lantern-hit:focus-visible ~ .scene{--boost:1}
+.scene>*{position:absolute}
+.scene i,.scene b{display:block}
+
+/* ---- sky ---- */
+.sky{inset:0;background:linear-gradient(180deg,#0d2b3e 0%,#123a50 17%,#1e5568 33%,#4d8189 46%,#a29f9c 55%,#f2aa87 61.2%,#ff9a76 64.5%,#ff9a76 100%)}
+.sky-night{inset:0;opacity:var(--night);transition:opacity 2.8s ease;
+  background:
+    radial-gradient(70% 22% at 22% 64.5%,rgba(255,138,110,.38),transparent 70%),
+    linear-gradient(180deg,#020a14 0%,#04121f 22%,#082234 44%,#0e3448 58%,#154358 64.5%,#154358 100%)}
+
+/* ---- stars: box-shadow stars, four twinkle groups + a night crop ---- */
+.stars{left:0;top:0;right:0;height:56%}
+.stars i{position:absolute;left:0;top:0;width:1px;height:1px;background:transparent;border-radius:50%}
+.st1{box-shadow:4vw 6vh 0 0 #fff,9vw 21vh 0 0 #dbeaff,13vw 12vh 0 0 #fff,17vw 34vh 0 0 #fff5df,21vw 5vh 0 0 #fff,26vw 27vh 0 0 #dbeaff,30vw 14vh 0 0 #fff,35vw 39vh 0 0 #fff,39vw 8vh 0 0 #fff5df,43vw 22vh 0 0 #fff,47vw 3vh 0 0 #dbeaff,52vw 31vh 0 0 #fff,56vw 15vh 0 0 #fff,60vw 7vh 0 0 #fff5df,66vw 26vh 0 0 #fff,71vw 10vh 0 0 #dbeaff,75vw 37vh 0 0 #fff,80vw 18vh 0 0 #fff,84vw 4vh 0 0 #fff5df,89vw 29vh 0 0 #fff,93vw 13vh 0 0 #dbeaff,97vw 41vh 0 0 #fff;animation:tw1 calc(4.6s * var(--slow)) ease-in-out infinite}
+.st2{box-shadow:2vw 30vh 0 .3px #fff,7vw 15vh 0 .3px #dbeaff,11vw 43vh 0 .3px #fff,19vw 20vh 0 .3px #fff5df,24vw 9vh 0 .3px #fff,29vw 37vh 0 .3px #dbeaff,37vw 30vh 0 .3px #fff,41vw 12vh 0 .3px #fff,49vw 40vh 0 .3px #fff5df,54vw 23vh 0 .3px #fff,63vw 34vh 0 .3px #dbeaff,68vw 16vh 0 .3px #fff,73vw 2vh 0 .3px #fff5df,78vw 44vh 0 .3px #fff,86vw 24vh 0 .3px #dbeaff,91vw 8vh 0 .3px #fff,95vw 33vh 0 .3px #fff,99vw 20vh 0 .3px #fff5df;animation:tw2 calc(6.3s * var(--slow)) ease-in-out infinite -1.7s}
+.st3{box-shadow:6vw 38vh 0 .2px #fff,15vw 3vh 0 .2px #fff5df,23vw 17vh 0 .2px #dbeaff,32vw 24vh 0 .2px #fff,45vw 33vh 0 .2px #fff,50vw 11vh 0 .2px #fff5df,58vw 42vh 0 .2px #fff,62vw 20vh 0 .2px #dbeaff,69vw 6vh 0 .2px #fff,76vw 28vh 0 .2px #fff,82vw 13vh 0 .2px #fff5df,88vw 39vh 0 .2px #fff,94vw 5vh 0 .2px #dbeaff,12vw 26vh 0 .2px #fff,27vw 45vh 0 .2px #fff5df,33vw 2vh 0 .2px #fff;animation:tw1 calc(7.9s * var(--slow)) ease-in-out infinite -3.4s}
+.st4{box-shadow:10vw 9vh 1px .6px #fff,20vw 30vh 1px .6px #cfe4ff,28vw 7vh 1px .6px #fff,40vw 17vh 1px .6px #ffeccc,55vw 5vh 1px .6px #fff,65vw 38vh 1px .6px #cfe4ff,72vw 22vh 1px .6px #fff,81vw 8vh 1px .6px #ffeccc,90vw 17vh 1px .6px #fff,96vw 27vh 1px .6px #cfe4ff,14vw 40vh 1px .6px #fff,47vw 27vh 1px .6px #ffeccc;animation:tw3 calc(5.2s * var(--slow)) ease-in-out infinite -.8s}
+.stars-n{opacity:var(--night);transition:opacity 3s ease}
+.stars-n i{position:absolute;left:0;top:0;width:1px;height:1px;background:transparent;border-radius:50%}
+.sn1{box-shadow:1vw 12vh 0 0 #fff,5vw 3vh 0 .3px #fff,8vw 33vh 0 0 #dbeaff,12vw 18vh 0 .4px #fff,16vw 8vh 0 0 #fff5df,18vw 41vh 0 0 #fff,22vw 24vh 0 .3px #fff,25vw 13vh 0 0 #dbeaff,31vw 4vh 0 .4px #fff,34vw 29vh 0 0 #fff,38vw 20vh 0 .3px #fff5df,42vw 36vh 0 0 #fff,46vw 9vh 0 .4px #dbeaff,51vw 19vh 0 0 #fff,57vw 28vh 0 .3px #fff,61vw 13vh 0 0 #fff5df,64vw 3vh 0 .4px #fff,67vw 43vh 0 0 #dbeaff,70vw 31vh 0 .3px #fff,74vw 14vh 0 0 #fff,77vw 22vh 0 .4px #fff5df,83vw 35vh 0 0 #fff,87vw 10vh 0 .3px #dbeaff,92vw 25vh 0 0 #fff,98vw 9vh 0 .4px #fff;animation:tw2 calc(5.7s * var(--slow)) ease-in-out infinite -2.2s}
+.sn2{box-shadow:3vw 24vh 1px .7px #fff,13vw 28vh 1px .7px #ffeccc,26vw 19vh 1px .7px #fff,36vw 11vh 1px .7px #cfe4ff,48vw 15vh 1px .7px #fff,59vw 33vh 1px .7px #ffeccc,73vw 8vh 1px .7px #fff,85vw 27vh 1px .7px #cfe4ff,94vw 16vh 1px .7px #fff;animation:tw3 calc(6.8s * var(--slow)) ease-in-out infinite -4s}
+@keyframes tw1{0%,100%{opacity:.95}50%{opacity:.35}}
+@keyframes tw2{0%,100%{opacity:.4}45%{opacity:1}70%{opacity:.55}}
+@keyframes tw3{0%,100%{opacity:1}30%{opacity:.25}60%{opacity:.85}}
+
+/* ---- moon (night only) ---- */
+.moon{left:15%;top:calc(var(--H) * .14);width:calc(var(--u) * 6.4);height:calc(var(--u) * 6.4);border-radius:50%;
+  background:rgba(170,190,225,.07);box-shadow:inset calc(var(--u) * -1.7) calc(var(--u) * .3) 0 0 #f7f0da,0 0 calc(var(--u) * 6) rgba(255,240,200,.25);
+  opacity:var(--night);transition:opacity 3s ease}
+
+/* ---- sun sliver ---- */
+.sun-glow{left:22%;top:calc(var(--hz) - var(--u) * 19);width:calc(var(--u) * 92);height:calc(var(--u) * 38);margin-left:calc(var(--u) * -46);
+  background:radial-gradient(ellipse at 50% 56%,rgba(255,232,186,.95),rgba(255,176,128,.6) 28%,rgba(255,140,110,.22) 50%,transparent 70%);
+  opacity:calc(1 - var(--night));transition:opacity 2.4s ease}
+.sun{left:22%;top:calc(var(--hz) - var(--u) * 4.6);width:calc(var(--u) * 16);height:calc(var(--u) * 16);margin-left:calc(var(--u) * -8);border-radius:50%;
+  background:radial-gradient(circle at 50% 34%,#fffdf0 0,#ffeab5 34%,#ffbf82 74%,#ff9468 100%);
+  box-shadow:0 0 calc(var(--u) * 4) calc(var(--u) * 1.4) rgba(255,196,136,.85),0 0 calc(var(--u) * 12) calc(var(--u) * 3) rgba(255,160,110,.45);
+  transform:translateY(calc(var(--night) * var(--u) * 14));opacity:calc(1 - var(--night));transition:transform 2.6s ease,opacity 2.4s ease}
+.haze{left:0;right:0;top:calc(var(--hz) - var(--u) * 11);height:calc(var(--u) * 13);
+  background:linear-gradient(180deg,transparent,rgba(255,178,140,.55) 78%,rgba(255,154,118,.75));
+  opacity:calc(1 - var(--night) * .78);transition:opacity 2.6s ease}
+
+/* ---- far ship on the horizon ---- */
+.ship{left:0;top:calc(var(--hz) - var(--u) * 1.9);width:calc(var(--u) * 6);height:calc(var(--u) * 2.4);animation:ship calc(300s * var(--slow)) linear infinite -90s}
+.ship i{position:absolute;left:0;bottom:0;width:100%;height:46%;background:#20384a;clip-path:polygon(0 0,100% 0,90% 100%,8% 100%)}
+.ship i+i{left:22%;bottom:38%;width:34%;height:42%;background:#20384a;clip-path:none}
+.ship i+i+i{left:60%;bottom:38%;width:6%;height:100%;background:#20384a}
+.ship b{position:absolute;left:61.5%;top:8%;width:calc(var(--u) * .3);height:calc(var(--u) * .3);border-radius:50%;background:#ffd27a;box-shadow:0 0 calc(var(--u) * .8) rgba(255,210,122,.95)}
+@keyframes ship{from{transform:translateX(-14vw)}to{transform:translateX(112vw)}}
+
+/* ---- clouds: a gradient tile drifts by translateX (compositor only); the very same tile masks a warm copy
+        that carries the sweeping beam, so clouds light up exactly where the beam crosses them.
+        The beam is counter-translated inside the drifting mask so it stays fixed on the lantern. ---- */
+.cl,.cl-lit{left:0;top:var(--ct);height:calc(var(--u) * var(--chh));width:calc(100% + var(--u) * var(--ctw));animation:cdrift calc(var(--cdur) * var(--slow)) linear infinite}
+.cl-far,.cl-far-lit{--ct:calc(var(--H) * .42);--chh:16;--ctw:80;--cdur:170s;
+  --tile:
+    radial-gradient(ellipse calc(var(--u) * 15) calc(var(--u) * 1.7) at 22% 66%,var(--cc) 0 45%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 6) calc(var(--u) * 2) at 17% 52%,var(--cc) 0 40%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 7) calc(var(--u) * 2.4) at 25% 48%,var(--cc) 0 40%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 17) calc(var(--u) * 2) at 68% 70%,var(--cc) 0 45%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 6.5) calc(var(--u) * 2.2) at 62% 56%,var(--cc) 0 40%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 8) calc(var(--u) * 2.6) at 71% 52%,var(--cc) 0 40%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 9) calc(var(--u) * 1.2) at 46% 26%,var(--cc) 0 40%,transparent 100%)}
+.cl-far{--cc:rgba(255,190,152,.62);background-image:var(--tile);background-size:calc(var(--u) * 80) 100%;background-repeat:repeat-x}
+.cl-near,.cl-near-lit{--ct:calc(var(--H) * .12);--chh:32;--ctw:120;--cdur:110s;
+  --tile:
+    radial-gradient(ellipse calc(var(--u) * 20) calc(var(--u) * 2.6) at 22% 78%,var(--cc) 0 45%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 7) calc(var(--u) * 4) at 14% 68%,var(--cc) 0 42%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 9) calc(var(--u) * 5.4) at 23% 62%,var(--cc) 0 42%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 6.5) calc(var(--u) * 3.2) at 32% 68%,var(--cc) 0 42%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 24) calc(var(--u) * 3) at 66% 84%,var(--cc) 0 45%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 9) calc(var(--u) * 5) at 57% 75%,var(--cc) 0 42%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 11) calc(var(--u) * 6.4) at 67% 68%,var(--cc) 0 42%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 7) calc(var(--u) * 3.6) at 77% 76%,var(--cc) 0 42%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 15) calc(var(--u) * 2) at 46% 24%,var(--cc) 0 42%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 5.5) calc(var(--u) * 2.6) at 41% 19%,var(--cc) 0 42%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 6.5) calc(var(--u) * 3) at 50% 18%,var(--cc) 0 42%,transparent 100%),
+    radial-gradient(ellipse calc(var(--u) * 10) calc(var(--u) * 1.6) at 91% 40%,var(--cc) 0 42%,transparent 100%)}
+.cl-near{--cc:rgba(126,158,182,.34);background-image:var(--tile);background-size:calc(var(--u) * 120) 100%;background-repeat:repeat-x}
+.cl-far-lit,.cl-near-lit{--cc:#000;
+  -webkit-mask-image:var(--tile);mask-image:var(--tile);-webkit-mask-size:calc(var(--u) * var(--ctw)) 100%;mask-size:calc(var(--u) * var(--ctw)) 100%;
+  -webkit-mask-repeat:repeat-x;mask-repeat:repeat-x;
+  filter:brightness(calc(1 + var(--boost) * .7));transition:filter .6s ease}
+.cl-cnt{position:absolute;left:0;top:0;width:100vw;height:100%;animation:ccount calc(var(--cdur) * var(--slow)) linear infinite}
+@keyframes cdrift{to{transform:translateX(calc(var(--u) * var(--ctw) * -1))}}
+@keyframes ccount{to{transform:translateX(calc(var(--u) * var(--ctw)))}}
+
+/* ---- gulls ---- */
+.gull{left:0;top:var(--gy);width:calc(var(--u) * var(--gs));height:calc(var(--u) * var(--gs) * .4);animation:fly calc(var(--gd) * var(--slow)) linear infinite;animation-delay:var(--gdel)}
+.gull i{position:absolute;inset:0;animation:bob calc(5.5s * var(--slow)) ease-in-out infinite alternate}
+.gull i::before{content:"";position:absolute;inset:0;background:#14212b;transform-origin:50% 90%;
+  clip-path:polygon(0 72%,10% 40%,22% 14%,34% 4%,44% 22%,50% 40%,56% 22%,66% 4%,78% 14%,90% 40%,100% 72%,90% 54%,78% 34%,66% 26%,58% 44%,50% 70%,42% 44%,34% 26%,22% 34%,10% 54%);
+  animation:flap calc(3.4s * var(--slow)) ease-in-out infinite}
+@keyframes fly{from{transform:translateX(-14vw)}to{transform:translateX(112vw)}}
+@keyframes bob{from{transform:translateY(calc(var(--u) * -1.2))}to{transform:translateY(calc(var(--u) * 1.4))}}
+@keyframes flap{0%,56%,100%{transform:scaleY(1)}66%{transform:scaleY(.42)}76%{transform:scaleY(1.25)}88%{transform:scaleY(.9)}}
+
+/* ---- the sea ---- */
+.sea{left:0;right:0;top:var(--hz);bottom:0;
+  background:linear-gradient(180deg,#f0906f 0,#c47f86 3%,#647f96 10%,#215872 28%,#0f3b53 58%,#0a2c40 100%)}
+.sea-night{left:0;right:0;top:var(--hz);bottom:0;opacity:var(--night);transition:opacity 2.8s ease;
+  background:linear-gradient(180deg,#25566a 0,#123e54 8%,#0a2a3d 30%,#061d2d 60%,#04131f 100%)}
+.glitter{left:22%;top:var(--hz);width:calc(var(--u) * 26);height:calc(var(--u) * 34);margin-left:calc(var(--u) * -13);
+  opacity:calc(1 - var(--night));transition:opacity 2.4s ease;
+  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 30%,transparent 100%);mask-image:linear-gradient(180deg,#000 0,#000 30%,transparent 100%)}
+.glitter i{position:absolute;left:50%;height:calc(var(--u) * .34);border-radius:50%;background:linear-gradient(90deg,transparent,rgba(255,222,170,.85),transparent);animation:glint 3.2s ease-in-out infinite alternate}
+.glitter i:nth-child(1){top:2%;width:38%;margin-left:-19%}
+.glitter i:nth-child(2){top:9%;width:52%;margin-left:-26%;animation-duration:2.4s;animation-delay:-.7s}
+.glitter i:nth-child(3){top:17%;width:34%;margin-left:-14%;animation-duration:3.8s;animation-delay:-1.2s}
+.glitter i:nth-child(4){top:26%;width:58%;margin-left:-29%;animation-duration:2.9s;animation-delay:-2s}
+.glitter i:nth-child(5){top:36%;width:40%;margin-left:-22%;animation-duration:3.5s;animation-delay:-.3s}
+.glitter i:nth-child(6){top:48%;width:64%;margin-left:-30%;animation-duration:2.6s;animation-delay:-1.6s}
+.glitter i:nth-child(7){top:60%;width:44%;margin-left:-17%;animation-duration:3.1s;animation-delay:-2.4s}
+.glitter i:nth-child(8){top:74%;width:56%;margin-left:-28%;animation-duration:3.9s;animation-delay:-.9s}
+@keyframes glint{from{transform:scaleX(.55) translateX(-6%);opacity:.5}to{transform:scaleX(1.05) translateX(8%);opacity:1}}
+.glitter.glitter-m{left:16%;opacity:var(--night);transition:opacity 3s ease}
+.glitter-m i{background:linear-gradient(90deg,transparent,rgba(226,236,255,.7),transparent)}
+
+/* wave rows: domes from radial gradients, tiled and slid by whole tiles */
+.wv{left:0;width:100%;animation:bobY calc(var(--bd) * var(--slow)) ease-in-out infinite alternate;animation-delay:var(--bdel,0s)}
+.wave{position:absolute;left:0;top:0;height:100%;width:calc(100% + var(--u) * var(--tw) * 8);
+  background-image:
+    radial-gradient(ellipse 34% 46% at 50% 6%,var(--hi),transparent 74%),
+    radial-gradient(ellipse 50% 100% at 50% 100%,transparent 0 84%,var(--foam) 88%,transparent 95%),
+    linear-gradient(180deg,var(--body),var(--body2));
+  background-size:calc(var(--u) * var(--tw)) calc(var(--u) * var(--th)),calc(var(--u) * var(--tw)) calc(var(--u) * var(--th)),100% 100%;
+  background-position:0 0,0 0,0 0;
+  background-repeat:repeat-x,repeat-x,no-repeat;
+  /* the scalloped crest is a radial-gradient mask: a row of domes plus the solid body beneath */
+  -webkit-mask-image:radial-gradient(ellipse 50% 100% at 50% 100%,#000 0 96%,transparent 100%),linear-gradient(#000,#000);
+  mask-image:radial-gradient(ellipse 50% 100% at 50% 100%,#000 0 96%,transparent 100%),linear-gradient(#000,#000);
+  -webkit-mask-size:calc(var(--u) * var(--tw)) calc(var(--u) * var(--th)),100% calc(100% - var(--u) * var(--th));
+  mask-size:calc(var(--u) * var(--tw)) calc(var(--u) * var(--th)),100% calc(100% - var(--u) * var(--th));
+  -webkit-mask-position:0 0,0 calc(var(--u) * var(--th));
+  mask-position:0 0,0 calc(var(--u) * var(--th));
+  -webkit-mask-repeat:repeat-x,no-repeat;
+  mask-repeat:repeat-x,no-repeat;
+  animation:slideL calc(var(--sp) * var(--slow)) linear infinite}
+.wave.rev{animation-name:slideR}
+@keyframes slideL{from{transform:translateX(0)}to{transform:translateX(calc(var(--u) * var(--tw) * -8))}}
+@keyframes slideR{from{transform:translateX(calc(var(--u) * var(--tw) * -8))}to{transform:translateX(0)}}
+@keyframes bobY{from{transform:translateY(calc(var(--u) * -.45))}to{transform:translateY(calc(var(--u) * .55))}}
+.w1{top:calc(var(--hz) + var(--u) * .6);height:calc(var(--u) * 34);--bd:6.4s;--tw:8;--th:2.2;--sp:52s;
+  --body:rgba(48,100,124,.62);--body2:rgba(28,76,100,.78);--foam:rgba(255,206,170,.6);--hi:rgba(255,214,176,.38)}
+.w2{top:calc(var(--hz) + var(--u) * 7.4);height:calc(var(--u) * 40);--bd:5.2s;--bdel:-1.8s;--tw:12;--th:3.2;--sp:38s;
+  --body:rgba(18,72,96,.84);--body2:#0e3a52;--foam:rgba(214,234,242,.46);--hi:rgba(214,234,242,.2)}
+.w3{top:calc(var(--hz) + var(--u) * 21);height:calc(var(--u) * 60);--bd:4.4s;--bdel:-.6s;--tw:18;--th:4.4;--sp:27s;
+  --body:#0b3046;--body2:#06202f;--foam:rgba(234,247,251,.78);--hi:rgba(234,247,251,.16)}
+.w1b{top:calc(var(--hz) + var(--u) * 3.6);height:calc(var(--u) * 26);--bd:5.6s;--bdel:-2.6s;--tw:11;--th:2.2;--sp:47s;
+  --body:transparent;--body2:transparent;--foam:rgba(255,206,170,.34);--hi:transparent}
+.w2b{top:calc(var(--hz) + var(--u) * 14);height:calc(var(--u) * 34);--bd:4.8s;--bdel:-.9s;--tw:15;--th:3;--sp:36s;
+  --body:transparent;--body2:transparent;--foam:rgba(214,234,242,.3);--hi:transparent}
+
+/* buoy with a blinking lamp */
+.buoy{left:calc(var(--tx) - var(--u) * 40);top:calc(var(--hz) + var(--u) * 17.8);width:calc(var(--u) * 2.2);height:calc(var(--u) * 3.4);animation:bobY 3.6s ease-in-out infinite alternate}
+.buoy i{position:absolute;left:14%;bottom:0;width:72%;height:62%;background:linear-gradient(90deg,#f0553e,#a8291b);clip-path:polygon(12% 100%,88% 100%,70% 0,30% 0);border-radius:0 0 40% 40%}
+.buoy b{position:absolute;left:38%;top:8%;width:24%;height:34%;background:#1a232c}
+.buoy em{position:absolute;left:28%;top:0;width:44%;height:22%;border-radius:50%;background:#ff5a45;box-shadow:0 0 calc(var(--u) * 1.6) calc(var(--u) * .4) rgba(255,90,70,.95);animation:blink calc(3s * var(--slow)) steps(1,end) infinite}
+@keyframes blink{0%{opacity:1}12%{opacity:0}100%{opacity:0}}
+
+/* ===================== the islet ===================== */
+.a-islet,.a-islet2,.a-fx{left:var(--tx);bottom:var(--base);width:0;height:0}
+.a-islet>*,.a-islet2>*,.a-fx>*{position:absolute}
+.a-islet{filter:
+  drop-shadow(calc(var(--u) * -.24) calc(var(--u) * -.16) 0 rgba(255,160,118,calc(.92 * (1 - var(--night)))))
+  drop-shadow(calc(var(--u) * .2) 0 0 rgba(120,196,214,calc(.38 * (1 - var(--night)))))
+  drop-shadow(calc(var(--u) * -.2) calc(var(--u) * -.14) 0 rgba(176,214,255,calc(.5 * var(--night))))
+  brightness(calc(1 - var(--night) * .52));
+  transition:filter 2.8s ease}
+
+/* rocks (origin = the plateau under the tower; y grows downward as negative bottom) */
+.rk{background:linear-gradient(112deg,#3a4f62 0 13%,#2a3c4b 13% 30%,#1d2c39 30% 54%,#142029 54% 78%,#0d1620 78%)}
+.rk-far{left:calc(var(--u) * 12);bottom:calc(var(--u) * -12);width:calc(var(--u) * 26);height:calc(var(--u) * 9);
+  clip-path:polygon(0 100%,8% 60%,20% 42%,34% 22%,46% 8%,58% 0,70% 18%,84% 40%,100% 100%);
+  background:linear-gradient(112deg,#4a6072,#2d4152 60%,#1f2f3d)}
+.rk-main{left:calc(var(--u) * -31);bottom:calc(var(--u) * -17);width:calc(var(--u) * 56);height:calc(var(--u) * 17);
+  clip-path:polygon(0 100%,1.5% 90%,3.5% 82%,2.8% 72%,6.5% 66%,8.5% 54%,14% 50%,16% 40%,20% 36%,22% 26%,26% 20%,28.5% 11%,30.5% 4%,34% 1.5%,44% 1%,52% 0,61% 1%,68% 0,73% 4%,77% 8%,79% 17%,84% 22%,86% 33%,91% 40%,92.5% 52%,96.5% 62%,98% 78%,100% 100%);
+  background:
+    linear-gradient(64deg,transparent 0 20%,rgba(255,255,255,.07) 20% 31%,transparent 31% 58%,rgba(0,0,0,.26) 58% 74%,transparent 74%),
+    linear-gradient(112deg,#465d72 0 11%,#31465a 11% 26%,#223343 26% 46%,#172532 46% 70%,#0e1822 70%)}
+.rk-main::after{content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(180deg,rgba(92,112,70,.6) 0,transparent calc(var(--u) * 1.5)),
+    repeating-linear-gradient(64deg,transparent 0 calc(var(--u) * 2.1),rgba(0,0,0,.13) calc(var(--u) * 2.1) calc(var(--u) * 2.22)),
+    repeating-linear-gradient(-33deg,transparent 0 calc(var(--u) * 3.3),rgba(255,255,255,.05) calc(var(--u) * 3.3) calc(var(--u) * 3.42)),
+    radial-gradient(ellipse at 20% 30%,rgba(255,164,124,.3),transparent 52%)}
+.rk-l{left:calc(var(--u) * -40);bottom:calc(var(--u) * -19);width:calc(var(--u) * 19);height:calc(var(--u) * 10);
+  clip-path:polygon(0 100%,4% 78%,9% 66%,8% 52%,16% 44%,22% 30%,30% 22%,36% 10%,46% 4%,54% 0,62% 12%,70% 20%,78% 38%,86% 50%,92% 70%,100% 100%)}
+.rk-r{left:calc(var(--u) * 21);bottom:calc(var(--u) * -19);width:calc(var(--u) * 20);height:calc(var(--u) * 8.5);
+  clip-path:polygon(0 100%,6% 72%,12% 60%,20% 44%,28% 36%,34% 18%,44% 8%,52% 0,60% 10%,68% 24%,76% 30%,84% 50%,92% 66%,100% 100%)}
+
+/* tower */
+.plinth{left:calc(var(--u) * -5.6);bottom:0;width:calc(var(--u) * 11.2);height:calc(var(--u) * 1.9);clip-path:polygon(5% 0,95% 0,100% 100%,0 100%);
+  background:linear-gradient(90deg,#5a6d7c,#2c3b48 55%,#16222c)}
+.body{left:calc(var(--u) * -4.6);bottom:calc(var(--u) * 1.7);width:calc(var(--u) * 9.2);height:calc(var(--u) * 34);
+  clip-path:polygon(calc(var(--u) * 1.6) 0,calc(100% - var(--u) * 1.6) 0,100% 100%,0 100%);
+  background:
+    linear-gradient(90deg,rgba(255,176,128,.5),rgba(255,176,128,0) 22%,rgba(10,25,40,0) 42%,rgba(8,20,34,.5) 78%,rgba(6,16,28,.72) 100%),
+    repeating-linear-gradient(180deg,transparent 0 calc(var(--band) - 1.5px),rgba(30,12,10,.24) calc(var(--band) - 1.5px) var(--band)),
+    repeating-linear-gradient(180deg,var(--cream) 0 var(--band),var(--red) var(--band) calc(var(--band) * 2))}
+.door{left:calc(var(--u) * -.85);bottom:calc(var(--u) * 1.8);width:calc(var(--u) * 1.7);height:calc(var(--u) * 3);border-radius:calc(var(--u) * .85) calc(var(--u) * .85) 0 0;background:linear-gradient(90deg,#4b2c1c,#2a190f)}
+.tw{left:calc(var(--u) * -.45);width:calc(var(--u) * .9);height:calc(var(--u) * 1.7);border-radius:calc(var(--u) * .45) calc(var(--u) * .45) 0 0;background:#10202c;box-shadow:0 0 0 calc(var(--u) * .16) rgba(22,33,43,.9)}
+.tw1{bottom:calc(var(--u) * 9)}
+.tw2{bottom:calc(var(--u) * 20.5)}
+.tw3{bottom:calc(var(--u) * 29.5)}
+.gal{left:calc(var(--u) * -5.9);bottom:calc(var(--u) * 35.2);width:calc(var(--u) * 11.8);height:calc(var(--u) * 1.15);border-radius:calc(var(--u) * .3);
+  background:linear-gradient(180deg,#4a5a68,#212d38 45%,#111a22);box-shadow:0 calc(var(--u) * .5) 0 calc(var(--u) * -.1) #0d151c}
+.cor{left:calc(var(--u) * -5.2);bottom:calc(var(--u) * 34);width:calc(var(--u) * 10.4);height:calc(var(--u) * 1.4);clip-path:polygon(0 0,100% 0,88% 100%,12% 100%);background:#1a252f}
+.rail{left:calc(var(--u) * -5.2);bottom:calc(var(--u) * 36.3);width:calc(var(--u) * 10.4);height:calc(var(--u) * 2);border-top:calc(var(--u) * .24) solid #131c24;
+  background:repeating-linear-gradient(90deg,#131c24 0 calc(var(--u) * .2),transparent calc(var(--u) * .2) calc(var(--u) * .95))}
+.lframe{left:calc(var(--u) * -2.9);bottom:calc(var(--u) * 36.3);width:calc(var(--u) * 5.8);height:calc(var(--u) * 4.6);background:#161f28;border-radius:calc(var(--u) * .4)}
+.roof{left:calc(var(--u) * -3.5);bottom:calc(var(--u) * 40.8);width:calc(var(--u) * 7);height:calc(var(--u) * 3);border-radius:50% 50% 0 0/100% 100% 0 0;
+  background:linear-gradient(90deg,#f26b50 0,#d64933 36%,#7d1f14 100%)}
+.roof-ring{left:calc(var(--u) * -3.7);bottom:calc(var(--u) * 40.6);width:calc(var(--u) * 7.4);height:calc(var(--u) * .7);background:#141d25;border-radius:calc(var(--u) * .2)}
+.ball{left:calc(var(--u) * -.55);bottom:calc(var(--u) * 43.6);width:calc(var(--u) * 1.1);height:calc(var(--u) * 1.1);border-radius:50%;background:radial-gradient(circle at 35% 30%,#f3dc95,#8c6a24)}
+.rod{left:calc(var(--u) * -.1);bottom:calc(var(--u) * 44.5);width:calc(var(--u) * .2);height:calc(var(--u) * 2.6);background:#141d25}
+
+/* keeper's cottage */
+.c-wall{left:calc(var(--u) * -13);bottom:0;width:calc(var(--u) * 9);height:calc(var(--u) * 4.7);background:linear-gradient(90deg,#f1e5cb 0,#d3c6ab 55%,#948b77 100%)}
+.c-roof{left:calc(var(--u) * -13.9);bottom:calc(var(--u) * 4.5);width:calc(var(--u) * 10.8);height:calc(var(--u) * 3.6);clip-path:polygon(5% 100%,50% 0,95% 100%);
+  background:linear-gradient(98deg,#c0583f,#8a3025 62%,#4d1b17)}
+.c-chim{left:calc(var(--u) * -6.3);bottom:calc(var(--u) * 6.4);width:calc(var(--u) * 1.15);height:calc(var(--u) * 2.6);background:linear-gradient(90deg,#7a382b,#3d1a15)}
+.c-door{left:calc(var(--u) * -11.7);bottom:0;width:calc(var(--u) * 1.7);height:calc(var(--u) * 3.1);border-radius:calc(var(--u) * .85) calc(var(--u) * .85) 0 0;background:#3a2015}
+.c-win{left:calc(var(--u) * -8.4);bottom:calc(var(--u) * 1.6);width:calc(var(--u) * 2.3);height:calc(var(--u) * 2.3);background:#0e1a24;box-shadow:0 0 0 calc(var(--u) * .2) #6a5a44}
+.c-wall::after{content:"";position:absolute;left:0;right:0;bottom:0;height:calc(var(--u) * .5);background:linear-gradient(#5c5346,#3b3630)}
+
+/* flag */
+.pole{left:calc(var(--u) * 9.2);bottom:0;width:calc(var(--u) * .16);height:calc(var(--u) * 9.4);background:#16212b;box-shadow:calc(var(--u) * -.16) 0 0 rgba(255,160,118,.7)}
+.flag{left:calc(var(--u) * 9.36);bottom:calc(var(--u) * 7.3);width:calc(var(--u) * 3.3);height:calc(var(--u) * 1.9);background:var(--red);
+  clip-path:polygon(0 0,100% 10%,80% 50%,100% 90%,0 100%);transform-origin:0 50%;animation:flutter calc(2.4s * var(--slow)) ease-in-out infinite alternate}
+@keyframes flutter{from{transform:skewY(-5deg) scaleX(.94)}to{transform:skewY(5deg) scaleX(1.04)}}
+
+/* foam around the rocks */
+.foam{left:calc(var(--u) * -33);bottom:calc(var(--u) * -20);width:calc(var(--u) * 70);height:calc(var(--u) * 4.2);
+  background:
+    radial-gradient(ellipse 12% 55% at 10% 60%,rgba(240,250,252,.8),transparent 70%),
+    radial-gradient(ellipse 9% 45% at 27% 45%,rgba(240,250,252,.7),transparent 70%),
+    radial-gradient(ellipse 13% 50% at 46% 62%,rgba(240,250,252,.75),transparent 70%),
+    radial-gradient(ellipse 10% 45% at 64% 48%,rgba(240,250,252,.7),transparent 70%),
+    radial-gradient(ellipse 12% 55% at 88% 60%,rgba(240,250,252,.8),transparent 70%);
+  animation:foam calc(5.4s * var(--slow)) ease-in-out infinite alternate}
+@keyframes foam{from{transform:translateX(calc(var(--u) * -.7)) scaleX(.97);opacity:.7}to{transform:translateX(calc(var(--u) * .8)) scaleX(1.03);opacity:1}}
+
+/* foreground rocks */
+.fore{left:0;right:0;bottom:0;height:calc(var(--u) * 26);
+  filter:drop-shadow(calc(var(--u) * -.22) calc(var(--u) * -.16) 0 rgba(255,160,118,calc(.85 * (1 - var(--night)))))
+    drop-shadow(calc(var(--u) * -.2) calc(var(--u) * -.14) 0 rgba(176,214,255,calc(.42 * var(--night))))
+    brightness(calc(1 - var(--night) * .5));transition:filter 2.8s ease}
+.fr{position:absolute;bottom:calc(var(--u) * -4);background:linear-gradient(118deg,#2b3d4d 0 12%,#1a2833 12% 36%,#101a23 36% 66%,#0a1119 66%)}
+.fr-a{left:calc(var(--u) * -8);width:calc(var(--u) * 38);height:calc(var(--u) * 21);clip-path:polygon(0 100%,0 30%,10% 22%,20% 10%,34% 0,46% 12%,58% 26%,72% 52%,86% 78%,100% 100%)}
+.fr-b{left:calc(var(--u) * 20);width:calc(var(--u) * 18);height:calc(var(--u) * 10);clip-path:polygon(0 100%,14% 48%,32% 20%,48% 0,64% 24%,82% 56%,100% 100%)}
+.fr-c{right:calc(var(--u) * -7);width:calc(var(--u) * 30);height:calc(var(--u) * 15);clip-path:polygon(0 100%,10% 60%,24% 34%,40% 12%,54% 0,68% 18%,84% 30%,100% 24%,100% 100%)}
+
+/* ===================== night grade + light layers ===================== */
+.grade{inset:0;background:linear-gradient(180deg,#0d2340,#122c4a 60%,#0b2238);mix-blend-mode:multiply;opacity:calc(var(--night) * .72);transition:opacity 2.8s ease}
+.grade::after{content:"";position:absolute;inset:0;background:radial-gradient(60% 40% at 22% 64%,rgba(255,150,110,.0),transparent);}
+
+.a-fx{}
+.beam{left:0;bottom:calc(var(--u) * 38.8);width:calc(var(--u) * 160);height:calc(var(--u) * 84);margin-bottom:calc(var(--u) * -42);transform-origin:0 50%;pointer-events:none;
+  background:conic-gradient(from 78deg at 0% 50%,transparent 0deg,rgba(255,240,200,0) 1deg,rgba(255,240,200,.62) 6deg,rgba(255,247,222,.95) 12deg,rgba(255,240,200,.62) 18deg,rgba(255,240,200,0) 23deg,transparent 24deg);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 30%,transparent 100%);mask-image:linear-gradient(90deg,#000 0,#000 30%,transparent 100%);
+  filter:blur(calc(var(--u) * .8)) brightness(calc(1 + var(--boost) * .9 + var(--night) * .35));
+  transition:filter .6s ease;
+  animation:sweep calc(8s * var(--slow)) cubic-bezier(.45,.08,.55,.92) infinite}
+.beam-lit{position:absolute;left:var(--tx);top:calc(var(--ly) - var(--bt));margin-top:calc(var(--u) * -42);width:calc(var(--u) * 160);height:calc(var(--u) * 84);transform-origin:0 50%;pointer-events:none;
+  background:conic-gradient(from 78deg at 0% 50%,transparent 0deg,rgba(255,236,190,0) 1deg,rgba(255,232,176,.92) 6deg,rgba(255,246,214,1) 12deg,rgba(255,232,176,.92) 18deg,rgba(255,236,190,0) 23deg,transparent 24deg);
+  -webkit-mask-image:linear-gradient(90deg,#000 0,#000 40%,transparent 100%);mask-image:linear-gradient(90deg,#000 0,#000 40%,transparent 100%);
+  animation:sweep calc(8s * var(--slow)) cubic-bezier(.45,.08,.55,.92) infinite}
+.cl-far-lit .beam-lit{--bt:calc(var(--H) * .42)}
+.cl-near-lit .beam-lit{--bt:calc(var(--H) * .12)}
+@keyframes sweep{
+  0%{transform:rotate(10deg);opacity:0}
+  8%{opacity:1}
+  92%{opacity:1}
+  100%{transform:rotate(-190deg);opacity:0}}
+
+.glare{left:calc(var(--u) * -25);bottom:calc(var(--u) * 38.8);width:calc(var(--u) * 50);height:calc(var(--u) * 50);margin-bottom:calc(var(--u) * -25);border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(255,247,220,.95) 0,rgba(255,224,160,.55) 12%,rgba(255,196,124,.2) 34%,transparent 62%);
+  opacity:.22;animation:glare calc(8s * var(--slow)) ease-in-out infinite;filter:brightness(calc(1 + var(--boost) * .7))}
+@keyframes glare{0%,32%,68%,100%{opacity:.2;transform:scale(.82)}50%{opacity:1;transform:scale(1.5)}}
+.lglass{left:calc(var(--u) * -2.6);bottom:calc(var(--u) * 36.5);width:calc(var(--u) * 5.2);height:calc(var(--u) * 4.2);border-radius:calc(var(--u) * .5) calc(var(--u) * .5) 0 0;
+  background:
+    repeating-linear-gradient(90deg,rgba(22,31,40,.92) 0 calc(var(--u) * .26),transparent calc(var(--u) * .26) calc(var(--u) * 1.72)),
+    radial-gradient(ellipse at 50% 55%,#fffbe6 0,#ffe7a8 26%,#ffc562 62%,#f0a03c 100%);
+  box-shadow:0 0 calc(var(--u) * 3) calc(var(--u) * .6) rgba(255,214,140,.7);
+  filter:brightness(calc(.86 + var(--night) * .24 + var(--boost) * .25));transition:filter .5s ease}
+.lglass::after{content:"";position:absolute;left:18%;right:18%;top:26%;height:46%;
+  background:repeating-linear-gradient(180deg,rgba(255,255,240,.95) 0 calc(var(--u) * .16),rgba(255,236,170,.5) calc(var(--u) * .16) calc(var(--u) * .38))}
+.wglow{left:calc(var(--u) * -8.3);bottom:calc(var(--u) * 1.7);width:calc(var(--u) * 2.1);height:calc(var(--u) * 2.1);
+  background:radial-gradient(circle at 50% 60%,#fff2b8 0,#ffc25c 55%,#f08a2a 100%);
+  box-shadow:0 0 calc(var(--u) * 2.4) calc(var(--u) * .5) rgba(255,180,80,.75),0 calc(var(--u) * .6) calc(var(--u) * 5) calc(var(--u) * 1) rgba(255,150,60,.35);
+  animation:flicker calc(5.3s * var(--slow)) linear infinite}
+.wglow::before{content:"";position:absolute;left:47%;top:0;bottom:0;width:calc(var(--u) * .16);background:#5c4a34}
+.wglow::after{content:"";position:absolute;left:0;right:0;top:47%;height:calc(var(--u) * .16);background:#5c4a34}
+.spill{left:calc(var(--u) * -12);bottom:calc(var(--u) * -.6);width:calc(var(--u) * 9);height:calc(var(--u) * 1.6);border-radius:50%;
+  background:radial-gradient(ellipse,rgba(255,190,100,.5),transparent 70%);opacity:calc(.35 + var(--night) * .5);animation:flicker calc(5.3s * var(--slow)) linear infinite -1.1s}
+@keyframes flicker{0%,100%{opacity:1}7%{opacity:.86}11%{opacity:1}19%{opacity:.72}22%{opacity:.98}38%{opacity:.9}41%{opacity:1}57%{opacity:.78}60%{opacity:.95}74%{opacity:1}83%{opacity:.84}87%{opacity:1}}
+.tglow{left:calc(var(--u) * -.4);width:calc(var(--u) * .8);height:calc(var(--u) * 1.5);border-radius:calc(var(--u) * .4) calc(var(--u) * .4) 0 0;
+  background:#ffc562;box-shadow:0 0 calc(var(--u) * 1) rgba(255,190,90,.8);opacity:calc(var(--night) * .95);transition:opacity 3s ease}
+.tg1{bottom:calc(var(--u) * 9)}.tg2{bottom:calc(var(--u) * 20.5)}.tg3{bottom:calc(var(--u) * 29.5)}
+.smoke{left:calc(var(--u) * -6.1);bottom:calc(var(--u) * 9);width:calc(var(--u) * 1.6);height:calc(var(--u) * 1.6);border-radius:50%;background:rgba(214,226,234,.55);filter:blur(calc(var(--u) * .35));opacity:0;animation:smoke calc(7s * var(--slow)) ease-out infinite}
+.smoke.s2{animation-delay:-2.3s}.smoke.s3{animation-delay:-4.6s}
+@keyframes smoke{0%{transform:translate(0,0) scale(.5);opacity:0}12%{opacity:.6}100%{transform:translate(calc(var(--u) * 3.6),calc(var(--u) * -11)) scale(2.6);opacity:0}}
+.lantern-hit{position:fixed;z-index:5;left:var(--tx);bottom:calc(var(--base) + var(--lh));width:calc(var(--u) * 7);height:calc(var(--u) * 7);
+  margin:0 0 calc(var(--u) * -3.5) calc(var(--u) * -3.5);padding:0;border:0;border-radius:50%;background:transparent;cursor:help}
+.lantern-hit:focus-visible{outline:2px solid #ffe7a8;outline-offset:3px}
+
+/* ===================== finish ===================== */
+.grain{inset:0;background:#777;filter:url(#grain);opacity:.17;mix-blend-mode:overlay;pointer-events:none}
+.vignette{inset:0;pointer-events:none;
+  background:radial-gradient(120% 96% at 50% 42%,transparent 56%,rgba(3,14,24,.5) 100%),linear-gradient(0deg,rgba(3,12,20,.6),transparent 20%)}
+
+/* ===================== caption + brass lever ===================== */
+.ui{position:fixed;z-index:6;left:0;right:0;bottom:max(2.4vmin,env(safe-area-inset-bottom));text-align:center;pointer-events:none;padding:0 6vw}
+.caption{margin:0;font-weight:400;font-size:clamp(11px,2.05vmin,19px);line-height:1.5;color:#f6e7cc;
+  text-shadow:0 1px 0 rgba(4,14,22,.75),0 0 18px rgba(4,14,22,.75)}
+.caption .name{text-transform:uppercase;letter-spacing:.42em;margin-right:-.42em}
+.caption .sep{margin:0 .9em;opacity:.7}
+.caption .est{font-variant:small-caps;font-variant-numeric:oldstyle-nums;letter-spacing:.3em;text-transform:lowercase;opacity:.9}
+.caption::before,.caption::after{content:"";display:inline-block;vertical-align:middle;width:clamp(24px,8vmin,90px);height:1px;background:linear-gradient(90deg,transparent,rgba(246,231,204,.7));margin:0 1.6em .12em 0}
+.caption::after{transform:scaleX(-1);margin:0 0 .12em 1.6em}
+.light{margin:.55em 0 0;font-size:clamp(9px,1.5vmin,13px);letter-spacing:.32em;font-variant:small-caps;font-variant-numeric:oldstyle-nums;color:rgba(246,231,204,.66);text-shadow:0 0 14px rgba(4,14,22,.8)}
+
+.lever{position:fixed;z-index:7;right:max(3vmin,env(safe-area-inset-right));bottom:max(2.6vmin,env(safe-area-inset-bottom));display:block;width:clamp(78px,11vmin,112px);cursor:pointer;text-align:center;user-select:none;-webkit-user-select:none}
+.lever__dial{position:relative;display:block;width:100%;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 30% 24%,#f6e3a0 0,#d2ab55 30%,#9a7429 66%,#5a4216 100%);
+  box-shadow:inset 0 0 0 3px rgba(60,40,10,.35),inset 0 3px 4px rgba(255,244,190,.7),inset 0 -3px 5px rgba(60,38,8,.6),0 0 0 2px #24170a,0 10px 22px rgba(0,0,0,.55);
+  transition:transform .3s var(--ease)}
+.lever:active .lever__dial{transform:scale(.97)}
+.lever__arc{position:absolute;inset:11%;border-radius:50%;
+  background:conic-gradient(from -58deg,rgba(40,26,6,.85) 0 116deg,transparent 116deg);
+  -webkit-mask-image:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 7px));mask-image:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 7px))}
+.lever__arm{position:absolute;left:50%;top:50%;width:7%;height:38%;margin:-38% 0 0 -3.5%;transform-origin:50% 100%;border-radius:4px;
+  background:linear-gradient(90deg,#7a5a1c,#f7e4a4 38%,#cfa64a 62%,#5b4212);
+  box-shadow:1px 2px 3px rgba(40,25,4,.6);transform:rotate(-44deg);transition:transform .9s cubic-bezier(.34,1.56,.64,1)}
+#lamp:checked ~ .lever .lever__arm{transform:rotate(44deg)}
+.lever__knob{position:absolute;left:50%;top:-14%;width:230%;aspect-ratio:1;margin-left:-115%;border-radius:50%;
+  background:radial-gradient(circle at 34% 28%,#6a5442,#2a1c11 55%,#0f0905);box-shadow:0 2px 3px rgba(0,0,0,.6)}
+.lever__hub{position:absolute;left:50%;top:50%;width:17%;aspect-ratio:1;margin:-8.5% 0 0 -8.5%;border-radius:50%;
+  background:radial-gradient(circle at 34% 28%,#fff0b8,#c9a24d 50%,#6d5015);box-shadow:0 1px 2px rgba(40,25,4,.7)}
+.lever__hub::after{content:"";position:absolute;left:12%;right:12%;top:46%;height:8%;background:rgba(40,26,6,.7);transform:rotate(28deg)}
+.lever__bulb{position:absolute;left:50%;bottom:9%;width:10%;aspect-ratio:1;margin-left:-5%;border-radius:50%;background:#3b2a10;box-shadow:inset 0 1px 2px rgba(0,0,0,.6);transition:background .8s ease,box-shadow .8s ease}
+#lamp:checked ~ .lever .lever__bulb{background:#ffe9a0;box-shadow:0 0 8px 3px rgba(255,214,120,.95),inset 0 0 2px #fff}
+.lever__scr{position:absolute;width:7%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 34% 28%,#f3dc95,#7a5c1e);box-shadow:0 1px 1px rgba(40,25,4,.7)}
+.lever__scr::after{content:"";position:absolute;left:14%;right:14%;top:44%;height:12%;background:rgba(40,26,6,.7);transform:rotate(40deg)}
+.lever__scr--a{left:12%;top:16%}.lever__scr--b{right:12%;top:16%}
+.lever__text{display:block;width:170%;margin:.7em 0 0 -35%;white-space:nowrap;font-size:clamp(10px,1.7vmin,14px);font-variant:small-caps;letter-spacing:.2em;line-height:1.2;color:#f6e7cc;
+  text-shadow:0 1px 0 rgba(4,14,22,.8),0 0 14px rgba(4,14,22,.85)}
+.lever__text .t-on{display:none}
+#lamp:checked ~ .lever .t-on{display:inline}
+#lamp:checked ~ .lever .t-off{display:none}
+#lamp:focus-visible ~ .lever .lever__dial{outline:3px solid #ffe7a8;outline-offset:4px}
+
+@media (max-width:640px){
+  .lever{top:max(2.6vmin,env(safe-area-inset-top));bottom:auto;width:74px}
+  .lever__text{font-size:10px}
+  .caption::before,.caption::after{display:none}
+  .caption .name{letter-spacing:.32em;margin-right:-.32em}
+  .caption .est{letter-spacing:.22em}
+  .light{letter-spacing:.2em}
+}
+@media (prefers-reduced-motion:reduce){
+  .wglow,.spill,.buoy em,.buoy,.glitter i{animation:none}
+  .lever__arm,.lever__dial{transition-duration:.01s}
+  .scene *{transition-duration:.6s!important}
+}
+</style>
+</head>
+<body>
+
+<input class="toggle" type="checkbox" id="lamp">
+
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <filter id="grain" x="0" y="0" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+</svg>
+
+<button class="lantern-hit" type="button" aria-label="Lantern room. Hover or focus to make the beam blaze."></button>
+
+<div class="scene" aria-hidden="true">
+  <div class="sky"></div>
+  <div class="sky-night"></div>
+  <div class="stars"><i class="st1"></i><i class="st2"></i><i class="st3"></i><i class="st4"></i></div>
+  <div class="stars stars-n"><i class="sn1"></i><i class="sn2"></i></div>
+  <div class="moon"></div>
+  <div class="sun-glow"></div>
+  <div class="sun"></div>
+  <div class="haze"></div>
+  <div class="ship"><i></i><i></i><i></i><b></b></div>
+
+  <div class="cl cl-far"></div>
+  <div class="cl cl-near"></div>
+  <div class="gull" style="--gy:47%;--gs:4;--gd:64s;--gdel:-12s"><i></i></div>
+  <div class="gull" style="--gy:31%;--gs:3.2;--gd:82s;--gdel:-51s"><i></i></div>
+
+  <div class="sea"></div>
+  <div class="sea-night"></div>
+  <div class="glitter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="glitter glitter-m"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="wv w1"><div class="wave"></div></div>
+  <div class="wv w1b"><div class="wave rev"></div></div>
+  <div class="wv w2"><div class="wave rev"></div></div>
+  <div class="wv w2b"><div class="wave"></div></div>
+  <div class="buoy"><b></b><i></i><em></em></div>
+
+  <div class="a-islet">
+    <div class="rk rk-far"></div>
+    <div class="rk rk-l"></div>
+    <div class="rk rk-r"></div>
+    <div class="rk rk-main"></div>
+    <div class="c-wall"></div>
+    <div class="c-roof"></div>
+    <div class="c-chim"></div>
+    <div class="c-door"></div>
+    <div class="c-win"></div>
+    <div class="plinth"></div>
+    <div class="body"></div>
+    <div class="door"></div>
+    <div class="tw tw1"></div><div class="tw tw2"></div><div class="tw tw3"></div>
+    <div class="cor"></div>
+    <div class="gal"></div>
+    <div class="lframe"></div>
+    <div class="rail"></div>
+    <div class="roof-ring"></div>
+    <div class="roof"></div>
+    <div class="ball"></div>
+    <div class="rod"></div>
+  </div>
+  <div class="a-islet2">
+    <div class="foam"></div>
+    <div class="pole"></div>
+    <div class="flag"></div>
+  </div>
+
+  <div class="wv w3"><div class="wave"></div></div>
+  <div class="fore"><i class="fr fr-a"></i><i class="fr fr-b"></i><i class="fr fr-c"></i></div>
+
+  <div class="gull" style="--gy:39%;--gs:5.4;--gd:48s;--gdel:-30s"><i></i></div>
+
+  <div class="grade"></div>
+
+  <div class="cl-lit cl-far-lit"><div class="cl-cnt"><div class="beam-lit"></div></div></div>
+  <div class="cl-lit cl-near-lit"><div class="cl-cnt"><div class="beam-lit"></div></div></div>
+
+  <div class="a-fx">
+    <div class="beam"></div>
+    <div class="glare"></div>
+    <div class="lglass"></div>
+    <div class="wglow"></div>
+    <div class="spill"></div>
+    <div class="tglow tg1"></div><div class="tglow tg2"></div><div class="tglow tg3"></div>
+    <div class="smoke"></div><div class="smoke s2"></div><div class="smoke s3"></div>
+  </div>
+
+  <div class="grain"></div>
+  <div class="vignette"></div>
+</div>
+
+<main class="ui">
+  <h1 class="caption"><span class="name">Cape Verity Light</span><span class="sep">·</span><span class="est">est. 1874</span></h1>
+  <p class="light">Fl(2) W 16s · Focal plane 41 m · Range 22 nm</p>
+</main>
+
+<label class="lever" for="lamp">
+  <span class="lever__dial" aria-hidden="true">
+    <span class="lever__arc"></span>
+    <span class="lever__scr lever__scr--a"></span><span class="lever__scr lever__scr--b"></span>
+    <span class="lever__arm"><span class="lever__knob"></span></span>
+    <span class="lever__hub"></span>
+    <span class="lever__bulb"></span>
+  </span>
+  <span class="lever__text"><span class="t-off">Light the lamp</span><span class="t-on">Trim the lamp</span></span>
+</label>
+
+</body>
+</html>

@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hotel Meridiana · Radial Atlas</title>
+<meta name="theme-color" content="#17110d">
+<style>
+/* ============ tokens ============ */
+:root{
+  --ink:#17110d; --brass:#c9a45c; --brass-2:#e6cf9a; --cream:#f4e9d3;
+  --terra:#c8553d; --terra-d:#8f3524; --ochre:#e0a458;
+  --blue:#16305c; --blue-d:#0c1c3a; --gold:#e5b64f;
+  --sage:#a9bfa6; --sage-d:#2e4433; --white:#fbfaf6;
+  --saffron:#e8a33d; --plum:#4a1d3f;
+  --paper:#f2ebdb; --vermilion:#b8402a;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif;
+  --sans:"Gill Sans","Gill Sans MT",Optima,Calibri,"Segoe UI",Ubuntu,Cantarell,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --sweep:cubic-bezier(.72,.02,.18,1);
+  --px:50%; --py:calc(100% - 78px); --cs:88px; --cb:34px; --D:110px; --rmax:1600px; --k:16;
+  --c-bg:#17100b; --c-fg:#e6cf9a; --c-ring:#c9a45c; --ring-fg:#c9a45c; --ha:0deg;
+}
+html[data-room="rooms"]{--c-bg:#f4e6cf;--c-fg:#8f3524;--c-ring:#c8553d;--ring-fg:#f8e9d0}
+html[data-room="rooftop"]{--c-bg:#e5b64f;--c-fg:#0c1c3a;--c-ring:#16305c;--ring-fg:#e5b64f}
+html[data-room="spa"]{--c-bg:#fbfaf6;--c-fg:#2e4433;--c-ring:#6f8f73;--ring-fg:#2e4433}
+html[data-room="table"]{--c-bg:#4a1d3f;--c-fg:#e8a33d;--c-ring:#e8a33d;--ring-fg:#f7dfae}
+@media (max-width:899px){html[data-room="table"]{--ring-fg:#4a1d3f}}
+html[data-room="journal"]{--c-bg:#1a1815;--c-fg:#f2ebdb;--c-ring:#d0553b;--ring-fg:#1a1815}
+
+/* ============ base ============ */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+html{background:#120c09;color-scheme:dark;-webkit-text-size-adjust:100%}
+body{min-height:100vh;min-height:100dvh;overflow:hidden;background:#120c09;color:var(--cream);font-family:var(--sans);-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+ul{list-style:none}
+.skip{position:fixed;left:12px;top:-60px;z-index:100;background:var(--cream);color:var(--ink);padding:10px 16px;border-radius:999px;font:600 13px/1 var(--sans);text-decoration:none;transition:top .25s}
+.skip:focus{top:12px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:2px solid var(--brass-2);outline-offset:4px}
+kbd{font:600 10px/1 var(--sans);letter-spacing:.06em;padding:3px 6px;border:1px solid rgba(230,207,154,.4);border-radius:5px;margin:0 2px}
+
+/* ============ lobby ============ */
+.lobby{position:fixed;inset:0;z-index:1;overflow:hidden;
+  background:radial-gradient(120% 92% at 50% 112%,#4d3722 0%,#2b1e14 36%,#18110c 70%,#0f0a07 100%)}
+.glow{position:absolute;inset:0;opacity:0;transition:opacity 1s ease;pointer-events:none;
+  background:radial-gradient(70vmax 62vmax at 50% 104%,rgba(var(--g),.46),rgba(var(--g),.14) 42%,transparent 72%)}
+.lobby.fan-open .glow.on{opacity:1}
+.dial{position:absolute;left:0;top:0;width:10px;height:10px;pointer-events:none;overflow:visible;animation:dialIn 2.6s var(--ease) backwards}
+.dial .r{fill:none;stroke:#c9a45c;stroke-opacity:.2;stroke-width:1}
+.dial .r.rd{stroke-dasharray:1 7;stroke-opacity:.3}
+.dial .r.tk{stroke-width:9;stroke-opacity:.26;stroke-dasharray:.9 7.3}
+.dial .r.tk2{stroke-width:17;stroke-opacity:.34;stroke-dasharray:1 40.01}
+.dial .hl{stroke:#c9a45c;stroke-opacity:.15;stroke-width:1}
+.dial .hl.mer{stroke-opacity:.42;stroke-width:1.4}
+.dial text{font-family:var(--serif);font-size:17px;fill:#e6cf9a;fill-opacity:.46;text-anchor:middle;letter-spacing:.08em}
+.ray{position:absolute;left:var(--px);top:var(--py);width:0;height:0;pointer-events:none;will-change:transform;transform:rotate(-40deg)}
+.ray .beam{position:absolute;left:-150px;bottom:0;width:300px;height:var(--L,700px);
+  background:linear-gradient(to top,rgba(255,226,150,.34),rgba(255,226,150,.08) 60%,rgba(255,226,150,0));
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 34%,#000 66%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 34%,#000 66%,transparent 100%);
+  clip-path:polygon(47% 100%,53% 100%,100% 0,0 0);-webkit-clip-path:polygon(47% 100%,53% 100%,100% 0,0 0)}
+.ray .line{position:absolute;left:-.5px;bottom:0;width:1px;height:var(--L,700px);background:linear-gradient(to top,rgba(255,232,170,.75),rgba(255,232,170,.0))}
+.ray .sun{position:absolute;left:-8px;top:calc(var(--L,700px) * -.93 - 8px);width:16px;height:16px;border-radius:50%;
+  background:radial-gradient(circle,#fff7dc 0 28%,#f4cd6f 58%,rgba(244,205,111,0) 74%);box-shadow:0 0 30px 10px rgba(244,205,111,.34)}
+.top{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:22px clamp(18px,3.2vw,48px);
+  font:500 11px/1 var(--sans);letter-spacing:.28em;text-transform:uppercase;color:rgba(230,207,154,.72);animation:fade 1.6s .3s backwards}
+.top::after{content:"";position:absolute;left:clamp(18px,3.2vw,48px);right:clamp(18px,3.2vw,48px);bottom:0;height:1px;background:linear-gradient(90deg,rgba(201,164,92,0),rgba(201,164,92,.4),rgba(201,164,92,0))}
+.top b{font-weight:600;color:var(--cream);font-variant-numeric:tabular-nums;letter-spacing:.14em;margin-left:6px}
+.hero{position:absolute;z-index:2;left:0;right:0;top:clamp(62px,9.5vh,118px);text-align:center;padding:0 22px;
+  transition:opacity .8s var(--ease),transform 1s var(--ease),filter .8s var(--ease)}
+.hero .k{display:flex;align-items:center;justify-content:center;gap:16px;font:600 12px/1 var(--sans);letter-spacing:.56em;text-indent:.56em;text-transform:uppercase;color:var(--brass-2);animation:rise 1.2s .15s var(--ease) backwards}
+.hero .k::before,.hero .k::after{content:"";width:clamp(28px,5vw,64px);height:1px;background:linear-gradient(90deg,rgba(201,164,92,0),var(--brass))}
+.hero .k::after{transform:scaleX(-1)}
+.hero h1{margin:.14em 0 .1em;font:400 clamp(54px,min(10.4vw,17.5vh),160px)/.88 var(--serif);letter-spacing:-.028em;
+  background:linear-gradient(180deg,#fdf3dc 8%,#ecd39c 52%,#b98f4d 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 6px 30px rgba(0,0,0,.45));animation:rise 1.4s .3s var(--ease) backwards}
+.hero .tag{max-width:38em;margin:0 auto;font:italic 400 clamp(16px,1.75vw,24px)/1.42 var(--serif);color:rgba(244,233,211,.88);text-shadow:0 0 10px #100b08,0 0 22px #100b08,0 0 34px rgba(16,11,8,.9);transition:opacity .5s;animation:rise 1.3s .5s var(--ease) backwards}
+.hero .addr{margin-top:16px;font:500 11px/1 var(--sans);letter-spacing:.32em;text-transform:uppercase;color:rgba(230,207,154,.72);text-shadow:0 0 8px #100b08,0 0 18px #100b08,0 0 30px rgba(16,11,8,.9);transition:opacity .5s;animation:rise 1.3s .7s var(--ease) backwards}
+.lobby.fan-open .hero.dim .tag,.lobby.fan-open .hero.dim .addr{opacity:0}
+@media (max-height:830px) and (min-aspect-ratio:9/10){.hero .addr{display:none}}
+.foot{position:absolute;z-index:2;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:flex-end;padding:0 clamp(18px,3.2vw,48px) 26px;
+  font:500 10.5px/1.5 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:rgba(230,207,154,.8);animation:fade 1.6s 1.2s backwards}
+.foot .fr{text-align:right}
+.foot .fr kbd{letter-spacing:.06em}
+
+/* ============ atlas (fan) ============ */
+.atlas{position:fixed;inset:0;z-index:5;visibility:hidden;pointer-events:none;touch-action:none;user-select:none;-webkit-user-select:none;transition:visibility 0s .75s}
+.atlas.open{visibility:visible;pointer-events:auto;transition-delay:0s}
+.scrim{position:absolute;inset:0;opacity:0;transition:opacity .7s ease;
+  background:linear-gradient(to top,rgba(12,8,6,.82) 0%,rgba(12,8,6,.56) 40%,rgba(12,8,6,0) 82%)}
+.atlas.open .scrim{opacity:1}
+.tracks{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+.tracks path{fill:none;stroke-linecap:round}
+.tracks .track{stroke:#c9a45c;stroke-opacity:.42;stroke-width:1}
+.tracks .track2{stroke:#c9a45c;stroke-opacity:.26;stroke-width:1;stroke-dasharray:1 7}
+.tracks .gauge{stroke:#f0d894;stroke-width:3;filter:drop-shadow(0 0 7px rgba(240,216,148,.75))}
+.tracks .caret{fill:#f0d894;stroke:none;filter:drop-shadow(0 0 6px rgba(240,216,148,.7))}
+.item{position:absolute;left:0;top:0;width:var(--D);height:var(--D);opacity:0;will-change:transform,opacity;pointer-events:none}
+.disc{position:relative;display:block;width:100%;height:100%;border-radius:50%;color:var(--fg);touch-action:none;pointer-events:auto;
+  background-color:var(--bg);
+  background-image:radial-gradient(circle at 32% 24%,rgba(255,255,255,.34),rgba(255,255,255,0) 48%),radial-gradient(circle at 70% 90%,rgba(0,0,0,.22),rgba(0,0,0,0) 55%);
+  box-shadow:0 26px 46px -16px rgba(0,0,0,.72),0 0 0 1px rgba(255,255,255,.16) inset,0 0 0 7px rgba(255,255,255,.05),0 0 0 8px rgba(255,255,255,.08);
+  transition:box-shadow .4s var(--ease)}
+.disc::before{content:"";position:absolute;inset:8px;border-radius:50%;border:1px solid currentColor;opacity:.32}
+.disc:hover,.disc:focus-visible{box-shadow:0 30px 60px -14px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.3) inset,0 0 0 7px rgba(255,255,255,.08),0 0 0 9px rgba(240,216,148,.55)}
+.disc svg{display:block;width:42%;height:42%;margin:29%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.lbl{position:absolute;left:50%;top:calc(100% + 13px);white-space:nowrap;transform-origin:50% -13px;pointer-events:none;
+  font:600 11px/1 var(--sans);letter-spacing:.32em;text-indent:.32em;text-transform:uppercase;color:var(--cream);text-shadow:0 1px 10px rgba(0,0,0,.7)}
+.lbl::before{content:"";position:absolute;left:50%;top:-13px;width:1px;height:10px;background:linear-gradient(rgba(230,207,154,.7),rgba(230,207,154,0))}
+.focus{position:absolute;left:50%;width:min(320px,56vw);text-align:center;transform:translateX(-50%);opacity:0;pointer-events:none;transition:opacity .6s .3s}
+.atlas.open .focus{opacity:1}
+.focus .fk{display:block;font:600 10px/1 var(--sans);letter-spacing:.42em;text-indent:.42em;text-transform:uppercase;color:var(--brass-2);opacity:.8}
+.focus h2{margin-top:12px;font:400 clamp(32px,3.5vw,48px)/1 var(--serif);letter-spacing:-.015em;color:var(--cream);transition:opacity .22s,transform .3s var(--ease)}
+.focus p{margin:10px auto 0;max-width:19.5em;font:italic 400 clamp(14px,1.15vw,16px)/1.45 var(--serif);color:rgba(244,233,211,.76);transition:opacity .22s .04s,transform .3s var(--ease)}
+.focus.swap h2,.focus.swap p{opacity:0;transform:translateY(8px)}
+
+/* ============ compass ============ */
+.compass{position:fixed;left:50%;bottom:var(--cb);width:var(--cs);height:var(--cs);margin-left:calc(var(--cs) / -2);z-index:20;border-radius:50%;
+  color:var(--c-fg);background-color:var(--c-bg);
+  background-image:radial-gradient(circle at 34% 26%,rgba(255,255,255,.2),rgba(255,255,255,0) 52%);
+  box-shadow:0 0 0 1px var(--c-ring),0 0 0 8px rgba(0,0,0,.16),0 22px 44px -10px rgba(0,0,0,.6);
+  transition:background-color .6s,color .6s,box-shadow .6s,transform .35s var(--ease);
+  animation:pop .9s .55s cubic-bezier(.3,1.6,.4,1) backwards;touch-action:manipulation}
+.compass:hover{transform:scale(1.04)}
+.compass:active{transform:scale(.95)}
+.compass:focus-visible{outline:2px solid var(--c-ring);outline-offset:9px}
+.compass::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--c-ring);opacity:0;pointer-events:none;animation:halo 3.4s 2.4s ease-out infinite}
+.compass.used::after{animation:none}
+.cface{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+.cface *{transition:stroke .6s,fill .6s,opacity .5s,transform .9s cubic-bezier(.3,1.5,.4,1)}
+.cface .needle,.cface .needle *{transition:opacity .5s,fill .6s}
+.c-rim{fill:none;stroke:var(--c-ring);stroke-width:.7}
+.c-ticks{fill:none;stroke:currentColor;stroke-opacity:.5;stroke-width:3;stroke-dasharray:.5 3.2525}
+.c-here{fill:none;stroke:var(--c-ring);stroke-width:2.8;stroke-linecap:round;transform:rotate(var(--ha));filter:drop-shadow(0 0 2px var(--c-ring))}
+.rose path{fill:none;stroke:currentColor;stroke-width:.9;stroke-linejoin:round}
+.rose path.s{stroke-opacity:.55}
+.compass.open .rose{transform:rotate(45deg)}
+.needle .n{fill:#d8553a}
+.needle .sth{fill:currentColor;fill-opacity:.9}
+.needle .pin{fill:var(--c-ring)}
+.needle .pin2{fill:var(--c-bg)}
+.backarrow{opacity:0;transform:scale(.4) rotate(90deg)}
+.backarrow path{fill:none;stroke:currentColor;stroke-width:3.6;stroke-linecap:round;stroke-linejoin:round}
+.compass.back .rose{opacity:0;transform:scale(.4) rotate(-90deg)}
+.compass.back .needle{opacity:0}
+.compass.back .backarrow{opacity:1;transform:none}
+.cring{position:absolute;left:50%;top:50%;width:calc(var(--cs) * 1.86);height:calc(var(--cs) * 1.86);margin:calc(var(--cs) * -.93) 0 0 calc(var(--cs) * -.93);pointer-events:none;overflow:visible;
+  animation:spin 70s linear infinite;transition:opacity .35s}
+.cring text{font:600 8.6px var(--sans);fill:var(--ring-fg);text-transform:uppercase;transition:fill .6s}
+.cring.swap{opacity:0}
+.atlas.open ~ .compass .cring{opacity:.35}
+.wave{position:fixed;left:var(--px);top:var(--py);width:0;height:0;box-sizing:border-box;border-radius:50%;z-index:12;pointer-events:none;opacity:0;
+  border:1.5px solid rgba(240,216,148,.9);box-shadow:0 0 28px 2px rgba(240,216,148,.34),inset 0 0 34px rgba(240,216,148,.3);
+  transform:translate(-50%,-50%);transition:width var(--rv,1.05s) var(--sweep),height var(--rv,1.05s) var(--sweep),opacity .35s}
+.wave.go{width:calc(var(--rmax) * 2);height:calc(var(--rmax) * 2)}
+.grain{position:fixed;inset:0;z-index:15;pointer-events:none;opacity:.16}
+.toast{position:fixed;left:50%;bottom:calc(var(--cb) + var(--cs) + 34px);z-index:30;transform:translate(-50%,16px);opacity:0;pointer-events:none;
+  padding:12px 20px;border-radius:999px;background:rgba(20,14,10,.92);color:var(--cream);font:500 13px/1.3 var(--sans);letter-spacing:.04em;text-align:center;max-width:min(88vw,420px);
+  box-shadow:0 12px 40px rgba(0,0,0,.4);border:1px solid rgba(230,207,154,.3);transition:opacity .4s,transform .5s var(--ease)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ============ rooms: shared ============ */
+.room{position:fixed;inset:0;z-index:10;display:none;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+  -webkit-clip-path:circle(0px at var(--px) var(--py));clip-path:circle(0px at var(--px) var(--py));
+  transition:clip-path var(--rv,1.05s) var(--sweep),-webkit-clip-path var(--rv,1.05s) var(--sweep),opacity .5s}
+.room.show{display:block}
+.room.reveal{-webkit-clip-path:circle(var(--rmax) at var(--px) var(--py));clip-path:circle(var(--rmax) at var(--px) var(--py))}
+.room.instant,.room.instant *{transition:none!important;animation-duration:.001s!important}
+.rise{opacity:0;transform:translateY(26px);transition:opacity .25s,transform .25s}
+.room.on .rise{opacity:1;transform:none;transition:opacity .9s var(--ease),transform 1.1s var(--ease);transition-delay:calc(var(--i,0) * 90ms)}
+.rw{position:relative;min-height:100%}
+.kick{font:600 11px/1 var(--sans);letter-spacing:.36em;text-transform:uppercase;margin-bottom:clamp(12px,2.2vh,22px)}
+.btn{display:inline-flex;align-items:center;gap:10px;min-height:46px;padding:0 24px;border-radius:999px;font:600 12px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;transition:transform .35s var(--ease),background-color .3s,color .3s,box-shadow .3s}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:translateY(0) scale(.98)}
+
+/* ============ 01 · ROOMS — terracotta & cream ============ */
+#room-rooms{background:radial-gradient(46% 42% at 80% 96%,rgba(255,214,160,.24),transparent 70%),radial-gradient(110% 100% at 26% 10%,#d96c53 0%,#c8553d 46%,#a9412b 100%);color:#fbeed6}
+.rooms-w{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:center;gap:clamp(8px,3vw,64px);padding:clamp(84px,12vh,130px) clamp(22px,5vw,96px) 176px;max-width:1560px;margin:0 auto}
+.r-copy .kick{opacity:.86}
+.r-copy h2{margin:.1em 0 .16em;font:400 clamp(76px,11vw,176px)/.82 var(--serif);letter-spacing:-.035em;color:#fdf1dc;text-shadow:0 5px 0 rgba(143,53,36,.32)}
+.r-info{transition:opacity .25s,transform .35s var(--ease)}
+.r-info.swap{opacity:0;transform:translateY(10px)}
+.r-name{font:400 clamp(26px,2.5vw,38px)/1.12 var(--serif)}
+.r-name em{display:block;margin-top:.22em;font-size:.6em;opacity:.82}
+.r-txt{max-width:30em;margin-top:16px;font:400 16px/1.7 var(--sans);opacity:.95;min-height:8.2em}
+.r-spec{display:flex;max-width:30em;margin-top:18px;border-top:1px solid rgba(251,238,214,.4)}
+.r-spec div{flex:1;padding:14px 10px 0 0}
+.r-spec div:nth-child(2){flex:1.6}
+.r-spec dt{font:600 10px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:.74}
+.r-spec dd{margin-top:9px;font:400 clamp(17px,1.5vw,22px)/1.15 var(--serif)}
+.r-cta{margin-top:24px}
+.btn-cream{background:#f7e8cd;color:#8f3524;box-shadow:0 14px 30px -12px rgba(80,20,10,.6)}
+.btn-cream:hover{background:#fff6e2}
+.r-stage{position:relative;height:clamp(450px,64vh,620px)}
+.arches{--aw:min(300px,42vw);position:absolute;left:0;right:0;top:0;bottom:72px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.arch{position:absolute;left:50%;bottom:0;margin:0 0 0 calc(var(--aw) / -2);width:var(--aw);aspect-ratio:300/460;border-radius:999px 999px 4px 4px;overflow:hidden;background:#f4e6cf;cursor:pointer;
+  box-shadow:0 0 0 8px #f7e8cd,0 0 0 9px rgba(143,53,36,.42),0 34px 60px -22px rgba(70,15,8,.65);
+  transform:translateX(calc(var(--o,0) * 94%)) scale(calc(1 - var(--a,0) * .26));transform-origin:50% 100%;
+  z-index:calc(5 - var(--a,0) * 2);transition:transform .9s var(--ease)}
+.arch::before{content:"";position:absolute;inset:-10px;z-index:2;pointer-events:none;background:#a83f29;opacity:calc(var(--a,0) * .36);transition:opacity .9s var(--ease)}
+.arch svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.arch::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(112deg,transparent 30%,rgba(255,240,210,.32) 46%,transparent 62%);background-size:280% 100%;animation:patch 11s ease-in-out infinite alternate}
+.r-ctl{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:center;gap:22px;font:600 12px/1 var(--sans);letter-spacing:.28em}
+.rc{width:48px;height:48px;border-radius:50%;border:1.5px solid rgba(251,238,214,.78);display:grid;place-items:center;transition:background-color .3s,color .3s,transform .35s var(--ease)}
+.rc:hover{background:#f7e8cd;color:#8f3524;transform:scale(1.07)}
+.rc svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.r-dots{display:flex;gap:8px;align-items:flex-end}
+.r-dots i{width:10px;height:14px;border:1.5px solid rgba(251,238,214,.75);border-radius:6px 6px 1px 1px;transition:background-color .4s,height .4s var(--ease)}
+.r-dots i.on{background:#f7e8cd;height:21px}
+.r-count{min-width:5.5em;text-align:center}
+
+/* ============ 02 · ROOFTOP — deep blue & gold ============ */
+#room-rooftop{color:#f6e9c6;background:linear-gradient(180deg,#06122a 0%,#0c1f45 24%,#16305c 50%,#264a82 70%,#7d7a76 86%,#dfa848 100%)}
+.rf-w{overflow:hidden;min-height:100%;padding:clamp(84px,13vh,150px) clamp(22px,6vw,110px) calc(min(42vh,420px) + 30px)}
+.stars{position:fixed;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none}
+.moon{position:fixed;right:clamp(28px,9vw,150px);top:clamp(64px,9vh,110px);width:clamp(110px,14vw,190px);height:auto;aspect-ratio:1;animation:bob 16s ease-in-out infinite alternate;pointer-events:none}
+.rf-copy{position:relative;z-index:2;max-width:580px}
+.rf-copy .kick{color:#f0c866}
+.rf-copy h2{margin:.1em 0 .12em;font:italic 400 clamp(72px,11.5vw,176px)/.88 var(--serif);letter-spacing:-.03em;padding-right:.1em;
+  background:linear-gradient(180deg,#fff2cc 0%,#f2c96a 52%,#c8912f 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.rf-lede{font:600 12px/1.4 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:#f0c866}
+.rf-txt{margin-top:16px;max-width:26em;font:italic 400 clamp(17px,1.5vw,21px)/1.55 var(--serif);color:#e9e4d2}
+.rf-list{position:absolute;z-index:2;right:clamp(22px,6vw,110px);top:clamp(250px,36vh,350px);width:min(390px,32vw)}
+.rf-list h3{font:600 11px/1 var(--sans);letter-spacing:.36em;text-transform:uppercase;color:#f0c866;padding-bottom:12px;border-bottom:1px solid rgba(240,200,102,.45)}
+.rf-list li{display:grid;grid-template-columns:1fr auto;gap:3px 14px;padding:14px 0;border-bottom:1px solid rgba(240,200,102,.2)}
+.rf-list li span{font:400 clamp(19px,1.7vw,23px)/1.15 var(--serif);color:#fff3d2}
+.rf-list li b{font:400 20px/1.15 var(--serif);color:#f0c866}
+.rf-list li small{grid-column:1/-1;font:400 12.5px/1.45 var(--sans);color:rgba(246,233,198,.72)}
+.rf-sky{margin-top:14px;font:500 10.5px/1.6 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:rgba(246,233,198,.55)}
+.skyline{position:fixed;left:50%;bottom:0;height:min(42vh,420px);min-width:100%;aspect-ratio:1600/420;transform:translateX(-50%);display:block;pointer-events:none}
+.bulb{transform-box:fill-box;transform-origin:center;animation:shimmer 3.4s ease-in-out infinite}
+.win{animation:winlight 6s ease-in-out infinite}
+.candle{animation:flick 1.8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+
+/* ============ 03 · SPA — sage & white ============ */
+#room-spa{background:radial-gradient(90% 80% at 50% 46%,#cbd9c7 0%,#b7cab3 42%,#a2ba9f 100%);color:#2e4433}
+.sp-w{overflow:hidden;min-height:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,1fr) minmax(0,1fr);align-items:center;gap:clamp(12px,3vw,48px);padding:clamp(84px,12vh,130px) clamp(22px,5vw,96px) 176px;--od:clamp(220px,42vmin,410px)}
+.leaf{position:absolute;width:min(36vw,470px);height:auto;pointer-events:none;fill:#8fa78d;transform-origin:0 0;animation:sway 11s ease-in-out infinite alternate}
+.leaf .lt{fill:#dfe9db}
+.leaf-a{left:-3vw;top:-3vh}
+.leaf-b{right:-3vw;bottom:-3vh;transform:rotate(180deg);transform-origin:50% 50%;animation-name:sway2}
+.sp-c{position:absolute;left:50%;top:47%;width:0;height:0;z-index:1;transform:translate(var(--mx,0px),var(--my,0px));transition:transform 1.4s var(--ease)}
+.sp-rip i{position:absolute;left:calc(var(--od) / -2);top:calc(var(--od) / -2);width:var(--od);height:var(--od);border-radius:50%;opacity:0;
+  border:1px solid rgba(255,255,255,.85);background:radial-gradient(circle,rgba(255,255,255,0) 60%,rgba(255,255,255,.14) 100%);
+  animation:rip 12s cubic-bezier(.2,.5,.3,1) infinite;animation-delay:calc(var(--i) * -2s)}
+.sp-orb{position:absolute;left:calc(var(--od) / -2);top:calc(var(--od) / -2);width:var(--od);height:var(--od);border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 36% 28%,#fff 0%,#fbfaf6 46%,#e6eee2 100%);
+  box-shadow:0 0 0 14px rgba(255,255,255,.2),0 0 0 36px rgba(255,255,255,.1),0 46px 90px -24px rgba(46,68,51,.5);animation:breathe 10s ease-in-out infinite}
+.sp-orb span{position:absolute;font:italic 400 clamp(22px,2.6vw,34px)/1 var(--serif);color:#3b5a42;opacity:0}
+.sp-orb .in{animation:tIn 10s ease-in-out infinite}
+.sp-orb .out{animation:tOut 10s ease-in-out infinite}
+.sp-orb small{position:absolute;bottom:17%;font:600 10px/1 var(--sans);letter-spacing:.34em;text-transform:uppercase;color:#6f8f73}
+.sp-copy{position:relative;z-index:2}
+.sp-copy h2{margin:.1em 0 .18em;font:400 clamp(76px,10.5vw,160px)/.86 var(--serif);letter-spacing:-.035em;color:#284031}
+.sp-copy{grid-column:1}
+.sp-list{grid-column:3}
+.sp-copy .lede{max-width:24em;font:italic 400 clamp(17px,1.5vw,21px)/1.55 var(--serif);color:#365040}
+.sp-list{position:relative;z-index:2;justify-self:end;width:min(100%,400px)}
+.sp-list li{display:grid;grid-template-columns:1fr auto;gap:3px 14px;padding:15px 0;border-bottom:1px solid rgba(46,68,51,.26)}
+.sp-list li:first-child{border-top:1px solid rgba(46,68,51,.26)}
+.sp-list span{font:400 clamp(21px,1.9vw,26px)/1.1 var(--serif)}
+.sp-list span i{font-style:italic;opacity:.6;margin-left:.3em;font-size:.8em}
+.sp-list b{font:600 11px/1.9 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:#4f6f55}
+.sp-list small{grid-column:1/-1;font:400 13px/1.45 var(--sans);color:#43604a}
+.sp-note{margin-top:16px;font:600 10.5px/1.6 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:#4f6f55}
+.tap{position:absolute;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;border:1.5px solid rgba(255,255,255,.95);pointer-events:none;z-index:3;animation:tap 2.6s cubic-bezier(.2,.6,.3,1) forwards}
+
+/* ============ 04 · TABLE — saffron & plum ============ */
+#room-table{background:radial-gradient(80% 70% at 30% 20%,#f0b453 0%,#e8a33d 50%,#d9902b 100%);color:#4a1d3f}
+.tb-w{overflow:hidden;min-height:100%;padding:clamp(84px,12vh,130px) clamp(22px,5vw,96px) 176px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);align-items:center;gap:clamp(10px,3vw,60px)}
+.tb-disc{position:absolute;right:-14vw;bottom:-30vh;width:min(96vw,1040px);aspect-ratio:1;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 38% 32%,#6a2a5f 0%,#4a1d3f 52%,#371230 100%);
+  box-shadow:0 0 0 clamp(18px,3vw,44px) rgba(74,29,63,.14),0 0 0 clamp(44px,7vw,100px) rgba(74,29,63,.07)}
+.tb-w::after{content:"";position:fixed;left:var(--px);top:var(--py);width:212px;height:212px;margin:-106px 0 0 -106px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,#55214a 0%,#4a1d3f 62%,#41193a 100%);box-shadow:0 0 0 1px rgba(232,163,61,.35),0 0 0 9px rgba(74,29,63,.35)}
+.tb-copy{position:relative;z-index:2}
+.tb-copy .kick{color:#4a1d3f}
+.tb-copy h2{margin:.08em 0 .1em;font:400 clamp(80px,11.5vw,180px)/.84 var(--serif);letter-spacing:-.035em;color:#4a1d3f}
+.tb-sub{font:italic 400 clamp(18px,1.7vw,24px)/1.35 var(--serif);max-width:20em}
+.tb-menu{margin-top:22px;max-width:520px;border-top:2px solid #4a1d3f}
+.tb-menu li{display:grid;grid-template-columns:1fr auto;gap:3px 16px;padding:14px 0;border-bottom:1px solid rgba(74,29,63,.32);transition:padding-left .4s var(--ease)}
+.tb-menu li:hover{padding-left:12px}
+.tb-menu h3{font:400 clamp(20px,1.85vw,26px)/1.15 var(--serif)}
+.tb-menu b{grid-row:1;grid-column:2;font:400 clamp(20px,1.85vw,26px)/1.15 var(--serif)}
+.tb-menu p{grid-column:1/-1;font:400 13.5px/1.5 var(--sans);opacity:.82}
+.tb-foot{margin-top:16px;font:600 10.5px/1.6 var(--sans);letter-spacing:.24em;text-transform:uppercase;opacity:.75}
+.tb-plate{position:relative;z-index:2;justify-self:center;width:min(100%,760px);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tb-plate svg{display:block;width:100%;height:auto;overflow:visible}
+.st{stroke-dasharray:74 112;animation:steam 4.6s linear infinite}
+.st2{animation-delay:-1.5s;animation-duration:5.2s}
+.st3{animation-delay:-3s;animation-duration:4.2s}
+.tb-plate.puff .st{animation-duration:1.9s}
+.fork{transform-box:fill-box;transform-origin:0 100%;transition:transform .7s cubic-bezier(.3,1.6,.4,1)}
+.tb-plate:hover .fork,.tb-plate.puff .fork{transform:rotate(-7deg)}
+
+/* ============ 05 · JOURNAL — paper & ink ============ */
+#room-journal{background:#f1e9d7;color:#1c1a17}
+.jr-w{padding:clamp(70px,8.5vh,110px) clamp(22px,5vw,88px) 150px;max-width:1400px;margin:0 auto;
+  background-image:radial-gradient(rgba(60,40,20,.05) 1px,transparent 1.4px);background-size:7px 7px}
+.jr-top{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:4px solid #1c1a17;border-bottom:1px solid #1c1a17;font:600 10.5px/1.3 var(--sans);letter-spacing:.26em;text-transform:uppercase}
+.jr-mast{position:relative;text-align:center;padding:clamp(10px,2.2vh,24px) 0 clamp(10px,1.8vh,18px)}
+.jr-mast h2{font:400 clamp(56px,min(10.5vw,16vh),160px)/.9 var(--serif);letter-spacing:-.04em;color:#1c1a17}
+.jr-mast h2 em{font-style:italic;letter-spacing:-.03em}
+.jr-sub{margin-top:8px;font:italic 400 clamp(16px,1.7vw,22px)/1.3 var(--serif);color:#4a4239}
+.stamp{position:absolute;right:0;top:clamp(0px,1vh,12px);width:clamp(70px,7.2vw,102px);aspect-ratio:1;border-radius:50%;border:2px solid #b8402a;color:#b8402a;display:grid;place-items:center;text-align:center;
+  font:700 clamp(8px,.8vw,10.5px)/1.25 var(--sans);letter-spacing:.2em;text-transform:uppercase;transform:rotate(12deg);opacity:.85}
+.stamp::before{content:"";position:absolute;inset:5px;border-radius:50%;border:1px dashed #b8402a;opacity:.7}
+.stamp b{display:block;font:italic 400 clamp(22px,2.6vw,34px)/1 var(--serif);letter-spacing:0}
+.jr-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid #1c1a17;border-bottom:1px solid #1c1a17;margin-top:6px}
+.card{position:relative;padding:clamp(16px,2vw,28px) clamp(16px,2vw,30px) 16px;display:flex;flex-direction:column;transition:background-color .5s}
+.card+.card{border-left:1px solid rgba(28,26,23,.75)}
+.card:hover{background:rgba(255,252,242,.7)}
+.card .no{font:italic 400 clamp(38px,4vw,58px)/.9 var(--serif);color:#b8402a}
+.card .spot{position:absolute;right:clamp(16px,2vw,30px);top:clamp(14px,1.8vw,26px);width:clamp(60px,6vw,84px);height:auto;fill:none;stroke:#1c1a17;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.card .spot *{stroke-dasharray:1;stroke-dashoffset:1}
+.room.on .card .spot *{animation:ink 2.2s .8s cubic-bezier(.5,0,.2,1) forwards}
+.card:hover .spot *{animation:ink2 1.4s cubic-bezier(.5,0,.2,1) both}
+.card .cat{margin-top:clamp(14px,1.7vw,24px);font:600 10.5px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:#b8402a}
+.card h3{margin-top:12px;font:400 clamp(26px,2.5vw,36px)/1.08 var(--serif);letter-spacing:-.015em}
+.card .dek{margin-top:12px;font:italic 400 clamp(15.5px,1.25vw,17.5px)/1.55 var(--serif);color:#3f382f}
+.more{display:grid;grid-template-rows:0fr;transition:grid-template-rows .7s var(--ease)}
+.more.open{grid-template-rows:1fr}
+.more>div{overflow:hidden}
+.more p{padding-top:14px;font:400 14.5px/1.72 var(--sans);color:#2c2823}
+.more p::first-letter{float:left;margin:.06em .1em 0 0;font:400 3.3em/.78 var(--serif);color:#b8402a}
+.card footer{margin-top:auto;padding-top:20px;display:flex;align-items:center;justify-content:space-between;gap:10px;font:600 10px/1.3 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:#5a5044}
+.rd{padding:9px 0 9px 4px;border-bottom:1.5px solid #1c1a17;font:700 10px/1 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:#1c1a17;transition:color .3s,border-color .3s}
+.rd:hover{color:#b8402a;border-color:#b8402a}
+.room.on .card.rise{transition:opacity .9s var(--ease),transform 1.1s var(--ease),background-color .5s;transition-delay:calc(var(--i,0) * 90ms),calc(var(--i,0) * 90ms),0s}
+.jr-foot{margin-top:18px;display:flex;justify-content:space-between;gap:12px;font:italic 400 14px/1.4 var(--serif);color:#5a5044}
+
+/* room-only keyframes */
+@keyframes patch{from{background-position:100% 0}to{background-position:0 0}}
+@keyframes bob{from{transform:translateY(-4px) rotate(-3deg)}to{transform:translateY(8px) rotate(3deg)}}
+@keyframes shimmer{0%,100%{opacity:.5;transform:scale(.8)}50%{opacity:1;transform:scale(1.25)}}
+@keyframes winlight{0%,100%{opacity:.95}46%{opacity:.3}}
+@keyframes flick{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.35)}}
+@keyframes breathe{0%,100%{transform:scale(.86)}45%{transform:scale(1.07)}}
+@keyframes tIn{0%,3%{opacity:0}12%,38%{opacity:1}46%,100%{opacity:0}}
+@keyframes tOut{0%,50%{opacity:0}60%,90%{opacity:1}98%,100%{opacity:0}}
+@keyframes rip{0%{transform:scale(.9);opacity:0}8%{opacity:.85}100%{transform:scale(3.3);opacity:0}}
+@keyframes sway{from{transform:rotate(-2.2deg)}to{transform:rotate(2.6deg)}}
+@keyframes sway2{from{transform:rotate(177.8deg)}to{transform:rotate(182.6deg)}}
+@keyframes tap{0%{transform:scale(1);opacity:1}100%{transform:scale(16);opacity:0}}
+@keyframes steam{0%{stroke-dashoffset:186;opacity:0}22%{opacity:.85}70%{opacity:.5}100%{stroke-dashoffset:0;opacity:0}}
+@keyframes ink{to{stroke-dashoffset:0}}
+@keyframes ink2{0%{stroke-dashoffset:0}1%{stroke-dashoffset:1}100%{stroke-dashoffset:0}}
+
+/* rooms: responsive */
+@media (max-width:899px){
+  .rooms-w{grid-template-columns:1fr;gap:12px;padding-top:88px}
+  .r-copy{display:contents}
+  .r-copy .kick{order:1;margin-bottom:0}
+  .r-copy h2{order:2;font-size:clamp(64px,21vw,120px);margin:0 0 4px}
+  .r-stage{order:3}
+  .r-copy>div{order:4;margin-top:14px}
+  .r-cta{order:5}
+  .r-txt{min-height:0}
+  .r-stage{height:440px}
+  .arches{--aw:min(236px,58vw)}
+  .rf-list{position:relative;right:auto;top:auto;width:auto;max-width:440px;margin-top:22px;z-index:2}
+  .rf-list li{padding:11px 0}
+  .rf-sky{display:none}
+  .rf-w{padding-bottom:calc(min(26vh,230px) + 120px)}
+  .skyline{height:min(26vh,230px)}
+  .moon{width:clamp(84px,24vw,120px);top:70px}
+  .sp-w{grid-template-columns:1fr;gap:18px;padding-top:92px}
+  .sp-c{position:relative;left:auto;top:auto;order:2;width:100%;height:calc(var(--od) * 1.32);transform:none}
+  .sp-c>*{left:50%;top:50%;margin:0}
+  .sp-orb{left:calc(50% - var(--od) / 2);top:calc(50% - var(--od) / 2)}
+  .sp-rip i{left:calc(50% - var(--od) / 2);top:calc(50% - var(--od) / 2)}
+  .sp-copy,.sp-list{grid-column:1}
+  .sp-copy{order:1}.sp-list{order:3;justify-self:stretch;width:auto}
+  .tb-w::after{display:none}
+  .leaf{width:64vw}
+  .tb-w{grid-template-columns:1fr;gap:6px;padding-top:88px}
+  .tb-plate{order:-1;width:min(100%,520px);margin-bottom:-10px}
+  .tb-copy{order:1}
+  .tb-disc{right:-36vw;top:-15vh;bottom:auto;width:122vw}
+  .jr-grid{grid-template-columns:1fr}
+  .card+.card{border-left:0;border-top:1px solid rgba(28,26,23,.75)}
+  .jr-top span:nth-child(2){display:none}
+  .stamp{display:none}
+}
+@media (max-width:520px){
+  .r-spec dd{font-size:16px}
+}
+@media (prefers-reduced-motion:reduce){
+  .arch::after,.moon,.leaf,.sp-rip i,.st,.bulb,.win,.candle{animation:none}
+  .sp-orb{animation:none;transform:scale(.96)}
+  .sp-orb .out{animation:none;opacity:0}
+  .sp-orb .in{animation:none;opacity:1}
+  .sp-rip i{opacity:.4}
+  .st{opacity:.6;stroke-dasharray:none}
+  .card .spot *{stroke-dashoffset:0;animation:none!important}
+}
+
+/* ============ motion ============ */
+@keyframes rise{from{opacity:0;transform:translateY(22px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{transform:scale(.2);opacity:0}to{transform:none;opacity:1}}
+@keyframes dialIn{from{opacity:0;transform:scale(.9) rotate(-8deg)}to{opacity:1;transform:none}}
+@keyframes halo{0%{transform:scale(.92);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ============ small screens ============ */
+@media (max-width:699px),(max-aspect-ratio:9/10){
+  .top{padding-top:18px}
+  .top .tl{display:none}
+  .top{justify-content:center}
+  .hero{top:clamp(64px,10vh,96px)}
+  .hero .tag{font-size:17px;max-width:20em}
+  .hero .addr{margin-top:16px;letter-spacing:.26em}
+  .foot{display:none}
+  .lbl{font-size:10.5px;letter-spacing:.26em}
+}
+
+/* ============ reduced motion ============ */
+@media (prefers-reduced-motion:reduce){
+  .cring,.compass::after{animation:none}
+  .dial,.hero *,.top,.foot,.compass{animation:none}
+  .room{-webkit-clip-path:none;clip-path:none;opacity:0;transition:opacity .45s}
+  .room.reveal{opacity:1}
+  .wave{display:none}
+  .rise{transform:none}
+  .room.on .rise{transition:opacity .5s;transition-delay:0s}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#compass">Skip to the compass menu</a>
+
+<main id="lobby" class="lobby" aria-labelledby="hTitle">
+  <i class="glow" style="--g:200,85,61"></i>
+  <i class="glow" style="--g:44,96,176"></i>
+  <i class="glow" style="--g:169,191,166"></i>
+  <i class="glow" style="--g:232,163,61"></i>
+  <i class="glow" style="--g:239,228,204"></i>
+
+  <svg class="dial" id="dial" viewBox="-600 -600 1200 1200" aria-hidden="true" focusable="false">
+    <circle class="r" r="120"/>
+    <circle class="r" r="210"/>
+    <circle class="r rd" r="300"/>
+    <circle class="r" r="358"/>
+    <circle class="r" r="404"/>
+    <circle class="r tk" r="470"/>
+    <circle class="r tk2" r="470"/>
+    <circle class="r" r="486"/>
+    <circle class="r rd" r="560"/>
+    <g>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(-90)"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(-75)"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(-60)"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(-45)"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(-30)"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(-15)"/>
+      <line class="hl mer" x1="0" y1="-120" x2="0" y2="-560"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(15)"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(30)"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(45)"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(60)"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(75)"/>
+      <line class="hl" x1="0" y1="-120" x2="0" y2="-404" transform="rotate(90)"/>
+    </g>
+    <g>
+      <text transform="rotate(-90) translate(0,-432)">VI</text>
+      <text transform="rotate(-75) translate(0,-432)">VII</text>
+      <text transform="rotate(-60) translate(0,-432)">VIII</text>
+      <text transform="rotate(-45) translate(0,-432)">IX</text>
+      <text transform="rotate(-30) translate(0,-432)">X</text>
+      <text transform="rotate(-15) translate(0,-432)">XI</text>
+      <text transform="rotate(0) translate(0,-432)">XII</text>
+      <text transform="rotate(15) translate(0,-432)">I</text>
+      <text transform="rotate(30) translate(0,-432)">II</text>
+      <text transform="rotate(45) translate(0,-432)">III</text>
+      <text transform="rotate(60) translate(0,-432)">IV</text>
+      <text transform="rotate(75) translate(0,-432)">V</text>
+      <text transform="rotate(90) translate(0,-432)">VI</text>
+    </g>
+  </svg>
+  <div class="ray" id="ray" aria-hidden="true"><i class="beam"></i><i class="line"></i><i class="sun"></i></div>
+
+  <header class="top"><span class="tl">Est. 1926 &middot; Old Town</span><span>Sundial<b id="sunTime">12:00</b></span></header>
+
+  <section class="hero" id="hero">
+    <p class="k">Hotel</p>
+    <h1 id="hTitle">Meridiana</h1>
+    <p class="tag">Twelve rooms, one rooftop and a sundial that keeps better time than we do.</p>
+    <p class="addr">Via della Meridiana 12 &middot; Old Town</p>
+  </section>
+
+  <footer class="foot"><span class="fl">Move across the lobby &mdash; the light follows</span><span class="fr"><span class="kb"><kbd>&larr;</kbd><kbd>&rarr;</kbd> turn &middot; <kbd>Enter</kbd> open &middot; <kbd>Esc</kbd> close &middot; <kbd>1</kbd>&ndash;<kbd>5</kbd> jump</span></span></footer>
+</main>
+
+<nav id="atlas" class="atlas" aria-label="Hotel Meridiana sections">
+  <div class="scrim"></div>
+  <svg class="tracks" aria-hidden="true" focusable="false">
+    <path id="trackA" class="track"/>
+    <path id="trackB" class="track2"/>
+    <path id="trackC" class="track2"/>
+    <path id="gauge" class="gauge"/>
+    <path id="caret" class="caret"/>
+  </svg>
+  <div class="focus" id="focus" aria-hidden="true">
+    <span class="fk">Turn the dial</span>
+    <h2 id="fName">Spa</h2>
+    <p id="fDesc">Warm stone, cold water and a silence you can lean on.</p>
+  </div>
+  <ul class="wheel">
+    <li class="item" style="--bg:#c8553d;--fg:#f8e9d0">
+      <button class="disc" type="button" data-i="0" aria-label="Rooms: three arched suites">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 41V22a10 10 0 0 1 20 0v19"/><path d="M9 41h30"/><path d="M24 12v29M14 27h20"/><path d="M19 7.5l2 2.5M29 7.5l-2 2.5M24 5v3" stroke-width="1.2"/></svg>
+      </button>
+      <span class="lbl" aria-hidden="true">Rooms</span>
+    </li>
+    <li class="item" style="--bg:#16305c;--fg:#f0c866">
+      <button class="disc" type="button" data-i="1" aria-label="Rooftop: the bar under the stars">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M19 8.5a8.5 8.5 0 1 0 8.5 11.5A7 7 0 0 1 19 8.5z"/><path d="M36 9l1.5 4.5L42 15l-4.5 1.5L36 21l-1.5-4.5L30 15l4.5-1.5z" fill="currentColor" stroke-width="1"/><path d="M5 41h38"/><path d="M8 41V33h6v8M17 41V29l4.5-4L26 29v12M29 41V32h5v9M36 41v-6h4v6"/></svg>
+      </button>
+      <span class="lbl" aria-hidden="true">Rooftop</span>
+    </li>
+    <li class="item" style="--bg:#a9bfa6;--fg:#fbfaf6">
+      <button class="disc" type="button" data-i="2" aria-label="Spa: warm stone and cold water">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 7c5.5 6.6 9 11 9 15.5a9 9 0 0 1-18 0C15 18 18.500 13.600 24 7z" fill="currentColor" stroke-width="1.2"/><path d="M8 36c6 3.500 26 3.500 32 0" stroke-width="2"/><path d="M14 41.500c4.500 2 15.500 2 20 0" stroke-width="2" opacity=".7"/></svg>
+      </button>
+      <span class="lbl" aria-hidden="true">Spa</span>
+    </li>
+    <li class="item" style="--bg:#e8a33d;--fg:#4a1d3f">
+      <button class="disc" type="button" data-i="3" aria-label="Table: lunch at the hour the sun stands still">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 33a16 16 0 0 1 32 0z"/><path d="M5 37h38"/><path d="M24 17v-4M21 13h6"/><path d="M16 28a9 9 0 0 1 5-7" stroke-width="1.2" opacity=".7"/></svg>
+      </button>
+      <span class="lbl" aria-hidden="true">Table</span>
+    </li>
+    <li class="item" style="--bg:#f2ebdb;--fg:#1a1815">
+      <button class="disc" type="button" data-i="4" aria-label="Journal: notes from the hotel">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6l9 15-9 21-9-21z"/><path d="M24 22v20"/><circle cx="24" cy="22" r="2" fill="currentColor"/><path d="M15 21h18" stroke-width="1.2"/></svg>
+      </button>
+      <span class="lbl" aria-hidden="true">Journal</span>
+    </li>
+  </ul>
+</nav>
+
+<button id="compass" class="compass" type="button" aria-label="Open the atlas menu" aria-expanded="false" aria-controls="atlas">
+  <svg class="cring" id="cring" viewBox="-80 -80 160 160" aria-hidden="true" focusable="false">
+    <defs><path id="ringPath" d="M0 -62A62 62 0 1 1 -0.01 -62"/></defs>
+    <text><textPath id="ringText" href="#ringPath" lengthAdjust="spacing">HOTEL MERIDIANA &#183; TOUCH THE COMPASS &#183; TWELVE ROOMS &#183; ONE ROOFTOP &#183; </textPath></text>
+  </svg>
+  <svg class="cface" viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
+    <circle class="c-rim" r="47"/>
+    <circle class="c-ticks" r="43"/>
+    <path class="c-here" d="M-14.540 -39.940A42.500 42.500 0 0 1 14.540 -39.940"/>
+    <g class="rose">
+      <path d="M0 -37L4.200 -4.200L37 0L4.200 4.200L0 37L-4.200 4.200L-37 0L-4.200 -4.200Z"/>
+      <path class="s" transform="rotate(45)" d="M0 -24L3 -3L24 0L3 3L0 24L-3 3L-24 0L-3 -3Z"/>
+    </g>
+    <g class="needle" id="needle">
+      <path class="n" d="M0 -31L5.500 0L-5.500 0Z"/>
+      <path class="sth" d="M0 31L5.500 0L-5.500 0Z"/>
+      <circle class="pin" r="3"/><circle class="pin2" r="1.100"/>
+    </g>
+    <g class="backarrow"><path d="M11 -15L-8 0L11 15M-8 0H17"/></g>
+  </svg>
+</button>
+
+<div id="wave" class="wave" aria-hidden="true"></div>
+
+<div id="rooms">
+
+<!-- ================= 01 ROOMS ================= -->
+<section id="room-rooms" class="room" hidden aria-label="Rooms">
+  <div class="rw rooms-w">
+    <div class="r-copy">
+      <p class="kick rise" style="--i:0">01 &middot; Camere</p>
+      <h2 class="rise" style="--i:1">Rooms</h2>
+      <div class="rise" style="--i:2">
+        <div class="r-info" id="rInfo" aria-live="polite">
+          <p class="r-name"><span id="rName">Camera Ocra</span><em id="rSub">The Ochre Room</em></p>
+          <p class="r-txt" id="rTxt">Lime-washed walls the colour of late afternoon, a walnut bed dressed in stone-washed linen, and an arched window that frames the courtyard well at the exact hour the sun crosses it.</p>
+          <dl class="r-spec">
+            <div><dt>Size</dt><dd id="rSize">32 m&sup2;</dd></div>
+            <div><dt>View</dt><dd id="rView">Courtyard well</dd></div>
+            <div><dt>From</dt><dd id="rPrice">&euro;290</dd></div>
+          </dl>
+        </div>
+      </div>
+      <p class="r-cta rise" style="--i:3"><button class="btn btn-cream" id="rHold" type="button">Hold this room</button></p>
+    </div>
+    <div class="r-stage rise" style="--i:2">
+      <div class="arches" id="arches" role="group" aria-roledescription="carousel" aria-label="Three rooms">
+        <figure class="arch" aria-label="Camera Ocra, looking over the courtyard">
+          <svg viewBox="0 0 300 460" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+            <defs><linearGradient id="gA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efb48a"/><stop offset=".6" stop-color="#f8dcb5"/></linearGradient></defs>
+            <rect width="300" height="460" fill="url(#gA)"/>
+            <circle cx="204" cy="150" r="68" fill="#fbe6c2" opacity=".5"/>
+            <circle cx="204" cy="150" r="42" fill="#c8553d"/>
+            <path d="M0 292C52 250 100 272 146 288S246 252 300 278V460H0Z" fill="#e2a46e"/>
+            <path d="M0 334C62 304 132 326 192 330S272 310 300 318V460H0Z" fill="#c97d4b"/>
+            <path d="M42 352C33 314 37 264 42 218C47 264 51 314 42 352Z" fill="#4c5830"/>
+            <path d="M72 354C65 324 68 290 72 260C76 290 79 324 72 354Z" fill="#5c6a36"/>
+            <path d="M248 348C240 316 243 276 248 246C253 276 256 316 248 348Z" fill="#4c5830"/>
+            <rect y="376" width="300" height="84" fill="#9a3e29"/>
+            <path d="M100 460V420a50 50 0 0 1 100 0V460Z" fill="#3a1a12"/>
+            <path d="M100 420a50 50 0 0 1 100 0" fill="none" stroke="#f3d1a6" stroke-width="3.500"/>
+            <rect x="222" y="388" width="52" height="30" rx="3" fill="#f3d1a6"/>
+            <rect x="217" y="382" width="62" height="9" rx="4" fill="#f9e2c2"/>
+            <path d="M232 382v-14h32v14" fill="none" stroke="#3a1a12" stroke-width="3"/>
+            <path d="M18 460V150a132 132 0 0 1 264 0V460" fill="none" stroke="#f7e8cd" stroke-width="2" opacity=".75"/>
+          </svg>
+        </figure>
+        <figure class="arch" aria-label="Camera Loggia, a lemon tree and the sea">
+          <svg viewBox="0 0 300 460" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+            <defs><linearGradient id="gB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4cfa4"/><stop offset="1" stop-color="#fce9cb"/></linearGradient></defs>
+            <rect width="300" height="460" fill="url(#gB)"/>
+            <circle cx="88" cy="132" r="30" fill="#e88a4f"/>
+            <rect y="236" width="300" height="224" fill="#5e97a3"/>
+            <rect y="236" width="300" height="10" fill="#8dbcc2"/>
+            <path d="M0 262h300M0 284h300M0 310h300M0 340h300" stroke="#8dbcc2" stroke-width="2" opacity=".55"/>
+            <path d="M0 236C40 208 88 212 132 236z" fill="#7d8b58"/>
+            <path d="M204 224l-2-42 34 42z" fill="#fbeed6"/>
+            <path d="M194 230h52l-9 11h-34z" fill="#8f3524"/>
+            <path d="M150 372V318" stroke="#5a3924" stroke-width="7"/>
+            <circle cx="150" cy="296" r="36" fill="#5d7838"/>
+            <circle cx="124" cy="318" r="25" fill="#6d8a42"/>
+            <circle cx="178" cy="316" r="27" fill="#54702f"/>
+            <g fill="#f2c93f"><circle cx="136" cy="286" r="5.500"/><circle cx="166" cy="304" r="5.500"/><circle cx="150" cy="324" r="5.500"/><circle cx="116" cy="326" r="5"/><circle cx="184" cy="292" r="5"/><circle cx="158" cy="272" r="4.500"/></g>
+            <rect y="368" width="300" height="12" rx="2" fill="#fbeed6"/>
+            <rect y="380" width="300" height="80" fill="#f2e0c0"/>
+            <g fill="#e0c69a"><rect x="18" y="388" width="12" height="58" rx="5"/><rect x="54" y="388" width="12" height="58" rx="5"/><rect x="90" y="388" width="12" height="58" rx="5"/><rect x="126" y="388" width="12" height="58" rx="5"/><rect x="162" y="388" width="12" height="58" rx="5"/><rect x="198" y="388" width="12" height="58" rx="5"/><rect x="234" y="388" width="12" height="58" rx="5"/><rect x="270" y="388" width="12" height="58" rx="5"/></g>
+            <rect width="24" height="460" fill="#f3e1c2"/><rect x="276" width="24" height="460" fill="#f3e1c2"/>
+            <rect x="18" width="6" height="460" fill="#dcc196" opacity=".7"/><rect x="276" width="6" height="460" fill="#dcc196" opacity=".7"/>
+            <path d="M18 460V150a132 132 0 0 1 264 0V460" fill="none" stroke="#f7e8cd" stroke-width="2" opacity=".75"/>
+          </svg>
+        </figure>
+        <figure class="arch" aria-label="Camera Cupola, the domed ceiling and the moon">
+          <svg viewBox="0 0 300 460" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+            <defs><radialGradient id="gC" cx=".5" cy=".33" r=".75"><stop offset="0" stop-color="#fbe8c8"/><stop offset=".45" stop-color="#eab07c"/><stop offset="1" stop-color="#a5442d"/></radialGradient></defs>
+            <rect width="300" height="460" fill="url(#gC)"/>
+            <g stroke="#8f3524" stroke-opacity=".42" stroke-width="2" fill="none"><circle cx="150" cy="150" r="64"/><circle cx="150" cy="150" r="104"/><circle cx="150" cy="150" r="152"/><circle cx="150" cy="150" r="214"/></g>
+            <g stroke="#8f3524" stroke-opacity=".38" stroke-width="2">
+              <line x1="184" y1="150" x2="380" y2="150"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(30 150 150)"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(60 150 150)"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(90 150 150)"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(120 150 150)"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(150 150 150)"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(180 150 150)"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(210 150 150)"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(240 150 150)"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(270 150 150)"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(300 150 150)"/>
+              <line x1="184" y1="150" x2="380" y2="150" transform="rotate(330 150 150)"/>
+            </g>
+            <circle cx="150" cy="150" r="34" fill="#0d2148"/>
+            <circle cx="150" cy="150" r="34" fill="none" stroke="#f9e6c2" stroke-width="6"/>
+            <circle cx="160" cy="142" r="11" fill="#f6dc93"/><circle cx="166" cy="137" r="10" fill="#0d2148"/>
+            <g fill="#f9e6c2"><circle cx="134" cy="160" r="1.600"/><circle cx="140" cy="134" r="1.200"/><circle cx="153" cy="167" r="1.300"/></g>
+            <path d="M0 372C60 350 240 350 300 372V460H0Z" fill="#7c3222"/>
+            <path d="M0 402C70 386 230 386 300 402V460H0Z" fill="#f4e0bf"/>
+            <path d="M18 460V150a132 132 0 0 1 264 0V460" fill="none" stroke="#f7e8cd" stroke-width="2" opacity=".75"/>
+          </svg>
+        </figure>
+      </div>
+      <div class="r-ctl">
+        <button class="rc" id="rPrev" type="button" aria-label="Previous room"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <span class="r-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="r-count" id="rCount">01 / 03</span>
+        <button class="rc" id="rNext" type="button" aria-label="Next room"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 ROOFTOP ================= -->
+<section id="room-rooftop" class="room" hidden aria-label="Rooftop">
+  <div class="rw rf-w">
+    <canvas id="stars" class="stars" aria-hidden="true"></canvas>
+    <svg class="moon" viewBox="-60 -60 120 120" aria-hidden="true" focusable="false">
+      <defs>
+        <mask id="cres"><rect x="-60" y="-60" width="120" height="120" fill="#fff"/><circle cx="20" cy="-8" r="40" fill="#000"/></mask>
+        <radialGradient id="moonG"><stop offset="0" stop-color="#ffe9a8" stop-opacity=".38"/><stop offset="1" stop-color="#ffe9a8" stop-opacity="0"/></radialGradient>
+      </defs>
+      <circle r="58" fill="url(#moonG)"/>
+      <circle r="38" fill="#f4cd70" mask="url(#cres)"/>
+    </svg>
+    <div class="rf-copy">
+      <p class="kick rise" style="--i:0">02 &middot; Terrazza</p>
+      <h2 class="rise" style="--i:1">Rooftop</h2>
+      <p class="rf-lede rise" style="--i:2">Bar Meridiana &middot; sunset until one a.m.</p>
+      <p class="rf-txt rise" style="--i:3">Seven floors above the tiles, the city switches on one window at a time. Order something bitter and watch it happen.</p>
+    </div>
+    <div class="rf-list rise" style="--i:4">
+      <h3>The list</h3>
+      <ul>
+        <li><span>Negroni Solare</span><b>14</b><small>Gin, bitter orange, sun-dried vermouth and one very large ice cube.</small></li>
+        <li><span>Notte Lunga</span><b>15</b><small>Rye, coffee liqueur, a single ice sphere and a lot of patience.</small></li>
+        <li><span>Cedro Fizz</span><b>9</b><small>Zero proof: citron, thyme, cold tonic. Tastes like a dare.</small></li>
+      </ul>
+      <p class="rf-sky">Sky report &middot; clear &middot; Vega overhead &middot; illustrative</p>
+    </div>
+    <svg class="skyline" id="skyline" viewBox="0 0 1600 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="hz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e0a94a" stop-opacity="0"/><stop offset="1" stop-color="#eab85a" stop-opacity=".5"/></linearGradient>
+        <radialGradient id="bulbG"><stop offset="0" stop-color="#fff3c4"/><stop offset=".35" stop-color="#ffd67a" stop-opacity=".85"/><stop offset="1" stop-color="#ffb640" stop-opacity="0"/></radialGradient>
+        <linearGradient id="shelfG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb640" stop-opacity=".62"/><stop offset="1" stop-color="#ffb640" stop-opacity=".05"/></linearGradient>
+      </defs>
+      <rect y="120" width="1600" height="300" fill="url(#hz)"/>
+      <path fill="#22457f" opacity=".92" d="M0 420V318H36V296H72V318H108V270L120 258L132 270V318H176V300H214V326H258V284H292V326H336V304H380V330H424V296H452V330H500V310H540V336H590V304H630V330H880V318H920V296H948V318H1010V300H1052V322H1096V286H1130V322H1180V304H1222V326H1270V292L1282 278L1294 292V326H1340V306H1384V330H1430V300H1470V326H1520V310H1560V322H1600V420Z"/>
+      <g fill="#142c5b">
+        <path d="M648 420V326C648 246 704 206 764 206S880 246 880 326V420Z"/>
+        <path d="M756 208v-26h16v26z"/>
+        <rect x="958" y="238" width="36" height="182"/>
+        <path d="M953 238l23-48 23 48z"/>
+        <path d="M968 264a8 8 0 0 1 16 0v18h-16z" fill="#0c1d40"/>
+      </g>
+      <path d="M764 182v-18M757 172h14" stroke="#142c5b" stroke-width="3" fill="none"/>
+      <g id="bldgs" fill="#0c1d40"></g>
+      <g id="wins"></g>
+      <path d="M0 420V392H1600V420Z" fill="#050c1c"/>
+      <rect y="388" width="1600" height="6" fill="#0a1830"/>
+      <path d="M60 392V236M700 392V196" stroke="#050c1c" stroke-width="5"/>
+      <path d="M60 236Q380 300 700 196M700 196Q940 300 1180 246" fill="none" stroke="#0a1830" stroke-width="2"/>
+      <g fill="#0a1830"><path d="M86 322Q168 262 250 322Z"/><path d="M296 340Q368 288 440 340Z"/></g>
+      <path d="M86 322Q168 262 250 322M296 340Q368 288 440 340" fill="none" stroke="#4a6fa8" stroke-width="1.500" opacity=".7"/>
+      <path d="M168 296V392M368 316V392" stroke="#0a1830" stroke-width="4"/>
+      <ellipse cx="168" cy="386" rx="40" ry="7" fill="#050c1c"/><ellipse cx="368" cy="386" rx="36" ry="6" fill="#050c1c"/>
+      <circle class="candle" cx="168" cy="379" r="3" fill="#ffd67a"/><circle class="candle" cx="368" cy="380" r="3" fill="#ffd67a" style="animation-delay:-.7s"/>
+      <path d="M1160 264H1580L1562 234H1180Z" fill="#070f22"/>
+      <rect x="1180" y="264" width="380" height="104" fill="url(#shelfG)"/>
+      <g fill="#0b1630" stroke="#ffb640" stroke-opacity=".5" stroke-width="1">
+        <rect x="1200" y="302" width="13" height="48" rx="5"/><rect x="1204" y="288" width="5" height="16" rx="2"/>
+        <rect x="1236" y="296" width="13" height="54" rx="5"/><rect x="1240" y="280" width="5" height="17" rx="2"/>
+        <rect x="1272" y="304" width="13" height="46" rx="5"/><rect x="1276" y="290" width="5" height="15" rx="2"/>
+        <rect x="1308" y="298" width="13" height="52" rx="5"/><rect x="1312" y="283" width="5" height="16" rx="2"/>
+        <rect x="1344" y="302" width="13" height="48" rx="5"/><rect x="1348" y="288" width="5" height="16" rx="2"/>
+        <rect x="1380" y="294" width="13" height="56" rx="5"/><rect x="1384" y="278" width="5" height="17" rx="2"/>
+        <rect x="1416" y="304" width="13" height="46" rx="5"/><rect x="1420" y="290" width="5" height="15" rx="2"/>
+        <rect x="1452" y="298" width="13" height="52" rx="5"/><rect x="1456" y="283" width="5" height="16" rx="2"/>
+        <rect x="1488" y="302" width="13" height="48" rx="5"/><rect x="1492" y="288" width="5" height="16" rx="2"/>
+        <rect x="1524" y="296" width="13" height="54" rx="5"/><rect x="1528" y="280" width="5" height="17" rx="2"/>
+      </g>
+      <rect x="1180" y="350" width="380" height="12" fill="#070f22"/>
+      <rect x="1170" y="362" width="410" height="58" fill="#050c1c"/>
+      <path d="M1190 363h370" stroke="#ffb640" stroke-opacity=".55" stroke-width="2"/>
+      <g id="bulbs"></g>
+    </svg>
+  </div>
+</section>
+
+<!-- ================= 03 SPA ================= -->
+<section id="room-spa" class="room" hidden aria-label="Spa">
+  <div class="rw sp-w" id="spaStage">
+    <svg class="leaf leaf-a" viewBox="0 0 420 300" aria-hidden="true" focusable="false">
+      <path d="M0 14C96 26 208 70 288 160S384 270 396 300" fill="none" stroke="#7e9a80" stroke-width="3"/>
+      <ellipse cx="34" cy="2" rx="26" ry="10" transform="rotate(-18 34 2)"/><ellipse cx="46" cy="36" rx="26" ry="10" transform="rotate(28 46 36)"/>
+      <ellipse cx="100" cy="24" rx="27" ry="10.500" transform="rotate(-30 100 24)"/><ellipse class="lt" cx="112" cy="62" rx="27" ry="10.500" transform="rotate(34 112 62)"/>
+      <ellipse cx="170" cy="60" rx="28" ry="11" transform="rotate(-38 170 60)"/><ellipse cx="178" cy="100" rx="28" ry="11" transform="rotate(42 178 100)"/>
+      <ellipse class="lt" cx="236" cy="108" rx="28" ry="11" transform="rotate(-50 236 108)"/><ellipse cx="240" cy="148" rx="28" ry="11" transform="rotate(50 240 148)"/>
+      <ellipse cx="290" cy="164" rx="27" ry="10.500" transform="rotate(-60 290 164)"/><ellipse class="lt" cx="300" cy="200" rx="26" ry="10" transform="rotate(58 300 200)"/>
+      <ellipse cx="346" cy="222" rx="24" ry="9.500" transform="rotate(-70 346 222)"/><ellipse cx="366" cy="256" rx="22" ry="9" transform="rotate(62 366 256)"/>
+    </svg>
+    <svg class="leaf leaf-b" viewBox="0 0 420 300" aria-hidden="true" focusable="false">
+      <path d="M0 14C96 26 208 70 288 160S384 270 396 300" fill="none" stroke="#7e9a80" stroke-width="3"/>
+      <ellipse cx="34" cy="2" rx="26" ry="10" transform="rotate(-18 34 2)"/><ellipse class="lt" cx="46" cy="36" rx="26" ry="10" transform="rotate(28 46 36)"/>
+      <ellipse cx="100" cy="24" rx="27" ry="10.500" transform="rotate(-30 100 24)"/><ellipse cx="112" cy="62" rx="27" ry="10.500" transform="rotate(34 112 62)"/>
+      <ellipse cx="170" cy="60" rx="28" ry="11" transform="rotate(-38 170 60)"/><ellipse class="lt" cx="178" cy="100" rx="28" ry="11" transform="rotate(42 178 100)"/>
+      <ellipse cx="236" cy="108" rx="28" ry="11" transform="rotate(-50 236 108)"/><ellipse cx="240" cy="148" rx="28" ry="11" transform="rotate(50 240 148)"/>
+      <ellipse class="lt" cx="290" cy="164" rx="27" ry="10.500" transform="rotate(-60 290 164)"/><ellipse cx="300" cy="200" rx="26" ry="10" transform="rotate(58 300 200)"/>
+      <ellipse cx="346" cy="222" rx="24" ry="9.500" transform="rotate(-70 346 222)"/><ellipse cx="366" cy="256" rx="22" ry="9" transform="rotate(62 366 256)"/>
+    </svg>
+    <div class="sp-c" id="spC">
+      <div class="sp-rip" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i></div>
+      <div class="sp-orb" aria-hidden="true"><span class="in">Breathe in</span><span class="out">Let it go</span><small>Ten-second breath</small></div>
+    </div>
+    <div class="sp-copy">
+      <p class="kick rise" style="--i:0">03 &middot; Terme</p>
+      <h2 class="rise" style="--i:1">Spa</h2>
+      <p class="lede rise" style="--i:2">Warm stone, cold water and a silence you can lean on. Turn your phone face-down; the room will keep the time for you.</p>
+    </div>
+    <div class="sp-list rise" style="--i:3">
+      <ul>
+        <li><span>Acqua<i>the thermal circuit</i></span><b>90 min</b><small>Three pools, a steam room and a cold plunge, in that order.</small></li>
+        <li><span>Sale<i>salt cave &amp; scrub</i></span><b>60 min</b><small>Breathe the sea for an hour, then be rubbed like a loaf.</small></li>
+        <li><span>Argilla<i>olive-clay wrap</i></span><b>75 min</b><small>Warm green clay, crushed leaves, a very long blanket.</small></li>
+        <li><span>Silenzio<i>float in the dark</i></span><b>45 min</b><small>One tank, no light, no opinions.</small></li>
+      </ul>
+      <p class="sp-note">Quiet hours 7&ndash;9 a.m. &middot; Touch the water to make a ripple</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 04 TABLE ================= -->
+<section id="room-table" class="room" hidden aria-label="Table">
+  <div class="rw tb-w">
+    <div class="tb-disc" aria-hidden="true"></div>
+    <div class="tb-copy">
+      <p class="kick rise" style="--i:0">04 &middot; Tavola</p>
+      <h2 class="rise" style="--i:1">Table</h2>
+      <p class="tb-sub rise" style="--i:2">Menu del sole: lunch at the hour the sun stands still.</p>
+      <ul class="tb-menu rise" style="--i:3">
+        <li><h3>Tagliolini al limone</h3><b>22</b><p>Brown butter, bottarga, lemon zest and a great deal of black pepper.</p></li>
+        <li><h3>Risotto allo zafferano</h3><b>26</b><p>Saffron from the pantry shelf, bone marrow, an aged rind.</p></li>
+        <li><h3>Branzino in crosta di sale</h3><b>34</b><p>Cracked open at the table. Fennel, blood orange, green olive oil.</p></li>
+        <li><h3>Budino al cioccolato</h3><b>11</b><p>Sea salt, olive oil, cream whipped by someone who cares.</p></li>
+      </ul>
+      <p class="tb-foot rise" style="--i:4">Served twelve to three &middot; prices in euros</p>
+    </div>
+    <div class="tb-plate rise" style="--i:2" id="plate" role="button" tabindex="0" aria-label="A steaming plate of tagliolini. Activate to stir the steam.">
+      <svg viewBox="0 0 640 520" aria-hidden="true" focusable="false">
+        <defs>
+          <radialGradient id="plRim" cx=".5" cy=".38" r=".75"><stop offset="0" stop-color="#fffaf0"/><stop offset=".7" stop-color="#f6e7cb"/><stop offset="1" stop-color="#e6cfa6"/></radialGradient>
+          <linearGradient id="pasta" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7c95f"/><stop offset="1" stop-color="#d98a25"/></linearGradient>
+        </defs>
+        <ellipse cx="328" cy="412" rx="290" ry="62" fill="#1d0a19" opacity=".55"/>
+        <ellipse cx="320" cy="368" rx="296" ry="128" fill="#dcc496"/>
+        <ellipse cx="320" cy="356" rx="296" ry="128" fill="url(#plRim)"/>
+        <ellipse cx="320" cy="356" rx="278" ry="117" fill="none" stroke="#e8a33d" stroke-width="3" opacity=".85"/>
+        <ellipse cx="320" cy="360" rx="232" ry="94" fill="#ecd8b2"/>
+        <ellipse cx="320" cy="368" rx="214" ry="84" fill="#f9eed9"/>
+        <ellipse cx="320" cy="380" rx="176" ry="54" fill="#f2c866" opacity=".5"/>
+        <path d="M196 376C190 318 250 252 322 250S452 318 444 376C440 400 390 412 320 412S200 400 196 376Z" fill="url(#pasta)"/>
+        <g fill="none" stroke-linecap="round" stroke-width="3.400">
+          <path stroke="#c47519" d="M204 370C210 324 256 282 318 278"/>
+          <path stroke="#fbdc8a" d="M220 388C214 334 262 292 326 290"/>
+          <path stroke="#c47519" d="M236 400C226 346 274 304 336 302"/>
+          <path stroke="#fbdc8a" d="M262 406C246 358 290 320 346 318"/>
+          <path stroke="#c47519" d="M300 260C350 264 420 302 432 376"/>
+          <path stroke="#fbdc8a" d="M330 274C384 282 428 320 436 388"/>
+          <path stroke="#c47519" d="M308 302C356 308 402 338 414 396"/>
+          <path stroke="#fbdc8a" d="M240 342C262 306 306 298 340 316"/>
+          <path stroke="#c47519" d="M270 374C286 332 330 324 372 348"/>
+          <path stroke="#fbdc8a" d="M226 376C250 352 292 354 314 376C334 396 380 392 404 370"/>
+          <path stroke="#c47519" d="M250 398C280 382 320 386 350 400"/>
+          <path stroke="#fbdc8a" d="M282 302C300 286 340 284 366 298"/>
+        </g>
+        <path d="M318 262c-26-8-38-30-30-48 22 4 36 22 30 48z" fill="#4c7a3a"/>
+        <path d="M318 262c22-14 42-12 54 2-12 16-34 18-54-2z" fill="#5e8f45"/>
+        <path d="M316 264c-6-20 2-38 20-48 8 20 2 40-20 48z" fill="#3f6b31"/>
+        <path d="M318 262l-22-36M318 262l32-16" stroke="#2c4d22" stroke-width="1.500" fill="none"/>
+        <g fill="none" stroke="#f6d24a" stroke-width="3" stroke-linecap="round"><path d="M372 282c14-10 26 0 18 12"/><path d="M262 292c-14-8-24 4-14 14"/><path d="M356 330c12-4 18 6 10 12"/></g>
+        <g fill="#3a1a2e"><circle cx="300" cy="300" r="2.200"/><circle cx="340" cy="330" r="2"/><circle cx="262" cy="350" r="2.200"/><circle cx="378" cy="360" r="1.900"/><circle cx="318" cy="378" r="2"/><circle cx="286" cy="330" r="1.700"/></g>
+        <g transform="translate(566 436) rotate(-40)"><g class="fork" fill="#d9d1c3">
+          <rect x="-6" y="0" width="12" height="100" rx="6"/>
+          <path d="M-6 0C-6 -14 -15 -20 -15 -38V-58H15V-38C15 -20 6 -14 6 0Z"/>
+          <rect x="-15" y="-96" width="5.500" height="44" rx="2.750"/><rect x="-7" y="-96" width="5.500" height="44" rx="2.750"/><rect x="1.500" y="-96" width="5.500" height="44" rx="2.750"/><rect x="9.500" y="-96" width="5.500" height="44" rx="2.750"/>
+          <path d="M-3 4V96" stroke="#fff" stroke-opacity=".55" stroke-width="2" fill="none"/>
+        </g></g>
+        <g fill="none" stroke="#fff5e4" stroke-width="6" stroke-linecap="round" style="filter:blur(1.400px)">
+          <path class="st st1" d="M286 246c-18-26 16-42-2-70s16-44-2-72"/>
+          <path class="st st2" d="M326 238c-20-28 18-46 0-76s18-48 0-78"/>
+          <path class="st st3" d="M368 248c-16-24 14-40-2-64s14-40-2-66"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 05 JOURNAL ================= -->
+<section id="room-journal" class="room" hidden aria-label="Journal">
+  <div class="rw jr-w">
+    <div class="jr-top rise" style="--i:0"><span>N&ordm; 14 &middot; Autumn</span><span>Free at the front desk</span><span>Est. 1926</span></div>
+    <header class="jr-mast">
+      <h2 class="rise" style="--i:1">The <em>Journal</em></h2>
+      <p class="jr-sub rise" style="--i:2">Short notes from a small hotel, printed slowly.</p>
+      <div class="stamp" aria-hidden="true"><span>N&ordm;<b>14</b>Autumn</span></div>
+    </header>
+    <div class="jr-grid">
+      <article class="card rise" style="--i:3">
+        <span class="no">01</span>
+        <svg class="spot" viewBox="0 0 96 96" aria-hidden="true" focusable="false">
+          <path pathLength="1" d="M14 68a34 34 0 0 1 68 0"/><path pathLength="1" d="M8 68h80"/><path pathLength="1" d="M48 68V34"/>
+          <path pathLength="1" d="M48 68L28 42M48 68L68 42M48 68L18 54M48 68L78 54"/><path pathLength="1" d="M40 68l8-30 8 30"/>
+          <path pathLength="1" d="M42 20a6 6 0 1 0 12 0a6 6 0 1 0-12 0"/><path pathLength="1" d="M48 6v4M62 12l-3 3M34 12l3 3"/>
+        </svg>
+        <p class="cat">Courtyard</p>
+        <h3>The sundial that runs six minutes late</h3>
+        <p class="dek">Every guest asks. Our gardener has a theory involving the church, the tram and the ancient art of not caring.</p>
+        <div class="more" id="jm1"><div><p>The dial in our courtyard was cut in 1926 for a slightly different latitude, which is why it has been politely wrong ever since. We stopped correcting it years ago. At what the stone calls noon, the kitchen goes quiet for exactly one minute, and someone always says the same thing: it is late somewhere.</p></div></div>
+        <footer><span>Words by Ilaria &middot; 4 min</span><button class="rd" type="button" aria-expanded="false" aria-controls="jm1">Read the note</button></footer>
+      </article>
+      <article class="card rise" style="--i:4">
+        <span class="no">02</span>
+        <svg class="spot" viewBox="0 0 96 96" aria-hidden="true" focusable="false">
+          <path pathLength="1" d="M22 46h44v10a22 22 0 0 1-44 0z"/><path pathLength="1" d="M66 50h6a8 8 0 0 1 0 16h-8"/><path pathLength="1" d="M14 82h60"/>
+          <path pathLength="1" d="M34 38c-4-6 4-8 0-14M46 38c-4-6 4-8 0-14M58 38c-4-6 4-8 0-14"/>
+        </svg>
+        <p class="cat">The concierge map</p>
+        <h3>Seven doors worth knocking on</h3>
+        <p class="dek">A short, opinionated walk from the lobby: the baker who will not sell after ten, the shop that mends umbrellas, the church you should try to enter.</p>
+        <div class="more" id="jm2"><div><p>Turn left at the lemon tree, then keep the sea on your right shoulder. The second door with a green shutter is Nino&rsquo;s. He opens at six, sells out by nine, and considers the words &ldquo;to go&rdquo; a personal insult. Eat standing up, as intended, and do not ask for oat milk.</p></div></div>
+        <footer><span>The front desk &middot; 6 min</span><button class="rd" type="button" aria-expanded="false" aria-controls="jm2">Read the note</button></footer>
+      </article>
+      <article class="card rise" style="--i:5">
+        <span class="no">03</span>
+        <svg class="spot" viewBox="0 0 96 96" aria-hidden="true" focusable="false">
+          <path pathLength="1" d="M12 62c0-20 16-32 36-32s36 12 36 32c0 8-6 12-12 12H24c-6 0-12-4-12-12z"/><path pathLength="1" d="M30 46l10 16M44 42l10 20M58 44l8 16"/><path pathLength="1" d="M8 82h80"/>
+        </svg>
+        <p class="cat">From the kitchen</p>
+        <h3>Long tables, slow bread</h3>
+        <p class="dek">Our sourdough is fed twice a day and named after a cousin. This is how a jam jar outlived three head chefs.</p>
+        <div class="more" id="jm3"><div><p>The starter arrived in a jam jar in 2011 and has never left the building. It has survived a flood, two renovations and a chef who tried to make it more efficient. Feed it at dawn, feed it at dusk, and it repays you with a crust that sings when you open the oven door.</p></div></div>
+        <footer><span>Chef&rsquo;s table &middot; 5 min</span><button class="rd" type="button" aria-expanded="false" aria-controls="jm3">Read the note</button></footer>
+      </article>
+    </div>
+    <p class="jr-foot rise" style="--i:6"><span>Printed in the courtyard, on the third Sunday.</span><span>Take one. Leave a note.</span></p>
+  </div>
+</section>
+
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<p id="live" class="sr" role="status" aria-live="polite"></p>
+<div id="grain" class="grain" aria-hidden="true"></div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const mod = (n, m) => ((n % m) + m) % m;
+const root = document.documentElement;
+const mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+let reduce = !!(mq && mq.matches);
+if (mq) { const f = e => { reduce = e.matches; setRV(); }; if (mq.addEventListener) mq.addEventListener('change', f); else if (mq.addListener) mq.addListener(f); }
+
+/* ---------- data ---------- */
+const N = 5, SL = 40 * Math.PI / 180;
+let REVEAL = 1050;
+const DATA = [
+  { key: 'rooms',   name: 'Rooms',   desc: 'Three arched suites above the courtyard, dressed in lime plaster and linen.' },
+  { key: 'rooftop', name: 'Rooftop', desc: 'Sunset until one a.m., under a sky the city forgot to switch off.' },
+  { key: 'spa',     name: 'Spa',     desc: 'Warm stone, cold water and a silence you can lean on.' },
+  { key: 'table',   name: 'Table',   desc: 'Lunch at the hour the sun stands still: saffron, butter, patience.' },
+  { key: 'journal', name: 'Journal', desc: 'Notes from the courtyard, the kitchen and the concierge desk.' }
+];
+DATA.forEach(d => { d.el = $('#room-' + d.key); d.hook = null; });
+function setRV() { REVEAL = reduce ? 450 : 1050; root.style.setProperty('--rv', (REVEAL / 1000) + 's'); }
+setRV();
+
+/* ---------- elements ---------- */
+const lobby = $('#lobby'), atlas = $('#atlas'), compass = $('#compass'), wave = $('#wave');
+const toastEl = $('#toast'), live = $('#live'), hero = $('#hero');
+const focusEl = $('#focus'), fName = $('#fName'), fDesc = $('#fDesc');
+const lis = $$('.item', atlas), discs = $$('.disc', atlas), lbls = $$('.lbl', atlas);
+const glows = $$('.glow', lobby);
+const dial = $('#dial'), ray = $('#ray'), sunTime = $('#sunTime');
+const trackA = $('#trackA'), trackB = $('#trackB'), trackC = $('#trackC'), gauge = $('#gauge'), caret = $('#caret');
+const needle = $('#needle'), cring = $('#cring'), ringTP = $('#ringText'), ringPath = $('#ringPath');
+const rooms = DATA.map(d => d.el);
+
+/* ---------- film grain (runtime data URL, no requests) ---------- */
+(function grain() {
+  try {
+    const c = document.createElement('canvas'); c.width = c.height = 150;
+    const g = c.getContext('2d'); const im = g.createImageData(150, 150); const d = im.data;
+    for (let i = 0; i < d.length; i += 4) { const v = (Math.random() * 255) | 0; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 26 + ((Math.random() * 40) | 0); }
+    g.putImageData(im, 0, 0);
+    $('#grain').style.backgroundImage = 'url(' + c.toDataURL('image/png') + ')';
+  } catch (e) { /* grain is optional */ }
+})();
+
+/* ---------- state ---------- */
+let W = 0, H = 0, px = 0, py = 0, rx = 0, ry = 0, D = 100, cs = 88, vertical = false, rmax = 1400;
+let w = 2, wv = 0, wT = 2, dragging = false;
+let fanOpen = false, inRoom = false, busy = false, cur = -1, focusIdx = 2, hoverI = -1, interacted = false;
+let nA = 0, nV = 0, ptrAng = 0, ptrT = -99;
+let sunA = -34, sunT = -34, sunMoved = -99, sunShown = '';
+let zTop = 10, hist = false, lastT = performance.now(), swapT = 0, waveT = 0, toastT = 0;
+const st = lis.map(() => ({ p: 0, v: 0, tgt: 0, pend: -1, pendT: 0, z: -99 }));
+
+function nowS() { return performance.now() / 1000; }
+function announce(msg) { live.textContent = ''; setTimeout(() => { live.textContent = msg; }, 40); }
+function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 2800); }
+
+/* ---------- layout ---------- */
+function arc(scale, a0, a1) {
+  const X = a => px + rx * scale * Math.sin(a), Y = a => py - ry * scale * Math.cos(a);
+  return 'M' + X(a0).toFixed(1) + ' ' + Y(a0).toFixed(1) + 'A' + (rx * scale).toFixed(1) + ' ' + (ry * scale).toFixed(1) + ' 0 0 1 ' + X(a1).toFixed(1) + ' ' + Y(a1).toFixed(1);
+}
+function layout() {
+  W = window.innerWidth; H = window.innerHeight;
+  vertical = W < 700 || H > W * 1.12;
+  cs = vertical ? 76 : Math.round(clamp(Math.min(W, H) * 0.098, 84, 104));
+  const cb = vertical ? 24 : 34;
+  px = W / 2; py = H - cb - cs / 2;
+  if (vertical) {
+    D = clamp(W * 0.235, 72, W < 520 ? 98 : 112);
+    rx = Math.min(W * 0.34, W < 520 ? 150 : 250);
+    ry = Math.max(220, Math.min(H * 0.6, py - D / 2 - 100));
+  } else {
+    D = clamp(Math.min(W, H) * 0.145, 80, 150);
+    rx = ry = Math.max(150, Math.min(H * 0.4, W * 0.34, 400));
+  }
+  rmax = Math.hypot(Math.max(px, W - px), py) + 40;
+  const s = root.style;
+  s.setProperty('--px', px.toFixed(1) + 'px'); s.setProperty('--py', py.toFixed(1) + 'px');
+  s.setProperty('--cs', cs + 'px'); s.setProperty('--cb', cb + 'px'); s.setProperty('--D', D.toFixed(1) + 'px');
+  s.setProperty('--rmax', rmax.toFixed(0) + 'px'); s.setProperty('--k', (rmax / 100).toFixed(3));
+  // engraved dial: ring r=300 rides through the fan
+  const sc = (vertical ? ry * 0.8 : rx) / 300, size = 1200 * sc;
+  dial.style.width = size + 'px'; dial.style.height = size + 'px';
+  dial.style.left = (px - size / 2) + 'px'; dial.style.top = (py - size / 2) + 'px';
+  s.setProperty('--L', (Math.min(size * 0.46, H * 1.1)).toFixed(0) + 'px');
+  // tracks
+  const q = Math.PI / 2;
+  trackA.setAttribute('d', arc(1, -q, q)); trackB.setAttribute('d', arc(1.2, -q, q)); trackC.setAttribute('d', arc(0.78, -q, q));
+  gauge.setAttribute('d', arc(1, -0.3, 0.3));
+  const cy = py - ry - D / 2 - 22;
+  caret.setAttribute('d', 'M' + (px - 7) + ' ' + cy + 'L' + (px + 7) + ' ' + cy + 'L' + px + ' ' + (cy + 10) + 'Z');
+  focusEl.style.top = Math.round(vertical ? Math.max(py - ry * 0.46 - 56, py - ry * 0.766 + D * 0.5 + 44) : py - ry + D * 0.57 + 24) + 'px';
+  // ring text fits the circle exactly
+  try { ringTP.setAttribute('textLength', (ringPath.getTotalLength() - 1.5).toFixed(1)); } catch (e) { /* ignore */ }
+}
+
+/* ---------- helpers for the wheel ---------- */
+function slotFor(i) { const r = Math.round(wT); return r + (mod(i - r + 2, N) - 2); }
+function angDeg(i) { return (mod(i - w + 2.5, N) - 2.5) * 40; }
+function setFocus(i) {
+  if (i === focusIdx) return;
+  const dir = mod(i - focusIdx + 2, N) - 2;
+  focusIdx = i;
+  glows.forEach((g, k) => g.classList.toggle('on', k === i));
+  nV += -dir * 70;
+  clearTimeout(swapT); focusEl.classList.add('swap');
+  swapT = setTimeout(() => { fName.textContent = DATA[i].name; fDesc.textContent = DATA[i].desc; focusEl.classList.remove('swap'); }, 130);
+  try { if (fanOpen && navigator.vibrate) navigator.vibrate(6); } catch (e) { /* ignore */ }
+}
+
+/* ---------- fan open / close ---------- */
+function openFan(fromKey) {
+  if (fanOpen || busy || inRoom) return;
+  fanOpen = true;
+  atlas.classList.add('open'); compass.classList.add('open'); lobby.classList.add('fan-open');
+  if (vertical) hero.classList.add('dim'); else hero.classList.remove('dim');
+  compass.setAttribute('aria-expanded', 'true'); compass.setAttribute('aria-label', 'Close the atlas menu');
+  const t = nowS();
+  st.forEach((s, i) => { s.pend = t + 0.02 + i * 0.06; s.pendT = 1; });
+  glows.forEach((g, k) => g.classList.toggle('on', k === focusIdx));
+  if (fromKey) setTimeout(() => discs[mod(Math.round(wT), N)].focus({ preventScroll: true }), 120);
+  announce('Atlas open. Use the arrow keys to turn the dial and Enter to choose.');
+}
+function closeFan(quiet) {
+  if (!fanOpen) return;
+  fanOpen = false; hoverI = -1;
+  atlas.classList.remove('open'); compass.classList.remove('open'); lobby.classList.remove('fan-open');
+  hero.classList.remove('dim');
+  compass.setAttribute('aria-expanded', 'false');
+  if (!inRoom) compass.setAttribute('aria-label', 'Open the atlas menu');
+  const t = nowS();
+  st.forEach((s, i) => { s.pend = t + (N - 1 - i) * 0.035; s.pendT = 0; });
+  if (!quiet) announce('Atlas closed.');
+}
+
+/* ---------- rooms: circular reveal ---------- */
+function ringText(isRoom) {
+  let txt;
+  if (isRoom && cur >= 0) {
+    const nm = DATA[cur].name.toUpperCase();
+    txt = 'YOU ARE HERE · ' + nm + ' · TOUCH TO GO BACK · ';
+    while (txt.length < 58) txt += 'YOU ARE HERE · ' + nm + ' · ';
+  } else txt = 'HOTEL MERIDIANA · TOUCH THE COMPASS · TWELVE ROOMS · ONE ROOFTOP · ';
+  cring.classList.add('swap');
+  setTimeout(() => { ringTP.textContent = txt; try { ringTP.setAttribute('textLength', (ringPath.getTotalLength() - 1.5).toFixed(1)); } catch (e) { /* ignore */ } cring.classList.remove('swap'); }, 260);
+}
+function sweepRing(open) {
+  if (reduce) return;
+  wave.style.opacity = '1'; wave.classList.toggle('go', open);
+  clearTimeout(waveT); waveT = setTimeout(() => { wave.style.opacity = '0'; }, REVEAL - 60);
+}
+function pushRoom(key) { try { history.pushState({ room: key }, '', '#' + key); hist = true; } catch (e) { hist = false; } }
+
+function openRoom(i, opt) {
+  opt = opt || {};
+  if (busy || i === cur) return;
+  const R = DATA[i], el = R.el, prev = cur >= 0 ? DATA[cur] : null;
+  busy = true; interacted = true; compass.classList.add('used');
+  closeFan(true);
+  cur = i; inRoom = true; wT = slotFor(i);
+  root.dataset.room = R.key;
+  root.style.setProperty('--ha', ((i - 2) * 40) + 'deg');
+  document.title = R.name + ' · Hotel Meridiana';
+  ringText(true);
+  compass.classList.add('back');
+  compass.setAttribute('aria-label', 'Back to the atlas. You are in ' + R.name + '.');
+  el.style.zIndex = String(++zTop);
+  el.hidden = false; el.classList.add('show');
+  if (opt.instant) el.classList.add('instant');
+  el.scrollTop = 0;
+  void el.offsetWidth;
+  requestAnimationFrame(() => { el.classList.add('reveal'); if (!opt.instant) sweepRing(true); });
+  if (!opt.instant) { if (prev) { try { history.replaceState({ room: R.key }, '', '#' + R.key); } catch (e) { /* ignore */ } } else pushRoom(R.key); }
+  setTimeout(() => { el.classList.add('on'); if (R.hook && R.hook.enter) R.hook.enter(el); }, opt.instant ? 40 : (reduce ? 120 : REVEAL * 0.46));
+  setTimeout(() => {
+    if (prev) { prev.el.classList.remove('show', 'reveal', 'on'); prev.el.hidden = true; if (prev.hook && prev.hook.leave) prev.hook.leave(prev.el); }
+    el.classList.remove('instant'); busy = false;
+    announce(R.name + ' opened. Press the compass to go back to the atlas.');
+  }, opt.instant ? 80 : REVEAL + 40);
+}
+function leaveRoom() {
+  if (busy || !inRoom) return;
+  busy = true;
+  const R = DATA[cur], el = R.el;
+  if (R.hook && R.hook.leave) R.hook.leave(el);
+  el.classList.remove('on');
+  requestAnimationFrame(() => { el.classList.remove('reveal'); sweepRing(false); });
+  setTimeout(() => { root.dataset.room = ''; root.style.setProperty('--ha', '0deg'); compass.classList.remove('back'); ringText(false); }, reduce ? 100 : REVEAL * 0.56);
+  setTimeout(() => {
+    el.classList.remove('show'); el.hidden = true;
+    inRoom = false; busy = false; cur = -1;
+    document.title = 'Hotel Meridiana · Radial Atlas';
+    compass.setAttribute('aria-label', 'Open the atlas menu');
+    announce('Back at the atlas.');
+    openFan(true);
+  }, REVEAL + 50);
+}
+function requestBack() {
+  if (!inRoom || busy) return;
+  if (hist) { hist = false; try { history.back(); return; } catch (e) { /* fall through */ } }
+  try { if (location.hash) history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ }
+  leaveRoom();
+}
+window.addEventListener('popstate', () => {
+  const s = history.state;
+  if (inRoom && !(s && s.room)) { hist = false; leaveRoom(); }
+  else if (!inRoom && s && s.room) { const i = DATA.findIndex(d => d.key === s.room); if (i >= 0) openRoom(i); }
+});
+
+/* ---------- compass ---------- */
+compass.addEventListener('click', () => {
+  interacted = true; compass.classList.add('used');
+  if (busy) return;
+  if (inRoom) requestBack(); else if (fanOpen) { closeFan(); } else openFan(false);
+});
+let dblT = 0;
+compass.addEventListener('pointerdown', () => {
+  const t = performance.now();
+  if (t - dblT < 330 && !inRoom) { nV += 2600; toast('Whee. Magnetic north is exactly where you left it.'); }
+  dblT = t;
+});
+
+/* ---------- pointer: wheel drag with inertia + snapping ---------- */
+let pid = null, sx = 0, sy = 0, lastA = 0, lastPT = 0, dragV = 0, moved = false, wheelLock = 0;
+function pAngle(e) { return Math.atan2((e.clientX - px) / rx, (py - e.clientY) / ry); }
+function wrapPi(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
+atlas.addEventListener('pointerdown', e => {
+  if (!fanOpen || (e.button && e.button > 0)) return;
+  pid = e.pointerId; sx = e.clientX; sy = e.clientY; moved = false; lastA = pAngle(e); lastPT = performance.now(); dragV = 0;
+});
+atlas.addEventListener('pointermove', e => {
+  if (e.pointerId !== pid) return;
+  if (!moved && Math.hypot(e.clientX - sx, e.clientY - sy) > 9) {
+    moved = true; dragging = true; wv = 0; lastA = pAngle(e); lastPT = performance.now();
+    try { atlas.setPointerCapture(pid); } catch (err) { /* ignore */ }
+  }
+  if (moved) {
+    const a = pAngle(e), da = wrapPi(a - lastA); lastA = a;
+    const dw = -da / SL, t = performance.now(), dt = Math.max(8, t - lastPT) / 1000; lastPT = t;
+    w += dw; dragV = dragV * 0.55 + (dw / dt) * 0.45;
+  }
+});
+function endDrag(e) {
+  if (e.pointerId !== pid) return;
+  const wasMoved = moved; pid = null; moved = false;
+  if (wasMoved) {
+    dragging = false; wv = clamp(dragV, -16, 16);
+    if (performance.now() - lastPT > 90) wv = 0;
+    wT = Math.round(w + wv * 0.26);
+    try { atlas.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    swallow = true; setTimeout(() => { swallow = false; }, 60);
+  } else if (e.type === 'pointerup' && !e.target.closest('.disc') && !e.target.closest('.focus')) {
+    closeFan();
+  }
+}
+let swallow = false;
+atlas.addEventListener('pointerup', endDrag);
+atlas.addEventListener('pointercancel', endDrag);
+atlas.addEventListener('wheel', e => {
+  if (!fanOpen) return;
+  e.preventDefault();
+  const t = performance.now(); if (t - wheelLock < 140) return; wheelLock = t;
+  const d = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+  if (d) wT = Math.round(wT) + (d > 0 ? 1 : -1);
+}, { passive: false });
+discs.forEach((b, i) => {
+  b.addEventListener('click', e => { if (swallow) { e.preventDefault(); return; } if (!fanOpen || busy) return; openRoom(i); });
+  b.addEventListener('pointerenter', () => { hoverI = i; });
+  b.addEventListener('pointerleave', () => { if (hoverI === i) hoverI = -1; });
+  b.addEventListener('focus', () => { let kb = true; try { kb = b.matches(':focus-visible'); } catch (err) { /* older engines */ } if (fanOpen && !dragging && kb) wT = slotFor(i); });
+});
+window.addEventListener('pointermove', e => {
+  ptrT = nowS(); ptrAng = clamp(Math.atan2(e.clientX - px, py - e.clientY) * 180 / Math.PI, -179, 179);
+  if (!inRoom) {
+    const dy = py - e.clientY;
+    sunT = clamp(Math.atan2(e.clientX - px, Math.max(dy, 30)) * 180 / Math.PI, -86, 86); sunMoved = nowS();
+  }
+}, { passive: true });
+
+/* ---------- keyboard ---------- */
+function step(dir) { wT = Math.round(wT) + dir; setTimeout(() => discs[mod(Math.round(wT), N)].focus({ preventScroll: true }), 0); }
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  interacted = true;
+  if (k === 'Escape') {
+    if (fanOpen) { closeFan(); compass.focus({ preventScroll: true }); e.preventDefault(); }
+    else if (inRoom) { requestBack(); e.preventDefault(); }
+    return;
+  }
+  if (/^[1-5]$/.test(k) && !busy && (fanOpen || inRoom || document.activeElement === document.body)) { openRoom(+k - 1); e.preventDefault(); return; }
+  if (inRoom) {
+    const h = DATA[cur].hook;
+    if (h && h.key && h.key(e)) e.preventDefault();
+    return;
+  }
+  if (busy) return;
+  if (!fanOpen) {
+    if (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ArrowUp' || k === 'ArrowDown') { openFan(true); e.preventDefault(); }
+    else if (k === 'Enter' && document.activeElement === document.body) { openFan(true); e.preventDefault(); }
+    return;
+  }
+  if (k === 'ArrowRight' || k === 'ArrowDown') { step(1); e.preventDefault(); }
+  else if (k === 'ArrowLeft' || k === 'ArrowUp') { step(-1); e.preventDefault(); }
+  else if ((k === 'Enter' || k === ' ') && document.activeElement === document.body) { openRoom(focusIdx); e.preventDefault(); }
+});
+
+/* ---------- frame loop ---------- */
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden) { lastT = now; return; }
+  const dt = Math.min(0.033, Math.max(0.001, (now - lastT) / 1000)); lastT = now;
+  render(dt, now / 1000);
+}
+function render(dt, t) {
+  // wheel spring toward the snapped slot
+  if (!dragging) {
+    const k = reduce ? 240 : 120, c = reduce ? 30 : 15.5;
+    for (let s = 0; s < 2; s++) { const h = dt / 2; wv += (-k * (w - wT) - c * wv) * h; w += wv * h; }
+    if (Math.abs(w - wT) < 0.0004 && Math.abs(wv) < 0.004) { w = wT; wv = 0; }
+  }
+  const fi = mod(Math.round(w), N); setFocus(fi);
+  // fan items
+  const SK = reduce ? 260 : 150, SC = reduce ? 34 : 12.5;
+  let active = fanOpen;
+  for (let i = 0; i < N; i++) {
+    const s = st[i];
+    if (s.pend >= 0 && t >= s.pend) { s.tgt = s.pendT; s.pend = -1; }
+    if (!fanOpen && s.tgt === 0 && s.p < 0.002 && Math.abs(s.v) < 0.02) { if (s.p !== 0) { s.p = 0; s.v = 0; lis[i].style.opacity = '0'; } continue; }
+    active = true;
+    for (let q = 0; q < 2; q++) { const h = dt / 2; s.v += (-SK * (s.p - s.tgt) - SC * s.v) * h; s.p += s.v * h; }
+    const p = s.p, pc = p < 0 ? 0 : p, pm = pc > 1 ? 1 : pc;
+    const d = mod(i - w + 2.5, N) - 2.5, ad = Math.abs(d);
+    const ang = d * SL * (0.5 + 0.5 * (pc > 1.15 ? 1.15 : pc)) - (1 - pm) * 0.9;
+    let x = px + rx * pc * Math.sin(ang), y = py - ry * pc * Math.cos(ang);
+    if (!reduce) { x += 4.5 * Math.sin(t * 0.8 + i * 1.7); y += 4.5 * Math.cos(t * 0.65 + i * 2.3); }
+    const edge = ad > 2.05 ? Math.max(0, 1 - (ad - 2.05) / 0.45) : 1;
+    const foc = ad < 1 ? 1 - ad : 0;
+    const sc = (0.25 + 0.75 * (pc > 1.1 ? 1.1 : pc)) * (1 + 0.13 * foc * foc) * (1 - 0.06 * (ad > 2 ? 2 : ad)) * (0.8 + 0.2 * edge);
+    const el = lis[i];
+    el.style.transform = 'translate3d(' + (x - D / 2).toFixed(2) + 'px,' + (y - D / 2).toFixed(2) + 'px,0) scale(' + sc.toFixed(4) + ')';
+    el.style.opacity = (Math.min(1, pc * 1.7) * edge).toFixed(3);
+    const z = 10 - Math.round(ad);
+    if (z !== s.z) { s.z = z; el.style.zIndex = String(z); }
+    const sw = clamp(-wv * 9, -24, 24) + (reduce ? 0 : 1.7 * Math.sin(t * 1.3 + i * 1.1)) - (1 - pm) * 110;
+    lbls[i].style.transform = 'translateX(-50%) rotate(' + sw.toFixed(2) + 'deg)';
+    lbls[i].style.opacity = (1 - (foc * 1.7 > 1 ? 1 : foc * 1.7)).toFixed(2);
+  }
+  // compass needle: a slightly underdamped spring
+  let target = 0;
+  if (inRoom) target = 0;
+  else if (fanOpen) target = (hoverI >= 0 ? angDeg(hoverI) : 0) + clamp(-wv * 6, -50, 50);
+  else if (t - ptrT < 3) target = ptrAng;
+  else target = 9 * Math.sin(t * 0.7) + 3 * Math.sin(t * 2.1);
+  if (reduce) target = fanOpen && hoverI >= 0 ? angDeg(hoverI) : 0;
+  nV += (-62 * (nA - target) - 5.4 * nV) * dt; nA += nV * dt;
+  if (!inRoom) needle.style.transform = 'rotate(' + nA.toFixed(2) + 'deg)';
+  // the sun-ray on the dial
+  if (!inRoom) {
+    if (t - sunMoved > 5) sunT = reduce ? 24 : 68 * Math.sin(t / 19 + 0.6);
+    sunA += (sunT - sunA) * (1 - Math.exp(-dt * (reduce ? 8 : 2.6)));
+    ray.style.transform = 'rotate(' + sunA.toFixed(2) + 'deg)';
+    const th = 12 + sunA / 15, hh = Math.floor(th), mm = Math.floor((th - hh) * 60);
+    const txt = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
+    if (txt !== sunShown) { sunShown = txt; sunTime.textContent = txt; }
+  }
+}
+
+/* ---------- boot ---------- */
+layout();
+let rzT = 0;
+window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(layout, 60); layout(); });
+render(0.016, nowS());
+requestAnimationFrame(frame);
+
+/* =====================  ROOM HOOKS  ===================== */
+
+/* --- 01 Rooms: three-arch carousel --- */
+DATA[0].hook = (() => {
+  const el = DATA[0].el;
+  const cards = $$('.arch', el), dots = $$('.r-dots i', el), stage = $('#arches', el);
+  const info = $('#rInfo'), nameEl = $('#rName'), subEl = $('#rSub'), txtEl = $('#rTxt');
+  const sizeEl = $('#rSize'), viewEl = $('#rView'), priceEl = $('#rPrice'), count = $('#rCount');
+  const hold = $('#rHold'), holdLabel = hold.textContent;
+  const ROOM = [
+    { n: 'Camera Ocra', s: 'The Ochre Room', size: '32 m²', view: 'Courtyard well', price: '€290',
+      t: 'Lime-washed walls the colour of late afternoon, a walnut bed dressed in stone-washed linen, and an arched window that frames the courtyard well at the exact hour the sun crosses it.' },
+    { n: 'Camera Loggia', s: 'The Lemon Loggia', size: '41 m²', view: 'Sea and rooftops', price: '€360',
+      t: 'A long balcony under three arches, a lemon tree in a terracotta pot, and enough silence to hear the shutters of the town opening one by one.' },
+    { n: 'Camera Cupola', s: 'The Cupola Suite', size: '58 m²', view: 'Dome and moon', price: '€520',
+      t: 'Sleep beneath a plastered dome with a round window at its crown. At night the moon walks straight through it and across the bed.' }
+  ];
+  let idx = 0, swapTimer = 0, holdTimer = 0, sx = null, swiped = false;
+  function paint() {
+    cards.forEach((c, i) => {
+      const o = mod(i - idx + 1, 3) - 1;
+      c.style.setProperty('--o', o); c.style.setProperty('--a', o ? 1 : 0);
+      c.setAttribute('aria-hidden', o ? 'true' : 'false');
+    });
+    dots.forEach((d, i) => d.classList.toggle('on', i === idx));
+    count.textContent = '0' + (idx + 1) + ' / 03';
+  }
+  function fill(i) {
+    const r = ROOM[i];
+    nameEl.textContent = r.n; subEl.textContent = r.s; txtEl.textContent = r.t;
+    sizeEl.textContent = r.size; viewEl.textContent = r.view; priceEl.textContent = r.price;
+    info.classList.remove('swap');
+  }
+  function go(d) {
+    idx = mod(idx + d, 3); paint();
+    if (reduce) { fill(idx); return; }
+    info.classList.add('swap'); clearTimeout(swapTimer); swapTimer = setTimeout(() => fill(idx), 240);
+  }
+  cards.forEach((c, i) => c.addEventListener('click', () => { if (swiped) return; const o = mod(i - idx + 1, 3) - 1; if (o) go(o); }));
+  $('#rPrev').addEventListener('click', () => go(-1));
+  $('#rNext').addEventListener('click', () => go(1));
+  stage.addEventListener('pointerdown', e => { sx = e.clientX; });
+  stage.addEventListener('pointerup', e => {
+    if (sx === null) return;
+    const dx = e.clientX - sx; sx = null;
+    if (Math.abs(dx) > 44) { swiped = true; go(dx < 0 ? 1 : -1); setTimeout(() => { swiped = false; }, 60); }
+  });
+  stage.addEventListener('pointercancel', () => { sx = null; });
+  hold.addEventListener('click', () => {
+    toast(ROOM[idx].n + ' is held for you until midnight. A demo hold, but the pillows are real.');
+    hold.textContent = 'Held ✓'; clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => { hold.textContent = holdLabel; }, 3400);
+  });
+  paint();
+  return {
+    enter() { paint(); },
+    leave() {},
+    key(e) { if (e.key === 'ArrowRight') { go(1); return true; } if (e.key === 'ArrowLeft') { go(-1); return true; } return false; }
+  };
+})();
+
+/* --- 02 Rooftop: twinkling canvas stars, a shooting star, skyline + shimmering bar lights --- */
+DATA[1].hook = (() => {
+  const el = DATA[1].el, cv = $('#stars', el);
+  const ctx = cv.getContext ? cv.getContext('2d') : null;
+  let stars = [], cw = 0, ch = 0, raf = 0, on = false, shoot = null, nextShoot = 2.5, built = false;
+  function buildSky() {
+    if (built) return; built = true;
+    const svg = $('#skyline', el);
+    const bl = $('#bldgs', svg), wn = $('#wins', svg), bb = $('#bulbs', svg);
+    const B = [[0,58,322],[58,46,296],[104,68,334],[172,52,304],[224,64,340],[288,46,298],[334,74,326],[408,50,290],[458,66,338],[524,52,308],[576,44,344],[620,30,362],
+      [880,36,356],[916,42,334],[1012,54,312],[1066,72,338],[1138,48,298],[1186,66,328],[1252,54,292],[1306,70,334],[1376,46,306],[1422,62,330],[1484,52,298],[1536,64,336]];
+    let d = '', wsv = '';
+    B.forEach((b, bi) => {
+      const x = b[0], w2 = b[1], t = b[2], r = x + w2;
+      const kind = bi % 3;
+      if (kind === 0) d += 'M' + x + ' 420V' + (t - 4) + 'H' + r + 'V420Z';
+      else if (kind === 1) d += 'M' + x + ' 420V' + t + 'L' + (x + w2 / 2) + ' ' + (t - 15) + 'L' + r + ' ' + t + 'V420Z';
+      else d += 'M' + x + ' 420V' + t + 'H' + (x + w2 * 0.62) + 'V' + (t - 13) + 'H' + (x + w2 * 0.62 + 9) + 'V' + t + 'H' + r + 'V420Z';
+      const cols = Math.max(1, Math.floor((w2 - 10) / 13)), rows = Math.max(0, Math.floor((388 - t - 14) / 19));
+      const gap = (w2 - 14) / cols;
+      for (let ro = 0; ro < rows; ro++) for (let c = 0; c < cols; c++) {
+        const hsh = (bi * 131 + ro * 31 + c * 17 + 7) % 100;
+        if (hsh < 26) {
+          const anim = hsh % 3 === 0 ? ' class="win" style="animation-delay:-' + ((hsh % 11) * 0.55).toFixed(2) + 's"' : '';
+          wsv += '<rect' + anim + ' x="' + (x + 7 + c * gap).toFixed(1) + '" y="' + (t + 12 + ro * 19) + '" width="5" height="8" rx="1" fill="' + (hsh % 2 ? '#f6d27a' : '#ffe4a0') + '"/>';
+        }
+      }
+    });
+    bl.innerHTML = '<path d="' + d + '"/>'; wn.innerHTML = wsv;
+    function strand(p0, p1, p2, n, seed) {
+      let s = '';
+      for (let i = 1; i <= n; i++) {
+        const t = i / (n + 1), a = (1 - t) * (1 - t), b = 2 * (1 - t) * t, c = t * t;
+        const x = a * p0[0] + b * p1[0] + c * p2[0], y = a * p0[1] + b * p1[1] + c * p2[1] + 6;
+        s += '<g transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ')"><g class="bulb" style="animation-delay:-' + (((i * seed) % 17) / 5).toFixed(2) + 's"><circle r="13" fill="url(#bulbG)"/><circle r="2.8" fill="#fff2c2"/></g></g>';
+      }
+      return s;
+    }
+    bb.innerHTML = strand([60, 236], [380, 300], [700, 196], 15, 7) + strand([700, 196], [940, 300], [1180, 246], 13, 5);
+  }
+  function size() {
+    if (!ctx) return;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cw = window.innerWidth; ch = window.innerHeight;
+    cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const n = clamp(Math.round(cw * ch / 5600), 90, 300);
+    stars = [];
+    for (let i = 0; i < n; i++) {
+      const big = Math.random() < 0.09;
+      stars.push({ x: Math.random() * cw, y: Math.pow(Math.random(), 1.3) * ch * 0.62, r: big ? 1.5 + Math.random() * 0.7 : 0.5 + Math.random() * 0.8,
+        sp: 0.6 + Math.random() * 2.4, ph: Math.random() * 6.28, b: 0.45 + Math.random() * 0.55, big });
+    }
+  }
+  function draw(t) {
+    ctx.clearRect(0, 0, cw, ch);
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      const a = s.b * (0.55 + 0.45 * Math.sin(t * s.sp + s.ph));
+      ctx.globalAlpha = a; ctx.fillStyle = s.big ? '#fff4d0' : '#f4efe0';
+      if (s.r < 1) ctx.fillRect(s.x, s.y, s.r * 1.5, s.r * 1.5);
+      else {
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill();
+        if (s.big) { ctx.globalAlpha = a * 0.55; ctx.fillRect(s.x - 6, s.y - 0.4, 12, 0.8); ctx.fillRect(s.x - 0.4, s.y - 6, 0.8, 12); }
+      }
+    }
+    if (!reduce) {
+      if (!shoot && t > nextShoot) { shoot = { x: cw * (0.4 + Math.random() * 0.55), y: ch * (0.04 + Math.random() * 0.2), t0: t }; nextShoot = t + 7 + Math.random() * 6; }
+      if (shoot) {
+        const k = (t - shoot.t0) / 0.95;
+        if (k > 1) shoot = null;
+        else {
+          const x = shoot.x - k * 480, y = shoot.y + k * 240;
+          const g = ctx.createLinearGradient(x, y, x + 150, y - 75);
+          g.addColorStop(0, 'rgba(255,244,208,' + (0.95 * (1 - k)).toFixed(2) + ')'); g.addColorStop(1, 'rgba(255,244,208,0)');
+          ctx.globalAlpha = 1; ctx.strokeStyle = g; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 150, y - 75); ctx.stroke();
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+  function loop(now) { if (!on) return; raf = requestAnimationFrame(loop); if (!document.hidden) draw(now / 1000); }
+  function start() { if (!ctx) return; on = true; cancelAnimationFrame(raf); if (reduce) draw(1); else raf = requestAnimationFrame(loop); }
+  function stop() { on = false; cancelAnimationFrame(raf); }
+  window.addEventListener('resize', () => { if (on) { size(); if (reduce) draw(1); } });
+  return { enter() { buildSky(); size(); start(); }, leave() { stop(); } };
+})();
+
+/* --- 03 Spa: ripples on touch, gentle parallax on the breathing orb --- */
+DATA[2].hook = (() => {
+  const el = DATA[2].el, stage = $('#spaStage', el), c = $('#spC', el);
+  stage.addEventListener('pointermove', e => {
+    if (reduce) return;
+    const r = stage.getBoundingClientRect();
+    c.style.setProperty('--mx', (((e.clientX - r.left) / r.width - 0.5) * 30).toFixed(1) + 'px');
+    c.style.setProperty('--my', (((e.clientY - r.top) / r.height - 0.5) * 20).toFixed(1) + 'px');
+  });
+  stage.addEventListener('pointerdown', e => {
+    if (reduce || e.target.closest('.sp-list')) return;
+    const r = stage.getBoundingClientRect();
+    const d = document.createElement('i'); d.className = 'tap';
+    d.style.left = (e.clientX - r.left) + 'px'; d.style.top = (e.clientY - r.top) + 'px';
+    stage.appendChild(d); setTimeout(() => d.remove(), 2800);
+  });
+  return { enter() {}, leave() {} };
+})();
+
+/* --- 04 Table: stir the steam --- */
+DATA[3].hook = (() => {
+  const plate = $('#plate', DATA[3].el); let t = 0;
+  function puff() {
+    plate.classList.add('puff'); toast('Buon appetito. Careful, it is hot.');
+    clearTimeout(t); t = setTimeout(() => plate.classList.remove('puff'), 2600);
+  }
+  plate.addEventListener('click', puff);
+  plate.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); puff(); } });
+  return { enter() {}, leave() {} };
+})();
+
+/* --- 05 Journal: unfold the notes --- */
+DATA[4].hook = (() => {
+  const el = DATA[4].el;
+  $$('.rd', el).forEach(b => b.addEventListener('click', () => {
+    const box = document.getElementById(b.getAttribute('aria-controls'));
+    const open = !box.classList.contains('open');
+    box.classList.toggle('open', open); b.setAttribute('aria-expanded', String(open));
+    b.textContent = open ? 'Close the note' : 'Read the note';
+  }));
+  return { enter() {}, leave() { $$('.more.open', el).forEach(m => m.classList.remove('open')); $$('.rd', el).forEach(b => { b.setAttribute('aria-expanded', 'false'); b.textContent = 'Read the note'; }); } };
+})();
+
+window.addEventListener('pointerdown', () => { interacted = true; }, { passive: true });
+
+// deep link (#rooftop etc.) opens instantly; otherwise the atlas introduces itself
+const hashKey = (location.hash || '').replace('#', '');
+const hashIdx = DATA.findIndex(d => d.key === hashKey);
+if (hashIdx >= 0) { openRoom(hashIdx, { instant: true }); }
+else setTimeout(() => { if (!interacted && !inRoom) openFan(false); }, 1250);
+})();
+</script>
+</body>
+</html>

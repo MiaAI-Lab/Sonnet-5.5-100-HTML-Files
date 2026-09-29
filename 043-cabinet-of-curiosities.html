@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cabinet of Curiosities — Plate XIV: Coleoptera</title>
+<meta name="description" content="An antique natural-history plate of eight beetles. Pass a brass magnifying glass over the engraving to reveal hidden detail, and click a specimen to open its field card.">
+<style>
+:root{--parch:#eadfc2;--sepia:#4a3521;--verd:#4f7f74;--cinn:#b13a2a;--gold:#b8912f;--card:#f1e7cb;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#1a110a}
+body{font-family:var(--serif);color:var(--sepia);
+  background:radial-gradient(120% 90% at 30% 15%,#4d3522 0%,#2c1d12 48%,#140c06 100%)}
+.desk{position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(93deg,rgba(255,215,150,.03) 0 2px,rgba(0,0,0,.05) 2px 6px,transparent 6px 13px),
+  radial-gradient(90% 70% at 50% 50%,transparent 55%,rgba(0,0,0,.45) 100%)}
+.stage{position:fixed;inset:0;display:grid;place-items:center;touch-action:none;user-select:none;-webkit-user-select:none}
+svg#plate{display:block;overflow:visible;filter:drop-shadow(0 28px 34px rgba(0,0,0,.55)) drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+@media (hover:hover) and (pointer:fine){.stage{cursor:none}}
+svg text{font-family:var(--serif)}
+.spec{outline:none}
+.spec:focus-visible .ring{opacity:1}
+.ring{opacity:0;transition:opacity .25s}
+.pin{transition:opacity .45s,transform .5s cubic-bezier(.3,1.6,.4,1)}
+svg.nopins .pin:not(.on){opacity:0;transform:translateY(-14px)}
+canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:6}
+.bar{position:fixed;left:0;right:0;bottom:max(12px,env(safe-area-inset-bottom));z-index:7;display:flex;justify-content:center;align-items:center;gap:16px;pointer-events:none;padding:0 12px}
+.hint{font-style:italic;font-size:14px;color:#e6d7b4;text-shadow:0 1px 6px #000;opacity:.85}
+.brass{pointer-events:auto;appearance:none;border:1px solid #6b4f14;border-radius:3px;height:38px;padding:0 16px;cursor:pointer;
+  font:600 11px/1 var(--serif);letter-spacing:.2em;text-transform:uppercase;color:#3a2a0e;
+  background:linear-gradient(180deg,#e7cf86,#b8912f 55%,#8d6c1c);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 4px 10px rgba(0,0,0,.5);transition:transform .2s,filter .2s}
+.brass:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.brass:focus-visible,.x:focus-visible{outline:2px solid #fff3c4;outline-offset:3px}
+.card{position:fixed;z-index:8;right:clamp(12px,3vw,44px);top:50%;width:min(360px,calc(100vw - 24px));max-height:calc(100vh - 40px);overflow:auto;
+  padding:26px 26px 22px;color:var(--sepia);transform:translate(0,-50%) rotate(-1.2deg);
+  background:radial-gradient(120% 80% at 20% 10%,rgba(255,255,255,.35),transparent 60%),repeating-linear-gradient(0deg,rgba(120,85,40,.05) 0 1px,transparent 1px 24px),var(--card);
+  border:1px solid rgba(74,53,33,.3);box-shadow:0 26px 50px rgba(0,0,0,.6),inset 0 0 40px rgba(150,105,50,.18);
+  transition:opacity .45s,transform .6s cubic-bezier(.2,.8,.2,1)}
+.card[hidden]{display:block;visibility:hidden;opacity:0;transform:translate(60px,-50%) rotate(3deg);pointer-events:none}
+.card::before,.card::after{content:"";position:absolute;top:-10px;width:70px;height:22px;background:rgba(214,190,120,.55);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.card::before{left:-16px;transform:rotate(-38deg)}.card::after{right:-16px;transform:rotate(38deg)}
+.card .kicker{padding-right:34px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:#7a6242}
+.card h2{margin:6px 0 2px;font-style:italic;font-weight:400;font-size:28px;line-height:1.05}
+.card h2 span{font-variant:small-caps;letter-spacing:.04em}
+.card .common{font-size:14px;color:#6d5636;font-style:italic;margin-bottom:12px}
+.card .mini{float:right;width:112px;height:112px;margin:-4px -6px 4px 8px;border-radius:50%;border:1px solid rgba(74,53,33,.35);background:radial-gradient(circle,#f7efd8,#e2d3ac)}
+.card dl{margin:12px 0;display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:14px;clear:both}
+.card dt{font-variant:small-caps;letter-spacing:.08em;color:#7a6242}
+.card dd{margin:0;font-style:italic}
+.card p{margin:10px 0 0;font-style:italic;line-height:1.5;font-size:15px}
+.card .sig{margin-top:12px;text-align:right;font-size:13px;color:var(--cinn);transform:rotate(-2deg)}
+.x{position:absolute;top:8px;right:10px;width:36px;height:36px;border:0;background:none;font-size:24px;line-height:1;color:var(--sepia);cursor:pointer;border-radius:50%}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:760px){.card{top:auto;bottom:56px;right:12px;left:12px;width:auto;max-height:50vh;transform:rotate(-.6deg)}.card[hidden]{transform:translate(0,60px)}.hint{display:none}}
+@media (prefers-reduced-motion:reduce){.card,.pin{transition:none}}
+</style>
+</head>
+<body>
+<div class="desk" aria-hidden="true"></div>
+<main class="stage" id="stage">
+  <svg id="plate" role="group" aria-label="Plate XIV, Coleoptera: eight beetle specimens engraved on parchment. A brass magnifying glass follows the pointer."></svg>
+</main>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="bar">
+  <span class="hint">Pass the glass over the plate · click a specimen for its field card</span>
+  <button class="brass" id="pinBtn" type="button" aria-pressed="true">Unpin all</button>
+</div>
+<aside class="card" id="card" hidden aria-labelledby="cTitle">
+  <button class="x" id="cClose" type="button" aria-label="Close field card">×</button>
+  <div class="kicker" id="cKick"></div>
+  <svg class="mini" id="cMini" viewBox="-70 -70 140 140" aria-hidden="true"></svg>
+  <h2 id="cTitle"></h2>
+  <div class="common" id="cCommon"></div>
+  <dl id="cDl"></dl>
+  <p id="cNote"></p>
+  <div class="sig" id="cSig"></div>
+</aside>
+<p class="sr" id="live" aria-live="polite"></p>
+<script>
+(function(){
+'use strict';
+var doc=document, NS='http://www.w3.org/2000/svg';
+var reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+function $(i){return doc.getElementById(i)}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function mul(a){return function(){a=(a+0x6D2B79F5)>>>0;var t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296}}
+function f1(n){return Math.round(n*10)/10}
+
+/* ---------------- the eight specimens (fictional) ---------------- */
+var SP=[
+ {n:'Scarabaeus',e:'aurorae',c:'The Dawn Scarab',mm:24,H:190,hd:{y0:-95,y1:-60,w:30,t:1},pr:{y0:-62,y1:-12,wf:34,wm:62,wb:58},el:{y0:-14,y1:92,ws:58,wm:66,ym:.36,tail:.05},
+  col:['#e0bd58','#a07a24','#b13a2a'],ant:{t:'lam',len:52,a0:-60,da:3},mand:0,lk:1.05,pat:{stri:9},habitat:'Dry dunes at first light',range:'Cape Vell to the salt flats',season:'May to July',note:'Rolls its sphere of dung due east and, they say, never once looks back. The elytra take a rose-gold blush when held towards the sunrise.',by:'R. Ashdown, 14 June 1798'},
+ {n:'Carabus',e:'viridulus',c:'The Verdigris Runner',mm:31,H:210,hd:{y0:-105,y1:-76,w:18},pr:{y0:-78,y1:-36,wf:22,wm:31,wb:24},el:{y0:-38,y1:104,ws:30,wm:37,ym:.46,tail:.6},
+  col:['#6fa595','#4f7f74','#24423c'],ant:{t:'fili',len:110,a0:-70,da:3},mand:0,lk:1.25,pat:{stri:0,ridge:3},habitat:'Beech litter after rain',range:'Northern woodlands',season:'April to September',note:'A patient night hunter. Three raised ridges run the length of each wing case, edged with a thread of gold leaf.',by:'M. Vane, 2 May 1797'},
+ {n:'Buprestis',e:'cinnabarina',c:'The Vermilion Jewel',mm:19,H:170,hd:{y0:-85,y1:-60,w:23},pr:{y0:-62,y1:-22,wf:22,wm:32,wb:33},el:{y0:-24,y1:86,ws:32,wm:35,ym:.25,tail:.95},
+  col:['#d4583f','#b13a2a','#5c1c14'],ant:{t:'ser',len:60,a0:-50,da:2},mand:0,lk:.8,pat:{spots:[[12,-4,6],[19,26,6.5],[13,54,5]],stri:4},habitat:'Sun-warmed pine stumps',range:'Southern coasts',season:'June to August',note:'Metallic and quick to take flight. Three pairs of sepia spots cross the vermilion wing cases like a string of seals.',by:'J. Marchetti, 9 July 1799'},
+ {n:'Cerambyx',e:'longicornis',c:'The Long-horned Sentinel',mm:38,H:230,hd:{y0:-115,y1:-92,w:16},pr:{y0:-94,y1:-54,wf:20,wm:27,wb:22,sp:1},el:{y0:-56,y1:112,ws:28,wm:29,ym:.3,tail:.3},
+  col:['#8a6a44','#4a3521','#2a1c10'],ant:{t:'long',len:210,a0:-40,da:5.5},mand:0,lk:1.15,pat:{bands:[[.28,.09,'#b8912f'],[.62,.08,'#b8912f']],stri:0},habitat:'Old oaks at dusk',range:'Central forests',season:'June to July',note:'The antennae, half as long again as the body, sweep back over the wings when it walks. Two gilded bands mark the elytra.',by:'R. Ashdown, 21 June 1798'},
+ {n:'Lucanus',e:'cervulus',c:'The Little Stag',mm:44,H:210,hd:{y0:-110,y1:-62,w:38,box:1},pr:{y0:-64,y1:-20,wf:44,wm:49,wb:45},el:{y0:-22,y1:100,ws:44,wm:47,ym:.3,tail:.35},
+  col:['#8b4a30','#4a3521','#22150b'],ant:{t:'elb',len:56,a0:-35,da:6},mand:1,lk:1.1,pat:{gloss:1,stri:0},habitat:'Rotting oak stumps',range:'Ancient parkland',season:'Midsummer',note:'The male carries antlers in miniature and wrestles rivals from the bark at twilight. Lacquered like a violin back.',by:'M. Vane, 30 June 1797'},
+ {n:'Coccinella',e:'vermilia',c:'The Seven-seal Ladybird',mm:8,H:110,hd:{y0:-56,y1:-40,w:16},pr:{y0:-42,y1:-22,wf:24,wm:32,wb:34,cream:1},el:{y0:-24,y1:56,ws:36,wm:41,ym:.45,tail:0},
+  col:['#d8543a','#b13a2a','#7a2016'],ant:{t:'club',len:30,a0:-60,da:3},mand:0,lk:.7,pat:{spots:[[14,-6,6.5],[26,14,7.5],[15,34,6]],center:[0,-10,5]},habitat:'Aphid-rich rose canes',range:'Every garden',season:'March to October',note:'Drawn here three times its life size. Seven black seals, one on the suture, and a lucky wish for whoever counts them.',by:'J. Marchetti, 11 April 1799'},
+ {n:'Chrysomela',e:'auricoma',c:'The Gilt-haired Leaf Beetle',mm:11,H:130,hd:{y0:-65,y1:-49,w:18},pr:{y0:-51,y1:-24,wf:26,wm:34,wb:36},el:{y0:-26,y1:64,ws:38,wm:43,ym:.4,tail:.05},
+  col:['#d8b447','#4f7f74','#27506e'],ant:{t:'bead',len:46,a0:-55,da:3},mand:0,lk:.85,pat:{stri:6,gold:1},habitat:'Willow and mint leaves',range:'River meadows',season:'May to August',note:'Iridescent: gold, then verdigris, then the deep blue of a shaded pool, depending on the angle of the lamp.',by:'R. Ashdown, 3 May 1798'},
+ {n:'Necrophorus',e:'umbriferus',c:'The Shadow Sexton',mm:27,H:170,hd:{y0:-85,y1:-62,w:23},pr:{y0:-66,y1:-30,wf:30,wm:38,wb:36,rim:1},el:{y0:-32,y1:58,ws:36,wm:38,ym:.35,tail:0,flat:1,abd:28},
+  col:['#5c4630','#2e2116','#140d07'],ant:{t:'club',len:44,a0:-55,da:3,or:1},mand:0,lk:.95,pat:{bands:[[.22,.15,'#c2622a'],[.62,.15,'#c2622a']],stri:0},habitat:'Beneath fallen thrushes',range:'Hedgerows',season:'August to October',note:'The sexton beetle. Two bands of cinnabar-orange announce its trade to the mites that ride upon it.',by:'M. Vane, 17 August 1797'}
+];
+
+/* ---------------- beetle builder: right half drawn twice, the second mirrored ---------------- */
+function pathPron(p){var h=p.y1-p.y0;return 'M0 '+p.y0+'L'+p.wf*.55+' '+p.y0+'C'+p.wf*.9+' '+p.y0+' '+p.wf+' '+(p.y0+h*.1)+' '+p.wf*1.05+' '+(p.y0+h*.25)+'C'+p.wm+' '+(p.y0+h*.42)+' '+p.wm+' '+(p.y0+h*.62)+' '+p.wm+' '+(p.y0+h*.72)+'C'+p.wm+' '+(p.y0+h*.9)+' '+p.wb+' '+p.y1+' '+p.wb*.86+' '+p.y1+'L0 '+p.y1+'Z'}
+function pathEly(e){var h=e.y1-e.y0,ym=e.y0+h*e.ym,t=e.tail;
+  var s='M0 '+e.y0+'L'+e.ws*.45+' '+e.y0+'C'+e.ws*.9+' '+e.y0+' '+e.ws+' '+(e.y0+h*.02)+' '+e.ws+' '+(e.y0+h*.09)+'C'+e.wm+' '+(e.y0+h*.14)+' '+e.wm+' '+(ym-h*.12)+' '+e.wm+' '+ym;
+  if(e.flat)return s+'C'+e.wm+' '+(ym+(e.y1-ym)*.6)+' '+e.wm*.98+' '+(e.y1-3)+' '+e.wm*.8+' '+e.y1+'L0 '+e.y1+'Z';
+  return s+'C'+e.wm+' '+(ym+(e.y1-ym)*.5)+' '+e.wm*(.78-.62*t)+' '+(e.y1-(e.y1-ym)*(.16-.1*t))+' '+(t>.6?0:e.wm*.2*(1-t))+' '+e.y1+'L0 '+e.y1+'Z'}
+function pathHead(h){var y0=h.y0,y1=h.y1,w=h.w,d=y1-y0;
+  if(h.box)return 'M0 '+y0+'L'+w*.6+' '+y0+'L'+w+' '+(y0+5)+'L'+w+' '+(y1-6)+'L'+w*.8+' '+y1+'L0 '+y1+'Z';
+  if(h.t)return 'M0 '+(y0-2)+'L6 '+(y0-2)+'L8 '+(y0+3)+'L14 '+(y0+1)+'L17 '+(y0+6)+'L24 '+(y0+5)+'C'+w+' '+(y0+10)+' '+w+' '+(y0+20)+' '+w+' '+(y1-6)+'L'+w*.7+' '+y1+'L0 '+y1+'Z';
+  return 'M0 '+y0+'C'+w*.7+' '+y0+' '+w+' '+(y0+d*.25)+' '+w+' '+(y0+d*.55)+'C'+w+' '+(y0+d*.85)+' '+w*.6+' '+y1+' 0 '+y1+'Z'}
+function antenna(s,detail){
+  var a=s.ant,h=s.hd,n=a.t==='long'?15:a.t==='fili'?12:9,sl=a.len/n,x=h.w*.5,y=h.y0+4,ang=a.a0*Math.PI/180,pts=[[x,y]],i,out='';
+  for(i=0;i<n;i++){ang+=a.da*Math.PI/180*(a.t==='long'&&i>5?-.5:1);x+=Math.cos(ang)*sl;y+=Math.sin(ang)*sl;pts.push([x,y])}
+  var d='M'+pts.map(function(p){return f1(p[0])+' '+f1(p[1])}).join('L');
+  out+='<path d="'+d+'" fill="none" stroke="#3a2915" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>';
+  var L=pts[n],c=a.or?'#c2622a':'#4a3521';
+  if(a.t==='lam'){for(i=-1;i<=1;i++)out+='<ellipse cx="'+L[0]+'" cy="'+L[1]+'" rx="2.6" ry="10" transform="rotate('+(i*28+60)+' '+L[0]+' '+L[1]+')" fill="#5a4225"/>'}
+  if(a.t==='club'||a.t==='elb'){for(i=n-3;i<=n;i++)out+='<circle cx="'+f1(pts[i][0])+'" cy="'+f1(pts[i][1])+'" r="'+(2.2+(i-n+3)*.9)+'" fill="'+c+'"/>'}
+  if(a.t==='bead'||a.t==='fili'||a.t==='long'){for(i=1;i<=n;i++)out+='<circle cx="'+f1(pts[i][0])+'" cy="'+f1(pts[i][1])+'" r="'+(detail?1.9:1.3)+'" fill="#4a3521"/>'}
+  if(a.t==='ser'){for(i=2;i<=n;i++)out+='<path d="M'+f1(pts[i][0])+' '+f1(pts[i][1])+'l5 3l-6 2z" fill="#3a2915"/>'}
+  if(detail){for(i=2;i<=n;i++)out+='<path d="M'+f1(pts[i][0])+' '+f1(pts[i][1])+'l3 -3M'+f1(pts[i][0])+' '+f1(pts[i][1])+'l-2 3" stroke="#5a4225" stroke-width=".5" fill="none"/>'}
+  return out;
+}
+var WIG=false;
+function legs(s,detail){
+  var H=s.H,k=s.lk*H*.0125,pr=s.pr,el=s.el,out='',i;
+  var A=[[pr.wm*.9,pr.y0+(pr.y1-pr.y0)*.4,[[9,-4],[8,-9],[3,-7]]],[el.ws*.95,el.y0+(el.y1-el.y0)*.1,[[10,0],[9,5],[4,7]]],[el.wm*.72,el.y0+(el.y1-el.y0)*.52,[[9,6],[7,11],[3,8]]]];
+  A.forEach(function(l,li){
+    var x=l[0],y=l[1],p=[[x,y]];
+    if(WIG)out+='<g><animateTransform attributeName="transform" type="rotate" values="-10 '+f1(x)+' '+f1(y)+';10 '+f1(x)+' '+f1(y)+';-10 '+f1(x)+' '+f1(y)+'" dur="'+(0.8+li*.17)+'s" repeatCount="indefinite"/>';
+    l[2].forEach(function(v){x+=v[0]*k;y+=v[1]*k;p.push([x,y])});
+    var w=[4,2.8,1.5];
+    for(i=0;i<3;i++){
+      out+='<path d="M'+f1(p[i][0])+' '+f1(p[i][1])+'L'+f1(p[i+1][0])+' '+f1(p[i+1][1])+'" stroke="#3a2915" stroke-width="'+w[i]*(s.lk>1?1:1.1)+'" stroke-linecap="round" fill="none"/>';
+      out+='<circle cx="'+f1(p[i+1][0])+'" cy="'+f1(p[i+1][1])+'" r="'+(w[i]*.55)+'" fill="#4a3521"/>';
+      if(detail){for(var j=1;j<4;j++){var t=j/4,hx=p[i][0]+(p[i+1][0]-p[i][0])*t,hy=p[i][1]+(p[i+1][1]-p[i][1])*t;out+='<path d="M'+f1(hx)+' '+f1(hy)+'l2.4 -1.6M'+f1(hx)+' '+f1(hy)+'l-1.6 2.4" stroke="#6b4e2a" stroke-width=".45"/>'}}
+    }
+    var e=p[3],q=p[2];out+='<path d="M'+f1(e[0])+' '+f1(e[1])+'l'+f1((e[0]-q[0])*.35)+' '+f1((e[1]-q[1])*.35)+'" stroke="#2a1c10" stroke-width="1.2" stroke-linecap="round"/>';
+    if(detail){out+='<path d="M'+f1(p[1][0])+' '+f1(p[1][1])+'l3 2M'+f1((p[1][0]+p[2][0])/2)+' '+f1((p[1][1]+p[2][1])/2)+'l3 2" stroke="#2a1c10" stroke-width="1.1"/>'}
+    if(WIG)out+='</g>';
+  });
+  return out;
+}
+function bug(s,detail,uid){
+  var el=s.el,pr=s.pr,hd=s.hd,h=el.y1-el.y0,ym=el.y0+h*el.ym,gid='g'+uid,cid='c'+uid,pid='p'+uid,i,half='',pat='';
+  var defs='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+s.col[0]+'"/><stop offset=".5" stop-color="'+s.col[1]+'"/><stop offset="1" stop-color="'+s.col[2]+'"/></linearGradient>'
+   +'<linearGradient id="'+pid+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset=".35" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".25"/></linearGradient>'
+   +'<clipPath id="'+cid+'"><path d="'+pathEly(el)+'"/></clipPath></defs>';
+  var p=s.pat, sn=s.pat.stri||0;
+  for(i=0;i<sn;i++){var xk=.14+.8*i/Math.max(1,sn-1);pat+='<path d="M'+f1(xk*el.ws)+' '+(el.y0+6)+'C'+f1(xk*el.wm)+' '+(el.y0+h*.3)+' '+f1(xk*el.wm)+' '+(el.y0+h*.6)+' '+f1(xk*el.wm*.25)+' '+(el.y1-3)+'" stroke="rgba(30,18,8,.45)" stroke-width="1" fill="none"/>'}
+  if(p.ridge){for(i=0;i<p.ridge;i++){var xr=.2+.28*i;pat+='<path d="M'+f1(xr*el.ws)+' '+(el.y0+4)+'C'+f1(xr*el.wm*1.05)+' '+(el.y0+h*.3)+' '+f1(xr*el.wm*1.05)+' '+(el.y0+h*.6)+' '+f1(xr*el.wm*.3)+' '+(el.y1-3)+'" stroke="#b8912f" stroke-width="'+(i===1?2.4:1.6)+'" fill="none" opacity=".85"/>'+(detail?'<path d="M'+f1(xr*el.ws+1.6)+' '+(el.y0+4)+'C'+f1(xr*el.wm*1.05+1.6)+' '+(el.y0+h*.3)+' '+f1(xr*el.wm*1.05+1.6)+' '+(el.y0+h*.6)+' '+f1(xr*el.wm*.3+1.6)+' '+(el.y1-3)+'" stroke="rgba(20,10,4,.55)" stroke-width="1.2" fill="none"/>':'')}}
+  if(p.bands){p.bands.forEach(function(b){var y=el.y0+h*b[0],t=h*b[1];pat+='<path d="M0 '+f1(y)+'C'+f1(el.wm*.5)+' '+f1(y+t*.5)+' '+f1(el.wm)+' '+f1(y+t*.2)+' '+f1(el.wm*1.1)+' '+f1(y+t*.8)+'L'+f1(el.wm*1.1)+' '+f1(y+t*1.6)+'C'+f1(el.wm)+' '+f1(y+t)+' '+f1(el.wm*.5)+' '+f1(y+t*1.3)+' 0 '+f1(y+t*1.1)+'Z" fill="'+b[2]+'" opacity=".92"/>'})}
+  if(p.spots){p.spots.forEach(function(q){pat+='<circle cx="'+q[0]+'" cy="'+q[1]+'" r="'+q[2]+'" fill="#1e120a"/>'+(detail?'<circle cx="'+(q[0]-q[2]*.3)+'" cy="'+(q[1]-q[2]*.3)+'" r="'+q[2]*.3+'" fill="#fff" opacity=".35"/>':'')})}
+  if(p.gold){for(i=0;i<3;i++){var xg=.3+.25*i;pat+='<path d="M'+f1(xg*el.ws)+' '+(el.y0+8)+'C'+f1(xg*el.wm*1.1)+' '+(el.y0+h*.3)+' '+f1(xg*el.wm*1.1)+' '+(el.y0+h*.6)+' '+f1(xg*el.wm*.3)+' '+(el.y1-5)+'" stroke="#e8cf7a" stroke-width="2.2" fill="none" opacity=".7"/>'}}
+  if(p.gloss)pat+='<path d="M'+el.wm*.5+' '+(el.y0+10)+'C'+el.wm*.8+' '+(el.y0+h*.3)+' '+el.wm*.8+' '+(el.y0+h*.5)+' '+el.wm*.55+' '+(el.y0+h*.62)+'" stroke="#fff" stroke-width="5" opacity=".28" fill="none" stroke-linecap="round"/>';
+  if(detail){
+    var hx='';for(var x=-80;x<80;x+=3.4){hx+='M'+x+' '+(el.y0)+'l'+h*.9+' '+h*.9+'M'+x+' '+el.y1+'l'+h*.9+' '+(-h*.9)}
+    pat+='<path d="'+hx+'" stroke="rgba(30,18,8,.2)" stroke-width=".45" fill="none"/>';
+    for(i=0;i<Math.max(sn,4);i++){var xp=.14+.8*i/Math.max(1,Math.max(sn,4)-1);for(var j=1;j<14;j++){var t=j/14,px=xp*(el.ws+(el.wm-el.ws)*Math.min(1,t*2.2))*(1-t*.6),py=el.y0+h*t;pat+='<circle cx="'+f1(px)+'" cy="'+f1(py)+'" r=".8" fill="rgba(20,10,4,.6)"/>'}}
+    pat+='<rect x="-90" y="'+(el.y0-10)+'" width="180" height="'+(h+20)+'" fill="url(#i'+uid+')" opacity=".42"/>';
+    defs=defs.replace('</defs>','<linearGradient id="i'+uid+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b13a2a"/><stop offset=".33" stop-color="#b8912f"/><stop offset=".66" stop-color="#4f7f74"/><stop offset="1" stop-color="#3a5a9a"/></linearGradient></defs>');
+  }
+  var body='<path d="'+pathEly(el)+'" fill="url(#'+gid+')" stroke="#2a1c10" stroke-width="1.4"/><g clip-path="url(#'+cid+')">'+pat+'<path d="'+pathEly(el)+'" fill="url(#'+pid+')"/></g>';
+  if(el.abd){body='<path d="M0 '+el.y1+'L'+el.wm*.8+' '+el.y1+'C'+el.wm*.7+' '+(el.y1+el.abd*.6)+' '+el.wm*.4+' '+(el.y1+el.abd)+' 0 '+(el.y1+el.abd)+'Z" fill="#2a1c10" stroke="#2a1c10"/><path d="M0 '+(el.y1+9)+'H'+el.wm*.7+'M0 '+(el.y1+18)+'H'+el.wm*.5+'" stroke="#6b4e2a" stroke-width="1"/>'+body}
+  var prn='<path d="'+pathPron(pr)+'" fill="'+(pr.cream?'#efe2bd':'url(#'+gid+')')+'" stroke="#2a1c10" stroke-width="1.3"/>';
+  if(pr.cream)prn+='<path d="M'+pr.wm*.5+' '+(pr.y0+5)+'L'+pr.wm*.6+' '+(pr.y0+14)+'L'+pr.wm*.4+' '+(pr.y0+12)+'Z" fill="#1e120a"/>';
+  if(pr.rim)prn+='<path d="'+pathPron(pr)+'" fill="none" stroke="#c2622a" stroke-width="3" opacity=".5"/>';
+  if(pr.sp)prn+='<path d="M'+pr.wm+' '+(pr.y0+(pr.y1-pr.y0)*.55)+'l7 -3l-5 9z" fill="#2a1c10"/>';
+  if(detail){prn+='<path d="'+pathPron(pr)+'" fill="url(#'+pid+')"/>';for(i=0;i<16;i++){var ty=pr.y0+(pr.y1-pr.y0)*(i/16);prn+='<path d="M'+f1(pr.wm*(.75+.25*Math.sin(i/16*3)))+' '+f1(ty)+'l4 -2M'+f1(pr.wm*.5)+' '+f1(ty)+'l2 -2" stroke="#3a2915" stroke-width=".55"/>'}}
+  var hdp='<path d="'+pathHead(hd)+'" fill="'+(hd.box?'#5a3320':'#33251a')+'" stroke="#1a0f07" stroke-width="1.3"/>';
+  var ey=hd.y0+(hd.y1-hd.y0)*.45;
+  hdp+='<ellipse cx="'+hd.w*.78+'" cy="'+ey+'" rx="'+f1(hd.w*.22)+'" ry="'+f1((hd.y1-hd.y0)*.18)+'" fill="#0e0804"/><circle cx="'+f1(hd.w*.72)+'" cy="'+f1(ey-2)+'" r="1.2" fill="#fff" opacity=".7"/>';
+  if(detail)for(i=0;i<9;i++)hdp+='<circle cx="'+f1(hd.w*(.66+(i%3)*.1))+'" cy="'+f1(ey-4+Math.floor(i/3)*3)+'" r=".6" fill="#8a7a5a"/>';
+  var md='';
+  if(s.mand===1){md='<path d="M'+hd.w*.5+' '+hd.y0+'C'+hd.w*1.1+' '+(hd.y0-30)+' '+hd.w*.5+' '+(hd.y0-56)+' '+hd.w*.15+' '+(hd.y0-62)+'L'+hd.w*.2+' '+(hd.y0-52)+'C'+hd.w*.55+' '+(hd.y0-44)+' '+hd.w*.9+' '+(hd.y0-22)+' '+hd.w*.28+' '+(hd.y0+4)+'Z" fill="#7a3d24" stroke="#2a1c10" stroke-width="1.2"/>';
+    for(i=0;i<4;i++)md+='<path d="M'+f1(hd.w*(.92-i*.18))+' '+f1(hd.y0-14-i*10)+'l-6 -3l3 6z" fill="#2a1c10"/>'}
+  else md='<path d="M'+hd.w*.3+' '+hd.y0+'q3 -7 9 -8q-3 5 -3 9z" fill="#2a1c10"/>';
+  half=legs(s,detail)+body+prn+hdp+md+antenna(s,detail);
+  var sut='<path d="M0 '+el.y0+'V'+(el.y1)+'" stroke="#1a0f07" stroke-width="1.3"/><path d="M0 '+pr.y0+'V'+pr.y1+'" stroke="#1a0f07" stroke-width=".9"/>';
+  if(p.center)sut+='<circle cx="0" cy="'+p.center[1]+'" r="'+p.center[2]+'" fill="#1e120a"/>';
+  return defs+'<g>'+half+'</g><g transform="scale(-1 1)">'+half+'</g>'+sut;
+}
+
+/* ---------------- parchment, painted once on a canvas ---------------- */
+function paper(w,h){
+  var c=doc.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d'),r=mul(14),i;
+  x.fillStyle='#eadfc2';x.fillRect(0,0,w,h);
+  var gw=Math.ceil(w/40)+2,gh=Math.ceil(h/40)+2,g=[];for(i=0;i<gw*gh;i++)g.push(r());
+  var im=x.getImageData(0,0,w,h),d=im.data,px,py;
+  for(py=0;py<h;py++)for(px=0;px<w;px++){
+    var u=px/40,v=py/40,iu=u|0,iv=v|0,fu=u-iu,fv=v-iv;fu=fu*fu*(3-2*fu);fv=fv*fv*(3-2*fv);
+    var n=(g[iv*gw+iu]*(1-fu)+g[iv*gw+iu+1]*fu)*(1-fv)+(g[(iv+1)*gw+iu]*(1-fu)+g[(iv+1)*gw+iu+1]*fu)*fv;
+    var k=(n-.5)*26+((px*7+py*13)%5-2)*1.5,o=(py*w+px)*4;
+    d[o]+=k;d[o+1]+=k*.9;d[o+2]+=k*.7;
+  }
+  x.putImageData(im,0,0);
+  x.lineWidth=.6;
+  for(i=0;i<1400;i++){x.strokeStyle=r()<.5?'rgba(120,90,50,.07)':'rgba(255,250,235,.12)';var a=r()*w,b=r()*h,an=r()*6.28,l=4+r()*14;x.beginPath();x.moveTo(a,b);x.lineTo(a+Math.cos(an)*l,b+Math.sin(an)*l);x.stroke()}
+  for(i=0;i<46;i++){
+    var cx=r()*w,cy=r()*h,rad=4+r()*(r()<.2?34:14),gr=x.createRadialGradient(cx,cy,0,cx,cy,rad);
+    gr.addColorStop(0,'rgba(150,96,40,'+(.12+r()*.2)+')');gr.addColorStop(1,'rgba(150,96,40,0)');x.fillStyle=gr;x.fillRect(cx-rad,cy-rad,rad*2,rad*2);
+  }
+  for(i=0;i<260;i++){x.fillStyle='rgba(110,70,30,'+(.15+r()*.3)+')';x.beginPath();x.arc(r()*w,r()*h,.5+r()*1.6,0,6.28);x.fill()}
+  var ed=x.createRadialGradient(w/2,h/2,Math.min(w,h)*.38,w/2,h/2,Math.max(w,h)*.72);ed.addColorStop(0,'rgba(120,80,30,0)');ed.addColorStop(1,'rgba(120,80,30,.35)');x.fillStyle=ed;x.fillRect(0,0,w,h);
+  x.strokeStyle='rgba(120,80,30,.07)';x.lineWidth=14;x.beginPath();x.arc(w*.12,h*.1,70,0,6.28);x.stroke();
+  x.fillStyle='rgba(90,60,20,.09)';x.fillRect(w/2-1,0,1,h);x.fillStyle='rgba(255,250,235,.25)';x.fillRect(w/2,0,1,h);
+  return c.toDataURL('image/jpeg',.86);
+}
+function hand(str,seed){var r=mul(seed),rot=[],dy=[];for(var i=0;i<str.length;i++){rot.push((r()*3-1.5).toFixed(1));dy.push((r()*1.8-.9).toFixed(1))}return 'rotate="'+rot.join(' ')+'" dy="'+dy.join(' ')+'"'}
+
+/* ---------------- the plate ---------------- */
+var svg=$('plate'), stage=$('stage'), vb={w:1350,h:900}, land=true, spots=[], imgURL='', built=false;
+function layout(){
+  var W=innerWidth,H=innerHeight,ls=W/H>=.95;
+  if(built&&ls===land)return fit();
+  land=ls;vb=ls?{w:1350,h:900}:{w:760,h:1300};
+  imgURL=paper(Math.round(vb.w*.8),Math.round(vb.h*.8));
+  build();built=true;fit();
+}
+function fit(){
+  var W=innerWidth,H=innerHeight,pad=W<760?10:28,s=Math.min((W-pad*2)/vb.w,(H-pad*2-46)/vb.h);
+  svg.style.width=Math.round(vb.w*s)+'px';svg.style.height=Math.round(vb.h*s)+'px';svg.style.marginBottom='38px';
+  svg.setAttribute('viewBox','0 0 '+vb.w+' '+vb.h);
+  pxu=vb.w/(vb.w*s);lensR=(W<760?76:104)*pxu;lensR=lensR;
+}
+var pxu=1,lensR=100,MAG=2.2;
+function plate(detail,uid){
+  var w=vb.w,h=vb.h,o='',i,cols=land?4:2,rows=land?2:4,mx=land?70:50,top=land?200:215,bot=land?96:96;
+  o+='<image href="'+imgURL+'" x="0" y="0" width="'+w+'" height="'+h+'" preserveAspectRatio="none"/>';
+  o+='<rect x="26" y="26" width="'+(w-52)+'" height="'+(h-52)+'" fill="none" stroke="#4a3521" stroke-width="2.6"/><rect x="36" y="36" width="'+(w-72)+'" height="'+(h-72)+'" fill="none" stroke="#4a3521" stroke-width=".9"/><rect x="42" y="42" width="'+(w-84)+'" height="'+(h-84)+'" fill="none" stroke="#b8912f" stroke-width=".8"/>';
+  [[42,42],[w-42,42],[42,h-42],[w-42,h-42]].forEach(function(p){o+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="6" fill="#f0e6c8" stroke="#b8912f" stroke-width="1.2"/><circle cx="'+p[0]+'" cy="'+p[1]+'" r="2" fill="#b13a2a"/>'});
+  o+='<g fill="#4a3521" text-anchor="middle"><text x="'+w/2+'" y="84" font-size="14" letter-spacing="5" style="font-variant:small-caps">Plate XIV</text>'
+   +'<text x="'+w/2+'" y="'+(land?146:142)+'" font-size="'+(land?60:54)+'" font-style="italic" '+hand('Coleoptera',3)+'>Coleoptera</text>'
+   +'<path d="M'+(w/2-150)+' '+(land?162:156)+'H'+(w/2+150)+'M'+(w/2-110)+' '+(land?167:161)+'H'+(w/2+110)+'" stroke="#4a3521" stroke-width=".9"/>'
+   +'<text x="'+w/2+'" y="'+(land?188:181)+'" font-size="12.5" font-style="italic" fill="#6d5636">Scarabæi, Carabi, Buprestides &amp; al. — figuræ ad vivum delineatæ</text></g>';
+  o+='<text x="62" y="70" font-size="11" letter-spacing="3" fill="#6d5636" style="font-variant:small-caps">Cabinet of Curiosities</text><text x="'+(w-62)+'" y="70" font-size="11" letter-spacing="3" fill="#b13a2a" text-anchor="end" style="font-variant:small-caps">Pl. XIV.</text>';
+  o+='<text x="62" y="'+(h-54)+'" font-size="11" font-style="italic" fill="#6d5636">Del. J. Marchetti ad nat., sculp. Cabinet Atelier</text><text x="'+(w-62)+'" y="'+(h-54)+'" font-size="11" font-style="italic" fill="#6d5636" text-anchor="end">Ex Museo · MDCCXCIX</text>';
+  var cw=(w-mx*2)/cols,ch=(h-top-bot)/rows;
+  if(!detail)spots=[];
+  SP.forEach(function(s,k){
+    var col=k%cols,row=(k/cols)|0,cx=mx+cw*(col+.5),cy=top+ch*row+ch*.40,rot=[-6,4,-3,7,-9,5,-5,3][k],sc=Math.min(land?1.05:.8,(land?172:150)/s.H);
+    var ppm=s.H*sc/s.mm,bar=Math.min(10*ppm,cw*.4),lab=(land?ch*.44:ch*.42);
+    if(!detail)spots.push({x:cx,y:cy,r:s.H*sc*.55,i:k});
+    o+='<g class="spec" data-i="'+k+'" '+(detail?'aria-hidden="true"':'tabindex="0" role="button" aria-label="Figure '+(k+1)+', '+s.n+' '+s.e+'. Open field card."')+'>';
+    o+='<ellipse cx="'+(cx+8)+'" cy="'+(cy+10)+'" rx="'+f1(s.el.wm*sc*.95)+'" ry="'+f1(s.H*sc*.5)+'" fill="rgba(60,35,10,.22)" transform="rotate('+rot+' '+cx+' '+cy+')"/>';
+    o+='<g transform="translate('+cx+' '+cy+') rotate('+rot+') scale('+f1(sc)+')">'+bug(s,detail,uid+'_'+k)+'</g>';
+    o+='<g class="pin'+'" data-pin="'+k+'" transform="translate('+f1(cx+Math.sin(rot*.0175)*s.pr.y0*-sc*.6)+' '+f1(cy+s.pr.y0*.55*sc+((s.pr.y1-s.pr.y0)*.5)*sc*.0)+')"><ellipse cx="4" cy="6" rx="5" ry="3.4" fill="rgba(0,0,0,.3)"/><circle r="6" fill="url(#pinG)" stroke="#5a410f" stroke-width=".8"/><circle cx="-2" cy="-2" r="1.8" fill="#fff" opacity=".7"/></g>';
+    o+='<ellipse class="ring" cx="'+cx+'" cy="'+cy+'" rx="'+f1(s.el.wm*sc*1.2)+'" ry="'+f1(s.H*sc*.58)+'" fill="none" stroke="#b13a2a" stroke-width="1.6" stroke-dasharray="4 5"/>';
+    var ly=cy+s.H*sc*.5+(land?30:26);
+    o+='<g text-anchor="middle" fill="#4a3521"><text x="'+cx+'" y="'+f1(ly)+'" font-size="'+(land?13:11)+'" fill="#b13a2a" '+hand('Fig. '+(k+1)+'.',k+9)+'>Fig. '+(k+1)+'.</text>'
+      +'<text x="'+cx+'" y="'+f1(ly+(land?21:17))+'" font-size="'+(land?17:14)+'" font-style="italic"><tspan style="font-variant:small-caps;letter-spacing:.04em">'+s.n+'</tspan> '+s.e+'</text>'
+      +'<text x="'+cx+'" y="'+f1(ly+(land?38:31))+'" font-size="'+(land?11.5:10)+'" font-style="italic" fill="#6d5636">'+s.c+' · Long. '+s.mm+' mm.</text></g>';
+    var by=ly+(land?52:42);
+    o+='<g stroke="#4a3521" stroke-width="1" fill="none"><path d="M'+f1(cx-bar/2)+' '+f1(by)+'h'+f1(bar)+'M'+f1(cx-bar/2)+' '+f1(by-4)+'v8M'+f1(cx+bar/2)+' '+f1(by-4)+'v8"/>';
+    for(var m=1;m<10;m++){if(m*ppm<bar)o+='<path d="M'+f1(cx-bar/2+m*ppm)+' '+f1(by)+'v-3"/>'}
+    o+='</g><text x="'+f1(cx+bar/2+5)+'" y="'+f1(by+4)+'" font-size="9.5" font-style="italic" fill="#6d5636">'+(bar>=10*ppm-1?'10 mm':'')+'</text>';
+    if(detail)o+='<text x="'+cx+'" y="'+f1(by+15)+'" font-size="6.5" font-style="italic" fill="#8a3a22" text-anchor="middle">'+s.by+' · '+s.habitat.toLowerCase()+'</text>';
+    if(!detail)o+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+f1(s.el.wm*sc*1.3)+'" ry="'+f1(s.H*sc*.6)+'" fill="transparent" class="hit" style="cursor:pointer"/>';
+    o+='</g>';
+  });
+  return o;
+}
+var defsHTML='<defs><radialGradient id="pinG" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#f5e4a0"/><stop offset=".55" stop-color="#b8912f"/><stop offset="1" stop-color="#7a5a14"/></radialGradient>'
+ +'<linearGradient id="brass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3dd93"/><stop offset=".45" stop-color="#b8912f"/><stop offset="1" stop-color="#6e4f12"/></linearGradient>'
+ +'<radialGradient id="glassG" cx=".5" cy=".5" r=".5"><stop offset=".72" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a2a10" stop-opacity=".35"/></radialGradient>'
+ +'<radialGradient id="lshadow" cx=".5" cy=".5" r=".5"><stop offset=".8" stop-color="#000" stop-opacity=".45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>'
+ +'<clipPath id="lensClip"><circle id="lensC" cx="300" cy="300" r="100"/></clipPath></defs>';
+var lx=0,ly=0,tx=0,ty=0,magEl,lensFrame,lensC,shadowEl;
+function build(){
+  svg.innerHTML=defsHTML+'<g id="base">'+plate(false,'b')+'</g><g id="lens" pointer-events="none"><ellipse id="lsh" rx="100" ry="100" fill="url(#lshadow)"/><g clip-path="url(#lensClip)"><g id="mag" aria-hidden="true">'+plate(true,'d')+'</g></g><g id="lframe"></g></g>';
+  magEl=$('mag');lensFrame=$('lframe');lensC=$('lensC');shadowEl=$('lsh');
+  svg.classList.toggle('nopins',!pinsOn);
+  if(sel>=0)markSel();
+  bindSpecs();
+  if(!lx){lx=tx=vb.w*.26;ly=ty=vb.h*.5}
+}
+function frameMarkup(r){
+  var rr=r+7;
+  return '<g transform="translate('+f1(lx)+' '+f1(ly)+')">'
+   +'<g transform="rotate(42)"><path d="M'+(r+2)+' -9L'+(r+70)+' -14L'+(r+96)+' -12L'+(r+96)+' 12L'+(r+70)+' 14L'+(r+2)+' 9Z" fill="#3b2412" stroke="#1a0f07" stroke-width="1.2"/><rect x="'+(r+2)+'" y="-11" width="22" height="22" fill="url(#brass)" stroke="#5a410f" stroke-width="1"/><path d="M'+(r+30)+' -13V13M'+(r+78)+' -14V14" stroke="#b8912f" stroke-width="2.2"/></g>'
+   +'<circle r="'+f1(rr)+'" fill="none" stroke="url(#brass)" stroke-width="13"/><circle r="'+f1(rr+6.5)+'" fill="none" stroke="#3a2a0c" stroke-width="1.2"/><circle r="'+f1(rr-6.5)+'" fill="none" stroke="#5a410f" stroke-width="1.2"/>'
+   +'<circle r="'+f1(r)+'" fill="url(#glassG)"/><circle r="'+f1(r-3)+'" fill="none" stroke="#b13a2a" stroke-width="1" opacity=".22"/><circle r="'+f1(r-5)+'" fill="none" stroke="#4f7f74" stroke-width="1" opacity=".25"/>'
+   +'<path d="M'+f1(-r*.72)+' '+f1(-r*.28)+'A'+f1(r*.78)+' '+f1(r*.78)+' 0 0 1 '+f1(-r*.2)+' '+f1(-r*.75)+'" fill="none" stroke="#fff" stroke-width="'+f1(r*.06)+'" stroke-linecap="round" opacity=".6"/>'
+   +'<path d="M'+f1(r*.5)+' '+f1(r*.55)+'A'+f1(r*.75)+' '+f1(r*.75)+' 0 0 1 '+f1(r*.7)+' '+f1(r*.2)+'" fill="none" stroke="#fff" stroke-width="'+f1(r*.03)+'" stroke-linecap="round" opacity=".4"/></g>';
+}
+function renderLens(){
+  lensC.setAttribute('cx',f1(lx));lensC.setAttribute('cy',f1(ly));lensC.setAttribute('r',f1(lensR));
+  magEl.setAttribute('transform','matrix('+MAG+' 0 0 '+MAG+' '+f1(lx*(1-MAG))+' '+f1(ly*(1-MAG))+')');
+  shadowEl.setAttribute('cx',f1(lx+14));shadowEl.setAttribute('cy',f1(ly+20));shadowEl.setAttribute('rx',f1(lensR+18));shadowEl.setAttribute('ry',f1(lensR+18));
+  lensFrame.innerHTML=frameMarkup(lensR);
+}
+
+/* ---------------- interaction ---------------- */
+var pinsOn=true, sel=-1, lastMove=0, tour=0, tourT=0, dragging=false, isTouch=false, downP=null;
+function toU(e){var r=svg.getBoundingClientRect();return [(e.clientX-r.left)/r.width*vb.w,(e.clientY-r.top)/r.height*vb.h]}
+function spotAt(u,pad){var b=null,bd=1e9;spots.forEach(function(s){var d=Math.hypot(u[0]-s.x,u[1]-s.y);if(d<s.r*(pad||1)&&d<bd){bd=d;b=s}});return b}
+stage.addEventListener('pointermove',function(e){
+  isTouch=e.pointerType==='touch';
+  if(isTouch&&!dragging)return;
+  var u=toU(e);tx=u[0];ty=u[1]-(isTouch?lensR*.95:0);lastMove=performance.now();
+});
+stage.addEventListener('pointerdown',function(e){
+  isTouch=e.pointerType==='touch';dragging=true;downP={x:e.clientX,y:e.clientY};
+  var u=toU(e);tx=u[0];ty=u[1]-(isTouch?lensR*.95:0);lastMove=performance.now();
+  try{stage.setPointerCapture(e.pointerId)}catch(x){}
+});
+stage.addEventListener('pointerup',function(e){
+  dragging=false;
+  var moved=downP?Math.hypot(e.clientX-downP.x,e.clientY-downP.y):0;
+  if(moved<10){var u=toU(e),s=spotAt(u,1.15);if(s)openCard(s.i)}
+  lastMove=performance.now();
+});
+stage.addEventListener('pointercancel',function(){dragging=false});
+function bindSpecs(){
+  Array.prototype.forEach.call(svg.querySelectorAll('#base .spec'),function(g){
+    var i=+g.getAttribute('data-i');
+    g.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openCard(i)}});
+    g.addEventListener('focus',function(){tx=spots[i].x;ty=spots[i].y;lastMove=performance.now()});
+  });
+}
+$('pinBtn').addEventListener('click',function(){
+  pinsOn=!pinsOn;svg.classList.toggle('nopins',!pinsOn);this.setAttribute('aria-pressed',pinsOn?'true':'false');this.textContent=pinsOn?'Unpin all':'Pin all';
+});
+function markSel(){
+  Array.prototype.forEach.call(svg.querySelectorAll('.pin'),function(p){p.classList.toggle('on',+p.getAttribute('data-pin')===sel)});
+}
+var card=$('card');
+function openCard(i){
+  var s=SP[i];sel=i;markSel();
+  $('cKick').textContent='Field card · N° '+(i+1)+' of VIII · Pl. XIV';
+  $('cTitle').innerHTML='<span>'+s.n+'</span> '+s.e;
+  $('cCommon').textContent=s.c;
+  $('cDl').innerHTML='<dt>Length</dt><dd>'+s.mm+' mm.</dd><dt>Habitat</dt><dd>'+s.habitat+'</dd><dt>Range</dt><dd>'+s.range+'</dd><dt>Season</dt><dd>'+s.season+'</dd>';
+  $('cNote').textContent=s.note;$('cSig').textContent='— '+s.by;
+  WIG=!reduce;$('cMini').innerHTML='<g transform="scale('+f1(105/s.H)+')">'+bug(s,false,'m')+'</g>';WIG=false;
+  card.hidden=false;$('live').textContent='Field card opened: '+s.n+' '+s.e;
+  $('cClose').focus({preventScroll:true});
+}
+function closeCard(){card.hidden=true;sel=-1;markSel()}
+$('cClose').addEventListener('click',closeCard);
+window.addEventListener('keydown',function(e){if(e.key==='Escape'&&!card.hidden)closeCard()});
+
+/* ---------------- ambience: beam, dust motes and a moth ---------------- */
+var fx=$('fx'),fc=fx.getContext('2d'),FW=0,FH=0,DPR=1,motes=[],moth=null,nextMoth=6;
+function fxSize(){DPR=Math.min(devicePixelRatio||1,1.5);FW=innerWidth;FH=innerHeight;fx.width=FW*DPR;fx.height=FH*DPR;
+  if(!motes.length){var r=mul(5);for(var i=0;i<70;i++)motes.push({x:r(),y:r(),z:r(),ph:r()*6.28,s:.4+r()})}}
+function beamK(x,y){var d=Math.abs((x/FW-.12)*.9-(y/FH-.0)*.55)/.5;return clamp(1-d*d*2.2,0,1)}
+function drawMoth(dt,t){
+  if(!moth){nextMoth-=dt;if(nextMoth<=0&&!reduce){var L=Math.random()<.5;moth={x:L?-40:FW+40,y:FH*(.15+Math.random()*.5),vx:(L?1:-1)*(70+Math.random()*40),ph:0,t:0}}return}
+  moth.t+=dt;moth.x+=moth.vx*dt;moth.y+=Math.sin(moth.t*1.7)*38*dt+Math.sin(moth.t*.6)*22*dt;moth.ph+=dt*17;
+  var fl=Math.abs(Math.cos(moth.ph)),d=moth.vx>0?1:-1;
+  fc.save();fc.translate(moth.x,moth.y);fc.rotate(Math.sin(moth.t*1.7)*.25);fc.scale(d,1);fc.globalAlpha=.92;
+  fc.fillStyle='rgba(0,0,0,.18)';fc.beginPath();fc.ellipse(10,26,15,4,0,0,6.28);fc.fill();
+  [[1,'#a98e62','#6d5636'],[-1,'#a98e62','#6d5636']].forEach(function(w){
+    fc.save();fc.scale(1,w[0]);fc.rotate(-.5*(1-fl)*w[0]*0);
+    fc.fillStyle=w[1];fc.strokeStyle=w[2];fc.lineWidth=1;fc.beginPath();fc.moveTo(0,0);fc.bezierCurveTo(-6,-22*fl-4,-24,-30*fl-4,-30,-16*fl-2);fc.bezierCurveTo(-26,-6,-14,0,0,0);fc.fill();fc.stroke();
+    fc.fillStyle='#d9c79a';fc.beginPath();fc.arc(-19,-11*fl-2,3.2*Math.max(.3,fl),0,6.28);fc.fill();fc.restore();
+  });
+  fc.fillStyle='#5a4428';fc.beginPath();fc.ellipse(2,0,3.4,10,1.57,0,6.28);fc.fill();
+  fc.strokeStyle='#5a4428';fc.lineWidth=.8;fc.beginPath();fc.moveTo(11,0);fc.quadraticCurveTo(18,-8,23,-9);fc.moveTo(11,0);fc.quadraticCurveTo(18,8,23,9);fc.stroke();fc.restore();
+  if(moth.x<-80||moth.x>FW+80){moth=null;nextMoth=14+Math.random()*12}
+}
+function fxFrame(dt,t){
+  fc.setTransform(DPR,0,0,DPR,0,0);fc.clearRect(0,0,FW,FH);
+  var g=fc.createLinearGradient(FW*.05,0,FW*.75,FH);g.addColorStop(0,'rgba(255,232,180,.16)');g.addColorStop(1,'rgba(255,232,180,0)');
+  fc.save();fc.globalCompositeOperation='lighter';fc.fillStyle=g;fc.beginPath();fc.moveTo(FW*.02,0);fc.lineTo(FW*.34,0);fc.lineTo(FW*.98,FH);fc.lineTo(FW*.5,FH);fc.closePath();fc.fill();
+  motes.forEach(function(m){
+    if(!reduce){m.x+=(Math.sin(t*.13+m.ph)*.006+.0016)*dt*m.s;m.y+=(Math.cos(t*.11+m.ph)*.005-.0009)*dt*m.s}
+    if(m.x>1.02)m.x=-.02;if(m.y<-.02)m.y=1.02;if(m.y>1.02)m.y=-.02;if(m.x<-.03)m.x=1.02;
+    var X=m.x*FW,Y=m.y*FH,b=beamK(X,Y),a=.08+b*.75*(.6+.4*Math.sin(t*1.3+m.ph*3));
+    fc.globalAlpha=a;fc.fillStyle='#fff1c8';fc.beginPath();fc.arc(X,Y,.6+m.z*1.5+b*.8,0,6.28);fc.fill();
+  });
+  fc.restore();fc.globalAlpha=1;
+  drawMoth(dt,t);
+}
+
+/* ---------------- loop ---------------- */
+var last=0,T=0;
+function frame(now){
+  requestAnimationFrame(frame);
+  if(doc.hidden){last=0;return}
+  var dt=last?Math.min(.05,(now-last)/1000):.016;last=now;T+=dt;
+  if(!dragging&&now-lastMove>4500&&!reduce){
+    tourT-=dt;
+    if(tourT<=0){tour=(tour+1)%spots.length;tourT=3.4}
+    var s=spots[tour];if(s){tx=s.x+Math.sin(T*.7)*s.r*.25;ty=s.y+Math.cos(T*.9)*s.r*.2}
+  }
+  var k=1-Math.exp(-dt*(reduce?30:9));
+  lx+=(tx-lx)*k;ly+=(ty-ly)*k;
+  renderLens();fxFrame(dt,T);
+}
+layout();fxSize();
+if(reduce){var s0=spots[0];tx=lx=s0.x;ty=ly=s0.y}else{var s1=spots[0];tx=s1.x;ty=s1.y;lx=vb.w*.3;ly=vb.h*.55;tourT=3;lastMove=-9999}
+var rt=0;addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){layout();fxSize()},90)});
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

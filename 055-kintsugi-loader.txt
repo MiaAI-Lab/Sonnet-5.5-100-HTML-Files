@@ -1,0 +1,24 @@
+==================== PROMPT ====================
+Design a beautiful loading sequence, "Kintsugi" — a ceramic bowl repaired with gold. SVG: a matte black-glaze bowl (elliptical rim, subtle glaze gradient and highlights) on cream paper with a soft shadow; it starts fractured into 6–9 pieces drifting slightly apart, and pieces slide together as loading progresses (0→100% over ~9 s with uneven progress like a real load: pauses and bursts); crack lines are drawn in liquid gold (#d4a537 with highlights #ffe28a, tapered ends), filling in via stroke-dashoffset in step with progress along randomly ordered seams; sparkles at the gold's leading edge (tiny star particles). The percentage counter in a thin serif beside it, with poetic status lines ("Gathering the pieces", "Warming the lacquer", "Dusting with gold", "Wabi-sabi is not a flaw"). At 100%: a pulse of light passes over the bowl, the gold gleams (a linear-gradient sweep clipped to the seams), the title "Restored" appears in serif, steam curls from the bowl (tea implied) and a "Replay" button appears. Palette: paper #efe6d6, charcoal glaze #1d1c1a, gold #d4a537, muted clay #8c6f57. Interaction: clicking the bowl at any time speeds up loading with a small burst; key R replays. Respect reduced motion by shortening durations.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Kintsugi Loader
+
+==================== DESCRIPTION ====================
+On warm cream paper with faint fibre grain, a matte black-glaze bowl lies broken into six to nine shards that hover apart and turn slightly. As a load that stalls and bursts runs from 0 to 100% over about nine seconds, the shards slide home one by one with a soft overshoot while liquid gold fills the cracks along randomly ordered seams, each drawn as a tapered ribbon with a dark under-edge, a body gradient and a bright highlight thread, led by drifting star-shaped sparkles. Beside the bowl a large light-weight serif percentage counts up over a gold hairline, with poetic status lines that cross-fade. Every replay fractures the bowl differently. At 100% a bloom of light expands, a bright band sweeps over the gold only, the word "Restored" appears in gilded italic serif, steam curls rise from the rim and a Replay button appears; the seams keep glinting.
+
+==================== TECHNIQUES ====================
+- Runtime fracture: random seeds inside a convex bowl silhouette, Voronoi cells by half-plane clipping, then shared jagged edges cached per edge so neighbouring shards fit exactly
+- Each shard is the same bowl artwork (glaze gradient, feTurbulence speckle, rim ellipse, interior, sheen, highlights) clipped by its own clipPath, with a bare-clay edge stroke
+- Seams drawn as tapered filled ribbons revealed by an SVG mask whose stroke animates with stroke-dashoffset, in a random order tied to progress
+- Piece motion tied to the same progress: each shard slides home before its first seam is filled, with out-back easing and idle drift while apart
+- Uneven load curve of stalls and bursts built from random keyframes with smoothstep segments, click boost that triples the clock for a moment
+- Sparkle pool of eight-point stars emitted at the leading edge of each seam, plus bursts on click and at completion
+- Finish sequence: expanding light pulse, gradient band sweep masked to the seam shapes, gilded text clip, blurred SVG steam paths animated with dash offset
+- System Didone/old-style serif stack in light weight, small-caps microcopy, paper-fibre grain from an inline SVG turbulence filter
+- Responsive two-column to stacked layout, reduced-motion shortens the load to about 3.5 seconds
+
+==================== INTERACTION ====================
+The sequence starts by itself. Click or tap the bowl (or focus it and press Enter or Space) to hurry the gold: time runs about three times faster for a moment and a burst of sparkles leaves the pointer. Press R at any time, or use the Replay button after "Restored", to fracture a new bowl and start again. With prefers-reduced-motion the load takes about three and a half seconds, idle drift of the shards is removed and the steam is very slow.

@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ebru — Marbling Studio</title>
+<meta name="description" content="Ebru, a paper-marbling studio in your browser: drop ink, rake a comb through it, stir it into spirals.">
+<style>
+/* =========================================================
+   EBRU — Marbling Studio
+   tokens · desk · header · gilded tray · dock · toast
+   ========================================================= */
+:root{
+  --paper:#f4ecda; --indigo:#23306b; --vermilion:#d8452b; --turquoise:#1f9a9a; --ochre:#d9a441; --blush:#e9b7a5; --blackgreen:#16302b;
+  --desk:#0c1b18; --ink:#16302b; --gold:#c9a24d; --gold-d:#8c6a24; --gold-l:#f0d98c;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;height:100vh;height:100dvh;overflow:hidden;color:var(--paper);font-family:var(--serif);
+  background:radial-gradient(120% 95% at 50% 38%,#18402f 0%,#11302a 38%,#0a1a16 78%,#060e0c 100%) var(--desk);
+  -webkit-font-smoothing:antialiased;overscroll-behavior:none}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:var(--noise,none);background-size:160px 160px;background-repeat:repeat}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold-l);outline-offset:3px}
+
+/* ---------- header ---------- */
+.top{position:relative;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:max(16px,env(safe-area-inset-top)) clamp(14px,2.4vw,34px) 12px}
+.brand h1{margin:0;font-weight:400;font-style:italic;font-size:clamp(34px,4.6vw,52px);line-height:.9;letter-spacing:.005em;color:var(--paper);text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.brand .sub{display:flex;flex-wrap:wrap;gap:2px 12px;align-items:baseline;margin:9px 0 0;font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold-l)}
+.brand .sub i{font-size:12px;letter-spacing:.04em;text-transform:none;color:rgba(244,236,218,.55)}
+.hint{margin:0;max-width:44ch;text-wrap:balance;text-align:right;font-style:italic;font-size:clamp(13px,1.25vw,16px);line-height:1.35;color:rgba(244,236,218,.78);min-height:2.7em}
+.hint b{font-weight:400;color:var(--gold-l)}
+.side{max-width:44ch}
+.keys{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px 16px;margin:8px 0 0;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,236,218,.46)}
+.keys span{white-space:nowrap}
+.keys kbd{display:inline-block;min-width:1.9em;margin:0 2px;padding:2px 4px 1px;border:1px solid rgba(201,162,77,.5);border-radius:4px;font:inherit;text-align:center;color:var(--gold-l);letter-spacing:.04em}
+
+/* ---------- gilded tray ---------- */
+.stage{position:relative;min-height:0;padding:0 clamp(10px,2vw,30px);display:grid}
+.frame{position:relative;min-height:0;padding:6px;border-radius:5px;
+  background:linear-gradient(135deg,#f7e5a6 0%,#b98b2c 20%,#f3de97 42%,#8c6a24 64%,#ecd282 84%,#a47c26 100%);
+  box-shadow:0 30px 70px rgba(0,0,0,.6),0 4px 12px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.5)}
+.tray{position:relative;width:100%;height:100%;overflow:hidden;border-radius:2px;background:var(--paper);touch-action:none;cursor:crosshair;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;outline-offset:-4px}
+.tray.nocursor{cursor:none}
+.tray canvas,.paper,.fibres,.cur{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.paper{background:
+  radial-gradient(60% 50% at 18% 22%,rgba(255,252,242,.6),transparent 70%),
+  radial-gradient(55% 60% at 82% 30%,rgba(226,200,150,.26),transparent 70%),
+  radial-gradient(70% 55% at 55% 92%,rgba(255,250,236,.5),transparent 72%),
+  radial-gradient(40% 40% at 6% 90%,rgba(220,192,140,.22),transparent 70%),
+  radial-gradient(50% 45% at 96% 94%,rgba(226,200,150,.24),transparent 70%),
+  #f4ecda}
+.fibres{background-image:var(--fibre,none);background-size:320px 320px;background-repeat:repeat}
+.tray::before{content:"";position:absolute;inset:11px;z-index:1;pointer-events:none;border:1px solid rgba(201,162,77,.5);border-radius:2px;box-shadow:0 0 0 1px rgba(255,244,205,.12)}
+.cur{overflow:hidden}
+.skim{position:absolute;top:0;bottom:0;left:0;width:56px;transform:translateX(-140px);pointer-events:none;opacity:0;background:linear-gradient(90deg,rgba(244,236,218,0),rgba(250,244,230,.93) 76%,#fffffa 94%,rgba(120,96,50,.4) 100%)}
+.skim.on{opacity:1}
+.tray::after{content:"";position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 70px rgba(72,48,12,.30),inset 0 0 0 1px rgba(255,244,205,.28),inset 0 2px 6px rgba(50,30,5,.35)}
+.corner{position:absolute;width:clamp(30px,4.2vw,54px);height:auto;pointer-events:none;z-index:2;filter:drop-shadow(0 1px 1px rgba(60,35,5,.5))}
+.corner.c1{left:8px;top:8px}
+.corner.c2{right:8px;top:8px;transform:scaleX(-1)}
+.corner.c3{left:8px;bottom:8px;transform:scaleY(-1)}
+.corner.c4{right:8px;bottom:8px;transform:scale(-1,-1)}
+.plaque{position:absolute;left:50%;bottom:12px;z-index:3;transform:translateX(-50%);margin:0;padding:7px 16px 6px;border-radius:999px;background:rgba(244,236,218,.92);color:var(--ink);font-size:13px;font-style:italic;letter-spacing:.02em;box-shadow:0 6px 18px rgba(20,12,0,.35),inset 0 0 0 1px rgba(201,162,77,.7);pointer-events:none;opacity:0;transition:opacity .6s ease;white-space:nowrap}
+.plaque.show{opacity:1}
+
+/* ---------- dock ---------- */
+.dock{position:relative;z-index:3;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 18px;width:max-content;max-width:calc(100% - 20px);margin:14px auto max(16px,env(safe-area-inset-bottom));padding:9px 18px;border-radius:999px;
+  background:linear-gradient(180deg,rgba(250,244,229,.97),rgba(238,227,200,.96));color:var(--ink);border:1px solid rgba(201,162,77,.85);
+  box-shadow:0 14px 34px rgba(0,0,0,.5),0 2px 0 rgba(255,255,255,.55) inset,0 -2px 0 rgba(140,106,36,.25) inset}
+.grp{display:flex;align-items:center;gap:8px}
+.dock .lbl{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:rgba(22,48,43,.66)}
+.sep{width:1px;align-self:stretch;min-height:28px;background:linear-gradient(180deg,transparent,rgba(140,106,36,.55),transparent)}
+.pigments{gap:9px}
+.sw{position:relative;width:30px;height:30px;padding:0;border-radius:50%;border:2px solid rgba(22,48,43,.3);background:var(--c);cursor:pointer;
+  box-shadow:inset 0 -4px 6px rgba(0,0,0,.26),inset 0 3px 4px rgba(255,255,255,.4),0 1px 2px rgba(0,0,0,.25);transition:transform .18s cubic-bezier(.3,1.6,.5,1),box-shadow .18s}
+.sw::after{content:"";position:absolute;inset:-7px;border-radius:50%}
+.sw:hover{transform:translateY(-2px)}
+.sw[aria-checked="true"]{transform:translateY(-3px) scale(1.14);border-color:var(--gold-d);box-shadow:inset 0 -4px 6px rgba(0,0,0,.26),inset 0 3px 4px rgba(255,255,255,.4),0 0 0 3px rgba(244,236,218,1),0 0 0 4.5px var(--gold-d),0 6px 10px rgba(0,0,0,.3)}
+.sw[data-cream]{border-color:rgba(140,106,36,.7)}
+.seg{display:inline-flex;border:1px solid rgba(22,48,43,.4);border-radius:999px;overflow:hidden;background:rgba(255,255,255,.35)}
+.seg button{min-height:40px;padding:0 15px;border:0;background:transparent;font-size:11px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;transition:background-color .15s,color .15s}
+.seg button+button{border-left:1px solid rgba(22,48,43,.22)}
+.seg button[aria-checked="true"]{background:var(--ink);color:var(--paper)}
+.seg button:not([aria-checked="true"]):hover{background:rgba(22,48,43,.09)}
+.size{display:flex;align-items:center;gap:9px}
+.size input{width:104px;height:26px;margin:0;-webkit-appearance:none;appearance:none;background:transparent;cursor:pointer}
+.size input::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--gold-d),var(--gold))}
+.size input::-moz-range-track{height:2px;background:linear-gradient(90deg,var(--gold-d),var(--gold))}
+.size input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:18px;height:18px;margin-top:-8px;border-radius:50%;border:1px solid var(--gold-d);background:radial-gradient(circle at 35% 30%,#fff9e2,#d8b45c 62%,#a47c26);box-shadow:0 1px 3px rgba(0,0,0,.45)}
+.size input::-moz-range-thumb{width:16px;height:16px;border-radius:50%;border:1px solid var(--gold-d);background:radial-gradient(circle at 35% 30%,#fff9e2,#d8b45c 62%,#a47c26);box-shadow:0 1px 3px rgba(0,0,0,.45)}
+.size input:focus-visible{outline:2px solid var(--gold-d);outline-offset:4px;border-radius:6px}
+.act button{min-height:40px;padding:0 15px;border-radius:999px;border:1px solid rgba(22,48,43,.5);background:transparent;font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;white-space:nowrap;transition:background-color .15s,color .15s,transform .15s}
+.act button:hover{background:rgba(22,48,43,.1)}
+.act button:active{transform:translateY(1px)}
+.act button.primary{background:var(--ink);color:var(--paper);border-color:var(--ink);box-shadow:0 3px 8px rgba(22,48,43,.4)}
+.act button.primary:hover{background:#0c211d}
+.act button:disabled{opacity:.4;cursor:default}
+.act .icon{min-width:40px;padding:0 10px;font-size:15px;letter-spacing:0}
+.dock :focus-visible{outline-color:var(--gold-d)}
+
+.toast{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));z-index:9;transform:translate(-50%,-200%);opacity:0;visibility:hidden;padding:9px 18px 8px;border-radius:999px;background:rgba(244,236,218,.96);color:var(--ink);font-size:14px;font-style:italic;box-shadow:0 10px 26px rgba(0,0,0,.45),inset 0 0 0 1px rgba(201,162,77,.8);transition:transform .45s cubic-bezier(.3,1.4,.5,1),opacity .3s,visibility 0s .45s;pointer-events:none}
+.toast.show{transform:translate(-50%,0);opacity:1;visibility:visible;transition-delay:0s}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media (max-width:820px),(hover:none){
+  .keys{display:none}
+}
+@media (max-width:820px){
+  .top{align-items:flex-start;padding-bottom:8px}
+  .hint{font-size:12.5px;max-width:24ch;min-height:0}
+  .dock{border-radius:26px;gap:8px 12px;padding:9px 12px;width:auto}
+  .sep{display:none}
+  .pigments{width:100%;justify-content:center}
+  .size input{width:82px}
+}
+@media (max-width:480px){
+  .brand .sub i{display:none}
+  .seg button{padding:0 11px;letter-spacing:.16em}
+  .act{gap:6px}
+  .act button{padding:0 9px;font-size:10px;letter-spacing:.1em}
+  .act .icon{min-width:38px;padding:0 6px;font-size:15px}
+  .size .lbl{display:none}
+  .dock{gap:6px 8px;padding:7px 10px;margin-top:10px}
+  .pigments{gap:7px}
+  .sw{width:27px;height:27px}
+  .plaque{font-size:12px;bottom:8px;max-width:calc(100% - 28px);overflow:hidden;text-overflow:ellipsis}
+}
+@media (max-height:520px){
+  .top{padding-block:6px 4px}
+  .brand h1{font-size:28px}
+  .brand .sub,.hint{display:none}
+  .dock{margin-block:6px;padding:5px 12px;gap:6px 12px}
+  .sw{width:24px;height:24px}
+  .seg button,.act button{min-height:36px}
+  .sep{display:none}
+  .size input{width:70px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.001ms!important;animation-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <h1>Ebru</h1>
+    <p class="sub"><span>Marbling Studio</span><i>from the Persian <em>ebr</em>, &ldquo;cloud&rdquo;</i></p>
+  </div>
+  <div class="side">
+    <p class="hint" id="hint" aria-live="polite"></p>
+    <p class="keys" aria-hidden="true"><span><kbd>D</kbd><kbd>C</kbd><kbd>S</kbd> tools</span><span><kbd>1</kbd>&ndash;<kbd>7</kbd> pigments</span><span><kbd>Z</kbd> undo</span><span><kbd>N</kbd> new</span></p>
+  </div>
+</header>
+
+<main class="stage">
+  <div class="frame">
+    <div class="tray" id="tray" tabindex="0" role="application" aria-label="Marbling tray. Press and hold to drop ink. Keyboard: arrow keys move the brush, hold Space to drop ink, comb or swirl with the chosen tool.">
+      <div class="paper" aria-hidden="true"></div>
+      <canvas id="ink" aria-hidden="true"></canvas>
+      <div class="fibres" aria-hidden="true"></div>
+      <div class="skim" id="skim" aria-hidden="true"></div>
+      <svg class="cur" id="cur" aria-hidden="true">
+        <g id="cDrop" display="none"><circle id="cdF" r="20" fill="#23306b" fill-opacity=".22"/><circle id="cdA" r="20" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="3"/><circle id="cdB" r="20" fill="none" stroke="rgba(22,30,28,.8)" stroke-width="1.2"/><circle id="cdC" r="3.6" fill="#23306b" stroke="#fff" stroke-width="1"/></g>
+        <g id="cComb" display="none"></g>
+        <g id="cSwirl" display="none"><path id="csA" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="3.2" stroke-linecap="round"/><path id="csB" fill="none" stroke="rgba(22,30,28,.8)" stroke-width="1.4" stroke-linecap="round"/></g>
+      </svg>
+      <svg class="corner c1" viewBox="0 0 60 60" aria-hidden="true"><use href="#orn"/></svg>
+      <svg class="corner c2" viewBox="0 0 60 60" aria-hidden="true"><use href="#orn"/></svg>
+      <svg class="corner c3" viewBox="0 0 60 60" aria-hidden="true"><use href="#orn"/></svg>
+      <svg class="corner c4" viewBox="0 0 60 60" aria-hidden="true"><use href="#orn"/></svg>
+      <p class="plaque" id="plaque" aria-hidden="true"></p>
+    </div>
+  </div>
+</main>
+
+<div class="dock" role="toolbar" aria-label="Marbling tools">
+  <div class="grp pigments" id="pigments" role="radiogroup" aria-label="Pigment">
+    <button class="sw" type="button" role="radio" aria-checked="true" aria-label="Indigo" title="Indigo (1)" style="--c:#23306b"></button>
+    <button class="sw" type="button" role="radio" aria-checked="false" aria-label="Vermilion" title="Vermilion (2)" style="--c:#d8452b"></button>
+    <button class="sw" type="button" role="radio" aria-checked="false" aria-label="Turquoise" title="Turquoise (3)" style="--c:#1f9a9a"></button>
+    <button class="sw" type="button" role="radio" aria-checked="false" aria-label="Ochre" title="Ochre (4)" style="--c:#d9a441"></button>
+    <button class="sw" type="button" role="radio" aria-checked="false" aria-label="Blush" title="Blush (5)" style="--c:#e9b7a5"></button>
+    <button class="sw" type="button" role="radio" aria-checked="false" aria-label="Black-green" title="Black-green (6)" style="--c:#16302b"></button>
+    <button class="sw" type="button" role="radio" aria-checked="false" aria-label="Cream" title="Cream (7)" data-cream style="--c:#f7f0df"></button>
+  </div>
+  <span class="sep" aria-hidden="true"></span>
+  <div class="seg" id="tools" role="radiogroup" aria-label="Tool">
+    <button type="button" role="radio" aria-checked="true" title="Drop ink (D)" aria-keyshortcuts="D">Drop</button>
+    <button type="button" role="radio" aria-checked="false" title="Comb or rake (C)" aria-keyshortcuts="C">Comb</button>
+    <button type="button" role="radio" aria-checked="false" title="Swirl (S)" aria-keyshortcuts="S">Swirl</button>
+  </div>
+  <div class="size">
+    <label class="lbl" for="size" id="sizeLbl">Drop size</label>
+    <input id="size" type="range" min="0" max="100" value="55">
+  </div>
+  <span class="sep" aria-hidden="true"></span>
+  <div class="grp act">
+    <button class="icon" id="undo" type="button" aria-label="Undo last action" title="Undo (Z)" aria-keyshortcuts="Z" disabled>&#8630;</button>
+    <button id="clear" type="button" title="Skim the tray clean">Clear tray</button>
+    <button id="fresh" class="primary" type="button" title="Compose a new pattern (N)" aria-keyshortcuts="N">New pattern</button>
+    <button class="icon" id="save" type="button" aria-label="Save the sheet as a PNG" title="Save as PNG">&#8681;</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7e5a6"/><stop offset=".45" stop-color="#c9a24d"/><stop offset="1" stop-color="#8c6a24"/>
+    </linearGradient>
+    <symbol id="orn" viewBox="0 0 60 60">
+      <path d="M3 57 V24 Q3 3 24 3 H57" fill="none" stroke="url(#gold)" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M9 57 V27 Q9 9 27 9 H57" fill="none" stroke="url(#gold)" stroke-width="1" stroke-linecap="round"/>
+      <path d="M16 16 q6 0 6 6 q0 -6 6 -6 q-6 0 -6 -6 q0 6 -6 6z" fill="url(#gold)"/>
+      <circle cx="3" cy="3" r="2.6" fill="url(#gold)"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+(() => {
+'use strict';
+/* =========================================================
+   helpers
+   ========================================================= */
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const hex2rgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+
+/* ---- the seven pigments ---- */
+const INKS = [
+  { name: 'Indigo', hex: '#23306b' }, { name: 'Vermilion', hex: '#d8452b' }, { name: 'Turquoise', hex: '#1f9a9a' },
+  { name: 'Ochre', hex: '#d9a441' }, { name: 'Blush', hex: '#e9b7a5' }, { name: 'Black-green', hex: '#16302b' }, { name: 'Cream', hex: '#f7f0df' }
+];
+INKS.forEach(k => {
+  const c = hex2rgb(k.hex);
+  const dk = (f, a) => 'rgba(' + Math.round(c[0] * f) + ',' + Math.round(c[1] * f) + ',' + Math.round(c[2] * f) + ',' + a + ')';
+  k.edge = dk(.6, .6); k.rim = dk(.55, .2);
+});
+INKS[6].edge = 'rgba(150,128,84,.55)'; INKS[6].rim = 'rgba(150,128,84,.16)';
+INKS.forEach((k, i) => {   // packed RGBA bytes for the WebGL edge pass
+  const c = hex2rgb(k.hex), f = i === 6 ? 0 : .58, e = i === 6 ? [150, 128, 84] : [c[0] * f, c[1] * f, c[2] * f];
+  k.edgeU = ((Math.round(e[0]) | Math.round(e[1]) << 8 | Math.round(e[2]) << 16 | Math.round(.86 * 255) << 24) >>> 0);
+  k.fill = [c[0] / 255, c[1] / 255, c[2] / 255];
+});
+
+/* =========================================================
+   canvases
+   ========================================================= */
+const tray = $('#tray');
+let cvInk = $('#ink');
+let gInk = null;      // 2D fallback context, only used when WebGL is unavailable
+let W = 0, H = 0, dpr = 1, U = 1;
+const polys = [];          // {c: pigment index, a: [x0,y0,x1,y1,...]} in draw order
+let dirty = true, uiDirty = true;
+const CAP = 8000;          // soft cap on total points
+const LMAX = 5;            // longest edge before subdividing (css px)
+
+/* ---- paper fibres: one seamless tile, painted once, repeated by CSS ---- */
+let fibreTile = null;
+function makeFibreTile() {
+  const N = 320, S = 2, c = document.createElement('canvas'); c.width = c.height = N * S;
+  const g = c.getContext('2d'); g.scale(S, S); g.lineCap = 'round';
+  const R = mulberry32(99), n = Math.round(N * N / 420);
+  for (let i = 0; i < n; i++) {
+    const x = R() * N, y = R() * N, a = R() * TAU, l = 5 + R() * 24, bend = (R() - .5) * l * .7, dark = R() < .6;
+    const col = dark ? 'rgba(96,72,38,' + (.035 + R() * .07).toFixed(3) + ')' : 'rgba(255,251,238,' + (.08 + R() * .14).toFixed(3) + ')', lw = .5 + R() * .7;
+    const cx = x + Math.cos(a) * l / 2 - Math.sin(a) * bend, cy = y + Math.sin(a) * l / 2 + Math.cos(a) * bend, ex = x + Math.cos(a) * l, ey = y + Math.sin(a) * l;
+    for (let ox = -N; ox <= N; ox += N) for (let oy = -N; oy <= N; oy += N) {
+      if (Math.max(x, ex) + ox < -2 || Math.min(x, ex) + ox > N + 2 || Math.max(y, ey) + oy < -2 || Math.min(y, ey) + oy > N + 2) continue;
+      g.strokeStyle = col; g.lineWidth = lw; g.beginPath(); g.moveTo(x + ox, y + oy); g.quadraticCurveTo(cx + ox, cy + oy, ex + ox, ey + oy); g.stroke();
+    }
+  }
+  const m = Math.round(N * N / 1500);
+  for (let i = 0; i < m; i++) { g.fillStyle = 'rgba(70,52,30,' + (.05 + R() * .09).toFixed(3) + ')'; g.fillRect(Math.floor(R() * N), Math.floor(R() * N), 1, 1); }
+  fibreTile = c;
+  document.documentElement.style.setProperty('--fibre', 'url(' + c.toDataURL() + ')');
+}
+function resize(force) {
+  const r = tray.getBoundingClientRect(), nw = Math.round(r.width), nh = Math.round(r.height);
+  if (!nw || !nh) return;
+  const nd = Math.min(2, window.devicePixelRatio || 1);
+  if (!force && nw === W && nh === H && nd === dpr) return;
+  const ow = W, oh = H;
+  W = nw; H = nh; dpr = nd;
+  U = clamp(Math.min(W, H) / 720, .58, 1.5);
+  cvInk.width = Math.round(W * dpr); cvInk.height = Math.round(H * dpr);
+  if (ow && polys.length) {       // keep the composition when the tray changes shape
+    const k = Math.min(W, H) / Math.min(ow, oh), ocx = ow / 2, ocy = oh / 2, ncx = W / 2, ncy = H / 2;
+    for (const p of polys) { const a = p.a; for (let i = 0; i < a.length; i += 2) { a[i] = ncx + (a[i] - ocx) * k; a[i + 1] = ncy + (a[i + 1] - ocy) * k; } }
+  }
+  dirty = uiDirty = true;
+}
+
+/* =========================================================
+   the maths of marbling
+   ========================================================= */
+const circle = (cx, cy, r, n) => { const a = new Array(n * 2); for (let i = 0; i < n; i++) { const t = i / n * TAU; a[2 * i] = cx + Math.cos(t) * r; a[2 * i + 1] = cy + Math.sin(t) * r; } return a; };
+const totalPts = () => { let n = 0; for (const p of polys) n += p.a.length >> 1; return n; };
+
+/* a drop of area pi*r2 lands at c: p' = c + (p - c) * sqrt(1 + r2/|p-c|^2)  (area-preserving) */
+function pushDrop(cx, cy, r2) {
+  for (let k = 0; k < polys.length; k++) {
+    const a = polys[k].a;
+    for (let i = 0; i < a.length; i += 2) {
+      let dx = a[i] - cx, dy = a[i + 1] - cy, d2 = dx * dx + dy * dy;
+      if (d2 < 1e-4) { dx = .01; d2 = 1e-4; }
+      const f = Math.sqrt(1 + r2 / d2);
+      a[i] = cx + dx * f; a[i + 1] = cy + dy * f;
+    }
+  }
+}
+/* a comb of (2*half+1) tines, spacing S, centred on (bx,by), axis (ux,uy), moved by (mx,my):
+   p' = p + m * FMAX * exp(-d/lambda) * envelope(along)      d = distance to the nearest tine line.
+   FMAX < 1 lets the comb overtake the ink instead of bulldozing it, so every layer is pulled a bounded
+   distance (about 4 sigma) and the wake stays a clean run of arches. */
+const FMAX = .7;
+function comb(bx, by, ux, uy, mx, my, S, half, lam, sig) {
+  const nx = -uy, ny = ux, inv2s = 1 / (2 * sig * sig), reach = sig * 3.2, il = 1 / lam;
+  for (let k = 0; k < polys.length; k++) {
+    const a = polys[k].a;
+    for (let i = 0; i < a.length; i += 2) {
+      const vx = a[i] - bx, vy = a[i + 1] - by;
+      const s = vx * ux + vy * uy;
+      if (s > reach || s < -reach) continue;
+      const w = vx * nx + vy * ny;
+      let q = Math.round(w / S); if (q > half) q = half; else if (q < -half) q = -half;
+      const d = Math.abs(w - q * S);
+      const f = FMAX * Math.exp(-d * il - s * s * inv2s);
+      if (f < .004) continue;
+      a[i] += mx * f; a[i + 1] += my * f;
+    }
+  }
+}
+/* twist: rotate by ang * exp(-d^2 / 2 sigma^2) around c  (area-preserving too) */
+function swirl(cx, cy, ang, sig) {
+  const inv = 1 / (2 * sig * sig), lim = sig * sig * 18;
+  for (let k = 0; k < polys.length; k++) {
+    const a = polys[k].a;
+    for (let i = 0; i < a.length; i += 2) {
+      const dx = a[i] - cx, dy = a[i + 1] - cy, d2 = dx * dx + dy * dy;
+      if (d2 > lim) continue;
+      const t = ang * Math.exp(-d2 * inv), c = Math.cos(t), s = Math.sin(t);
+      a[i] = cx + dx * c - dy * s; a[i + 1] = cy + dx * s + dy * c;
+    }
+  }
+}
+/* subdivide long edges with the 4-point interpolatory scheme so curves stay smooth */
+function refine(lmax) {
+  const L2 = lmax * lmax; let changed = false;
+  for (let k = 0; k < polys.length; k++) {
+    const p = polys[k], a = p.a, n = a.length >> 1;
+    let need = false;
+    for (let i = 0; i < n; i++) { const j = i + 1 === n ? 0 : i + 1, dx = a[2 * j] - a[2 * i], dy = a[2 * j + 1] - a[2 * i + 1]; if (dx * dx + dy * dy > L2) { need = true; break; } }
+    if (!need) continue;
+    changed = true;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const i0 = (i + n - 1) % n, i2 = (i + 1) % n, i3 = (i + 2) % n;
+      const x1 = a[2 * i], y1 = a[2 * i + 1], x2 = a[2 * i2], y2 = a[2 * i2 + 1];
+      out.push(x1, y1);
+      const dx = x2 - x1, dy = y2 - y1, d2 = dx * dx + dy * dy;
+      if (d2 > L2) {
+        let qx = (-a[2 * i0] + 9 * x1 + 9 * x2 - a[2 * i3]) / 16, qy = (-a[2 * i0 + 1] + 9 * y1 + 9 * y2 - a[2 * i3 + 1]) / 16;
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, ex = qx - mx, ey = qy - my, e2 = ex * ex + ey * ey, lim = .09 * d2;
+        if (e2 > lim) { const s = Math.sqrt(lim / e2); qx = mx + ex * s; qy = my + ey * s; }
+        out.push(qx, qy);
+      }
+    }
+    p.a = out;
+  }
+  return changed;
+}
+/* thin out nearly-straight stretches when the point budget is exceeded */
+function decimate(tol, join) {
+  const j2 = join * join;
+  for (const p of polys) {
+    const a = p.a, n = a.length >> 1; if (n <= 30) continue;
+    const out = []; let skip = false;
+    for (let i = 0; i < n; i++) {
+      if (skip) { skip = false; out.push(a[2 * i], a[2 * i + 1]); continue; }
+      const i0 = (i + n - 1) % n, i2 = (i + 1) % n;
+      const x0 = a[2 * i0], y0 = a[2 * i0 + 1], x1 = a[2 * i], y1 = a[2 * i + 1], x2 = a[2 * i2], y2 = a[2 * i2 + 1];
+      const jx = x2 - x0, jy = y2 - y0, jl = jx * jx + jy * jy;
+      if (jl < j2 && jl > 1e-9 && Math.abs((x1 - x0) * jy - (y1 - y0) * jx) / Math.sqrt(jl) < tol) { skip = true; continue; }
+      out.push(x1, y1);
+    }
+    if (out.length >= 60) p.a = out;
+  }
+}
+function budget() {
+  let t = totalPts(); if (t <= CAP) return;
+  let tol = .2, join = 14;
+  for (let pass = 0; pass < 7 && t > CAP * .88; pass++) { decimate(tol, join); t = totalPts(); tol *= 1.7; join += 4; }
+}
+function settle() { for (let i = 0; i < 4; i++) if (!refine(LMAX)) break; budget(); dirty = true; }
+
+/* =========================================================
+   drawing the polygons
+   ========================================================= */
+let skim = null;   // {x, then} while the tray is being skimmed clean
+
+/* ---- renderer 1: WebGL. Fills use the stencil-then-cover trick (any polygon, no triangulation);
+        outlines are feathered triangle strips, so edges stay smooth without MSAA. ---- */
+let gl = null, glOK = false, prFill = null, prEdge = null, bFill = null, bEdge = null;
+let uF = {}, uE = {}, fillArr = new Float32Array(1 << 15), edgeF = new Float32Array(1 << 16), edgeU = new Uint32Array(edgeF.buffer);
+const FILL_VS = 'attribute vec2 p;uniform vec2 res;void main(){vec2 c=p/res*2.-1.;gl_Position=vec4(c.x,-c.y,0.,1.);}';
+const FILL_FS = 'precision mediump float;uniform vec3 col;void main(){gl_FragColor=vec4(col,1.);}';
+const EDGE_VS = 'attribute vec2 p;attribute vec2 nn;attribute float sd;attribute vec4 col;uniform vec2 res;uniform float hw;varying float vs;varying vec4 vc;void main(){vec2 q=p+nn*hw;vec2 c=q/res*2.-1.;gl_Position=vec4(c.x,-c.y,0.,1.);vs=sd;vc=col;}';
+const EDGE_FS = 'precision mediump float;varying float vs;varying vec4 vc;uniform float core;uniform float alpha;void main(){float a=(1.-smoothstep(core,1.,abs(vs)))*alpha*vc.a;gl_FragColor=vec4(vc.rgb*a,a);}';
+function glProgram(vs, fs, attribs) {
+  const mk = (t, src) => { const o = gl.createShader(t); gl.shaderSource(o, src); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) { console.warn('shader:', gl.getShaderInfoLog(o)); return null; } return o; };
+  const v = mk(gl.VERTEX_SHADER, vs), f = mk(gl.FRAGMENT_SHADER, fs); if (!v || !f) return null;
+  const pr = gl.createProgram(); gl.attachShader(pr, v); gl.attachShader(pr, f);
+  attribs.forEach((n, i) => gl.bindAttribLocation(pr, i, n));
+  gl.linkProgram(pr); if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) { console.warn('link:', gl.getProgramInfoLog(pr)); return null; }
+  return pr;
+}
+function initGL() {
+  try { gl = cvInk.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false, stencil: true, depth: false, preserveDrawingBuffer: false, powerPreference: 'low-power' }); } catch (e) { gl = null; }
+  if (!gl) return false;
+  prFill = glProgram(FILL_VS, FILL_FS, ['p']); prEdge = glProgram(EDGE_VS, EDGE_FS, ['p', 'nn', 'sd', 'col']);
+  if (!prFill || !prEdge) return false;
+  const u = (pr, n) => gl.getUniformLocation(pr, n);
+  uF = { res: u(prFill, 'res'), col: u(prFill, 'col') }; uE = { res: u(prEdge, 'res'), hw: u(prEdge, 'hw'), core: u(prEdge, 'core'), alpha: u(prEdge, 'alpha') };
+  bFill = gl.createBuffer(); bEdge = gl.createBuffer();
+  glOK = true; return true;
+}
+function useFallbackCanvas() {   // WebGL is gone or broken: swap in a fresh canvas and paint with the 2D API
+  const c = document.createElement('canvas'); c.id = 'ink'; c.setAttribute('aria-hidden', 'true');
+  cvInk.replaceWith(c); cvInk = c; gl = null; glOK = false; gInk = c.getContext('2d'); resize(true);
+}
+function renderGL() {
+  const cw = cvInk.width, ch = cvInk.height;
+  gl.viewport(0, 0, cw, ch);
+  gl.disable(gl.SCISSOR_TEST); gl.stencilMask(255); gl.clearColor(0, 0, 0, 0); gl.clearStencil(0); gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
+  if (!polys.length) return;
+  if (skim) { const x = clamp(Math.round(skim.x * dpr), 0, cw); gl.enable(gl.SCISSOR_TEST); gl.scissor(x, 0, cw - x, ch); }
+  let nf = 0, ne = 0;
+  for (let k = 0; k < polys.length; k++) { const n = polys[k].a.length >> 1; if (n < 3) continue; nf += n + 6; ne += 2 * (n + 1); }
+  if (fillArr.length < nf * 2) fillArr = new Float32Array(nf * 3);
+  if (edgeF.length < ne * 6) { edgeF = new Float32Array(ne * 9); edgeU = new Uint32Array(edgeF.buffer); }
+  let fo = 0, eo = 0;
+  const HW = 1;   // normals are unit length; the shader scales them by the line half-width
+  for (let k = 0; k < polys.length; k++) {
+    const a = polys[k].a, n = a.length >> 1; if (n < 3) continue;
+    const col = INKS[polys[k].c].edgeU;
+    let sx = 0, sy = 0, x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (let i = 0; i < n; i++) { const x = a[2 * i], y = a[2 * i + 1]; sx += x; sy += y; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    fillArr[fo++] = sx / n; fillArr[fo++] = sy / n;
+    for (let i = 0; i < n; i++) { fillArr[fo++] = a[2 * i]; fillArr[fo++] = a[2 * i + 1]; }
+    fillArr[fo++] = a[0]; fillArr[fo++] = a[1];
+    fillArr[fo++] = x0 - 4; fillArr[fo++] = y0 - 4; fillArr[fo++] = x1 + 4; fillArr[fo++] = y0 - 4; fillArr[fo++] = x0 - 4; fillArr[fo++] = y1 + 4; fillArr[fo++] = x1 + 4; fillArr[fo++] = y1 + 4;
+    for (let i = 0; i <= n; i++) {
+      const j = i % n, ip = (j + n - 1) % n, inx = (j + 1) % n;
+      const x = a[2 * j], y = a[2 * j + 1];
+      let d1x = x - a[2 * ip], d1y = y - a[2 * ip + 1], d2x = a[2 * inx] - x, d2y = a[2 * inx + 1] - y;
+      let l1 = Math.hypot(d1x, d1y) || 1, l2 = Math.hypot(d2x, d2y) || 1;
+      d1x /= l1; d1y /= l1; d2x /= l2; d2y /= l2;
+      let nx = -d1y - d2y, ny = d1x + d2x, nl = Math.hypot(nx, ny);
+      if (nl < 1e-4) { nx = -d1y; ny = d1x; nl = 1; }
+      nx /= nl; ny /= nl;
+      const dot = nx * -d1y + ny * d1x, m = 1 / Math.max(dot, .45);
+      nx *= m * HW; ny *= m * HW;
+      edgeF[eo] = x; edgeF[eo + 1] = y; edgeF[eo + 2] = nx; edgeF[eo + 3] = ny; edgeF[eo + 4] = 1; edgeU[eo + 5] = col; eo += 6;
+      edgeF[eo] = x; edgeF[eo + 1] = y; edgeF[eo + 2] = -nx; edgeF[eo + 3] = -ny; edgeF[eo + 4] = -1; edgeU[eo + 5] = col; eo += 6;
+    }
+  }
+  // fills
+  gl.enable(gl.STENCIL_TEST); gl.disable(gl.BLEND);
+  gl.useProgram(prFill); gl.uniform2f(uF.res, W, H);
+  gl.bindBuffer(gl.ARRAY_BUFFER, bFill); gl.bufferData(gl.ARRAY_BUFFER, fillArr.subarray(0, fo), gl.STREAM_DRAW);
+  gl.enableVertexAttribArray(0); gl.disableVertexAttribArray(1); gl.disableVertexAttribArray(2); gl.disableVertexAttribArray(3);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  let off = 0;
+  for (let k = 0; k < polys.length; k++) {
+    const n = polys[k].a.length >> 1; if (n < 3) continue;
+    gl.colorMask(false, false, false, false);
+    gl.stencilFunc(gl.ALWAYS, 0, 255);
+    gl.stencilOpSeparate(gl.FRONT, gl.KEEP, gl.KEEP, gl.INCR_WRAP); gl.stencilOpSeparate(gl.BACK, gl.KEEP, gl.KEEP, gl.DECR_WRAP);
+    gl.drawArrays(gl.TRIANGLE_FAN, off, n + 2);
+    gl.colorMask(true, true, true, true);
+    gl.stencilFunc(gl.NOTEQUAL, 0, 255); gl.stencilOp(gl.ZERO, gl.ZERO, gl.ZERO);
+    const f = INKS[polys[k].c].fill; gl.uniform3f(uF.col, f[0], f[1], f[2]);
+    gl.drawArrays(gl.TRIANGLE_STRIP, off + n + 2, 4);
+    off += n + 6;
+  }
+  // outlines: a soft meniscus shadow, then a crisp thin line
+  gl.disable(gl.STENCIL_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  gl.useProgram(prEdge); gl.uniform2f(uE.res, W, H);
+  gl.bindBuffer(gl.ARRAY_BUFFER, bEdge); gl.bufferData(gl.ARRAY_BUFFER, edgeF.subarray(0, eo), gl.STREAM_DRAW);
+  for (let i = 0; i < 4; i++) gl.enableVertexAttribArray(i);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 24, 0); gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 24, 8);
+  gl.vertexAttribPointer(2, 1, gl.FLOAT, false, 24, 16); gl.vertexAttribPointer(3, 4, gl.UNSIGNED_BYTE, true, 24, 20);
+  for (let pass = 0; pass < 2; pass++) {
+    if (pass === 0) { gl.uniform1f(uE.hw, 3.6); gl.uniform1f(uE.core, 0); gl.uniform1f(uE.alpha, .2); }
+    else { gl.uniform1f(uE.hw, 1.5); gl.uniform1f(uE.core, .42); gl.uniform1f(uE.alpha, .9); }
+    let v = 0;
+    for (let k = 0; k < polys.length; k++) { const n = polys[k].a.length >> 1; if (n < 3) continue; gl.drawArrays(gl.TRIANGLE_STRIP, v, 2 * (n + 1)); v += 2 * (n + 1); }
+  }
+}
+
+/* ---- renderer 2: plain Canvas 2D, used only when WebGL is not available ---- */
+function render2D() {
+  const g = gInk; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  g.lineJoin = 'round';
+  g.save();
+  if (skim) { g.beginPath(); g.rect(skim.x, 0, W - skim.x + 2, H); g.clip(); }
+  for (let k = 0; k < polys.length; k++) {
+    const p = polys[k], a = p.a, n = a.length >> 1; if (n < 3) continue;
+    const ink = INKS[p.c];
+    g.beginPath();
+    g.moveTo((a[2 * n - 2] + a[0]) / 2, (a[2 * n - 1] + a[1]) / 2);
+    for (let i = 0; i < n; i++) { const j = i + 1 === n ? 0 : i + 1; g.quadraticCurveTo(a[2 * i], a[2 * i + 1], (a[2 * i] + a[2 * j]) / 2, (a[2 * i + 1] + a[2 * j + 1]) / 2); }
+    g.closePath();
+    g.fillStyle = ink.hex; g.fill();
+    g.lineWidth = 1.5; g.strokeStyle = ink.edge; g.stroke();
+  }
+  g.restore();
+}
+function render() { if (glOK) { if (gl.isContextLost()) return; renderGL(); } else if (gInk) render2D(); }
+
+/* =========================================================
+   state, history, tool sizes
+   ========================================================= */
+let colorIdx = 0, tool = 'drop', sizeV = .55;
+const history = [];
+const undoBtn = $('#undo');
+function snapshot() { history.push(polys.map(p => ({ c: p.c, a: p.a.slice() }))); if (history.length > 14) history.shift(); undoBtn.disabled = false; }
+function undo() {
+  if (!history.length) return;
+  if (demoRunning) stopDemo();
+  finishDrop(true);
+  const s = history.pop(); polys.length = 0; for (const p of s) polys.push(p);
+  undoBtn.disabled = !history.length; dirty = true; toast('Undone');
+}
+const R0 = () => lerp(13, 34, sizeV) * U;                  // smallest drop
+const RMAX = () => lerp(70, 250, sizeV) * U;               // largest drop when held
+const TINE = () => lerp(15, 58, sizeV) * U;                // comb tine spacing
+const SWIRL = () => lerp(46, 170, sizeV) * U;              // swirl radius
+
+/* =========================================================
+   live drops (held by the visitor or scripted)
+   ========================================================= */
+let cur = null;   // the drop that is growing under a finger
+function startDrop(cx, cy, c) {
+  const poly = { c, a: circle(cx, cy, 1.5, 180) }; polys.push(poly);
+  return { poly, cx, cy, r: 1.5 };
+}
+function growTo(d, newR) {
+  const dr2 = newR * newR - d.r * d.r;
+  if (dr2 > 0) { pushDrop(d.cx, d.cy, dr2); d.r = newR; dirty = true; }
+}
+function finishDrop(instant) {
+  if (!cur) return;
+  if (instant) { growTo(cur, Math.max(cur.r, cur.rmin || 0)); settle(); }
+  cur = null;
+}
+
+/* =========================================================
+   input (pointer events; keyboard drives the same state)
+   ========================================================= */
+const ptr = { down: false, id: null, kind: 'mouse', x: 0, y: 0, cx: 0, cy: 0, ux: 0, uy: 1, moved: false, t: 0, spin: 1, lastSpin: -1 };
+const cursor = { on: false, x: 0, y: 0 };
+const kb = { x: 0, y: 0, on: false, held: false };
+let demoRunning = false, userTouched = false;
+
+function local(e) { const r = tray.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+function beginStroke(x, y, kind) {
+  if (demoRunning) stopDemo();
+  finishDrop(true);
+  userTouched = true; hintNow();
+  snapshot();
+  ptr.down = true; ptr.kind = kind; ptr.x = ptr.cx = x; ptr.y = ptr.cy = y; ptr.t = 0; ptr.moved = false;
+  if (tool === 'drop') { cur = startDrop(x, y, colorIdx); cur.t = 0; cur.held = true; cur.rmin = R0(); cur.rmax = RMAX(); }
+  else if (tool === 'swirl') { ptr.spin = -ptr.lastSpin; ptr.lastSpin = ptr.spin; }
+  else { ptr.ux = ptr.uy = 0; ptr.dirSet = false; }
+  uiDirty = true;
+}
+function endStroke() {
+  if (!ptr.down) return;
+  ptr.down = false;
+  if (cur) cur.held = false;
+  uiDirty = true;
+}
+tray.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  if (ptr.down) return;
+  const [x, y] = local(e);
+  try { tray.setPointerCapture(e.pointerId); } catch (_) { /* ok */ }
+  ptr.id = e.pointerId; cursor.on = e.pointerType === 'mouse'; cursor.x = x; cursor.y = y;
+  beginStroke(x, y, e.pointerType);
+  e.preventDefault();
+});
+tray.addEventListener('pointermove', e => {
+  const [x, y] = local(e);
+  cursor.x = x; cursor.y = y; cursor.on = e.pointerType === 'mouse' || ptr.down;
+  if (ptr.down && e.pointerId === ptr.id) { ptr.x = x; ptr.y = y; }
+  uiDirty = true;
+});
+const up = e => { if (ptr.down && e.pointerId === ptr.id) { endStroke(); if (e.pointerType !== 'mouse') cursor.on = false; } };
+tray.addEventListener('pointerup', up);
+tray.addEventListener('pointercancel', up);
+tray.addEventListener('pointerleave', e => { if (!ptr.down) { cursor.on = false; uiDirty = true; } });
+tray.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') { cursor.on = true; uiDirty = true; } });
+tray.addEventListener('contextmenu', e => e.preventDefault());
+tray.addEventListener('wheel', e => { e.preventDefault(); setSize(clamp(sizeV * 100 - Math.sign(e.deltaY) * 5, 0, 100)); }, { passive: false });
+tray.addEventListener('focus', () => { if (!kb.on) { kb.on = true; if (!kb.x) { kb.x = W / 2; kb.y = H / 2; } cursor.x = kb.x; cursor.y = kb.y; cursor.on = true; uiDirty = true; } });
+tray.addEventListener('blur', () => { kb.on = false; if (ptr.down && ptr.kind === 'kb') endStroke(); if (!ptr.down) cursor.on = false; uiDirty = true; });
+tray.addEventListener('keydown', e => {
+  const step = (e.shiftKey ? 44 : 14) * U;
+  let dx = 0, dy = 0;
+  if (e.key === 'ArrowLeft') dx = -step; else if (e.key === 'ArrowRight') dx = step; else if (e.key === 'ArrowUp') dy = -step; else if (e.key === 'ArrowDown') dy = step;
+  else if ((e.key === ' ' || e.key === 'Enter') && !e.repeat && !ptr.down) { kb.held = true; beginStroke(kb.x, kb.y, 'kb'); e.preventDefault(); return; }
+  else return;
+  e.preventDefault();
+  kb.x = clamp(kb.x + dx, 0, W); kb.y = clamp(kb.y + dy, 0, H);
+  cursor.x = kb.x; cursor.y = kb.y; cursor.on = true; uiDirty = true;
+  if (ptr.down && ptr.kind === 'kb') { ptr.x = kb.x; ptr.y = kb.y; }
+});
+tray.addEventListener('keyup', e => { if ((e.key === ' ' || e.key === 'Enter') && ptr.kind === 'kb') { kb.held = false; endStroke(); } });
+
+/* per-frame work for the visitor's stroke */
+function stepStroke(dt) {
+  if (cur) {   // a drop being held or blooming
+    cur.t += dt;
+    let target;
+    if (cur.held) target = cur.rmin + (cur.rmax - cur.rmin) * (1 - Math.exp(-Math.max(0, cur.t - .1) / 1.25));
+    else target = Math.max(cur.rmin, cur.r);
+    const k = 1 - Math.exp(-dt * (cur.held ? 9 : 16));
+    growTo(cur, cur.r + (target - cur.r) * k);
+    if (!cur.held && Math.abs(target - cur.r) < .5) { growTo(cur, target); cur = null; }
+    settle();
+    return;
+  }
+  if (!ptr.down) return;
+  if (tool === 'swirl') {
+    ptr.t += dt;
+    const ramp = 1 - Math.exp(-ptr.t / .55);
+    swirl(ptr.x, ptr.y, ptr.spin * 5.2 * ramp * dt, SWIRL());
+    settle();
+  } else if (tool === 'comb') {
+    const mx = ptr.x - ptr.cx, my = ptr.y - ptr.cy, dist = Math.hypot(mx, my);
+    if (dist < .6) return;
+    combMove(ptr.cx, ptr.cy, ptr.x, ptr.y, TINE(), 4, .2 * TINE() + 1.5 * U, 46 * U, ptr);
+    ptr.cx = ptr.x; ptr.cy = ptr.y;
+  }
+}
+/* move a comb from (ax,ay) to (bx,by) in small sub-steps, keeping its axis along the (smoothed) motion */
+function combMove(ax, ay, bx, by, S, half, lam, sig, st) {
+  const mx = bx - ax, my = by - ay, dist = Math.hypot(mx, my);
+  const dx = mx / dist, dy = my / dist;
+  if (!st.dirSet) { st.ux = dx; st.uy = dy; st.dirSet = true; }
+  else { const k = clamp(dist / 14, .12, .5); let nx = st.ux * (1 - k) + dx * k, ny = st.uy * (1 - k) + dy * k; const l = Math.hypot(nx, ny) || 1; st.ux = nx / l; st.uy = ny / l; }
+  const steps = Math.max(1, Math.ceil(dist / 9)), sx = mx / steps, sy = my / steps;
+  for (let i = 1; i <= steps; i++) {
+    comb(ax + sx * i, ay + sy * i, st.ux, st.uy, sx, sy, S, half, lam, sig);
+    refine(LMAX);
+  }
+  budget(); dirty = true;
+}
+
+/* =========================================================
+   the cursor layer (a little SVG that follows the brush)
+   ========================================================= */
+const gDrop = $('#cDrop'), gComb = $('#cComb'), gSwirl = $('#cSwirl');
+const cdF = $('#cdF'), cdA = $('#cdA'), cdB = $('#cdB'), cdC = $('#cdC'), csA = $('#csA'), csB = $('#csB');
+let tineS = 0, swirlKey = '';
+for (let k = -4; k <= 4; k++) gComb.insertAdjacentHTML('beforeend', '<g data-k="' + k + '"><line x1="0" y1="-9" x2="0" y2="9" stroke="rgba(255,255,255,.6)" stroke-width="3.2" stroke-linecap="round"/><line x1="0" y1="-9" x2="0" y2="9" stroke="rgba(22,30,28,.8)" stroke-width="1.4" stroke-linecap="round"/></g>');
+const tineEls = Array.from(gComb.children);
+function show(el, on) { el.setAttribute('display', on ? 'inline' : 'none'); }
+function updateCursor() {
+  const on = cursor.on;
+  show(gDrop, on && tool === 'drop'); show(gComb, on && tool === 'comb'); show(gSwirl, on && tool === 'swirl');
+  if (!on) return;
+  const x = cursor.x.toFixed(1), y = cursor.y.toFixed(1);
+  if (tool === 'drop') {
+    const held = cur && cur.held, r = held ? cur.r : R0();
+    show(cdA, !(held && r > 6)); show(cdB, !(held && r > 6)); show(cdF, !(held && r > 6));
+    cdA.setAttribute('r', r.toFixed(1)); cdB.setAttribute('r', r.toFixed(1)); cdF.setAttribute('r', r.toFixed(1)); cdF.setAttribute('fill', INKS[colorIdx].hex);
+    cdC.setAttribute('fill', INKS[colorIdx].hex);
+    gDrop.setAttribute('transform', 'translate(' + x + ' ' + y + ')');
+  } else if (tool === 'comb') {
+    const S = TINE();
+    if (Math.abs(S - tineS) > .2) { tineS = S; tineEls.forEach(g => g.setAttribute('transform', 'translate(' + (+g.dataset.k * S).toFixed(1) + ' 0)')); }
+    const ux = ptr.down && ptr.dirSet ? ptr.ux : 0, uy = ptr.down && ptr.dirSet ? ptr.uy : 1;
+    gComb.setAttribute('transform', 'translate(' + x + ' ' + y + ') rotate(' + (Math.atan2(-ux, uy) * 180 / Math.PI).toFixed(1) + ')');
+  } else {
+    const rad = SWIRL() * .55, sp = ptr.down ? ptr.spin : (-ptr.lastSpin || 1), key = rad.toFixed(0) + ',' + sp;
+    if (key !== swirlKey) {
+      swirlKey = key; let d = '';
+      for (let i = 0; i <= 48; i++) { const t = i / 48, a = t * TAU * 2.1 * sp, rr = rad * t; d += (i ? 'L' : 'M') + (Math.cos(a) * rr).toFixed(1) + ' ' + (Math.sin(a) * rr).toFixed(1); }
+      csA.setAttribute('d', d); csB.setAttribute('d', d);
+    }
+    gSwirl.setAttribute('transform', 'translate(' + x + ' ' + y + ') rotate(' + (ptr.down ? ptr.t * 230 * sp : 0).toFixed(1) + ')');
+  }
+}
+
+/* =========================================================
+   the director: scripted patterns that compose themselves
+   ========================================================= */
+const dir = { on: false, t: 0, acts: [], i: 0, live: [], name: '' };
+const dropAct = (at, x, y, r, c, dur) => ({ at, type: 'drop', x, y, r, c, dur });
+const combAct = (at, pts, dur, S, half, lam, sig) => ({ at, type: 'comb', pts, dur, S, half, lam, sig });
+const swirlAct = (at, x, y, total, sig, dur) => ({ at, type: 'swirl', x, y, total, sig, dur });
+function samplePath(pts) {   // polyline -> {xs, ys, cum, len}
+  const xs = [], ys = [], cum = [0]; let len = 0;
+  for (let i = 0; i < pts.length; i++) { xs.push(pts[i][0]); ys.push(pts[i][1]); if (i) { len += Math.hypot(xs[i] - xs[i - 1], ys[i] - ys[i - 1]); cum.push(len); } }
+  return { xs, ys, cum, len };
+}
+function pointAt(P, s) {
+  let i = 1; while (i < P.cum.length - 1 && P.cum[i] < s) i++;
+  const s0 = P.cum[i - 1], s1 = P.cum[i], k = s1 > s0 ? (s - s0) / (s1 - s0) : 0;
+  return [lerp(P.xs[i - 1], P.xs[i], k), lerp(P.ys[i - 1], P.ys[i], k)];
+}
+function startAct(a) {
+  if (a.type === 'drop') { const d = startDrop(a.x, a.y, a.c); d.rEnd = a.r; d.t = 0; d.dur = a.dur; d.type = 'drop'; dir.live.push(d); }
+  else if (a.type === 'comb') { const P = samplePath(a.pts); dir.live.push({ type: 'comb', P, a, t: 0, prev: [P.xs[0], P.ys[0]], st: { dirSet: false, ux: 0, uy: 1 } }); }
+  else dir.live.push({ type: 'swirl', a, t: 0 });
+}
+function stepAct(L, dt) {
+  L.t += dt;
+  if (L.type === 'drop') {
+    const k = clamp(L.t / L.dur, 0, 1), e = 1 - Math.pow(1 - k, 3);
+    growTo(L, 1.5 + (L.rEnd - 1.5) * e); return k >= 1;
+  }
+  if (L.type === 'comb') {
+    const k = clamp(L.t / L.a.dur, 0, 1), e = .5 - .5 * Math.cos(Math.PI * k);
+    const p = pointAt(L.P, e * L.P.len);
+    if (Math.hypot(p[0] - L.prev[0], p[1] - L.prev[1]) > .4) { combMove(L.prev[0], L.prev[1], p[0], p[1], L.a.S, L.a.half, L.a.lam, L.a.sig, L.st); L.prev = p; }
+    return k >= 1;
+  }
+  const k = clamp(L.t / L.a.dur, 0, 1), sp = Math.sin(Math.PI * k) * Math.PI / 2;     // bell-shaped speed
+  swirl(L.a.x, L.a.y, L.a.total / L.a.dur * sp * dt, L.a.sig); refine(LMAX); dirty = true;
+  return k >= 1;
+}
+function stepDirector(dt) {
+  if (!dir.on) return;
+  dir.t += dt;
+  while (dir.i < dir.acts.length && dir.acts[dir.i].at <= dir.t) startAct(dir.acts[dir.i++]);
+  for (let k = dir.live.length - 1; k >= 0; k--) if (stepAct(dir.live[k], dt)) dir.live.splice(k, 1);
+  settle();
+  if (dir.i >= dir.acts.length && !dir.live.length) { dir.on = false; demoRunning = false; recipeDone(); }
+}
+function stopDemo() {
+  if (!dir.on) { demoRunning = false; return; }
+  for (const L of dir.live) if (L.type === 'drop') growTo(L, L.rEnd);
+  dir.live.length = 0; dir.on = false; demoRunning = false; settle();
+  plaqueShow(false);
+}
+function fastForward() { let guard = 0; while (dir.on && guard++ < 3000) stepDirector(1 / 40); }
+
+/* ---- palettes and recipes ---- */
+const PALS = [[0, 1, 3, 6], [2, 0, 4, 3], [5, 4, 1, 2], [0, 3, 4, 1], [1, 5, 2, 6], [2, 4, 0, 6]];
+let palLast = -1, recLast = -1;
+function pickPal(R) { let i; do { i = Math.floor(R() * PALS.length); } while (i === palLast); palLast = i; return PALS[i].slice(); }
+
+function recipeGelGit(R) {
+  const pal = pickPal(R), acts = []; let t = .1;
+  const wide = W > H * 1.2, cols = wide ? 4 : 3, rows = wide ? 2 : 3, cw = W / cols, ch = H / rows;
+  const rB = Math.hypot(cw, ch) * .4, cen = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cen.push([(c + .5 + (r % 2 ? .5 : 0)) * cw, (r + .5) * ch]);
+  cen.forEach((p, i) => { acts.push(dropAct(t, p[0], p[1], rB * (.92 + R() * .14), pal[(i + Math.floor(i / cols) * 2) % 4], .34)); t += .14; });
+  t += .04;
+  cen.forEach((p, i) => { acts.push(dropAct(t, p[0] + (R() - .5) * cw * .1, p[1] + (R() - .5) * ch * .1, rB * .52, pal[(i + 1 + Math.floor(i / cols) * 2) % 4], .28)); t += .09; });
+  cen.forEach((p, i) => { acts.push(dropAct(t, p[0], p[1], rB * .22, pal[(i + 2) % 4], .22)); t += .06; });
+  t += .12;
+  const S = clamp(W / (wide ? 15 : 6), 58 * U, 100 * U), half = Math.ceil(W / 2 / S) + 2, lam = S * .2, sig = Math.min(H * .07, W * .09), x0 = W * .5 + (R() - .5) * S;
+  acts.push(combAct(t, [[x0, -H * .04], [x0, H * 1.04]], 1.25, S, half, lam, sig)); t += 1.3;
+  acts.push(combAct(t, [[x0 + S / 2, H * 1.04], [x0 + S / 2, -H * .04]], 1.25, S, half, lam, sig)); t += 1.3;
+  return acts;
+}
+function recipeWheel(R) {
+  const pal = pickPal(R), acts = []; let t = .1;
+  const wide = W > H * 1.2, n = 3, cen = [];
+  for (let i = 0; i < n; i++) cen.push(wide ? [(i + .5) / n * W + (R() - .5) * W * .04, H * (.5 + (i % 2 ? .1 : -.1))] : [W * (.5 + (i % 2 ? .13 : -.13)), (i + .5) / n * H]);
+  const U0 = wide ? Math.min(W / n, H) * .5 : Math.min(W * .5, H / n * .5) * 1.12;
+  cen.forEach((p, i) => { acts.push(dropAct(t, p[0], p[1], U0 * 1.12, pal[(i + 3) % 4], .45)); t += .18; });
+  const ring = [.62, .5, .42, .34, .26, .18];
+  ring.forEach((f, k) => cen.forEach((p, i) => { acts.push(dropAct(t, p[0], p[1], U0 * f, pal[(k + i) % 4], .28)); t += .07; }));
+  t += .1;
+  cen.forEach((p, i) => { acts.push(swirlAct(t, p[0], p[1], (i % 2 ? -1 : 1) * TAU * 1.5, U0 * .42, 1.15)); t += .8; });
+  return acts;
+}
+function recipeStone(R) {
+  const pal = pickPal(R), acts = []; let t = .1;
+  const cols = Math.max(4, Math.round(W / 150)), rows = Math.max(3, Math.round(H / 150)), cw = W / cols, ch = H / rows, cells = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) cells.push([(c + .5 + (R() - .5) * .7) * cw, (r + .5 + (R() - .5) * .7) * ch]);
+  for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
+  const rBig = Math.min(cw, ch) * .95, count = Math.min(cells.length, 40), step = Math.max(.06, 2.7 / count);
+  cells.slice(0, count).forEach((p, i) => { const f = 1 - i / count * .66; acts.push(dropAct(t, p[0], p[1], rBig * f * (.9 + R() * .2), pal[i % 4 === 3 && R() < .6 ? 3 : Math.floor(R() * 4)], .3)); t += step; });
+  t += .15;
+  for (let i = 0; i < 3; i++) { acts.push(swirlAct(t, W * (.25 + R() * .5), H * (.25 + R() * .5), (R() < .5 ? -1 : 1) * TAU * .9, Math.min(W, H) * .16, .8)); t += .5; }
+  return acts;
+}
+const RECIPES = [{ name: 'Gel-Git', note: 'the comb goes, the comb comes back', build: recipeGelGit }, { name: 'Çarkıfelek', note: 'the wheel of fortune, stirred by hand', build: recipeWheel }, { name: 'Battal', note: 'stone pattern, dropped one by one', build: recipeStone }];
+let seed = (Date.now() & 0xffff) || 1;
+function compose(idx) {
+  const rec = RECIPES[idx]; recLast = idx;
+  const R = mulberry32(seed++ * 2654435761 >>> 0);
+  dir.acts = rec.build(R).sort((a, b) => a.at - b.at); dir.i = 0; dir.t = 0; dir.live.length = 0; dir.on = true; dir.name = rec.name; dir.note = rec.note; demoRunning = true;
+  hint('Composing a <b>' + rec.name + '</b> pattern&hellip; click anywhere to take over.');
+  if (reduce) { fastForward(); }
+}
+function recipeDone() {
+  plaqueShow(true);
+  hint(userTouched ? 'A <b>' + dir.name + '</b> is done &mdash; keep going.' : 'Your turn. <b>Press and hold</b> to let a drop grow, then <b>comb</b> through it.');
+}
+
+/* =========================================================
+   plaque, hint, toast
+   ========================================================= */
+const hintEl = $('#hint'), plaque = $('#plaque'), toastEl = $('#toast');
+let plaqueT = 0, toastT = 0;
+function hint(html) { hintEl.innerHTML = html; }
+function hintNow() {
+  hint(tool === 'drop' ? '<b>Press and hold</b> &mdash; the longer you hold, the wider the drop.' : tool === 'comb' ? '<b>Drag</b> across the ink to rake it into feathers.' : '<b>Press and hold</b> to stir the ink into a spiral.');
+}
+function plaqueShow(on) {
+  clearTimeout(plaqueT);
+  if (on) { plaque.textContent = dir.name + ' · ' + dir.note; plaque.classList.add('show'); plaqueT = setTimeout(() => plaque.classList.remove('show'), 4200); }
+  else plaque.classList.remove('show');
+}
+function toast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 1800); }
+
+/* =========================================================
+   dock: pigments, tools, size, actions
+   ========================================================= */
+function radioGroup(el, onPick) {
+  const btns = Array.from(el.querySelectorAll('[role=radio]'));
+  const pick = (i, focus) => { btns.forEach((b, k) => { b.setAttribute('aria-checked', String(k === i)); b.tabIndex = k === i ? 0 : -1; }); if (focus) btns[i].focus(); onPick(i); };
+  btns.forEach((b, i) => {
+    b.addEventListener('click', () => pick(i, false));
+    b.addEventListener('keydown', e => {
+      const cur = btns.findIndex(x => x.getAttribute('aria-checked') === 'true');
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); pick((cur + 1) % btns.length, true); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); pick((cur + btns.length - 1) % btns.length, true); }
+    });
+  });
+  btns.forEach((b, k) => { b.tabIndex = b.getAttribute('aria-checked') === 'true' ? 0 : -1; });
+  return pick;
+}
+const pickInk = radioGroup($('#pigments'), i => { colorIdx = i; uiDirty = true; });
+const TOOLS = ['drop', 'comb', 'swirl'], SIZE_LBL = { drop: 'Drop size', comb: 'Tine gap', swirl: 'Swirl width' };
+const pickTool = radioGroup($('#tools'), i => { tool = TOOLS[i]; $('#sizeLbl').textContent = SIZE_LBL[tool]; if (userTouched) hintNow(); uiDirty = true; });
+const sizeEl = $('#size'), skimEl = $('#skim');
+function setSize(v) { sizeEl.value = String(v); sizeV = v / 100; uiDirty = true; }
+sizeEl.addEventListener('input', () => { sizeV = sizeEl.value / 100; uiDirty = true; });
+tray.classList.add('nocursor');
+
+function clearTray(then) {
+  if (skim) return;
+  if (demoRunning) stopDemo();
+  finishDrop(true);
+  if (!polys.length) { if (then) then(); return; }
+  snapshot();
+  if (reduce) { polys.length = 0; dirty = true; if (then) then(); return; }
+  skim = { x: -8, then }; skimEl.classList.add('on');
+}
+function stepSkim(dt) {
+  skim.x += dt * (W + 140) / .85; dirty = true;
+  skimEl.style.transform = 'translateX(' + (skim.x - 52).toFixed(1) + 'px)';
+  if (skim.x > W + 8) { const t = skim.then; skim = null; skimEl.classList.remove('on'); skimEl.style.transform = ''; polys.length = 0; if (t) t(); }
+}
+$('#clear').addEventListener('click', () => { clearTray(); toast('Skimmed clean'); });
+$('#fresh').addEventListener('click', () => { userTouched = true; clearTray(() => compose((recLast + 1) % RECIPES.length)); });
+undoBtn.addEventListener('click', undo);
+$('#save').addEventListener('click', () => {
+  try {
+    const c = document.createElement('canvas'); c.width = cvInk.width; c.height = cvInk.height; const g = c.getContext('2d');
+    g.scale(dpr, dpr);
+    g.fillStyle = '#f4ecda'; g.fillRect(0, 0, W, H);
+    const R = mulberry32(7);
+    for (let i = 0; i < 40; i++) { const x = R() * W, y = R() * H, r = 90 + R() * 300, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, R() < .5 ? 'rgba(232,208,160,.16)' : 'rgba(255,252,242,.24)'); gr.addColorStop(1, 'rgba(244,236,218,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); }
+    render(); g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(cvInk, 0, 0);
+    if (fibreTile) { g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = g.createPattern(fibreTile, 'repeat'); g.save(); g.scale(.5, .5); g.fillRect(0, 0, W * 2, H * 2); g.restore(); }
+    c.toBlob(b => {
+      if (!b) { toast('Could not save here'); return; }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+      const d = new Date(); a.download = 'ebru-' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0') + '-' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0') + '.png';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('Sheet saved');
+    }, 'image/png');
+  } catch (e) { toast('Could not save here'); }
+});
+window.addEventListener('keydown', e => {
+  if (e.target && e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
+  if (e.ctrlKey || e.metaKey || e.altKey) { if ((e.key === 'z' || e.key === 'Z') && !e.altKey) { e.preventDefault(); undo(); } return; }
+  const k = e.key.toLowerCase();
+  if (k === 'd') pickTool(0, false); else if (k === 'c') pickTool(1, false); else if (k === 's') pickTool(2, false);
+  else if (k >= '1' && k <= '7') pickInk(+k - 1, false);
+  else if (k === 'z') undo();
+  else if (k === 'n') $('#fresh').click();
+  else if (k === '[') setSize(clamp(sizeV * 100 - 6, 0, 100)); else if (k === ']') setSize(clamp(sizeV * 100 + 6, 0, 100));
+});
+
+/* =========================================================
+   main loop
+   ========================================================= */
+let last = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden) { last = now; return; }
+  const dt = Math.min(1 / 10, Math.max(0, (now - last) / 1000) || 1 / 60); last = now;   // clamped so a slow frame or a returning tab never explodes the sim
+  if (!W) { resize(); if (!W) return; }
+  stepDirector(dt);
+  stepStroke(dt);
+  if (skim) stepSkim(dt);
+  if (dirty) { render(); dirty = false; }
+  if (uiDirty || ptr.down || (cur && cur.held)) { updateCursor(); uiDirty = false; }
+}
+if ('ResizeObserver' in window) new ResizeObserver(resize).observe(tray); else addEventListener('resize', resize);
+try {
+  const nc = document.createElement('canvas'); nc.width = nc.height = 160; const ng = nc.getContext('2d'), nr = mulberry32(5);
+  const im = ng.createImageData(160, 160); for (let i = 0; i < im.data.length; i += 4) { const v = nr() < .5 ? 255 : 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = Math.round(nr() * 14); }
+  ng.putImageData(im, 0, 0); document.documentElement.style.setProperty('--noise', 'url(' + nc.toDataURL() + ')');
+} catch (e) { /* the desk stays plain */ }
+makeFibreTile();
+if (initGL()) {
+  cvInk.addEventListener('webglcontextlost', e => { e.preventDefault(); glOK = false; });
+  cvInk.addEventListener('webglcontextrestored', () => { if (initGL()) dirty = true; });
+  resize();
+} else useFallbackCanvas();
+hintNow();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+setTimeout(() => { if (!userTouched && !polys.length) compose(0); }, 350);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#2b2d5b">
+<title>Murmuration — starlings at dusk</title>
+<meta name="description" content="A murmuration of starlings simulated with boids over a reed bed at dusk. Move to fly a peregrine falcon through the flock; click to startle it.">
+<style>
+:root{
+  --cream:#fff1e0;--peach:#f7b48a;--rose:#d9769a;--indigo:#2b2d5b;--ink:#120c1a;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif;
+  --sans:"Avenir Next",Avenir,"Century Gothic","URW Gothic","Trebuchet MS",system-ui,sans-serif;
+  --gut:clamp(22px,5.2vw,84px);--ease:cubic-bezier(.2,.8,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{position:fixed;inset:0;height:100vh;height:100dvh;overflow:hidden;color:var(--cream);font-family:var(--sans);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+  background:linear-gradient(180deg,#2b2d5b 0%,#4b3a78 20%,#b0608f 42%,#d9769a 54%,#f7b48a 64%,#6b4a72 64.3%,#3a2c58 82%,#2a2145 100%)}
+canvas{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+#fx{touch-action:none}
+#fx.hunt{cursor:none}
+
+.top{position:absolute;left:var(--gut);right:var(--gut);top:clamp(26px,7vh,84px);z-index:2;pointer-events:none}
+.kicker{margin:0 0 clamp(12px,2vh,20px);display:flex;align-items:center;gap:14px;font:500 10.5px/1 var(--sans);letter-spacing:.34em;text-transform:uppercase;color:rgba(255,241,224,.74)}
+.kicker::before{content:"";width:34px;height:1px;background:rgba(255,241,224,.6)}
+.title{margin:0;font-family:var(--serif);font-weight:300;font-size:clamp(26px,6.3vw,100px);line-height:1;letter-spacing:.32em;color:var(--cream);text-shadow:0 2px 40px rgba(43,45,91,.55);animation:trackIn 3.6s var(--ease) both}
+@keyframes trackIn{from{letter-spacing:.85em;opacity:0;filter:blur(6px)}to{letter-spacing:.32em;opacity:1;filter:blur(0)}}
+.note{margin-top:clamp(18px,3.4vh,36px);max-width:34em;min-height:5.6em}
+.note>*{transition:opacity 1.1s var(--ease),transform 1.1s var(--ease)}
+.note.out>*{opacity:0;transform:translateY(6px)}
+.n-meta{margin:0 0 9px;font:500 10.5px/1.6 var(--sans);letter-spacing:.24em;text-transform:uppercase;color:rgba(255,241,224,.86)}
+.n-text{margin:0;font:italic 300 clamp(15px,1.5vw,20px)/1.55 var(--serif);color:rgba(255,241,224,.92);text-shadow:0 1px 18px rgba(43,45,91,.6)}
+
+.bottom{position:absolute;left:var(--gut);right:var(--gut);bottom:clamp(18px,4vh,42px);z-index:3;display:flex;justify-content:flex-end;align-items:flex-end;gap:20px;pointer-events:none}
+.hint{margin:clamp(16px,2.6vh,28px) 0 0;max-width:40em;font:500 10px/1.9 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:rgba(255,241,224,.7);text-shadow:0 1px 14px rgba(43,45,91,.7);transition:opacity 1.8s}
+.hint.gone{opacity:0}
+.flock{pointer-events:auto;display:flex;align-items:center;gap:4px;padding:5px 5px 5px 18px;border:1px solid rgba(255,241,224,.3);border-radius:999px;background:rgba(40,28,66,.34)}
+.flock .lbl{margin-right:8px;font:500 10px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:rgba(255,241,224,.72)}
+.flock button{min-width:56px;height:42px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:rgba(255,241,224,.7);font:500 13px/1 var(--sans);font-variant-numeric:tabular-nums;letter-spacing:.06em;cursor:pointer;transition:background .5s var(--ease),color .5s}
+.flock button:hover{color:#fff}
+.flock button[aria-checked="true"]{background:var(--cream);color:#2a2048}
+.flock button:focus-visible{outline:2px solid var(--cream);outline-offset:2px}
+.live{margin:0 12px 0 10px;font:italic 300 14px/1 var(--serif);color:rgba(255,241,224,.78);white-space:nowrap;min-width:6.2em}
+.tag{position:absolute;left:0;top:0;z-index:2;pointer-events:none;opacity:0;white-space:nowrap;font:italic 300 13.5px/1 var(--serif);color:rgba(255,241,224,.92);text-shadow:0 1px 12px rgba(30,20,50,.7);transition:opacity .7s;will-change:transform}
+
+@media (max-width:640px){
+  .bottom{justify-content:center}
+  .hint{display:none}
+  .live{display:none}
+  .flock{padding-left:14px}
+  .flock button{min-width:48px}
+  .note{min-height:6.6em}
+}
+@media (max-height:520px){.note{display:none}}
+@media (prefers-reduced-motion:reduce){
+  .title{animation:none}
+  .note>*{transition:none}
+}
+</style>
+</head>
+<body>
+<canvas id="bg" aria-hidden="true"></canvas>
+<canvas id="fx" role="img" aria-label="An animated murmuration of starlings turning over a reed bed at dusk. Move the pointer to fly a falcon through the flock, click or tap to startle it."></canvas>
+<div class="tag" id="tag" aria-hidden="true">peregrine</div>
+
+<header class="top">
+  <p class="kicker">Field study &nbsp;·&nbsp; No. 12 &nbsp;·&nbsp; Dusk</p>
+  <h1 class="title">Murmuration</h1>
+  <div class="note" id="note" aria-live="off">
+    <p class="n-meta" id="nMeta">Rome · Nov 6 · 18:12 · ~40,000 birds</p>
+    <p class="n-text" id="nText">They gather over the station trees a quarter hour before the light goes.</p>
+  </div>
+  <p class="hint" id="hint">Move &mdash; a peregrine falcon. Click &mdash; a startle.<br>Field notes are illustrative.</p>
+</header>
+
+<footer class="bottom">
+  <div class="flock" id="flock" role="radiogroup" aria-label="Flock size">
+    <span class="lbl">Flock</span>
+    <button type="button" role="radio" aria-checked="false" data-i="0">500</button>
+    <button type="button" role="radio" aria-checked="true" data-i="1">1,500</button>
+    <button type="button" role="radio" aria-checked="false" data-i="2">3,000</button>
+    <span class="live" id="live" aria-hidden="true">1,500 birds</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+'use strict';
+var doc=document,win=window;
+function $(id){return doc.getElementById(id)}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function lerp(a,b,t){return a+(b-a)*t}
+function rnd32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+var mqR=win.matchMedia('(prefers-reduced-motion: reduce)'),reduce=mqR.matches;
+if(mqR.addEventListener)mqR.addEventListener('change',function(e){reduce=e.matches});
+
+var bgC=$('bg'),fxC=$('fx'),bg=null,fx=null;
+try{bg=bgC.getContext('2d');fx=fxC.getContext('2d')}catch(err){}
+if(!bg||!fx)return;   /* the CSS dusk gradient remains as the fallback */
+
+/* ------------------------------------------------------------------ scene state */
+var W=0,H=0,dpr=1,sc=1,horizon=0,cx=0,cy=0,sunX=0,sunY=0,INK='#120c1a';
+var refl=doc.createElement('canvas'),reflX=refl.getContext('2d');
+var reeds=[],clouds=[],glit=[];
+
+/* ------------------------------------------------------------------ helpers for the landscape */
+function hash(n){var s=Math.sin(n*127.1+311.7)*43758.5453;return s-Math.floor(s)}
+function vnoise(x){var i=Math.floor(x),f=x-i;f=f*f*(3-2*f);return lerp(hash(i),hash(i+1),f)}
+function fbm(x,seed){return vnoise(x+seed)*.55+vnoise(x*2.13+seed*1.7)*.3+vnoise(x*4.7+seed*2.9)*.15}
+function hills(c,base,amp,freq,seed,top,bottom,edge){
+  var g=c.createLinearGradient(0,base-amp*1.2,0,base+2);
+  g.addColorStop(0,top);g.addColorStop(1,bottom);
+  c.fillStyle=g;c.beginPath();c.moveTo(0,base+3);
+  for(var x=0;x<=W+6;x+=5){
+    var e=Math.abs(x-W*.46)/(W*.56),a=amp*(1+edge*e*e);
+    c.lineTo(x,base-a*(.1+.9*fbm(x*freq,seed)));
+  }
+  c.lineTo(W+6,base+3);c.closePath();c.fill();
+}
+function buildScene(){
+  var c=bg,i,g,R=rnd32(19);
+  c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+  /* sky: indigo to rose to peach */
+  g=c.createLinearGradient(0,0,0,horizon);
+  g.addColorStop(0,'#2b2d5b');g.addColorStop(.24,'#4b3a78');g.addColorStop(.5,'#b0608f');g.addColorStop(.68,'#d9769a');g.addColorStop(.87,'#eb9a95');g.addColorStop(1,'#f7b48a');
+  c.fillStyle=g;c.fillRect(0,0,W,horizon+2);
+  /* low sun, a wide glow and a small disc */
+  sunX=W*.7;sunY=horizon-H*.03;
+  var R1=Math.max(W,H)*.62,rg=c.createRadialGradient(sunX,sunY,0,sunX,sunY,R1);
+  rg.addColorStop(0,'rgba(255,240,204,.96)');rg.addColorStop(.045,'rgba(255,224,176,.82)');rg.addColorStop(.15,'rgba(255,188,142,.44)');rg.addColorStop(.4,'rgba(247,144,142,.15)');rg.addColorStop(1,'rgba(247,144,142,0)');
+  c.fillStyle=rg;c.fillRect(0,0,W,horizon+2);
+  c.fillStyle='#fff4de';c.beginPath();c.arc(sunX,sunY,Math.max(13,H*.03),0,6.2832);c.fill();
+  /* far hills (hazy mauve) and near hills (plum, framing the sides) */
+  hills(c,horizon+1,H*.075,.0034,3.1,'#a55f8d','#d58399',.25);
+  hills(c,horizon+1,H*.05,.0058,8.7,'#7e4a80','#a55a86',.6);
+  hills(c,horizon+2,H*.085,.0046,15.3,'#3c2858','#5a3a66',2.6);
+  /* the still lake: a darker, softened echo of the sky */
+  g=c.createLinearGradient(0,horizon,0,H);
+  g.addColorStop(0,'#d98f8f');g.addColorStop(.12,'#b9748f');g.addColorStop(.36,'#7d5589');g.addColorStop(.7,'#463466');g.addColorStop(1,'#2a2145');
+  c.fillStyle=g;c.fillRect(0,horizon,W,H-horizon);
+  c.save();c.translate(sunX,horizon);c.scale(.16,1);
+  rg=c.createRadialGradient(0,0,0,0,0,(H-horizon)*.95);
+  rg.addColorStop(0,'rgba(255,214,164,.62)');rg.addColorStop(.5,'rgba(255,170,140,.2)');rg.addColorStop(1,'rgba(255,170,140,0)');
+  c.fillStyle=rg;c.beginPath();c.arc(0,0,(H-horizon)*.95,0,3.1416);c.fill();c.restore();
+  for(i=0;i<110;i++){
+    var t=R(),y=horizon+4+Math.pow(t,1.5)*(H-horizon-10),len=24+R()*90*(.4+t*1.4),x=R()*(W+80)-40;
+    c.fillStyle=R()<.55?'rgba(255,236,214,'+(.03+R()*.05)+')':'rgba(38,22,64,'+(.05+R()*.07)+')';
+    c.fillRect(x,y,len,1+t*1.6);
+  }
+  c.fillStyle='rgba(58,34,84,.6)';c.fillRect(0,horizon,W,2);
+  /* the near bank and a low bed of short reeds, static */
+  c.fillStyle=INK;c.beginPath();c.moveTo(0,H+2);
+  for(i=0;i<=W;i+=6)c.lineTo(i,H-H*.03-vnoise(i*.011+4)*H*.028);
+  c.lineTo(W,H+2);c.closePath();c.fill();
+  c.strokeStyle=INK;c.lineCap='round';
+  var nS=Math.round(W/3.2);
+  for(i=0;i<nS;i++){
+    var bx=R()*W,h=H*(.03+R()*R()*.085),lean=(R()-.5)*h*.5;
+    c.lineWidth=(1.1+R()*1.1)*sc;c.beginPath();c.moveTo(bx,H+2);c.quadraticCurveTo(bx+lean*.3,H-h*.55,bx+lean,H-h);c.stroke();
+  }
+}
+function buildReeds(){
+  var R=rnd32(5),n=Math.round(clamp(W/8,44,190));
+  reeds=[];
+  for(var i=0;i<n;i++){
+    var u=R(),x=u<.46?R()*W*.26:u<.92?W-R()*W*.26:R()*W,edge=Math.abs(x-W*.5)/(W*.5);
+    reeds.push({x:x,h:H*(.12+R()*.2)*(.55+.55*edge),lean:(R()-.5)*.16,ph:R()*6.28,w:(1.5+R()*1.5)*sc,f:.5+R()*.5});
+  }
+  clouds=[];
+  for(i=0;i<6;i++)clouds.push({x:R()*W,y:H*(.1+R()*.38),w:W*(.22+R()*.3),h:H*(.012+R()*.02),v:(6+R()*10)*(R()<.5?1:-1)*.5,a:.16+R()*.14});
+  glit=[];
+  for(i=0;i<36;i++)glit.push({dx:(R()-.5)*2,dy:Math.pow(R(),1.3),ph:R()*6.28,w:.5+R()});
+}
+
+/* ------------------------------------------------------------------ the flock (3D boids, projected to the canvas) */
+var MAXN=3000,active=0,targetN=1500,sizes=[500,1500,3000],sizeIdx=1,maxAllowed=3000;
+var px=new Float32Array(MAXN),py=new Float32Array(MAXN),pz=new Float32Array(MAXN);
+var vx=new Float32Array(MAXN),vy=new Float32Array(MAXN),vz=new Float32Array(MAXN);
+var tau=new Float32Array(MAXN),sv=new Float32Array(MAXN),ph=new Float32Array(MAXN),grp=new Uint8Array(MAXN);
+var sxA=new Float32Array(MAXN),syA=new Float32Array(MAXN),uxA=new Float32Array(MAXN),uyA=new Float32Array(MAXN),lnA=new Float32Array(MAXN),clsA=new Uint8Array(MAXN);
+var cellOf=new Int32Array(MAXN),order=new Int32Array(MAXN),cstart=null,ccount=null;
+var NX=1,NY=1,NZ=1,CELLS=1,CS=48,GX0=0,GY0=0,GZ0=0,invCS=1;
+var SP={};
+var seedR=rnd32(77),lcg=12345;
+function frand(){lcg=(lcg*1664525+1013904223)|0;return (lcg>>>8)/16777216}
+function setScale(){
+  SP.R=76*sc;SP.R2=SP.R*SP.R;SP.RS=28*sc;SP.ws=1400*sc;SP.wr=85*sc;SP.rd0=300*sc;
+  SP.vT=155*sc;SP.vMin=115*sc;SP.vMax=215*sc;SP.noise=26*sc;SP.F=900*sc;SP.zmax=260*sc;
+  SP.fr=200*sc;SP.fa=2600*sc;SP.sw=760*sc;SP.sr=560*sc;SP.sa=5200*sc;
+  CS=Math.max(20,SP.R*.72);invCS=1/CS;
+  GX0=-W*.5-300*sc;GY0=-H*.6;GZ0=-360*sc;
+  NX=Math.ceil((W+600*sc)/CS);NY=Math.ceil(H*1.2/CS);NZ=Math.ceil(820*sc/CS);
+  var cells=NX*NY*NZ;
+  if(cells!==CELLS){CELLS=cells;cstart=new Int32Array(CELLS+1);ccount=new Int32Array(CELLS)}
+}
+function roostAt(t,out){
+  out[0]=W*.07+Math.sin(t*.21-.42)*W*.22*(1+.18*Math.sin(t*.05));
+  out[1]=Math.sin(t*.33+1.9)*H*.085-H*.02;
+  out[2]=Math.sin(t*.17+.4)*150*sc;
+}
+/* a smaller sub-flock chases a second roost, so streamers and bridges form between the clouds */
+function roost2At(t,out){
+  out[0]=W*.05+Math.sin(t*.155+3.4)*W*.27;
+  out[1]=Math.sin(t*.27+.5)*H*.085-H*.02;
+  out[2]=Math.sin(t*.13+2.2)*150*sc;
+}
+var A=[0,0,0];
+function seedBird(i,cxw,cyw,spread){
+  var a=frand()*6.2832,r=Math.sqrt(frand());
+  px[i]=cxw+Math.cos(a)*r*140*sc*spread;py[i]=cyw+Math.sin(a)*r*55*sc*spread;pz[i]=(frand()-.5)*130*sc*spread;
+  var va=frand()*.7-.35;vx[i]=Math.cos(va)*SP.vT;vy[i]=Math.sin(va)*SP.vT*.5;vz[i]=(frand()-.5)*40*sc;
+  tau[i]=3.2*Math.pow(frand(),1.5);sv[i]=1+(frand()-.5)*.15;ph[i]=frand()*6.2832;grp[i]=frand()<.24?1:0;
+}
+var flightT=0;
+/* falcon and startle inputs */
+var fal={on:false,x:0,y:0,px:0,py:0,vx:0,vy:0,idle:9,alpha:0,hx:1,hy:0,trail:[],speed:0,auto:-1,ax0:0,ay0:0};
+var stl={on:false,t:0,x:0,y:0,ring:0,rx:0,ry:0};
+
+function stepFlock(dt,t){
+  var n=active;if(n<2)return;
+  var i,c,s=0;
+  for(c=0;c<CELLS;c++)ccount[c]=0;
+  for(i=0;i<n;i++){
+    var ix=((px[i]-GX0)*invCS)|0,iy=((py[i]-GY0)*invCS)|0,iz=((pz[i]-GZ0)*invCS)|0;
+    ix=ix<0?0:ix>=NX?NX-1:ix;iy=iy<0?0:iy>=NY?NY-1:iy;iz=iz<0?0:iz>=NZ?NZ-1:iz;
+    c=ix+NX*(iy+NY*iz);cellOf[i]=c;ccount[c]++;
+  }
+  for(c=0;c<CELLS;c++){cstart[c]=s;s+=ccount[c];ccount[c]=0}
+  cstart[CELLS]=s;
+  for(i=0;i<n;i++){c=cellOf[i];order[cstart[c]+ccount[c]++]=i}
+  var R2=SP.R2,RS=SP.RS,RR=SP.R,M=16,zm=SP.zmax,F=SP.F;
+  var since=t-stl.t,mf=stl.on?1-.82*Math.exp(-since/.9):1;
+  var wa=3.0*mf,wc=.55*mf;
+  var bxl=W*.54,by0=-H*.25,by1=H*.15;
+  var fOn=fal.on&&fal.alpha>.2,fr=SP.fr,fx0=fal.x-cx,fy0=fal.y-cy,fvx=fal.hx,fvy=fal.hy;
+  var stOn=stl.on&&since<1.4,env=stOn?Math.exp(-since/.3):0,stx=stl.x-cx,sty=stl.y-cy,sR=SP.sr;
+  for(i=0;i<n;i++){
+    c=cellOf[i];
+    var gx=c%NX,gy=((c/NX)|0)%NY,gz=(c/(NX*NY))|0;
+    var cnt=0,nc=0,ax=0,ay=0,az=0,mx=0,my=0,mz=0,sx=0,sy=0,sz=0;
+    var off=(frand()*27)|0,xi=px[i],yi=py[i],zi=pz[i];
+    for(var k=0;k<27&&cnt<M;k++){
+      var q=(k+off)%27,jx=gx+(q%3)-1,jy=gy+(((q/3)|0)%3)-1,jz=gz+((q/9)|0)-1;
+      if(jx<0||jy<0||jz<0||jx>=NX||jy>=NY||jz>=NZ)continue;
+      var cc=jx+NX*(jy+NY*jz);
+      for(var m=cstart[cc],e=cstart[cc+1];m<e;m++){
+        var j=order[m];if(j===i)continue;
+        var ddx=px[j]-xi,ddy=py[j]-yi,ddz=pz[j]-zi,d2=ddx*ddx+ddy*ddy+ddz*ddz;
+        if(d2<R2){
+          cnt++;ax+=vx[j];ay+=vy[j];az+=vz[j];
+          var d=Math.sqrt(d2)+.001;
+          if(d<RS){var f=(RS-d)/RS/d;sx-=ddx*f;sy-=ddy*f;sz-=ddz*f}
+          else{var w=(d-RS)/(RR-RS);mx+=ddx*w;my+=ddy*w;mz+=ddz*w;nc++}
+          if(cnt>=M)break;
+        }
+      }
+    }
+    var axx=sx*SP.ws,ayy=sy*SP.ws,azz=sz*SP.ws;
+    if(cnt){var inv=1/cnt;axx+=(ax*inv-vx[i])*wa;ayy+=(ay*inv-vy[i])*wa;azz+=(az*inv-vz[i])*wa}
+    if(nc){var ic=1/nc;axx+=mx*ic*wc;ayy+=my*ic*wc;azz+=mz*ic*wc}
+    /* the roost: each bird chases where the roost was a moment ago, so the flock draws out into ribbons */
+    if(grp[i])roost2At(t-tau[i],A);else roostAt(t-tau[i],A);
+    var rx=A[0]-xi,ry=A[1]-yi,rz=A[2]-zi,rd=Math.sqrt(rx*rx+ry*ry+rz*rz)+1,rk=SP.wr*Math.min(rd/SP.rd0,1.4)/rd;
+    axx+=rx*rk;ayy+=ry*rk;azz+=rz*rk;
+    /* soft walls */
+    if(xi>bxl)axx-=(xi-bxl)*2.4;else if(xi<-bxl)axx-=(xi+bxl)*2.4;
+    if(yi<by0)ayy+=(by0-yi)*3;else if(yi>by1)ayy-=(yi-by1)*3;
+    if(zi>zm)azz-=(zi-zm)*4;else if(zi<-zm)azz+=(-zm-zi)*4;
+    axx+=(frand()-.5)*SP.noise;ayy+=(frand()-.5)*SP.noise;azz+=(frand()-.5)*SP.noise;
+    var panic=1,pk=F/(F+zi),bpx=xi*pk,bpy=yi*pk;
+    if(fOn){
+      var dx=bpx-fx0,dy=bpy-fy0,dd=dx*dx+dy*dy;
+      if(dd<fr*fr){
+        var dl=Math.sqrt(dd)+.01,kk=1-dl/fr,push=SP.fa*kk*kk,side=(dx*fvy-dy*fvx)>0?1:-1,sw=SP.sw*kk;
+        axx+=dx/dl*push-dy/dl*side*sw;ayy+=dy/dl*push+dx/dl*side*sw;azz+=(frand()-.5)*push*.3;panic=1+.65*kk;
+      }
+    }
+    if(stOn){
+      var ex=bpx-stx,ey=bpy-sty,ed=Math.sqrt(ex*ex+ey*ey)+.01;
+      if(ed<sR){var ek=1-ed/sR,pe=SP.sa*ek*ek*env;axx+=ex/ed*pe;ayy+=ey/ed*pe;azz+=(frand()-.5)*pe*.5}
+    }
+    var nvx=vx[i]+axx*dt,nvy=vy[i]+ayy*dt,nvz=vz[i]+azz*dt;
+    var sp=Math.sqrt(nvx*nvx+nvy*nvy+nvz*nvz)+1e-3,vt=SP.vT*sv[i]*panic,vmax=SP.vMax*panic*(stOn?1.5:1);
+    var tg=sp<SP.vMin?SP.vMin:sp>vmax?vmax:sp+(vt-sp)*Math.min(1,1.2*dt),kv=tg/sp;
+    vx[i]=nvx*kv;vy[i]=nvy*kv;vz[i]=nvz*kv;
+  }
+  for(i=0;i<n;i++){px[i]+=vx[i]*dt;py[i]+=vy[i]*dt;pz[i]+=vz[i]*dt}
+}
+
+function allocateFlock(first){
+  var oldSc=sc;
+  setScale();
+  if(first){
+    roostAt(0,A);active=targetN;
+    for(var i=0;i<active;i++)seedBird(i,A[0]-40*sc,A[1],1.4);
+    for(var w=0;w<220;w++){stepFlock(1/60,flightT);flightT+=1/60}
+  }
+}
+function setSizes(){
+  var cap=clamp(Math.floor(W*H/430),400,3000);
+  maxAllowed=cap;
+  var btn=doc.querySelectorAll('#flock button');
+  if(cap>=3000)sizes=[500,1500,3000];
+  else{
+    var r=function(v){return Math.max(100,Math.round(v/50)*50)};
+    sizes=[r(cap*.33),r(cap*.66),r(cap)];
+    if(sizes[1]<=sizes[0])sizes[1]=sizes[0]+50;
+    if(sizes[2]<=sizes[1])sizes[2]=sizes[1]+50;
+  }
+  for(var i=0;i<3;i++)btn[i].textContent=sizes[i].toLocaleString('en-US');
+  if(reduce)sizes=sizes.map(function(v){return Math.min(v,1000)});
+}
+function setFlock(idx,fromUser){
+  sizeIdx=idx;targetN=sizes[idx];
+  var btn=doc.querySelectorAll('#flock button');
+  for(var i=0;i<btn.length;i++)btn[i].setAttribute('aria-checked',i===idx?'true':'false');
+  $('live').textContent=targetN.toLocaleString('en-US')+' birds';
+  if(fromUser)nudgeNote('A flock of '+targetN.toLocaleString('en-US'),targetN>1500?'Heavier smoke, deeper folds; the edges begin to blur.':targetN<1500?'Fewer birds, and each one becomes an individual again.':'Enough birds for the cloud to hold a shape.');
+}
+function adjustActive(){
+  if(active<targetN){
+    var add=Math.min(48,targetN-active);
+    for(var k=0;k<add;k++){
+      var i=active++,src=(frand()*Math.max(1,i-1))|0;
+      px[i]=px[src]+(frand()-.5)*30*sc;py[i]=py[src]+(frand()-.5)*30*sc;pz[i]=pz[src]+(frand()-.5)*30*sc;
+      vx[i]=vx[src];vy[i]=vy[src];vz[i]=vz[src];tau[i]=3.2*Math.pow(frand(),1.5);sv[i]=1+(frand()-.5)*.15;ph[i]=frand()*6.2832;grp[i]=frand()<.24?1:0;
+    }
+  }else if(active>targetN)active=Math.max(targetN,active-56);
+}
+
+/* ------------------------------------------------------------------ drawing */
+function drawBirds(t){
+  var n=active,i,F=SP.F,ph2=t*15;
+  var baseL=5.3*sc;
+  for(i=0;i<n;i++){
+    var s=F/(F+pz[i]),spd=Math.sqrt(vx[i]*vx[i]+vy[i]*vy[i])+.01,ux=vx[i]/spd,uy=vy[i]/spd;
+    var fl=reduce?1:1+.32*Math.sin(ph2+ph[i]);
+    var L=baseL*(.78+.42*spd/(SP.vT*1.2))*s*fl;
+    sxA[i]=cx+px[i]*s;syA[i]=cy+py[i]*s;uxA[i]=ux*L*.5;uyA[i]=uy*L*.5;clsA[i]=pz[i]<-10*sc?1:0;
+  }
+  fx.lineCap='round';
+  for(var cl=0;cl<2;cl++){
+    fx.lineWidth=(cl?1.9:1.25)*sc*(W<600?1.05:1);
+    fx.strokeStyle=cl?'rgba(18,10,28,.6)':'rgba(24,14,36,.42)';
+    for(var g=0;g<6;g++){
+      fx.beginPath();
+      for(i=g;i<n;i+=6){
+        if(clsA[i]!==cl)continue;
+        fx.moveTo(sxA[i]-uxA[i],syA[i]-uyA[i]);fx.lineTo(sxA[i]+uxA[i],syA[i]+uyA[i]);
+      }
+      fx.stroke();
+    }
+  }
+}
+function drawClouds(dt){
+  for(var i=0;i<clouds.length;i++){
+    var c=clouds[i];
+    if(!reduce)c.x+=c.v*dt;
+    if(c.x>W+c.w)c.x=-c.w;else if(c.x<-c.w)c.x=W+c.w;
+    fx.save();fx.translate(c.x,c.y);fx.scale(c.w,c.h);
+    var g=fx.createRadialGradient(0,0,0,0,0,1);
+    g.addColorStop(0,'rgba(255,214,180,'+c.a+')');g.addColorStop(.6,'rgba(240,150,160,'+c.a*.4+')');g.addColorStop(1,'rgba(240,150,160,0)');
+    fx.fillStyle=g;fx.beginPath();fx.arc(0,0,1,0,6.2832);fx.fill();fx.restore();
+  }
+}
+function drawReflection(t){
+  /* the flock is drawn again, mirrored, into a quarter-size canvas; scaling it back up softens it like water */
+  var Wd=fxC.width,hd=horizon*dpr,lakeH=(H-horizon)*dpr,sw=refl.width,sh=refl.height,q=dpr/4,m=.72,n=active,i;
+  reflX.setTransform(1,0,0,1,0,0);reflX.clearRect(0,0,sw,sh);
+  reflX.lineCap='round';reflX.lineWidth=Math.max(1,1.5*sc*dpr/4*2);reflX.strokeStyle='rgba(22,12,34,.75)';
+  reflX.beginPath();
+  for(i=0;i<n;i++){
+    var d=horizon-syA[i];if(d<0)continue;
+    var y=d*m*q;if(y>sh)continue;
+    var x=sxA[i]*q,dx=uxA[i]*q,dy=-uyA[i]*m*q;
+    reflX.moveTo(x-dx,y-dy);reflX.lineTo(x+dx,y+dy);
+  }
+  reflX.stroke();
+  var S=26,hL=lakeH/S,hS=sh/S;
+  for(var k=0;k<S;k++){
+    var u=k/S,a=.55*Math.pow(1-u,1.2),off=Math.sin(k*.9+t*1.4)*(1.2+u*7)*dpr;
+    fx.globalAlpha=a;
+    fx.drawImage(refl,0,k*hS,sw,hS,off,hd+k*hL,Wd,hL+1);
+  }
+  fx.globalAlpha=1;
+}
+function drawGlitter(t){
+  var lake=H-horizon;
+  for(var i=0;i<glit.length;i++){
+    var g=glit[i],y=horizon+6+g.dy*lake*.92,spread=(y-horizon)*.16+8,x=sunX+g.dx*spread*1.6,wd=(8+g.dy*44)*g.w*sc;
+    var a=(.5+.5*Math.sin(t*2.3+g.ph))*(.55-.35*g.dy);
+    fx.fillStyle='rgba(255,231,196,'+a.toFixed(3)+')';fx.fillRect(x-wd*.5,y,wd,1+g.dy*1.4);
+  }
+}
+function drawReeds(t){
+  var wind=Math.sin(t*.35)*.5+Math.sin(t*.91+1.3)*.3,i;
+  var wide=[[],[]];
+  fx.lineCap='round';fx.strokeStyle=INK;fx.fillStyle=INK;
+  for(var pass=0;pass<2;pass++){
+    fx.lineWidth=(pass?2.7:1.7)*sc;fx.beginPath();
+    for(i=pass;i<reeds.length;i+=2){
+      var r=reeds[i],sway=(Math.sin(t*.9*r.f+r.ph)*.6+wind*1.2)*r.h*.045,tipx=r.x+r.lean*r.h+sway,tipy=H-r.h;
+      fx.moveTo(r.x,H+3);fx.quadraticCurveTo(r.x+r.lean*r.h*.28+sway*.35,H-r.h*.55,tipx,tipy);
+    }
+    fx.stroke();
+  }
+  fx.beginPath();
+  for(i=0;i<reeds.length;i++){
+    var q=reeds[i],sw2=(Math.sin(t*.9*q.f+q.ph)*.6+wind*1.2)*q.h*.045,tx=q.x+q.lean*q.h+sw2,ty=H-q.h;
+    var cxq=q.x+q.lean*q.h*.28+sw2*.35,cyq=H-q.h*.55,dx=tx-cxq,dy=ty-cyq,dl=Math.sqrt(dx*dx+dy*dy)+.001,tux=dx/dl,tuy=dy/dl;
+    var pl=Math.max(14*sc,q.h*.17),pw=pl*.17;
+    fx.moveTo(tx,ty);
+    fx.quadraticCurveTo(tx-tuy*pw+tux*pl*.5,ty+tux*pw+tuy*pl*.5,tx+tux*pl,ty+tuy*pl);
+    fx.quadraticCurveTo(tx+tuy*pw+tux*pl*.5,ty-tux*pw+tuy*pl*.5,tx,ty);
+  }
+  fx.fill();
+}
+function drawFalcon(t,dt){
+  var a=fal.alpha;if(a<=.02)return;
+  var tr=fal.trail;
+  if(!reduce&&tr.length>1){
+    fx.lineCap='round';
+    for(var i=1;i<tr.length;i++){
+      fx.strokeStyle='rgba(255,241,224,'+(.32*a*i/tr.length).toFixed(3)+')';fx.lineWidth=1.2*sc;
+      fx.beginPath();fx.moveTo(tr[i-1][0],tr[i-1][1]);fx.lineTo(tr[i][0],tr[i][1]);fx.stroke();
+    }
+  }
+  var ang=Math.atan2(fal.hy,fal.hx),fold=clamp(fal.speed/1700,0,1),flap=reduce?0:Math.sin(t*9)*(1-fold)*.28;
+  var k=1.25*sc*(W<600?.85:1);
+  fx.save();fx.translate(fal.x,fal.y);fx.rotate(ang);fx.scale(k,k);fx.globalAlpha=a;
+  fx.fillStyle='#0f0a18';
+  /* a peregrine: slim body, long sickle wings that sweep back into a stoop, a short fanned tail */
+  var tx=-15-fold*12,ty=30-fold*15+flap*22;
+  fx.beginPath();
+  fx.moveTo(17,0);
+  fx.quadraticCurveTo(12,-2.4,6,-3.4);
+  fx.quadraticCurveTo(9-fold*4,-17,tx,-ty);
+  fx.quadraticCurveTo(-3,-12-fold*2,-9,-4.6);
+  fx.lineTo(-18,-3.2);fx.lineTo(-29,-6.2);fx.lineTo(-26.5,0);fx.lineTo(-29,6.2);fx.lineTo(-18,3.2);
+  fx.lineTo(-9,4.6);
+  fx.quadraticCurveTo(-3,12+fold*2,tx,ty);
+  fx.quadraticCurveTo(9-fold*4,17,6,3.4);
+  fx.quadraticCurveTo(12,2.4,17,0);
+  fx.closePath();fx.fill();
+  fx.restore();fx.globalAlpha=1;
+}
+function drawStartle(dt){
+  if(!stl.on)return;
+  stl.ring+=dt;var u=stl.ring/1.1;
+  if(u>=1){if(stl.ring>2)stl.on=false;return}
+  var r=SP.sr*.9*(1-Math.pow(1-u,3));
+  fx.strokeStyle='rgba(255,236,214,'+(.4*(1-u)).toFixed(3)+')';fx.lineWidth=(2.2*(1-u)+.6)*sc;
+  fx.beginPath();fx.arc(stl.x,stl.y,r,0,6.2832);fx.stroke();
+}
+
+/* ------------------------------------------------------------------ pointer: the falcon and the startle */
+var lastMove=0,mouseMode=false;
+var armX=-1,armY=-1,armed=false;
+function onMove(e){
+  var x=e.clientX,y=e.clientY;
+  /* the falcon wakes only after the pointer has really travelled somewhere */
+  if(!armed){
+    if(armX<0){armX=x;armY=y;return}
+    if(Math.abs(x-armX)+Math.abs(y-armY)<10)return;
+    armed=true;
+  }
+  if(e.pointerType==='mouse'&&!mouseMode){mouseMode=true;fxC.classList.add('hunt')}
+  fal.px=x;fal.py=y;fal.idle=0;fal.on=true;
+  if(fal.auto>=0)fal.auto=-1;
+}
+win.addEventListener('pointermove',onMove,{passive:true});
+fxC.addEventListener('pointerdown',function(e){
+  armed=true;onMove(e);startle(e.clientX,e.clientY);
+  if(e.pointerType!=='mouse'){fal.x=e.clientX;fal.y=e.clientY}
+  hideHint();
+});
+doc.addEventListener('pointerleave',function(){fal.idle=Math.max(fal.idle,2.6)});
+function startle(x,y){
+  stl.on=true;stl.t=flightT;stl.x=x;stl.y=y;stl.ring=0;
+  nudgeNote('A startle','The whole flock turns at once, then remembers itself.');
+}
+win.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if((k===' '||k==='Enter')&&e.target===doc.body){e.preventDefault();startle(cx+A[0]*.8,cy+A[1]);hideHint()}
+  else if(k==='1'||k==='2'||k==='3')setFlock(+k-1,true);
+  else if(k==='f'||k==='F'){fal.auto=0;fal.on=true;fal.idle=0;fal.ax0=fal.x||W*.1;fal.ay0=fal.y||H*.2;hideHint()}
+});
+function hideHint(){$('hint').classList.add('gone')}
+setTimeout(hideHint,26000);
+
+/* ------------------------------------------------------------------ field notes */
+var NOTES=[
+  ['Rome · Nov 6 · 18:12 · ~40,000 birds','They gather over the station trees a quarter hour before the light goes.'],
+  ['Gretna · Dec 2 · 15:48 · ~60,000 birds','No leader. Each bird watches its seven nearest neighbours and nothing more.'],
+  ['Brighton · Nov 19 · 16:04 · ~30,000 birds','A turn begins at the edge of the flock and crosses it in a tenth of a second.'],
+  ['Somerset Levels · Jan 9 · 16:21 · ~100,000 birds','Then the whole cloud pours into the reeds, and there is only the sound of it.'],
+  ['Ebro Delta · Feb 3 · 18:02 · ~25,000 birds','A peregrine passes; the flock folds around it like cloth.'],
+  ['Otmoor · Dec 14 · 16:10 · ~50,000 birds','Density is the only punctuation the sky allows.']
+];
+var noteEl=$('note'),nMeta=$('nMeta'),nText=$('nText'),noteI=0,noteTimer=0,noteHold=0;
+function showNote(m,t){
+  noteEl.classList.add('out');
+  setTimeout(function(){nMeta.textContent=m;nText.textContent=t;noteEl.classList.remove('out')},reduce?0:900);
+}
+function cycleNote(){
+  if(noteHold>0){noteHold--;noteTimer=setTimeout(cycleNote,2500);return}
+  noteI=(noteI+1)%NOTES.length;showNote(NOTES[noteI][0],NOTES[noteI][1]);
+  noteTimer=setTimeout(cycleNote,7600);
+}
+function nudgeNote(m,t){showNote(m,t);noteHold=2;clearTimeout(noteTimer);noteTimer=setTimeout(cycleNote,5200)}
+noteTimer=setTimeout(cycleNote,7200);
+var falconNoted=0;
+
+/* ------------------------------------------------------------------ flock size control */
+var flockEl=$('flock');
+flockEl.addEventListener('click',function(e){var b=e.target.closest('button');if(b)setFlock(+b.getAttribute('data-i'),true)});
+flockEl.addEventListener('keydown',function(e){
+  var b=e.target.closest('button');if(!b)return;var i=+b.getAttribute('data-i'),n=-1;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')n=Math.min(2,i+1);else if(e.key==='ArrowLeft'||e.key==='ArrowUp')n=Math.max(0,i-1);
+  if(n>=0&&n!==i){e.preventDefault();setFlock(n,true);flockEl.querySelectorAll('button')[n].focus()}
+});
+flockEl.addEventListener('pointerdown',function(e){e.stopPropagation()});
+
+/* ------------------------------------------------------------------ layout and loop */
+var tagEl=$('tag'),tagT=0;
+function resize(){
+  var oldSc=sc,oldW=W;
+  W=win.innerWidth||360;H=win.innerHeight||640;dpr=Math.min(win.devicePixelRatio||1,1.25);
+  sc=clamp(Math.min(W/1440,H/900*1.15),.62,1.35);
+  bgC.width=fxC.width=Math.round(W*dpr);bgC.height=fxC.height=Math.round(H*dpr);
+  horizon=Math.round(H*.64);cx=W/2;cy=H*.365;
+  refl.width=Math.max(8,Math.round(W*dpr/4));refl.height=Math.max(8,Math.round((H-horizon)*dpr/4));
+  var was=oldW>0;
+  setScale();
+  if(was&&oldSc!==sc){var r=sc/oldSc;for(var i=0;i<active;i++){px[i]*=r;py[i]*=r;pz[i]*=r;vx[i]*=r;vy[i]*=r;vz[i]*=r}}
+  setSizes();
+  buildScene();buildReeds();
+}
+resize();
+setFlock(W<700?2:1,false);
+if(reduce&&targetN>1000)setFlock(0,false);
+allocateFlock(true);
+var rt=0;
+win.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){resize();setFlock(sizeIdx,false)},120)});
+
+var last=performance.now(),paused=false,frameAvg=16,slow=0,tail=0;
+doc.addEventListener('visibilitychange',function(){paused=doc.hidden;last=performance.now()});
+function frame(now){
+  requestAnimationFrame(frame);
+  if(paused)return;
+  var raw=(now-last)/1000;last=now;if(raw<=0)return;
+  var dt=Math.min(raw,1/30);
+  frameAvg+=(raw*1000-frameAvg)*.04;
+  /* gentle governor for genuinely slow devices (not for automated test runs) */
+  if(!win.navigator.webdriver){
+    if(frameAvg>62&&targetN>800){slow+=raw;if(slow>6&&sizeIdx>0){slow=0;setFlock(sizeIdx-1,false)}}else slow=Math.max(0,slow-raw);
+  }
+  var sd=reduce?dt*.55:dt;
+  flightT+=sd;
+  /* falcon follows the pointer, or flies its own dive on the F key */
+  fal.idle+=raw;
+  if(fal.auto>=0){
+    fal.auto+=raw/4.2;var u=fal.auto;
+    if(u>=1){fal.auto=-1;fal.idle=3}
+    else{
+      var mx=cx+A[0],my=cy+A[1],x0=fal.ax0,y0=fal.ay0,x1=W*1.08,y1=H*.4;
+      var bx=(1-u)*(1-u)*x0+2*(1-u)*u*mx+u*u*x1,by=(1-u)*(1-u)*y0+2*(1-u)*u*(my-H*.02)+u*u*y1;
+      fal.px=bx;fal.py=by;fal.idle=0;fal.on=true;
+    }
+  }
+  var kf=1-Math.exp(-raw*(fal.x===0&&fal.y===0?100:16));
+  var ox=fal.x,oy=fal.y;
+  fal.x+=(fal.px-fal.x)*kf;fal.y+=(fal.py-fal.y)*kf;
+  var vxn=(fal.x-ox)/Math.max(raw,.001),vyn=(fal.y-oy)/Math.max(raw,.001);
+  fal.vx+=(vxn-fal.vx)*.2;fal.vy+=(vyn-fal.vy)*.2;
+  fal.speed=Math.sqrt(fal.vx*fal.vx+fal.vy*fal.vy);
+  if(fal.speed>30){var hl=fal.speed;fal.hx+=(fal.vx/hl-fal.hx)*.15;fal.hy+=(fal.vy/hl-fal.hy)*.15;var hh=Math.sqrt(fal.hx*fal.hx+fal.hy*fal.hy)||1;fal.hx/=hh;fal.hy/=hh}
+  var want=fal.on&&fal.idle<3.4?1:0;
+  fal.alpha+=(want-fal.alpha)*Math.min(1,raw*(want?6:1.6));
+  if(fal.alpha<.03&&!want)fal.on=false;
+  if(fal.alpha>.05&&!reduce){fal.trail.push([fal.x,fal.y]);if(fal.trail.length>16)fal.trail.shift()}else if(fal.trail.length)fal.trail.shift();
+  if(fal.alpha>.5&&fal.speed>500&&!falconNoted){falconNoted=1;setTimeout(function(){falconNoted=0},15000);nudgeNote('Peregrine over the reed bed','The flock splits, flows around it, and closes behind.')}
+
+  adjustActive();
+  stepFlock(sd,flightT);
+
+  fx.setTransform(dpr,0,0,dpr,0,0);fx.clearRect(0,0,W,H);
+  drawClouds(sd);
+  drawBirds(flightT);
+  fx.setTransform(1,0,0,1,0,0);
+  drawReflection(flightT);
+  fx.setTransform(dpr,0,0,dpr,0,0);
+  drawGlitter(flightT);
+  drawReeds(flightT);
+  drawStartle(raw);
+  drawFalcon(flightT,raw);
+  /* the falcon's little caption */
+  tagT+=raw;
+  if(tagT>.09){
+    tagT=0;
+    if(fal.alpha>.4){
+      tagEl.style.opacity='1';
+      tagEl.textContent='peregrine · '+Math.round(clamp(fal.speed*.16,0,389))+' km/h';
+    }else tagEl.style.opacity='0';
+  }
+  tagEl.style.transform='translate3d('+Math.round(fal.x+22)+'px,'+Math.round(fal.y+16)+'px,0)';
+}
+requestAnimationFrame(function(t){last=t;frame(t)});
+})();
+</script>
+</body>
+</html>

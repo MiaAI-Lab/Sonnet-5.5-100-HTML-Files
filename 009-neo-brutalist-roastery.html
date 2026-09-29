@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRIND CULT — Small-Batch Coffee Roasters</title>
+<meta name="description" content="Grind Cult: small-batch coffee roasted in a former tyre shop. No decaf. No small talk. Slide the roast dial, do the brew maths, flip the bags.">
+<style>
+/* =========================================================
+   GRIND CULT — neo-brutalist roastery
+   tokens · base · nav · hero · stickers · ticker · roast dial
+   · brew calculator · product cards · rules · footer · bag
+   ========================================================= */
+:root{
+  --yellow:#ffe500; --pink:#ff4fa3; --cobalt:#2f4bff; --mint:#7dffb2; --paper:#fffbe6; --ink:#111;
+  --bw:4px; --sh:6px 6px 0 var(--ink); --sh-l:10px 10px 0 var(--ink);
+  --display:Impact,Haettenschweiler,"Franklin Gothic Heavy","Arial Black","Nimbus Sans Narrow","Liberation Sans Narrow","Arial Narrow","Nimbus Sans","Liberation Sans",Arial,sans-serif;
+  --body:"Helvetica Neue",Helvetica,Arial,"Nimbus Sans","Liberation Sans",sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --focus:var(--ink);
+  --wrapw:min(1320px,100% - 48px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.45;font-weight:500;min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased}
+img,svg{max-width:100%}
+a{color:inherit}
+::selection{background:var(--ink);color:var(--yellow)}
+:focus-visible{outline:4px solid var(--focus);outline-offset:3px}
+.wrap{width:var(--wrapw);margin-inline:auto}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:12px;top:-80px;z-index:200;background:var(--ink);color:var(--yellow);padding:12px 16px;font:700 14px var(--mono);text-decoration:none}
+.skip:focus{top:12px}
+.disp{font-family:var(--display);font-weight:900;text-transform:uppercase;letter-spacing:.005em}
+html.fb .disp,html.fb .btn,html.fb .logo{-webkit-text-stroke:.03em currentColor}
+.mono{font-family:var(--mono);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+
+/* ---------- buttons: hard shadow that presses down ---------- */
+.btn{--o:6px;--shc:var(--ink);--shb:0px;display:inline-flex;align-items:center;justify-content:center;gap:.6em;min-height:54px;padding:.55em 1.3em;border:var(--bw) solid var(--ink);background:var(--paper);color:var(--ink);font:900 1.2rem/1 var(--display);letter-spacing:.03em;text-transform:uppercase;text-decoration:none;box-shadow:var(--o) var(--o) 0 0 var(--shc),var(--o) var(--o) 0 var(--shb) var(--ink);cursor:pointer;transition:transform .07s ease-out,box-shadow .07s ease-out,background-color .12s;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn:hover{--o:3px;transform:translate(3px,3px)}
+.btn:active{--o:0px;--shb:0px;transform:translate(6px,6px)}
+.btn--ink{background:var(--ink);color:var(--yellow);--shc:var(--paper);--shb:4px}
+.btn--ink:hover{--shb:3px}
+.btn--pink{background:var(--pink)}
+.btn--yellow{background:var(--yellow)}
+.btn--mint{background:var(--mint)}
+.btn--sm{--o:4px;min-height:44px;font-size:1rem;padding:.4em .9em}
+.btn--sm:hover{--o:2px;transform:translate(2px,2px)}
+.btn--sm:active{--o:0px;transform:translate(4px,4px)}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+
+/* ---------- announcement + nav ---------- */
+.announce{margin:0;background:var(--ink);color:var(--yellow);font:700 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:10px 16px}
+.nav{position:sticky;top:0;z-index:60;background:var(--paper);border-bottom:var(--bw) solid var(--ink)}
+.nav-in{display:flex;align-items:center;gap:14px;min-height:74px;padding-block:8px}
+.logo{display:flex;align-items:stretch;text-decoration:none;color:var(--ink);font:900 27px/1 var(--display);letter-spacing:.02em;text-transform:uppercase;flex:none}
+.logo span{display:block;padding:.3em .42em .22em;border:3px solid var(--ink);transition:transform .12s}
+.logo .a{background:var(--ink);color:var(--yellow)}
+.logo .b{background:var(--pink);margin-left:-3px;transform:rotate(-3deg);box-shadow:3px 3px 0 var(--ink)}
+.logo:hover .b{transform:rotate(3deg) translateY(-2px)}
+.links{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+.links a{display:inline-block;padding:9px 14px;border:3px solid transparent;font:700 13px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;text-decoration:none;transition:transform .07s,box-shadow .07s,background-color .1s}
+.links a:hover{border-color:var(--ink);background:var(--yellow);box-shadow:4px 4px 0 var(--ink);transform:translate(-2px,-2px)}
+.links a:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+.bagbtn{flex:none;display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 16px;background:var(--cobalt);color:var(--paper);border:var(--bw) solid var(--ink);box-shadow:var(--sh);font:900 1.1rem/1 var(--display);letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:transform .07s,box-shadow .07s}
+.bagbtn:hover{transform:translate(3px,3px);box-shadow:3px 3px 0 var(--ink)}
+.bagbtn:active{transform:translate(6px,6px);box-shadow:0 0 0 var(--ink)}
+.bagbtn b{display:grid;place-items:center;min-width:28px;height:28px;padding:0 5px;background:var(--yellow);color:var(--ink);border:3px solid var(--ink);font:900 1rem/1 var(--display)}
+.bagbtn.bump{animation:bump .4s cubic-bezier(.3,1.8,.5,1)}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.14) rotate(-3deg)}100%{transform:scale(1)}}
+
+/* ---------- hero ---------- */
+section{scroll-margin-top:82px}
+.hero{position:relative;background:var(--yellow);border-bottom:var(--bw) solid var(--ink);overflow:clip;
+  background-image:linear-gradient(rgba(17,17,17,.09) 2px,transparent 2px),linear-gradient(90deg,rgba(17,17,17,.09) 2px,transparent 2px);background-size:56px 56px;background-position:-1px -1px}
+.hero-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(28px,4vw,64px);align-items:center;padding-block:clamp(36px,5vw,64px) clamp(44px,6vw,80px)}
+.eyebrow{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 clamp(26px,3vw,40px);padding:0;list-style:none}
+.eyebrow li{padding:7px 10px;border:3px solid var(--ink);background:var(--paper);font:700 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.eyebrow li:first-child{background:var(--ink);color:var(--paper);transform:rotate(-1.4deg)}
+.eyebrow li:last-child{transform:rotate(1deg)}
+.mega{margin:0;font-size:clamp(56px,14vw,180px);line-height:.84;color:var(--ink)}
+.mega .fit{display:block;width:max-content;white-space:nowrap;text-shadow:.045em .045em 0 var(--pink);padding-bottom:.04em}
+.mega .fit+.fit{margin-top:.05em;text-shadow:none}
+.mega .fit{animation:slam .75s cubic-bezier(.2,1.35,.3,1) both}
+.mega .fit+.fit{animation-delay:.14s}
+@keyframes slam{0%{transform:translate(-36px,34px) rotate(-2.5deg);opacity:0}100%{transform:none;opacity:1}}
+.hl{display:inline-block;background:var(--pink);border:var(--bw) solid var(--ink);box-shadow:10px 10px 0 var(--ink);padding:.02em .1em 0;transform:rotate(-1.6deg);transform-origin:0 100%}
+.lede{max-width:52ch;margin:clamp(28px,3vw,40px) 0 26px;font-size:clamp(17px,1.5vw,21px);line-height:1.42;font-weight:600}
+.lede b{background:var(--ink);color:var(--yellow);padding:0 .3em}
+.cta{display:flex;flex-wrap:wrap;gap:16px 20px;margin-bottom:28px}
+.facts{display:flex;flex-wrap:wrap;gap:10px 12px;margin:0;padding:0;list-style:none}
+.facts li{display:flex;align-items:baseline;gap:8px;padding:9px 12px;border:3px solid var(--ink);background:var(--paper);font:700 12px/1.1 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.facts li:nth-child(2){background:var(--mint);transform:rotate(-1deg)}
+.facts li:nth-child(3){background:var(--pink);transform:rotate(1.2deg)}
+.facts b{font:900 26px/1 var(--display);letter-spacing:.01em}
+
+.hero-art{position:relative;padding:0 14px 14px 0}
+.deco{position:absolute;pointer-events:none;z-index:0}
+.deco.c1{width:clamp(150px,20vw,290px);aspect-ratio:1;border-radius:50%;background:var(--cobalt);border:var(--bw) solid var(--ink);right:-6%;top:-9%;animation:breathe 7s ease-in-out infinite alternate}
+@keyframes breathe{from{transform:scale(.96)}to{transform:scale(1.05)}}
+.deco.c2{width:clamp(70px,8vw,116px);aspect-ratio:1;background:var(--mint);border:var(--bw) solid var(--ink);left:-24px;top:-30px;transform:rotate(-13deg)}
+.board{position:relative;z-index:1;font-size:clamp(10.5px,1.1vw,16px);aspect-ratio:1/1.04;background-color:var(--paper);background-image:radial-gradient(rgba(17,17,17,.26) 1.4px,transparent 1.7px);background-size:22px 22px;border:var(--bw) solid var(--ink);box-shadow:14px 14px 0 var(--ink);overflow:hidden;touch-action:pan-y}
+.board-cap{position:absolute;left:0;top:0;z-index:0;margin:0;padding:7px 10px;background:var(--ink);color:var(--paper);font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.boardwrap{position:relative;z-index:1}
+.board-foot{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:12px;margin:26px 0 0 clamp(78px,8vw,116px);font:700 11px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.board-foot span{background:var(--paper);border:3px solid var(--ink);padding:7px 9px}
+
+/* stickers */
+.sticker{position:absolute;left:0;top:0;z-index:3;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;will-change:transform;transition:transform .34s cubic-bezier(.3,1.7,.5,1)}
+.sticker.drag{cursor:grabbing;transition:none}
+.sticker:focus-visible{outline:4px solid var(--ink);outline-offset:6px}
+.sticker .face{--sx:5px;--sy:5px;display:block;position:relative;transition:filter .18s,box-shadow .18s,transform .18s;transform-origin:50% 60%}
+.sticker.intro .face{animation:slap .6s cubic-bezier(.2,1.5,.4,1) both;animation-delay:calc(var(--i,0)*80ms + 250ms)}
+.sticker svg.face{width:100%;height:auto;overflow:visible;filter:drop-shadow(var(--sx) var(--sy) 0 var(--ink))}
+.sticker.drag .face{--sx:13px;--sy:13px;animation:jitter .2s steps(2,end) infinite alternate}
+.sticker.landed .face{animation:thunk .3s cubic-bezier(.3,1.6,.5,1)}
+.sticker:not(.drag):not(.landed):not(.intro) .face{animation:idle 5.5s ease-in-out infinite alternate;animation-delay:calc(var(--i,0)*-.9s)}
+@keyframes idle{from{transform:rotate(-1.3deg) translateY(0)}to{transform:rotate(1.3deg) translateY(-3px)}}
+@keyframes slap{0%{transform:scale(2.3) rotate(-24deg);opacity:0}55%{opacity:1}100%{transform:none;opacity:1}}
+@keyframes jitter{from{transform:rotate(-2.6deg) scale(1.07)}to{transform:rotate(2.6deg) scale(1.07)}}
+@keyframes thunk{0%{transform:scale(1.14)}100%{transform:scale(1)}}
+.sticker text{font-family:var(--display);font-weight:900;text-transform:uppercase}
+.s-coin{width:9.6em}.s-burst{width:9.4em}.s-pill{width:max-content}.s-bubble{width:11.6em}.s-tag{width:6.6em}.s-cup{width:8.8em}.s-stamp{width:8em}.s-bar{width:9.6em}.s-oat{width:11em}
+.s-stamp text{font:700 13px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.s-stamp .spin{transform-origin:80px 80px;animation:spin 26s linear infinite}
+.s-pill .face{display:block;padding:.62em 1em .5em;background:var(--ink);color:var(--yellow);border:4px solid var(--ink);border-radius:999px;box-shadow:var(--sx) var(--sy) 0 var(--ink);font:900 1.32em/1 var(--display);letter-spacing:.04em;text-align:center;white-space:nowrap}
+.s-bubble .face{padding:.9em 1em .8em;background:var(--paper);border:4px solid var(--ink);border-radius:1.3em 1.3em 1.3em .2em;font:900 1.32em/1.02 var(--display);text-transform:uppercase;box-shadow:var(--sx) var(--sy) 0 var(--ink)}
+.s-bubble .face::after{content:"";position:absolute;left:.5em;bottom:-1.05em;width:1.1em;height:1.1em;background:var(--paper);border-right:4px solid var(--ink);border-bottom:4px solid var(--ink);transform:skewX(28deg);z-index:-1;box-shadow:var(--sx) var(--sy) 0 var(--ink)}
+.s-bubble .face b{background:var(--pink);padding:0 .12em}
+.s-bar .face{padding:.55em .6em .4em;background:#fff;border:4px solid var(--ink);box-shadow:var(--sx) var(--sy) 0 var(--ink);text-align:center}
+.s-bar i{display:block;height:2.7em;background:repeating-linear-gradient(90deg,#111 0 2px,transparent 2px 4px,#111 4px 5px,transparent 5px 8px,#111 8px 11px,transparent 11px 12px,#111 12px 13px,transparent 13px 15px,#111 15px 18px,transparent 18px 20px)}
+.s-bar span{display:block;margin-top:.35em;font:700 .78em/1 var(--mono);letter-spacing:.2em}
+.s-oat .face{padding:.75em .85em .65em;background:var(--cobalt);color:var(--paper);border:4px solid var(--ink);box-shadow:var(--sx) var(--sy) 0 var(--ink);font:900 1.22em/1.02 var(--display);text-transform:uppercase}
+.s-oat .face small{display:block;margin-top:.45em;font:700 .6em/1.2 var(--mono);letter-spacing:.1em;color:var(--yellow)}
+
+/* ---------- ticker ---------- */
+.ticks{position:relative;isolation:isolate;height:clamp(176px,19vw,212px);overflow:hidden;background:var(--paper);border-bottom:var(--bw) solid var(--ink)}
+.band{position:absolute;left:-6%;width:112%;top:50%;height:66px;margin-top:-33px;display:flex;align-items:center;border-block:var(--bw) solid var(--ink);overflow:hidden}
+.band--a{background:var(--ink);color:var(--yellow);transform:rotate(-3deg)}
+.band--b{background:var(--pink);color:var(--ink);transform:rotate(2.6deg);z-index:-1}
+.track{display:flex;flex:none;width:max-content;animation:marq 34s linear infinite}
+.band--b .track{animation-direction:reverse;animation-duration:42s}
+.band:hover .track{animation-play-state:paused}
+.track span{padding-right:.9em;font:900 32px/1 var(--display);letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+@keyframes marq{to{transform:translateX(-50%)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- section scaffolding ---------- */
+.sec{position:relative;padding-block:clamp(52px,7vw,96px);border-bottom:var(--bw) solid var(--ink);overflow:clip}
+.sec-head{display:grid;gap:22px;margin-bottom:clamp(28px,4vw,52px);max-width:980px}
+.tab{display:inline-flex;align-items:center;gap:12px;width:max-content;padding:8px 14px;background:var(--ink);color:var(--yellow);border:3px solid var(--ink);font:700 13px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;transform:rotate(-1.6deg)}
+.sec-head h2{margin:0;padding-top:.06em;font-size:clamp(46px,8.4vw,116px);line-height:.86}
+.sec-head p{margin:0;max-width:54ch;font-size:clamp(17px,1.5vw,20px);font-weight:600}
+.card{background:var(--paper);border:var(--bw) solid var(--ink);box-shadow:var(--sh-l)}
+
+.sec .wrap{position:relative}
+.hd-st{position:absolute;right:clamp(0px,3vw,48px);top:clamp(0px,1vw,16px);width:clamp(150px,17vw,250px);pointer-events:none;animation:wob 6s ease-in-out infinite alternate}
+.hd-st svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(8px 8px 0 var(--ink))}
+.hd-st text{font-family:var(--display);font-weight:900;text-transform:uppercase}
+@keyframes wob{from{transform:rotate(7deg)}to{transform:rotate(-4deg) translateY(-8px)}}
+
+/* ---------- roast dial ---------- */
+.roast{background:var(--pink)}
+.roast .sec-head h2{text-shadow:.04em .04em 0 var(--paper)}
+.roast-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(24px,3.4vw,48px);align-items:stretch}
+.beancard{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:18px;padding:clamp(18px,2.4vw,30px);background-color:var(--mint);background-image:radial-gradient(rgba(17,17,17,.2) 1.6px,transparent 1.9px);background-size:16px 16px;overflow:hidden}
+.beancard .fig{align-self:flex-start;margin:0;padding:6px 9px;background:var(--ink);color:var(--paper);font:700 11px/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+.beanwrap{position:relative;width:min(100%,420px);aspect-ratio:116/132;display:grid;place-items:center}
+#bean{width:100%;height:100%;overflow:visible;transition:transform .3s cubic-bezier(.3,1.7,.5,1)}
+#bean.pop{animation:beanpop .55s cubic-bezier(.3,1.8,.5,1)}
+@keyframes beanpop{0%{transform:scale(1) rotate(0)}30%{transform:scale(1.13) rotate(-5deg)}60%{transform:scale(.97) rotate(2deg)}100%{transform:scale(1) rotate(0)}}
+.b-fill{fill:var(--bean)}.b-shade{fill:var(--shade)}.b-line{stroke:var(--crease)}
+#bean .wr{opacity:var(--wr,1)}
+#bean .sheen,#bean .oil{opacity:var(--sheen,0)}
+.smoke{opacity:var(--smoke,0);transition:opacity .3s}
+.smoke path{fill:none;stroke:var(--ink);stroke-width:2.2;stroke-linecap:round;animation:puff 2.6s ease-in infinite;opacity:0}
+.smoke path:nth-child(2){animation-delay:.9s}.smoke path:nth-child(3){animation-delay:1.7s}
+@keyframes puff{0%{transform:translateY(6px);opacity:0}25%{opacity:.9}100%{transform:translateY(-22px);opacity:0}}
+.crack{position:absolute;right:-2%;top:-3%;width:clamp(96px,11vw,132px);pointer-events:none;opacity:0;transform:scale(.3) rotate(-20deg);transition:opacity .15s}
+.crack.on{opacity:1;animation:crack 1.1s cubic-bezier(.3,1.7,.5,1) both}
+.crack svg{width:100%;height:auto;overflow:visible;filter:drop-shadow(5px 5px 0 var(--ink))}
+.crack text{font-family:var(--display);font-weight:900}
+@keyframes crack{0%{transform:scale(.3) rotate(-20deg);opacity:0}25%{transform:scale(1.15) rotate(8deg);opacity:1}70%{transform:scale(1) rotate(4deg);opacity:1}100%{transform:scale(.9) rotate(6deg);opacity:0}}
+.minis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;width:100%}
+.mini{display:grid;justify-items:center;gap:4px;padding:8px 2px 6px;background:var(--paper);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);cursor:pointer;font:700 9.5px/1.1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink);transition:transform .07s,box-shadow .07s,background-color .1s}
+.mini svg{width:26px;height:31px}
+.mini:hover{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.mini[aria-pressed="true"]{background:var(--yellow);transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.dialcard{padding:clamp(20px,2.6vw,34px);display:grid;gap:clamp(16px,2vw,24px);align-content:start}
+.dialtop{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 18px}
+.dialtop .no{margin:0;font:700 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.dialtop h3{margin:12px 0 0;font-size:clamp(44px,6.4vw,84px);line-height:.95}
+.alias{padding:9px 12px 7px;background:var(--yellow);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);font:900 1.1rem/1 var(--display);letter-spacing:.04em;text-transform:uppercase;transform:rotate(2deg);white-space:nowrap}
+.quip{margin:0;font-size:clamp(17px,1.5vw,20px);font-weight:700;min-height:2.9em}
+.dial label.mono{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.slidebox{position:relative}
+.marks{position:relative;height:38px;margin-top:2px}
+input[type=range]{-webkit-appearance:none;appearance:none;display:block;width:100%;height:58px;margin:0;background:transparent;cursor:grab;touch-action:pan-y}
+input[type=range]:active{cursor:grabbing}
+input[type=range]::-webkit-slider-runnable-track{height:34px;border:var(--bw) solid var(--ink);background:linear-gradient(90deg,#c9955a 0 16.2%,#111 16.2% 17.1%,#a86f3c 17.1% 32.9%,#111 32.9% 33.8%,#7f4b26 33.8% 49.6%,#111 49.6% 50.5%,#5a3319 50.5% 66.2%,#111 66.2% 67.1%,#3a2010 67.1% 82.9%,#111 82.9% 83.8%,#1e110a 83.8%);box-sizing:content-box}
+input[type=range]::-moz-range-track{height:34px;border:var(--bw) solid var(--ink);background:linear-gradient(90deg,#c9955a 0 16.2%,#111 16.2% 17.1%,#a86f3c 17.1% 32.9%,#111 32.9% 33.8%,#7f4b26 33.8% 49.6%,#111 49.6% 50.5%,#5a3319 50.5% 66.2%,#111 66.2% 67.1%,#3a2010 67.1% 82.9%,#111 82.9% 83.8%,#1e110a 83.8%);box-sizing:content-box}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:38px;height:60px;margin-top:-13px;background:var(--paper) repeating-linear-gradient(0deg,transparent 0 6px,var(--ink) 6px 8px) center/14px 26px no-repeat;border:var(--bw) solid var(--ink);box-shadow:5px 5px 0 var(--ink);cursor:grab;transition:box-shadow .07s,transform .07s}
+input[type=range]::-moz-range-thumb{width:30px;height:52px;background:var(--paper) repeating-linear-gradient(0deg,transparent 0 6px,var(--ink) 6px 8px) center/14px 26px no-repeat;border:var(--bw) solid var(--ink);border-radius:0;box-shadow:5px 5px 0 var(--ink);cursor:grab}
+input[type=range]:active::-webkit-slider-thumb{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--ink)}
+input[type=range]:focus-visible{outline:4px solid var(--ink);outline-offset:8px}
+.crackmark{position:absolute;top:0;left:calc(19px + (100% - 38px) * var(--p));transform:translateX(-50%);display:grid;justify-items:center;gap:3px;font:700 10px/1.1 var(--mono);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;pointer-events:none}
+.crackmark i{display:block;width:0;height:0;border:7px solid transparent;border-bottom:10px solid var(--ink);border-top:0}
+.ends{display:flex;justify-content:space-between;font:900 1.35rem/1 var(--display);letter-spacing:.04em;text-transform:uppercase;padding-inline:2px;pointer-events:none;position:relative;margin-top:2px}
+.readouts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;width:100%}
+.readouts div{padding:9px 12px;border:3px solid var(--ink);background:var(--paper);font:700 11px/1.1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.readouts div:nth-child(1){background:var(--yellow)}.readouts div:nth-child(3){background:var(--mint)}
+.readouts b{display:block;margin-top:5px;font:900 24px/1 var(--display);letter-spacing:.02em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px 30px}
+.sub{margin:0 0 10px;font:700 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.tags{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;list-style:none;min-height:96px;align-content:flex-start}
+.tags li{padding:9px 13px 7px;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);font:900 1.15rem/1 var(--display);letter-spacing:.04em;text-transform:uppercase;animation:tagin .42s cubic-bezier(.3,1.7,.5,1) both;animation-delay:calc(var(--n)*55ms)}
+@keyframes tagin{from{transform:scale(.4) rotate(-10deg);opacity:0}to{opacity:1}}
+.bars{display:grid;gap:11px}
+.bar{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:10px;font:700 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.blocks{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;height:20px;padding:3px;border:3px solid var(--ink);background:var(--paper)}
+.blocks span{background:transparent;transition:background-color .2s}
+.blocks span.on{background:var(--ink)}
+.bar:nth-child(1) .blocks span.on{background:var(--yellow);box-shadow:inset 0 0 0 2px var(--ink)}
+.bar:nth-child(2) .blocks span.on{background:var(--pink);box-shadow:inset 0 0 0 2px var(--ink)}
+.bar:nth-child(3) .blocks span.on{background:var(--cobalt);box-shadow:inset 0 0 0 2px var(--ink)}
+.bar:nth-child(4) .blocks span.on{background:var(--ink)}
+.buyrow{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px;padding-top:6px}
+.pricetag{position:relative;padding:10px 16px 8px;background:var(--cobalt);color:var(--paper);border:var(--bw) solid var(--ink);box-shadow:var(--sh);transform:rotate(-2.2deg)}
+.pricetag b{display:block;font:900 clamp(40px,4.4vw,58px)/1 var(--display);letter-spacing:.01em}
+.pricetag span{font:700 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase}
+.fine{margin:0;font-size:14px;font-weight:600;max-width:34ch}
+
+/* ---------- brew calculator ---------- */
+.brew{background:var(--mint)}
+.brew .sec-head h2{text-shadow:.04em .04em 0 var(--paper)}
+.brew-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(24px,3.4vw,48px);align-items:stretch}
+.inputs{padding:clamp(20px,2.6vw,34px);display:grid;gap:clamp(18px,2.2vw,28px);align-content:start}
+.field label,.field .lbl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;font:900 1.35rem/1 var(--display);letter-spacing:.04em;text-transform:uppercase}
+.field label small,.field .lbl small{font:700 11px/1 var(--mono);letter-spacing:.12em;opacity:.8}
+.stepper{display:grid;grid-template-columns:64px minmax(0,1fr) 64px;gap:0;border:var(--bw) solid var(--ink);box-shadow:var(--sh);background:var(--paper)}
+.stepper button{border:0;background:var(--yellow);color:var(--ink);font:900 2.2rem/1 var(--display);cursor:pointer;min-height:68px;transition:background-color .1s,transform .07s;touch-action:manipulation}
+.stepper button:first-child{border-right:var(--bw) solid var(--ink)}
+.stepper button:last-child{border-left:var(--bw) solid var(--ink)}
+.stepper button:hover{background:var(--pink)}
+.stepper button:active{background:var(--ink);color:var(--yellow)}
+.stepper input,.ratio-in input{width:100%;min-width:0;border:0;border-radius:0;background:transparent;color:var(--ink);text-align:center;font:900 clamp(40px,5vw,62px)/1 var(--display);letter-spacing:.02em;padding:6px 4px 2px;-moz-appearance:textfield;appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button,.ratio-in input::-webkit-outer-spin-button,.ratio-in input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stepper:focus-within,.ratio-in:focus-within{outline:4px solid var(--cobalt);outline-offset:3px}
+.stepper input:focus-visible,.ratio-in input:focus-visible{outline:none}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;border:0}
+.chip{position:relative;display:block}
+.chip input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.chip span{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:86px;padding:10px 14px 8px;border:3px solid var(--ink);background:var(--paper);box-shadow:4px 4px 0 var(--ink);font:900 1.05rem/1 var(--display);letter-spacing:.04em;text-transform:uppercase;transition:transform .07s,box-shadow .07s,background-color .1s}
+.chip small{font:700 11px/1 var(--mono);letter-spacing:.1em}
+.chip:hover span{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.chip input:checked+span{background:var(--ink);color:var(--yellow);transform:translate(4px,4px);box-shadow:0 0 0 var(--ink)}
+.chip input:focus-visible+span{outline:4px solid var(--cobalt);outline-offset:3px}
+.ratio-row{display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px}
+.ratio-in{display:flex;align-items:center;gap:0;border:var(--bw) solid var(--ink);background:var(--paper);box-shadow:var(--sh)}
+.ratio-in span{padding:0 12px;font:900 2.2rem/1 var(--display);background:var(--ink);color:var(--yellow);align-self:stretch;display:grid;place-items:center}
+.ratio-in input{width:104px;font-size:44px}
+.result{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:18px;row-gap:18px;align-content:space-between;padding:clamp(20px,2.6vw,34px);background:var(--ink);color:var(--paper);border:var(--bw) solid var(--ink);box-shadow:var(--sh-l);overflow:hidden}
+.result>*{grid-column:1}
+.result>.stats{grid-column:1 / -1}
+.result .youneed{margin:0;font:700 12px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--yellow)}
+.bigres{display:flex;flex-wrap:wrap;align-items:flex-end;gap:6px 14px}
+.bigres .num{font:900 clamp(78px,8vw,120px)/.8 var(--display);letter-spacing:.005em;color:var(--yellow);text-shadow:.04em .04em 0 var(--pink);font-variant-numeric:tabular-nums}
+.bigres .unit{font:900 clamp(26px,3vw,40px)/1 var(--display);letter-spacing:.06em;padding-bottom:.1em}
+.resline{margin:0;font-weight:600;font-size:17px}
+.verdict{margin:0;padding:12px 14px 10px;background:var(--yellow);color:var(--ink);border:3px solid var(--paper);font:900 1.25rem/1.08 var(--display);letter-spacing:.03em;text-transform:uppercase;transform:rotate(-1deg)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0}
+.stats div{padding:9px 11px;border:3px solid var(--paper);min-width:0}
+.stats dt{margin:0;font:700 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mint)}
+.stats dd{margin:6px 0 0;font:900 1.15rem/1.05 var(--display);letter-spacing:.03em;text-transform:uppercase;overflow-wrap:anywhere}
+.beaker{grid-column:2;grid-row:1 / span 4;width:clamp(84px,8.6vw,118px);pointer-events:none;align-self:start}
+.beaker svg{width:100%;height:auto;overflow:visible}
+.beaker text{font:700 9px var(--mono);fill:#111;stroke:#fffbe6;stroke-width:3px}
+.liquid{transform-box:fill-box;transform-origin:50% 100%;transition:transform .5s cubic-bezier(.3,1.3,.5,1)}
+.planrow{margin-top:clamp(24px,3vw,40px);display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(24px,3.4vw,48px)}
+.plan{padding:clamp(20px,2.6vw,34px)}
+.plan h3,.timer h3{margin:0 0 14px;font-size:clamp(28px,3vw,40px);line-height:1}
+.steps{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:st}
+.steps li{display:grid;grid-template-columns:44px 1fr auto;align-items:center;gap:12px;padding:10px 12px;border:3px solid var(--ink);background:var(--paper);counter-increment:st;transition:background-color .15s,transform .15s,box-shadow .15s}
+.steps li::before{content:counter(st);display:grid;place-items:center;width:36px;height:36px;background:var(--ink);color:var(--yellow);font:900 1.3rem/1 var(--display)}
+.steps li b{display:block;font:900 1.2rem/1.05 var(--display);letter-spacing:.03em;text-transform:uppercase}
+.steps li em{display:block;font-style:normal;font-size:14px;font-weight:600;opacity:.85}
+.steps li .tt{font:700 12px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;text-align:right}
+.steps li .tt strong{display:block;font:900 1.35rem/1 var(--display);letter-spacing:.02em}
+.steps li.now{background:var(--yellow);transform:translate(-4px,-4px);box-shadow:6px 6px 0 var(--ink)}
+.steps li.done{background:#e9e4c8;opacity:.72}
+.timer{padding:clamp(20px,2.6vw,34px);background:var(--yellow);display:grid;gap:14px;align-content:start}
+.clock{font:900 clamp(74px,9vw,124px)/.9 var(--display);letter-spacing:.01em;font-variant-numeric:tabular-nums;text-shadow:.04em .04em 0 var(--paper)}
+.target{margin:0;padding:10px 12px 8px;background:var(--ink);color:var(--paper);font:700 12px/1.25 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.target b{display:block;margin-top:4px;font:900 1.8rem/1 var(--display);letter-spacing:.03em;color:var(--mint)}
+.timer .row{display:flex;flex-wrap:wrap;gap:12px}
+.timer .msg{margin:0;font-weight:700;font-size:16px;min-height:2.6em}
+
+/* ---------- product cards ---------- */
+.beans{background-color:var(--paper);background-image:radial-gradient(rgba(17,17,17,.16) 1.6px,transparent 1.9px);background-size:24px 24px}
+.grid-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(24px,3vw,44px) clamp(20px,2.6vw,36px);margin:0;padding:0;list-style:none}
+.flip{perspective:1400px;min-width:0}
+.flip-in{position:relative;display:grid;transform-style:preserve-3d;transition:transform .62s cubic-bezier(.3,1.25,.4,1)}
+.face-f,.face-b{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:var(--bw) solid var(--ink);box-shadow:var(--sh-l);min-width:0;display:flex;flex-direction:column}
+.face-b{transform:rotateY(180deg);background:var(--paper);visibility:hidden;transition:visibility 0s .3s}
+.flip.is-flipped .flip-in{transform:rotateY(180deg)}
+.flip.is-flipped .face-b{visibility:visible;transition-delay:0s}
+.flip.is-flipped .face-f{visibility:hidden;transition:visibility 0s .3s}
+@media (hover:hover){
+  .flip:hover .flip-in{transform:rotateY(180deg)}
+  .flip:hover .face-b{visibility:visible;transition-delay:0s}
+  .flip:hover .face-f{visibility:hidden;transition:visibility 0s .3s}
+}
+.face-f{position:relative;padding:18px 20px 20px;background:var(--cb,var(--pink));color:var(--cf,var(--ink));min-height:460px;justify-content:space-between;overflow:hidden}
+.idx{position:absolute;left:14px;top:6px;margin:0;font:900 84px/1 var(--display);color:transparent;-webkit-text-stroke:3px var(--ink);letter-spacing:.02em;opacity:.9}
+.on-dark .idx{-webkit-text-stroke-color:var(--paper)}
+.flag{position:absolute;right:14px;top:16px;margin:0;padding:7px 10px 5px;background:var(--paper);color:var(--ink);border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);font:700 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;transform:rotate(4deg)}
+.bagpic{align-self:center;width:min(62%,210px);margin-top:44px;transition:transform .3s cubic-bezier(.3,1.7,.5,1)}
+.flip:hover .bagpic{transform:rotate(-4deg) translateY(-6px)}
+.bagpic svg{display:block;width:100%;height:auto;overflow:visible}
+.bagpic text{font-family:var(--display);font-weight:900;fill:var(--ink)}
+.fname{margin:0;font-size:clamp(34px,3.4vw,46px);line-height:.9;text-shadow:3px 3px 0 var(--sh-c,transparent)}
+.fkind{margin:8px 0 0;font:700 12px/1.3 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.on-dark .fprice{background:var(--yellow);color:var(--ink);border-color:var(--paper)}
+.fbot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.fprice{padding:6px 12px 3px;background:var(--ink);color:var(--yellow);font:900 1.9rem/1 var(--display);letter-spacing:.02em;border:3px solid var(--ink);transform:rotate(-3deg);white-space:nowrap}
+.flipbtn{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;background:var(--paper);color:var(--ink);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);font:700 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:transform .07s,box-shadow .07s}
+.flipbtn:hover{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.face-b{padding:0;overflow:hidden}
+.bhead{padding:14px 18px 10px;background:var(--cb,var(--pink));color:var(--cf,var(--ink));border-bottom:var(--bw) solid var(--ink);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.bhead h3{margin:0;font-size:clamp(26px,2.5vw,34px);line-height:.95}
+.bhead span{font:700 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.bbody{padding:16px 18px 18px;display:flex;flex-direction:column;gap:14px;flex:1}
+.notes{margin:0;font-size:17px;line-height:1.35;font-weight:700}
+.spec{display:grid;gap:0;margin:0;border:3px solid var(--ink)}
+.spec div{display:grid;grid-template-columns:96px 1fr;gap:8px;padding:7px 10px;border-bottom:3px solid var(--ink);font-size:14px;line-height:1.25}
+.spec div:last-child{border-bottom:0}
+.spec dt{font:700 10.5px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;margin:0}
+.spec dd{margin:0;font-weight:700}
+.bbuy{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto}
+.bbuy .p{font:900 2rem/1 var(--display);letter-spacing:.02em}
+.bbuy .p small{display:block;font:700 10px/1 var(--mono);letter-spacing:.12em}
+.unflip{background:none;border:0;padding:0;font:700 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;text-decoration:underline;text-underline-offset:4px;cursor:pointer;color:var(--ink);min-height:40px}
+
+/* ---------- rules ---------- */
+.rules{background:var(--cobalt);color:var(--paper);--focus:var(--yellow)}
+.rules .sec-head h2{text-shadow:.04em .04em 0 var(--ink)}
+.rules .tab{background:var(--yellow);color:var(--ink);border-color:var(--ink)}
+.rulelist{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(18px,2vw,28px);margin:0;padding:0;list-style:none;counter-reset:r}
+.rulelist li{position:relative;padding:22px 18px 20px;background:var(--paper);color:var(--ink);border:var(--bw) solid var(--ink);box-shadow:8px 8px 0 var(--ink);counter-increment:r;transition:transform .1s,box-shadow .1s}
+.rulelist li:nth-child(odd){transform:rotate(-1.2deg)}
+.rulelist li:nth-child(even){transform:rotate(1.1deg);background:var(--yellow)}
+.rulelist li:nth-child(3){background:var(--mint)}
+.rulelist li:hover{transform:rotate(0) translate(3px,3px);box-shadow:4px 4px 0 var(--ink)}
+.rulelist li::before{content:counter(r,decimal-leading-zero);display:block;margin-bottom:10px;font:900 58px/.9 var(--display);color:var(--pink);-webkit-text-stroke:3px var(--ink)}
+.rulelist h3{margin:0 0 8px;font-size:clamp(24px,2.2vw,30px);line-height:.95}
+.rulelist p{margin:0;font-size:15.5px;line-height:1.35;font-weight:600}
+
+/* ---------- footer ---------- */
+.foot{background:var(--ink);color:var(--paper);--focus:var(--yellow);padding-block:clamp(48px,6vw,84px) 28px;overflow:clip}
+.mark{display:block;width:max-content;margin:0 0 clamp(30px,4vw,54px);color:var(--yellow);font-size:clamp(60px,20vw,300px);line-height:.8;white-space:nowrap;text-shadow:.03em .03em 0 var(--pink)}
+.foot-grid{display:grid;grid-template-columns:minmax(0,6fr) repeat(2,minmax(0,3fr));gap:clamp(28px,4vw,56px)}
+.join h2{margin:0 0 10px;font-size:clamp(32px,3.6vw,50px);line-height:.92;color:var(--pink)}
+.join p{margin:0 0 16px;max-width:46ch;font-weight:600}
+.joinform{display:flex;flex-wrap:wrap;gap:12px}
+.joinform input{flex:1 1 240px;min-width:0;min-height:58px;padding:0 16px;border:var(--bw) solid var(--paper);border-radius:0;background:var(--ink);color:var(--paper);font:700 1.05rem var(--mono);letter-spacing:.04em}
+.joinform input::placeholder{color:#a8a48c}
+.joinform .btn{box-shadow:6px 6px 0 var(--pink);border-color:var(--paper)}
+.joinform .btn:hover{box-shadow:3px 3px 0 var(--pink)}
+.joinform .btn:active{box-shadow:0 0 0 var(--pink)}
+.foot h3{margin:0 0 12px;font:700 12px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mint)}
+.foot ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.foot li a{display:inline-block;padding:4px 0;font:900 1.35rem/1.1 var(--display);letter-spacing:.04em;text-transform:uppercase;text-decoration:none}
+.foot li a:hover{color:var(--yellow);text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:5px}
+.foot address{font-style:normal;font-weight:600;line-height:1.5}
+.legal{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:14px 24px;margin-top:clamp(32px,4vw,52px);padding-top:20px;border-top:3px solid var(--paper);font:700 12px/1.5 var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.legal p{margin:0;max-width:78ch}
+
+/* ---------- bag drawer, toast, bean burst ---------- */
+.bag{position:fixed;top:0;right:0;bottom:0;z-index:90;width:min(440px,100%);display:flex;flex-direction:column;background:var(--paper);border-left:var(--bw) solid var(--ink);box-shadow:-12px 0 0 rgba(17,17,17,.9);transform:translateX(108%);visibility:hidden;transition:transform .3s cubic-bezier(.2,.9,.25,1),visibility 0s .3s}
+.bag.open{transform:none;visibility:visible;transition:transform .3s cubic-bezier(.2,.9,.25,1),visibility 0s}
+.bag-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;background:var(--yellow);border-bottom:var(--bw) solid var(--ink)}
+.bag-head h2{margin:0;font-size:38px;line-height:1}
+.bag-list{flex:1;overflow:auto;margin:0;padding:18px 20px;list-style:none;display:grid;gap:14px;align-content:start}
+.bag-item{display:grid;grid-template-columns:1fr auto;gap:6px 12px;padding:12px;border:3px solid var(--ink);background:#fff;box-shadow:4px 4px 0 var(--ink)}
+.bag-item b{font:900 1.3rem/1 var(--display);letter-spacing:.03em;text-transform:uppercase}
+.bag-item small{display:block;margin-top:4px;font:700 11px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.bag-item .pr{font:900 1.4rem/1 var(--display);text-align:right}
+.qty{display:inline-flex;align-items:center;gap:0;border:3px solid var(--ink);justify-self:start}
+.qty button{width:40px;height:40px;border:0;background:var(--mint);font:900 1.4rem/1 var(--display);cursor:pointer}
+.qty button:hover{background:var(--pink)}
+.qty span{min-width:36px;text-align:center;font:900 1.2rem/1 var(--display)}
+.empty{padding:26px 8px;text-align:center;font:900 1.5rem/1.1 var(--display);text-transform:uppercase}
+.empty small{display:block;margin-top:10px;font:700 12px/1.4 var(--mono);letter-spacing:.08em}
+.bag-foot{padding:16px 20px 22px;border-top:var(--bw) solid var(--ink);background:var(--paper);display:grid;gap:12px}
+.total{display:flex;justify-content:space-between;align-items:baseline;font:900 1.7rem/1 var(--display);text-transform:uppercase}
+.scrim{position:fixed;inset:0;z-index:80;background:rgba(17,17,17,.55);opacity:0;visibility:hidden;transition:opacity .25s,visibility 0s .25s}
+.scrim.open{opacity:1;visibility:visible;transition:opacity .25s,visibility 0s}
+.toast{position:fixed;left:50%;bottom:22px;z-index:120;max-width:min(92vw,520px);padding:13px 18px 11px;background:var(--ink);color:var(--yellow);border:var(--bw) solid var(--paper);box-shadow:6px 6px 0 var(--pink);font:900 1.15rem/1.15 var(--display);letter-spacing:.04em;text-transform:uppercase;text-align:center;transform:translate(-50%,160%) rotate(-1.5deg);transition:transform .35s cubic-bezier(.3,1.5,.5,1)}
+.toast.show{transform:translate(-50%,0) rotate(-1.5deg)}
+.bb{position:fixed;z-index:110;width:22px;height:26px;pointer-events:none;animation:bb .9s cubic-bezier(.2,.8,.3,1) forwards}
+@keyframes bb{0%{transform:translate(0,0) rotate(0) scale(.6);opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(1);opacity:0}}
+
+/* ---------- reveal ---------- */
+.js .rv{opacity:0;transform:translateY(28px) rotate(.6deg);transition:opacity .5s ease-out,transform .55s cubic-bezier(.2,.9,.25,1)}
+.js .rv.in{opacity:1;transform:none}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){
+  .rulelist{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .hero-grid,.roast-grid,.brew-grid,.planrow{grid-template-columns:minmax(0,1fr)}
+  .hero-art{max-width:640px;width:100%;margin-inline:auto;padding-right:12px}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .join{grid-column:1/-1}
+  .beaker{width:84px}
+  .hd-st{display:none}
+  .nav-in{flex-wrap:wrap;min-height:0;padding-block:10px 8px;gap:10px}
+  .bagbtn{margin-left:auto;min-height:44px}
+  .links{order:3;width:100%;margin-left:0;justify-content:space-between;gap:4px;flex-wrap:nowrap}
+  .links a{padding:9px 8px;white-space:nowrap}
+  section{scroll-margin-top:118px}
+}
+@media (max-width:720px){
+  :root{--wrapw:min(1320px,100% - 32px)}
+  body{font-size:17px}
+  .nav-in{flex-wrap:wrap;min-height:0;padding-block:10px 8px;gap:10px}
+  .logo{font-size:22px}
+  .bagbtn{margin-left:auto;min-height:44px}
+  .links{order:3;width:100%;margin-left:0;justify-content:space-between;gap:4px;flex-wrap:nowrap}
+  .links a{padding:9px 6px;font-size:11px;letter-spacing:.04em;white-space:nowrap}
+  .announce{font-size:10.5px;letter-spacing:.09em;padding:9px 12px}
+  .hm{display:none}
+  .grid2{grid-template-columns:1fr}
+  .grid-cards{grid-template-columns:minmax(0,1fr)}
+  .rulelist{grid-template-columns:minmax(0,1fr)}
+  .rulelist li:nth-child(n){transform:none}
+  .face-f{min-height:430px}
+  .minis{grid-template-columns:repeat(3,1fr)}
+  .track span{font-size:26px}
+  .band{height:56px;margin-top:-28px}
+  .bigres .num{font-size:88px}
+  .beaker{display:none}
+  .bar{grid-template-columns:86px 1fr}
+  .stepper{grid-template-columns:56px minmax(0,1fr) 56px}
+  .foot-grid{grid-template-columns:1fr}
+  .hl{box-shadow:6px 6px 0 var(--ink)}
+  .board-foot{margin-left:0}
+  .board-foot span{font-size:10px;letter-spacing:.08em}
+  .board-foot .btn{white-space:nowrap}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  .track{animation:none!important}
+  .s-stamp .spin{animation:none!important}
+  .js .rv{opacity:1;transform:none}
+  .flip-in{transition:none}
+}
+</style>
+</head>
+<body id="top">
+<a class="skip" href="#main">Skip to the beans</a>
+<p class="announce">Roasted Tue + Fri &#9733; <span class="hm">Free shipping over &pound;30 &#9733; </span>No decaf. Ever.</p>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="logo" href="#top" id="logo" aria-label="Grind Cult, back to top"><span class="a">GRIND</span><span class="b">CULT</span></a>
+    <nav class="links" aria-label="Primary">
+      <a href="#roast">Roast dial</a>
+      <a href="#brew">Brew maths</a>
+      <a href="#beans">The beans</a>
+      <a href="#rules">Rules</a>
+    </nav>
+    <button class="bagbtn" id="bagBtn" type="button" aria-controls="bag" aria-expanded="false">Bag <b id="bagCount" aria-live="polite">0</b></button>
+  </div>
+</header>
+
+<main id="main">
+  <!-- ================= HERO ================= -->
+  <section class="hero" aria-labelledby="h1">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <ul class="eyebrow">
+          <li>Small-batch coffee roasters</li>
+          <li>Kettle Lane &middot; est. 2019</li>
+        </ul>
+        <h1 class="mega disp" id="h1"><span class="fit" data-max="250">BURNT ON</span><span class="fit" data-max="250"><span class="hl">PURPOSE.</span></span></h1>
+        <p class="lede">We roast <b>15 kg at a time</b> in a former tyre shop, stop the drum the second the beans have something to say, and post them before they cool down and have regrets. No decaf. No syrups. No small talk.</p>
+        <div class="cta">
+          <a class="btn btn--ink" href="#beans">Shop the beans <span aria-hidden="true">&rarr;</span></a>
+          <a class="btn btn--pink" href="#roast">Find your roast <span aria-hidden="true">&darr;</span></a>
+        </div>
+        <ul class="facts">
+          <li><b>15 kg</b> drum named Brenda</li>
+          <li><b>0</b> decaf. sorry.</li>
+          <li><b>Tue + Fri</b> roast days</li>
+        </ul>
+      </div>
+
+      <div class="hero-art">
+        <div class="deco c1" aria-hidden="true"></div>
+        <div class="deco c2" aria-hidden="true"></div>
+        <div class="boardwrap">
+        <div class="board" id="board" role="group" aria-label="Sticker sheet. Drag the stickers anywhere; with a sticker focused, use the arrow keys to nudge it.">
+          <p class="board-cap">Sticker sheet no.1 &mdash; peel, drag, slap</p>
+
+          <div class="sticker intro s-coin" role="button" tabindex="0" aria-label="Sticker: zero percent decaf" data-fx=".04" data-fy=".13" data-r="-9" style="--i:0">
+            <svg class="face" viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="100" r="94" fill="#ff4fa3" stroke="#111" stroke-width="8"/>
+              <path id="ringA" d="M 25,100 a 75,75 0 1,1 150,0 a 75,75 0 1,1 -150,0" fill="none"/>
+              <text font-size="21" fill="#111" letter-spacing="1"><textPath href="#ringA" data-r="75">NO DECAF &#9733; NO DECAF &#9733; NO DECAF &#9733;</textPath></text>
+              <circle cx="100" cy="100" r="54" fill="#fffbe6" stroke="#111" stroke-width="6"/>
+              <text x="100" y="112" text-anchor="middle" font-size="52" fill="#111" textLength="76" lengthAdjust="spacingAndGlyphs">0%</text>
+              <text x="100" y="134" text-anchor="middle" font-size="18" fill="#111" textLength="64" lengthAdjust="spacingAndGlyphs">DECAF</text>
+            </svg>
+          </div>
+
+          <div class="sticker intro s-burst" role="button" tabindex="0" aria-label="Sticker: first crack at 196 degrees" data-fx=".98" data-fy=".095" data-r="11" style="--i:1">
+            <svg class="face" viewBox="0 0 200 200" aria-hidden="true">
+              <polygon points="100,4 115.2,23.5 136.7,11.3 143.3,35.1 167.9,32.1 164.9,56.7 188.7,63.3 176.5,84.8 196,100 176.5,115.2 188.7,136.7 164.9,143.3 167.9,167.9 143.3,164.9 136.7,188.7 115.2,176.5 100,196 84.8,176.5 63.3,188.7 56.7,164.9 32.1,167.9 35.1,143.3 11.3,136.7 23.5,115.2 4,100 23.5,84.8 11.3,63.3 35.1,56.7 32.1,32.1 56.7,35.1 63.3,11.3 84.8,23.5" fill="#ffe500" stroke="#111" stroke-width="7" stroke-linejoin="miter" stroke-miterlimit="3"/>
+              <text x="100" y="82" text-anchor="middle" font-size="30" fill="#111" textLength="102" lengthAdjust="spacingAndGlyphs">FIRST</text>
+              <text x="100" y="116" text-anchor="middle" font-size="40" fill="#ff4fa3" stroke="#111" stroke-width="2.4" paint-order="stroke" textLength="112" lengthAdjust="spacingAndGlyphs">CRACK</text>
+              <text x="100" y="146" text-anchor="middle" font-size="26" fill="#111" textLength="86" lengthAdjust="spacingAndGlyphs">196&#176;C!</text>
+            </svg>
+          </div>
+
+          <div class="sticker intro s-pill" role="button" tabindex="0" aria-label="Sticker: no small talk" data-fx=".52" data-fy=".22" data-r="-4" style="--i:2">
+            <span class="face">NO SMALL TALK</span>
+          </div>
+
+          <div class="sticker intro s-bubble" role="button" tabindex="0" aria-label="Sticker: I'm not addicted, I'm committed" data-fx=".037" data-fy=".54" data-r="5" style="--i:3">
+            <span class="face">I&rsquo;m not addicted. I&rsquo;m <b>committed.</b></span>
+          </div>
+
+          <div class="sticker intro s-tag" role="button" tabindex="0" aria-label="Sticker: batch number 0417, roasted Tuesday" data-fx=".984" data-fy=".57" data-r="8" style="--i:4">
+            <svg class="face" viewBox="0 0 120 176" aria-hidden="true">
+              <polygon points="32,4 88,4 116,32 116,172 4,172 4,32" fill="#7dffb2" stroke="#111" stroke-width="6" stroke-linejoin="miter"/>
+              <circle cx="60" cy="28" r="9" fill="#fffbe6" stroke="#111" stroke-width="5"/>
+              <text x="60" y="66" text-anchor="middle" font-size="15" font-family="ui-monospace,Menlo,Consolas,monospace" fill="#111" textLength="60" lengthAdjust="spacingAndGlyphs">BATCH</text>
+              <text x="60" y="112" text-anchor="middle" font-size="46" fill="#111" textLength="86" lengthAdjust="spacingAndGlyphs">0417</text>
+              <path d="M16 126 H104" stroke="#111" stroke-width="4"/>
+              <text x="60" y="146" text-anchor="middle" font-size="12" font-family="ui-monospace,Menlo,Consolas,monospace" fill="#111" textLength="84" lengthAdjust="spacingAndGlyphs">ROASTED TUE</text>
+              <text x="60" y="162" text-anchor="middle" font-size="12" font-family="ui-monospace,Menlo,Consolas,monospace" fill="#111" textLength="52" lengthAdjust="spacingAndGlyphs">06:40</text>
+            </svg>
+          </div>
+
+          <div class="sticker intro s-cup" role="button" tabindex="0" aria-label="Sticker: a very grumpy coffee cup" data-fx=".578" data-fy=".595" data-r="-11" style="--i:5">
+            <svg class="face" viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="100" r="94" fill="#2f4bff" stroke="#111" stroke-width="8"/>
+              <path d="M78 40 c-8 10 8 16 0 28 M104 34 c-8 10 8 16 0 28 M130 40 c-8 10 8 16 0 28" fill="none" stroke="#fffbe6" stroke-width="6" stroke-linecap="round"/>
+              <path d="M52 84 H144 V140 a26 26 0 0 1 -26 26 H78 a26 26 0 0 1 -26 -26 Z" fill="#fffbe6" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+              <path d="M144 96 h10 a17 17 0 0 1 0 34 h-10" fill="none" stroke="#111" stroke-width="7"/>
+              <path d="M66 100 l20 8 M130 100 l-20 8" stroke="#111" stroke-width="6" stroke-linecap="round"/>
+              <circle cx="78" cy="118" r="5.5" fill="#111"/><circle cx="118" cy="118" r="5.5" fill="#111"/>
+              <path d="M82 142 q16 -12 32 0" fill="none" stroke="#111" stroke-width="6" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="sticker intro s-stamp" role="button" tabindex="0" aria-label="Sticker: rotating seal, drum-roasted, small-batch, Kettle Lane" data-fx=".058" data-fy=".885" data-r="-6" style="--i:6">
+            <svg class="face" viewBox="0 0 160 160" aria-hidden="true">
+              <circle cx="80" cy="80" r="76" fill="#fffbe6" stroke="#111" stroke-width="6"/>
+              <g class="spin">
+                <path id="ringB" d="M 22,80 a 58,58 0 1,1 116,0 a 58,58 0 1,1 -116,0" fill="none"/>
+                <text font-size="14.5" fill="#111"><textPath href="#ringB" data-r="58">DRUM-ROASTED &#9733; SMALL-BATCH &#9733; KETTLE LANE &#9733;</textPath></text>
+              </g>
+              <circle cx="80" cy="80" r="31" fill="#ff4fa3" stroke="#111" stroke-width="5"/>
+              <use href="#i-bean" x="63" y="60" width="34" height="41"/>
+            </svg>
+          </div>
+
+          <div class="sticker intro s-bar" role="button" tabindex="0" aria-label="Sticker: barcode" data-fx=".476" data-fy=".9" data-r="-3" style="--i:7">
+            <span class="face"><i></i><span>0417&middot;CULT&middot;0000</span></span>
+          </div>
+
+          <div class="sticker intro s-oat" role="button" tabindex="0" aria-label="Sticker: oat milk, we have oat, we have opinions" data-fx=".973" data-fy=".956" data-r="-6" style="--i:8">
+            <span class="face">Oat milk? We have oat. We have opinions.<small>(please don&rsquo;t ask for syrup)</small></span>
+          </div>
+        </div>
+        </div>
+        <div class="board-foot">
+          <span>9 stickers &middot; all of them loose</span>
+          <button class="btn btn--sm btn--yellow" id="resetStickers" type="button">Re-peel &#8634;</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= TICKER ================= -->
+  <div class="ticks" aria-hidden="true">
+    <div class="band band--a"><div class="track">
+      <span>FRESH ROASTED &#9733; NO DECAF &#9733; NO SMALL TALK &#9733;</span><span>FRESH ROASTED &#9733; NO DECAF &#9733; NO SMALL TALK &#9733;</span><span>FRESH ROASTED &#9733; NO DECAF &#9733; NO SMALL TALK &#9733;</span><span>FRESH ROASTED &#9733; NO DECAF &#9733; NO SMALL TALK &#9733;</span>
+      <span>FRESH ROASTED &#9733; NO DECAF &#9733; NO SMALL TALK &#9733;</span><span>FRESH ROASTED &#9733; NO DECAF &#9733; NO SMALL TALK &#9733;</span><span>FRESH ROASTED &#9733; NO DECAF &#9733; NO SMALL TALK &#9733;</span><span>FRESH ROASTED &#9733; NO DECAF &#9733; NO SMALL TALK &#9733;</span>
+    </div></div>
+    <div class="band band--b"><div class="track">
+      <span>BEANS, NOT BEHAVIOUR &#9733; ROASTED TUESDAY &#9733; SHIPPED FRIDAY &#9733; NO OAT-MILK LECTURES &#9733;</span><span>BEANS, NOT BEHAVIOUR &#9733; ROASTED TUESDAY &#9733; SHIPPED FRIDAY &#9733; NO OAT-MILK LECTURES &#9733;</span><span>BEANS, NOT BEHAVIOUR &#9733; ROASTED TUESDAY &#9733; SHIPPED FRIDAY &#9733; NO OAT-MILK LECTURES &#9733;</span>
+      <span>BEANS, NOT BEHAVIOUR &#9733; ROASTED TUESDAY &#9733; SHIPPED FRIDAY &#9733; NO OAT-MILK LECTURES &#9733;</span><span>BEANS, NOT BEHAVIOUR &#9733; ROASTED TUESDAY &#9733; SHIPPED FRIDAY &#9733; NO OAT-MILK LECTURES &#9733;</span><span>BEANS, NOT BEHAVIOUR &#9733; ROASTED TUESDAY &#9733; SHIPPED FRIDAY &#9733; NO OAT-MILK LECTURES &#9733;</span>
+    </div></div>
+  </div>
+  <p class="sr">Fresh roasted. No decaf. No small talk.</p>
+
+  <!-- ================= ROAST DIAL ================= -->
+  <section class="sec roast" id="roast" aria-labelledby="roastH">
+    <div class="wrap">
+      <header class="sec-head rv">
+        <span class="tab">01 &mdash; The roast dial</span>
+        <h2 class="disp" id="roastH">How burnt do you like it?</h2>
+        <p>Drag the dial. Watch one perfectly innocent bean lose its will to live and gain a personality. Every stop is a real roast from Brenda, our 15 kg drum.</p>
+      </header>
+      <div class="hd-st" aria-hidden="true"><svg viewBox="0 0 200 200"><polygon points="100,4 115.2,23.5 136.7,11.3 143.3,35.1 167.9,32.1 164.9,56.7 188.7,63.3 176.5,84.8 196,100 176.5,115.2 188.7,136.7 164.9,143.3 167.9,167.9 143.3,164.9 136.7,188.7 115.2,176.5 100,196 84.8,176.5 63.3,188.7 56.7,164.9 32.1,167.9 35.1,143.3 11.3,136.7 23.5,115.2 4,100 23.5,84.8 11.3,63.3 35.1,56.7 32.1,32.1 56.7,35.1 63.3,11.3 84.8,23.5" fill="#ffe500" stroke="#111" stroke-width="7" stroke-miterlimit="3"/><text x="100" y="84" text-anchor="middle" font-size="32" fill="#111" textLength="110" lengthAdjust="spacingAndGlyphs">TURN UP</text><text x="100" y="116" text-anchor="middle" font-size="32" fill="#111" textLength="80" lengthAdjust="spacingAndGlyphs">THE</text><text x="100" y="156" text-anchor="middle" font-size="46" fill="#ff4fa3" stroke="#111" stroke-width="2.6" paint-order="stroke" textLength="112" lengthAdjust="spacingAndGlyphs">HEAT!</text></svg></div>
+
+      <div class="roast-grid">
+        <div class="card beancard rv">
+          <p class="fig">Fig. 1 &mdash; one (1) bean, roasted to order</p>
+          <div class="beanwrap">
+            <svg id="bean" viewBox="-6 -4 116 132" role="img" aria-label="A coffee bean whose colour follows the roast dial">
+              <g class="smoke" aria-hidden="true">
+                <path d="M30 4 c-6 -6 6 -10 0 -16"/><path d="M52 0 c-6 -6 6 -10 0 -16"/><path d="M74 6 c-6 -6 6 -10 0 -16"/>
+              </g>
+              <g transform="rotate(-16 50 60)">
+                <path d="M50 6 C78 4 96 32 94 62 C92 96 72 116 48 114 C24 112 6 90 8 58 C10 28 26 8 50 6Z" fill="#111" transform="translate(5 6)"/>
+                <clipPath id="beanClip"><path d="M50 6 C78 4 96 32 94 62 C92 96 72 116 48 114 C24 112 6 90 8 58 C10 28 26 8 50 6Z"/></clipPath>
+                <g clip-path="url(#beanClip)">
+                  <rect x="-4" y="-4" width="110" height="130" class="b-fill"/>
+                  <path class="b-shade" d="M104 24 C100 100 62 132 26 122 C62 98 86 72 104 24Z" opacity=".55"/>
+                  <g class="wr b-line" fill="none" stroke-width="1.7" stroke-linecap="round">
+                    <path d="M26 38 C32 42 36 44 40 49"/><path d="M20 62 C28 62 34 64 39 69"/><path d="M27 86 C33 84 38 86 43 91"/>
+                    <path d="M76 34 C70 38 66 42 63 49"/><path d="M84 60 C77 60 72 64 67 69"/><path d="M76 88 C71 86 66 88 61 93"/>
+                  </g>
+                  <path class="b-line" d="M52 10 C35 36 65 56 48 80 C40 96 55 104 46 118" fill="none" stroke-width="7" stroke-linecap="round"/>
+                  <path class="sheen" d="M17 48 C19 29 30 16 45 11" fill="none" stroke="#fffbe6" stroke-width="3.6" stroke-linecap="round"/>
+                  <ellipse class="oil" cx="78" cy="84" rx="4.6" ry="2.6" transform="rotate(-35 78 84)" fill="#fffbe6"/>
+                  <ellipse class="oil" cx="70" cy="30" rx="3" ry="1.8" transform="rotate(30 70 30)" fill="#fffbe6"/>
+                </g>
+                <path d="M50 6 C78 4 96 32 94 62 C92 96 72 116 48 114 C24 112 6 90 8 58 C10 28 26 8 50 6Z" fill="none" stroke="#111" stroke-width="2.7" stroke-linejoin="round"/>
+              </g>
+            </svg>
+            <div class="crack" id="crack" aria-hidden="true">
+              <svg viewBox="0 0 200 200"><polygon points="100,4 115.2,23.5 136.7,11.3 143.3,35.1 167.9,32.1 164.9,56.7 188.7,63.3 176.5,84.8 196,100 176.5,115.2 188.7,136.7 164.9,143.3 167.9,167.9 143.3,164.9 136.7,188.7 115.2,176.5 100,196 84.8,176.5 63.3,188.7 56.7,164.9 32.1,167.9 35.1,143.3 11.3,136.7 23.5,115.2 4,100 23.5,84.8 11.3,63.3 35.1,56.7 32.1,32.1 56.7,35.1 63.3,11.3 84.8,23.5" fill="#ffe500" stroke="#111" stroke-width="7" stroke-miterlimit="3"/>
+              <text id="crackTxt" x="100" y="108" text-anchor="middle" font-size="44" fill="#111" textLength="120" lengthAdjust="spacingAndGlyphs">POP!</text></svg>
+            </div>
+          </div>
+          <div class="readouts">
+            <div>Drop temp<b id="rTemp">209&deg;C</b></div>
+            <div>Roast time<b id="rTime">11:18</b></div>
+            <div>Weight lost<b id="rLoss">15%</b></div>
+          </div>
+          <div class="minis" id="minis" role="group" aria-label="Jump to a roast level"></div>
+        </div>
+
+        <div class="card dialcard rv">
+          <div class="dialtop">
+            <div>
+              <p class="no" id="roastNo">Roast 03 / 06</p>
+              <h3 class="disp" id="roastName">City+</h3>
+            </div>
+            <span class="alias" id="roastAlias">The crowd-pleaser</span>
+          </div>
+          <p class="quip" id="roastQuip" aria-live="polite">Behaves at dinner parties. Brings a bottle.</p>
+
+          <div class="dial">
+            <label class="mono" for="roast-range" id="dialLbl"><span>Roast dial</span><span id="dialVal">38 / 100</span></label>
+            <div class="slidebox">
+              <input id="roast-range" type="range" min="0" max="100" step="1" value="38" aria-labelledby="dialLbl" aria-valuetext="City+, 38 out of 100">
+              <div class="marks" aria-hidden="true">
+                <span class="crackmark" style="--p:.10"><i></i>1st crack</span>
+                <span class="crackmark" style="--p:.60"><i></i>2nd crack</span>
+              </div>
+            </div>
+            <div class="ends" aria-hidden="true"><span>Light</span><span>Dark</span></div>
+          </div>
+
+          <div class="grid2">
+            <div>
+              <h4 class="sub">Flavour notes</h4>
+              <ul class="tags" id="tags"></ul>
+            </div>
+            <div>
+              <h4 class="sub">Cup profile</h4>
+              <div class="bars" id="bars">
+                <div class="bar"><span>Acidity</span><div class="blocks" role="img" aria-label="Acidity"></div></div>
+                <div class="bar"><span>Sweetness</span><div class="blocks" role="img" aria-label="Sweetness"></div></div>
+                <div class="bar"><span>Body</span><div class="blocks" role="img" aria-label="Body"></div></div>
+                <div class="bar"><span>Bitterness</span><div class="blocks" role="img" aria-label="Bitterness"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="buyrow">
+            <div class="pricetag"><b id="rPrice">&pound;15.50</b><span>per 250 g bag</span></div>
+            <button class="btn btn--ink" id="addRoast" type="button">Add to bag <span aria-hidden="true">+</span></button>
+            <p class="fine" id="rFine">Lighter roasts cost more: fancier green coffee, less weight lost in the drum. Darker ones cost less. Less to hide behind.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BREW CALCULATOR ================= -->
+  <section class="sec brew" id="brew" aria-labelledby="brewH">
+    <div class="wrap">
+      <header class="sec-head rv">
+        <span class="tab">02 &mdash; Brew ratio calculator</span>
+        <h2 class="disp" id="brewH">Maths, but for breakfast.</h2>
+        <p>Nobody has ever said &ldquo;a scoop&rdquo; and meant it. Type grams, get millilitres, or type millilitres and get grams. Ratio is 1 gram of coffee to X millilitres of water. That&rsquo;s the whole religion.</p>
+      </header>
+      <div class="hd-st" aria-hidden="true"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="94" fill="#2f4bff" stroke="#111" stroke-width="8"/><path id="ringC" d="M 25,100 a 75,75 0 1,1 150,0 a 75,75 0 1,1 -150,0" fill="none"/><text font-size="19" fill="#fffbe6"><textPath href="#ringC" data-r="75">GRAMS IN &#9733; MILLILITRES OUT &#9733; GRAMS IN &#9733;</textPath></text><text x="100" y="121" text-anchor="middle" font-size="66" fill="#ffe500" stroke="#111" stroke-width="2.4" paint-order="stroke" textLength="100" lengthAdjust="spacingAndGlyphs">1:16</text><text x="100" y="144" text-anchor="middle" font-size="15" fill="#fffbe6" textLength="82" lengthAdjust="spacingAndGlyphs">THE ANSWER</text></svg></div>
+
+      <div class="brew-grid">
+        <div class="card inputs rv">
+          <div class="field">
+            <label for="coffee">Coffee <small>grams</small></label>
+            <div class="stepper">
+              <button type="button" data-t="coffee" data-s="-1" aria-label="One gram less coffee">&minus;</button>
+              <input id="coffee" type="number" inputmode="decimal" min="1" max="250" step="0.5" value="20">
+              <button type="button" data-t="coffee" data-s="1" aria-label="One gram more coffee">+</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="lbl" id="ratioLbl">Ratio <small>1 gram : X ml</small></div>
+            <div class="ratio-row">
+              <fieldset class="chips" aria-labelledby="ratioLbl">
+                <legend class="sr">Ratio presets</legend>
+                <label class="chip"><input type="radio" name="ratio" value="2"><span>Espresso<small>1:2</small></span></label>
+                <label class="chip"><input type="radio" name="ratio" value="8"><span>Cold brew<small>1:8</small></span></label>
+                <label class="chip"><input type="radio" name="ratio" value="14"><span>Strong<small>1:14</small></span></label>
+                <label class="chip"><input type="radio" name="ratio" value="16" checked><span>Filter<small>1:16</small></span></label>
+                <label class="chip"><input type="radio" name="ratio" value="18"><span>Gentle<small>1:18</small></span></label>
+              </fieldset>
+              <div class="ratio-in"><span aria-hidden="true">1:</span><input id="ratio" type="number" inputmode="decimal" min="1" max="25" step="0.5" value="16" aria-label="Custom ratio, millilitres of water per gram of coffee"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="water">Water <small>millilitres</small></label>
+            <div class="stepper">
+              <button type="button" data-t="water" data-s="-10" aria-label="Ten millilitres less water">&minus;</button>
+              <input id="water" type="number" inputmode="decimal" min="10" max="4000" step="5" value="320">
+              <button type="button" data-t="water" data-s="10" aria-label="Ten millilitres more water">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="result rv" aria-live="polite">
+          <div class="beaker" aria-hidden="true">
+            <svg viewBox="0 0 100 190">
+              <clipPath id="beakClip"><path d="M14 20 H86 V168 a8 8 0 0 1 -8 8 H22 a8 8 0 0 1 -8 -8 Z"/></clipPath>
+              <path d="M14 20 H86 V168 a8 8 0 0 1 -8 8 H22 a8 8 0 0 1 -8 -8 Z" fill="#1c1c1c" transform="translate(5 5)"/>
+              <path d="M14 20 H86 V168 a8 8 0 0 1 -8 8 H22 a8 8 0 0 1 -8 -8 Z" fill="#fffbe6"/>
+              <g clip-path="url(#beakClip)"><rect class="liquid" id="liquid" x="14" y="20" width="72" height="156" fill="#7a4a24"/><rect class="liquid" id="crema" x="14" y="20" width="72" height="156" fill="none"/></g>
+              <path d="M14 20 H86 V168 a8 8 0 0 1 -8 8 H22 a8 8 0 0 1 -8 -8 Z" fill="none" stroke="#fffbe6" stroke-width="5" stroke-linejoin="round"/>
+              <path d="M8 20 H92" stroke="#fffbe6" stroke-width="5" stroke-linecap="round"/>
+              <g stroke="#111" stroke-width="2.4"><path d="M14 58 h14"/><path d="M14 96 h14"/><path d="M14 134 h14"/></g>
+              <text paint-order="stroke" id="tk3" x="34" y="62">0</text><text paint-order="stroke" id="tk2" x="34" y="100">0</text><text paint-order="stroke" id="tk1" x="34" y="138">0</text>
+            </svg>
+          </div>
+          <p class="youneed">You need</p>
+          <div class="bigres"><span class="num" id="resNum">320</span><span class="unit">ml water</span></div>
+          <p class="resline" id="resLine">for 20 g of coffee at 1:16, about 1.3 cups.</p>
+          <p class="verdict" id="verdict">The sweet spot. Balanced, bright, only slightly smug.</p>
+          <dl class="stats">
+            <div><dt>Grind</dt><dd id="stGrind">Medium, like beach sand</dd></div>
+            <div><dt>Water temp</dt><dd id="stTemp">94&deg;C</dd></div>
+            <div><dt>Brew time</dt><dd id="stTime">3:00</dd></div>
+            <div><dt>Cups (250 ml)</dt><dd id="stCups">1.3</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <div class="planrow">
+        <div class="card plan rv">
+          <h3 class="disp" id="planH">Pour plan</h3>
+          <ol class="steps" id="steps" aria-labelledby="planH"></ol>
+        </div>
+        <div class="card timer rv">
+          <h3 class="disp">Brew clock</h3>
+          <div class="clock" id="clock" role="timer" aria-live="off">0:00</div>
+          <p class="target" id="target">Scale should read<b id="targetV">0 g</b></p>
+          <div class="row">
+            <button class="btn btn--ink" id="timerGo" type="button">Start</button>
+            <button class="btn btn--pink" id="timerReset" type="button">Reset</button>
+          </div>
+          <p class="msg" id="timerMsg">Press start when the kettle stops screaming.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PRODUCT CARDS ================= -->
+  <section class="sec beans" id="beans" aria-labelledby="beansH">
+    <div class="wrap">
+      <header class="sec-head rv">
+        <span class="tab">03 &mdash; The lineup</span>
+        <h2 class="disp" id="beansH">Six ways to be wide awake.</h2>
+        <p>Hover a bag to see what&rsquo;s inside. On a phone, tap it. On a typewriter, we&rsquo;re sorry. All 250 g, whole bean, roasted this week or we&rsquo;re not sending it.</p>
+      </header>
+      <div class="hd-st" aria-hidden="true"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="94" fill="#ff4fa3" stroke="#111" stroke-width="8"/><path id="ringD" d="M 25,100 a 75,75 0 1,1 150,0 a 75,75 0 1,1 -150,0" fill="none"/><text font-size="19" fill="#111"><textPath href="#ringD" data-r="75">ZERO REGRETS &#9733; ZERO REGRETS &#9733; ZERO REGRETS &#9733;</textPath></text><circle cx="100" cy="100" r="54" fill="#fffbe6" stroke="#111" stroke-width="6"/><text x="100" y="124" text-anchor="middle" font-size="80" fill="#111" textLength="46" lengthAdjust="spacingAndGlyphs">6</text><text x="100" y="146" text-anchor="middle" font-size="16" fill="#111" textLength="52" lengthAdjust="spacingAndGlyphs">BAGS</text></svg></div>
+
+      <ul class="grid-cards">
+        <li class="flip rv" style="--cb:var(--pink);--bag:var(--yellow)">
+          <div class="flip-in">
+            <article class="face-f" aria-label="Bad Decisions, espresso blend">
+              <p class="idx" aria-hidden="true">01</p><p class="flag">Dark roast</p>
+              <div class="bagpic" aria-hidden="true"><svg viewBox="-4 4 214 262"><use href="#i-bag"/><text x="100" y="181" text-anchor="middle" font-size="25" textLength="46" lengthAdjust="spacingAndGlyphs">BAD</text></svg></div>
+              <div><h3 class="fname disp" style="--sh-c:var(--paper)">Bad decisions</h3><p class="fkind">Espresso blend &middot; Brazil / Colombia / Uganda</p></div>
+              <div class="fbot"><span class="fprice">&pound;13.50</span><button class="flipbtn" type="button" aria-label="Flip the Bad Decisions bag to read tasting notes">Flip &#8635;</button></div>
+            </article>
+            <article class="face-b" aria-label="Bad Decisions, tasting notes">
+              <div class="bhead"><h3 class="disp">Bad decisions</h3><span>01 / 06</span></div>
+              <div class="bbody">
+                <p class="notes">Burnt toffee, cocoa nibs, poor judgement. Pulls like a dream, hits like a Monday.</p>
+                <dl class="spec"><div><dt>Origin</dt><dd>Brazil, Colombia, Uganda</dd></div><div><dt>Process</dt><dd>Natural + washed</dd></div><div><dt>Altitude</dt><dd>900&ndash;1,400 m</dd></div><div><dt>Roast</dt><dd>Vienna (dark)</dd></div><div><dt>Best for</dt><dd>Espresso, moka, 6 a.m.</dd></div></dl>
+                <div class="bbuy"><span class="p">&pound;13.50<small>250 G</small></span><button class="btn btn--sm btn--yellow" type="button" data-add data-name="Bad Decisions" data-meta="Espresso blend, 250 g" data-price="13.5">Add to bag +</button></div>
+                <button class="unflip" type="button" aria-label="Flip back to the front of the bag">&larr; back to the bag</button>
+              </div>
+            </article>
+          </div>
+        </li>
+
+        <li class="flip rv" style="--cb:var(--yellow);--bag:var(--cobalt)">
+          <div class="flip-in">
+            <article class="face-f" aria-label="Guji or Die, Ethiopian single origin">
+              <p class="idx" aria-hidden="true">02</p><p class="flag">Light roast</p>
+              <div class="bagpic" aria-hidden="true"><svg viewBox="-4 4 214 262"><use href="#i-bag"/><text x="100" y="181" text-anchor="middle" font-size="25" textLength="58" lengthAdjust="spacingAndGlyphs">GUJI</text></svg></div>
+              <div><h3 class="fname disp" style="--sh-c:var(--paper)">Guji or die</h3><p class="fkind">Single origin &middot; Guji, Ethiopia</p></div>
+              <div class="fbot"><span class="fprice">&pound;18.00</span><button class="flipbtn" type="button" aria-label="Flip the Guji or Die bag to read tasting notes">Flip &#8635;</button></div>
+            </article>
+            <article class="face-b" aria-label="Guji or Die, tasting notes">
+              <div class="bhead"><h3 class="disp">Guji or die</h3><span>02 / 06</span></div>
+              <div class="bbody">
+                <p class="notes">Blueberry jam, jasmine, mild sunburn. Smells like a fruit bowl having a breakdown.</p>
+                <dl class="spec"><div><dt>Origin</dt><dd>Guji, Ethiopia</dd></div><div><dt>Process</dt><dd>Natural, sun-dried</dd></div><div><dt>Altitude</dt><dd>2,050 m</dd></div><div><dt>Roast</dt><dd>Cinnamon (light)</dd></div><div><dt>Best for</dt><dd>V60, showing off</dd></div></dl>
+                <div class="bbuy"><span class="p">&pound;18.00<small>250 G</small></span><button class="btn btn--sm btn--yellow" type="button" data-add data-name="Guji or Die" data-meta="Ethiopia natural, 250 g" data-price="18">Add to bag +</button></div>
+                <button class="unflip" type="button" aria-label="Flip back to the front of the bag">&larr; back to the bag</button>
+              </div>
+            </article>
+          </div>
+        </li>
+
+        <li class="flip rv" style="--cb:var(--mint);--bag:var(--pink)">
+          <div class="flip-in">
+            <article class="face-f" aria-label="Sunday Scaries, Colombian single origin">
+              <p class="idx" aria-hidden="true">03</p><p class="flag">Medium roast</p>
+              <div class="bagpic" aria-hidden="true"><svg viewBox="-4 4 214 262"><use href="#i-bag"/><text x="100" y="181" text-anchor="middle" font-size="25" textLength="84" lengthAdjust="spacingAndGlyphs">SUNDAY</text></svg></div>
+              <div><h3 class="fname disp" style="--sh-c:var(--paper)">Sunday scaries</h3><p class="fkind">Single origin &middot; Huila, Colombia</p></div>
+              <div class="fbot"><span class="fprice">&pound;15.50</span><button class="flipbtn" type="button" aria-label="Flip the Sunday Scaries bag to read tasting notes">Flip &#8635;</button></div>
+            </article>
+            <article class="face-b" aria-label="Sunday Scaries, tasting notes">
+              <div class="bhead"><h3 class="disp">Sunday scaries</h3><span>03 / 06</span></div>
+              <div class="bbody">
+                <p class="notes">Red apple, panela, a long sit-down with nothing to do. The good kind of Sunday.</p>
+                <dl class="spec"><div><dt>Origin</dt><dd>Huila, Colombia</dd></div><div><dt>Process</dt><dd>Fully washed</dd></div><div><dt>Altitude</dt><dd>1,750 m</dd></div><div><dt>Roast</dt><dd>City (medium)</dd></div><div><dt>Best for</dt><dd>Everything. Even guests.</dd></div></dl>
+                <div class="bbuy"><span class="p">&pound;15.50<small>250 G</small></span><button class="btn btn--sm btn--yellow" type="button" data-add data-name="Sunday Scaries" data-meta="Colombia washed, 250 g" data-price="15.5">Add to bag +</button></div>
+                <button class="unflip" type="button" aria-label="Flip back to the front of the bag">&larr; back to the bag</button>
+              </div>
+            </article>
+          </div>
+        </li>
+
+        <li class="flip rv on-dark" style="--cb:var(--cobalt);--cf:var(--paper);--bag:var(--yellow)">
+          <div class="flip-in">
+            <article class="face-f" aria-label="The House Cult, house blend">
+              <p class="idx" aria-hidden="true">04</p><p class="flag">Medium-dark</p>
+              <div class="bagpic" aria-hidden="true"><svg viewBox="-4 4 214 262"><use href="#i-bag"/><text x="100" y="181" text-anchor="middle" font-size="25" textLength="72" lengthAdjust="spacingAndGlyphs">HOUSE</text></svg></div>
+              <div><h3 class="fname disp" style="--sh-c:var(--ink)">The house cult</h3><p class="fkind">House blend &middot; Brazil / Guatemala</p></div>
+              <div class="fbot"><span class="fprice">&pound;12.50</span><button class="flipbtn" type="button" aria-label="Flip the House Cult bag to read tasting notes">Flip &#8635;</button></div>
+            </article>
+            <article class="face-b" aria-label="The House Cult, tasting notes">
+              <div class="bhead"><h3 class="disp">The house cult</h3><span>04 / 06</span></div>
+              <div class="bbody">
+                <p class="notes">Milk chocolate, hazelnut, reliability. Our bestseller. Your dad would approve, quietly.</p>
+                <dl class="spec"><div><dt>Origin</dt><dd>Brazil, Guatemala</dd></div><div><dt>Process</dt><dd>Washed + natural</dd></div><div><dt>Altitude</dt><dd>1,100&ndash;1,600 m</dd></div><div><dt>Roast</dt><dd>Full City</dd></div><div><dt>Best for</dt><dd>Flat whites, arguments</dd></div></dl>
+                <div class="bbuy"><span class="p">&pound;12.50<small>250 G</small></span><button class="btn btn--sm btn--yellow" type="button" data-add data-name="The House Cult" data-meta="House blend, 250 g" data-price="12.5">Add to bag +</button></div>
+                <button class="unflip" type="button" aria-label="Flip back to the front of the bag">&larr; back to the bag</button>
+              </div>
+            </article>
+          </div>
+        </li>
+
+        <li class="flip rv" style="--cb:var(--paper);--bag:var(--pink)">
+          <div class="flip-in">
+            <article class="face-f" aria-label="Cassis Attack, Kenyan single origin">
+              <p class="idx" aria-hidden="true">05</p><p class="flag">Light-medium</p>
+              <div class="bagpic" aria-hidden="true"><svg viewBox="-4 4 214 262"><use href="#i-bag"/><text x="100" y="181" text-anchor="middle" font-size="25" textLength="78" lengthAdjust="spacingAndGlyphs">CASSIS</text></svg></div>
+              <div><h3 class="fname disp" style="--sh-c:var(--yellow)">Cassis attack</h3><p class="fkind">Single origin &middot; Nyeri, Kenya</p></div>
+              <div class="fbot"><span class="fprice">&pound;17.00</span><button class="flipbtn" type="button" aria-label="Flip the Cassis Attack bag to read tasting notes">Flip &#8635;</button></div>
+            </article>
+            <article class="face-b" aria-label="Cassis Attack, tasting notes">
+              <div class="bhead"><h3 class="disp">Cassis attack</h3><span>05 / 06</span></div>
+              <div class="bbody">
+                <p class="notes">Blackcurrant, grapefruit, tomato leaf. Zingy. Slightly rude. We love it.</p>
+                <dl class="spec"><div><dt>Origin</dt><dd>Nyeri, Kenya</dd></div><div><dt>Process</dt><dd>Washed, double-soaked</dd></div><div><dt>Altitude</dt><dd>1,800 m</dd></div><div><dt>Roast</dt><dd>New England</dd></div><div><dt>Best for</dt><dd>Filter, iced, opinions</dd></div></dl>
+                <div class="bbuy"><span class="p">&pound;17.00<small>250 G</small></span><button class="btn btn--sm btn--yellow" type="button" data-add data-name="Cassis Attack" data-meta="Kenya washed, 250 g" data-price="17">Add to bag +</button></div>
+                <button class="unflip" type="button" aria-label="Flip back to the front of the bag">&larr; back to the bag</button>
+              </div>
+            </article>
+          </div>
+        </li>
+
+        <li class="flip rv on-dark" style="--cb:var(--ink);--cf:var(--paper);--bag:var(--mint)">
+          <div class="flip-in">
+            <article class="face-f" aria-label="Swamp Thing, Sumatran single origin">
+              <p class="idx" aria-hidden="true">06</p><p class="flag">Medium-dark</p>
+              <div class="bagpic" aria-hidden="true"><svg viewBox="-4 4 214 262"><use href="#i-bag"/><text x="100" y="181" text-anchor="middle" font-size="25" textLength="72" lengthAdjust="spacingAndGlyphs">SWAMP</text></svg></div>
+              <div><h3 class="fname disp" style="--sh-c:var(--pink)">Swamp thing</h3><p class="fkind">Single origin &middot; Lintong, Sumatra</p></div>
+              <div class="fbot"><span class="fprice">&pound;14.00</span><button class="flipbtn" type="button" aria-label="Flip the Swamp Thing bag to read tasting notes">Flip &#8635;</button></div>
+            </article>
+            <article class="face-b" aria-label="Swamp Thing, tasting notes">
+              <div class="bhead"><h3 class="disp">Swamp thing</h3><span>06 / 06</span></div>
+              <div class="bbody">
+                <p class="notes">Cedar, tobacco leaf, damp forest floor. Tastes like the wardrobe on the way to Narnia.</p>
+                <dl class="spec"><div><dt>Origin</dt><dd>Lintong, Sumatra</dd></div><div><dt>Process</dt><dd>Wet-hulled</dd></div><div><dt>Altitude</dt><dd>1,300 m</dd></div><div><dt>Roast</dt><dd>Full City</dd></div><div><dt>Best for</dt><dd>French press, long walks</dd></div></dl>
+                <div class="bbuy"><span class="p">&pound;14.00<small>250 G</small></span><button class="btn btn--sm btn--yellow" type="button" data-add data-name="Swamp Thing" data-meta="Sumatra wet-hulled, 250 g" data-price="14">Add to bag +</button></div>
+                <button class="unflip" type="button" aria-label="Flip back to the front of the bag">&larr; back to the bag</button>
+              </div>
+            </article>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= RULES ================= -->
+  <section class="sec rules" id="rules" aria-labelledby="rulesH">
+    <div class="wrap">
+      <header class="sec-head rv">
+        <span class="tab">04 &mdash; House rules</span>
+        <h2 class="disp" id="rulesH">The rules. They&rsquo;re laws.</h2>
+      </header>
+      <div class="hd-st" aria-hidden="true"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="94" fill="#7dffb2" stroke="#111" stroke-width="8"/><path id="ringE" d="M 25,100 a 75,75 0 1,1 150,0 a 75,75 0 1,1 -150,0" fill="none"/><text font-size="19" fill="#111"><textPath href="#ringE" data-r="75">OBEY &#9733; OBEY &#9733; OBEY &#9733; OBEY &#9733; OBEY &#9733;</textPath></text><circle cx="100" cy="100" r="56" fill="#ffe500" stroke="#111" stroke-width="6"/><circle cx="100" cy="100" r="46" fill="none" stroke="#111" stroke-width="3" stroke-dasharray="5 5"/><text x="100" y="118" text-anchor="middle" font-size="50" fill="#111" textLength="74" lengthAdjust="spacingAndGlyphs">LAW</text></svg></div>
+      <ol class="rulelist">
+        <li class="rv"><h3 class="disp">No decaf.</h3><p>We looked into it. It&rsquo;s not a personality, it&rsquo;s a rumour.</p></li>
+        <li class="rv"><h3 class="disp">Milk is a condiment.</h3><p>Not a food group. Not a hug. A condiment. Pour like you mean it.</p></li>
+        <li class="rv"><h3 class="disp">Grind it fresh.</h3><p>Pre-ground coffee is a cry for help. Buy the grinder. Buy the good one.</p></li>
+        <li class="rv"><h3 class="disp">Stop at the crack.</h3><p>First crack is a pop. Second crack is a warning. Third crack is your smoke alarm.</p></li>
+        <li class="rv"><h3 class="disp">It&rsquo;s not bitter. It&rsquo;s you.</h3><p>Or your water. Or your grind. Mostly your grind. Try again, gently.</p></li>
+      </ol>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="mark disp" id="mark" aria-hidden="true">GRIND CULT</div>
+    <div class="foot-grid">
+      <div class="join">
+        <h2 class="disp">Join the cult.</h2>
+        <p>One email a month. Mostly beans, occasionally our dog (Crema). Unsubscribe any time; we&rsquo;ll pretend we&rsquo;re not hurt.</p>
+        <form class="joinform" id="joinForm" novalidate>
+          <label class="sr" for="email">Email address</label>
+          <input id="email" name="email" type="email" placeholder="you@definitelynotdecaf.com" autocomplete="email" required>
+          <button class="btn btn--yellow" type="submit">Initiate me</button>
+        </form>
+      </div>
+      <div>
+        <h3>Find us</h3>
+        <address>Unit 9, The Old Tyre Shop<br>Kettle Lane, Nowhere-on-Sea<br>Open Tue&ndash;Sat, 07:00&ndash;14:00<br>or until we run out of beans, or patience.</address>
+      </div>
+      <div>
+        <h3>Elsewhere</h3>
+        <ul>
+          <li><a href="#top" data-toast="Wholesale: we only supply cafes with taste. You know who you are.">Wholesale</a></li>
+          <li><a href="#top" data-toast="Subscriptions: coming soon. Like your deadline.">Subscriptions</a></li>
+          <li><a href="#top" data-toast="Press: please be nice about Brenda.">Press</a></li>
+          <li><a href="#top">Back to top &uarr;</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="legal">
+      <p>&copy; 2026 Grind Cult Roasting Co. Illustrated beans; genuine opinions. Refunds available if you can prove you didn&rsquo;t drink it.</p>
+      <p>Made with too much caffeine. Brenda sends her regards.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- bag drawer -->
+<div class="scrim" id="scrim"></div>
+<aside class="bag" id="bag" aria-label="Your bag">
+  <div class="bag-head"><h2 class="disp">Your bag</h2><button class="btn btn--sm btn--ink" id="bagClose" type="button" aria-label="Close bag">Close &times;</button></div>
+  <ul class="bag-list" id="bagList"></ul>
+  <div class="bag-foot">
+    <div class="total"><span>Total</span><span id="bagTotal">&pound;0.00</span></div>
+    <button class="btn btn--pink" id="checkout" type="button">Checkout (it&rsquo;s a demo)</button>
+  </div>
+</aside>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- shared symbols -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-bean" viewBox="0 0 100 120">
+      <path d="M50 6 C78 4 96 32 94 62 C92 96 72 116 48 114 C24 112 6 90 8 58 C10 28 26 8 50 6Z" style="fill:var(--bean,#7f4b26)" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M52 12 C35 36 65 56 48 80 C40 96 55 104 46 114" fill="none" stroke="#111" stroke-opacity=".55" stroke-width="8" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-bag" viewBox="-4 4 214 262">
+      <path d="M40 46 H160 L178 246 H22 Z" fill="#111" transform="translate(11 11)"/>
+      <path d="M40 46 H160 L178 246 H22 Z" style="fill:var(--bag,#ffe500)" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M40 46 L33 18 H167 L160 46 Z" fill="#fffbe6" stroke="#111" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M44 62 H156" stroke="#111" stroke-width="5"/>
+      <rect x="50" y="78" width="100" height="140" fill="#fffbe6" stroke="#111" stroke-width="6"/>
+      <use href="#i-bean" x="76" y="88" width="48" height="58" style="--bean:#7f4b26"/>
+      <path d="M62 190 H138" stroke="#111" stroke-width="4"/>
+      <text x="100" y="206" text-anchor="middle" font-size="9" font-family="ui-monospace,Menlo,Consolas,monospace" font-weight="700" fill="#111" textLength="74" lengthAdjust="spacingAndGlyphs">250 G WHOLE BEAN</text>
+      <path d="M36 236 H164" stroke="#111" stroke-width="3" stroke-dasharray="6 5"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, c = document) => c.querySelector(s);
+const $$ = (s, c = document) => Array.from(c.querySelectorAll(s));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.documentElement.classList.add('js');
+
+/* ---- does this machine have a real heavy display face? if not, thicken the fallback a hair ---- */
+try {
+  const cx = document.createElement('canvas').getContext('2d');
+  const w = f => { cx.font = '64px ' + f; return cx.measureText('BURNT ON PURPOSE 0123').width; };
+  const base = w('monospace');
+  const has = ['Impact', 'Haettenschweiler', '"Arial Black"', '"Franklin Gothic Heavy"'].some(f => Math.abs(w(f + ', monospace') - base) > .5);
+  if (!has) document.documentElement.classList.add('fb');
+} catch (e) { /* fine */ }
+
+/* ---- toast ---- */
+const toastEl = $('#toast'); let toastT = 0;
+function toast(msg) {
+  toastEl.textContent = msg; toastEl.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 2800);
+}
+$$('[data-toast]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); toast(a.dataset.toast); }));
+
+/* ---- fit giant headlines to their column, whatever the font ---- */
+function fitAll() {
+  $$('.fit').forEach(el => {
+    const host = el.parentElement; const W = host.clientWidth; if (!W) return;
+    const max = parseFloat(el.dataset.max) || 300;
+    el.style.fontSize = '100px';
+    const w = el.offsetWidth || 1;
+    el.style.fontSize = clamp(100 * (W - 16) / w, 20, max) + 'px';
+  });
+  const m = $('#mark');
+  if (m) {
+    const W = m.parentElement.clientWidth; m.style.fontSize = '100px';
+    const w = m.offsetWidth || 1; m.style.fontSize = Math.min(360, 100 * (W - 12) / w) + 'px';
+  }
+}
+let fitRaf = 0;
+addEventListener('resize', () => { cancelAnimationFrame(fitRaf); fitRaf = requestAnimationFrame(fitAll); });
+fitAll();
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
+addEventListener('load', fitAll);
+
+/* ---- ring text: spread letters evenly around the circle ---- */
+$$('textPath[data-r]').forEach(tp => {
+  const r = parseFloat(tp.dataset.r);
+  tp.setAttribute('textLength', String(Math.round(2 * Math.PI * r * .965)));
+  tp.setAttribute('lengthAdjust', 'spacing');
+});
+
+/* ---- reveal on scroll ---- */
+if ('IntersectionObserver' in window && !reduce) {
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .08, rootMargin: '0px 0px -6% 0px' });
+  $$('.rv').forEach((el, i) => { el.style.transitionDelay = (i % 3) * 70 + 'ms'; io.observe(el); });
+} else { $$('.rv').forEach(el => el.classList.add('in')); }
+
+/* =========================================================
+   STICKERS: pointer-driven, z-raise on pick-up, jittery tilt
+   ========================================================= */
+(() => {
+  const board = $('#board'); if (!board) return;
+  const items = $$('.sticker', board);
+  let zTop = 20;
+  const S = new Map();
+  items.forEach(el => S.set(el, { fx: +el.dataset.fx, fy: +el.dataset.fy, r: +el.dataset.r, r0: +el.dataset.r, x: 0, y: 0 }));
+  const put = el => { const s = S.get(el); el.style.transform = 'translate(' + s.x.toFixed(1) + 'px,' + s.y.toFixed(1) + 'px) rotate(' + s.r.toFixed(2) + 'deg)'; };
+  function layout(useFractions) {
+    const bw = board.clientWidth, bh = board.clientHeight;
+    items.forEach(el => {
+      const s = S.get(el), w = el.offsetWidth, h = el.offsetHeight;
+      if (useFractions) { s.x = s.fx * (bw - w); s.y = s.fy * (bh - h); }
+      else { s.x = clamp(s.fx * (bw - w), -6, bw - w + 6); s.y = clamp(s.fy * (bh - h), -6, bh - h + 6); }
+      put(el);
+    });
+  }
+  layout(true);
+  new ResizeObserver(() => layout(false)).observe(board);
+  setTimeout(() => items.forEach(el => el.classList.remove('intro')), 1700);
+  let drag = null;
+  items.forEach(el => {
+    el.addEventListener('pointerdown', e => {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      const s = S.get(el);
+      el.setPointerCapture(e.pointerId);
+      el.style.zIndex = ++zTop;
+      el.classList.remove('landed', 'intro'); el.classList.add('drag');
+      s.r = s.r0 + (Math.random() * 14 - 7);
+      drag = { el, id: e.pointerId, ox: e.clientX - s.x, oy: e.clientY - s.y, lx: e.clientX, vx: 0 };
+      put(el); e.preventDefault();
+    });
+    el.addEventListener('pointermove', e => {
+      if (!drag || drag.el !== el || e.pointerId !== drag.id) return;
+      const s = S.get(el), bw = board.clientWidth, bh = board.clientHeight, w = el.offsetWidth, h = el.offsetHeight;
+      s.x = clamp(e.clientX - drag.ox, -8, bw - w + 8);
+      s.y = clamp(e.clientY - drag.oy, -8, bh - h + 8);
+      drag.vx = drag.vx * .7 + (e.clientX - drag.lx) * .3; drag.lx = e.clientX;
+      s.r = s.r0 + clamp(drag.vx * 1.1, -14, 14);
+      put(el);
+    });
+    const end = e => {
+      if (!drag || drag.el !== el) return;
+      const s = S.get(el);
+      el.classList.remove('drag');
+      s.r0 = s.r0 + (Math.random() * 8 - 4); s.r = s.r0;
+      const bw = board.clientWidth, bh = board.clientHeight, w = el.offsetWidth, h = el.offsetHeight;
+      s.fx = (bw - w) ? clamp(s.x / (bw - w), 0, 1) : 0; s.fy = (bh - h) ? clamp(s.y / (bh - h), 0, 1) : 0;
+      put(el); void el.offsetWidth; el.classList.add('landed');
+      setTimeout(() => el.classList.remove('landed'), 360);
+      drag = null;
+    };
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+    el.addEventListener('lostpointercapture', end);
+    el.addEventListener('keydown', e => {
+      const s = S.get(el), step = e.shiftKey ? 40 : 12;
+      const bw = board.clientWidth, bh = board.clientHeight, w = el.offsetWidth, h = el.offsetHeight;
+      let used = true;
+      if (e.key === 'ArrowLeft') s.x -= step; else if (e.key === 'ArrowRight') s.x += step;
+      else if (e.key === 'ArrowUp') s.y -= step; else if (e.key === 'ArrowDown') s.y += step;
+      else if (e.key === 'Enter' || e.key === ' ') { s.r0 += 6; s.r = s.r0; el.style.zIndex = ++zTop; }
+      else used = false;
+      if (!used) return; e.preventDefault();
+      s.x = clamp(s.x, -8, bw - w + 8); s.y = clamp(s.y, -8, bh - h + 8);
+      s.fx = clamp(s.x / (bw - w), 0, 1); s.fy = clamp(s.y / (bh - h), 0, 1);
+      put(el); el.classList.remove('landed'); void el.offsetWidth; el.classList.add('landed');
+    });
+  });
+  $('#resetStickers').addEventListener('click', () => {
+    items.forEach((el, i) => {
+      const s = S.get(el);
+      s.fx = +el.dataset.fx; s.fy = +el.dataset.fy; s.r0 = +el.dataset.r; s.r = s.r0;
+      setTimeout(() => { layout(true); }, 0);
+    });
+    layout(true); toast('Stickers re-peeled. Nothing was harmed.');
+  });
+})();
+
+/* =========================================================
+   ROAST DIAL
+   ========================================================= */
+(() => {
+  const STOPS = [[201,149,90],[168,111,60],[127,75,38],[90,51,25],[58,32,16],[30,17,10]];
+  const ROASTS = [
+    { name: 'Cinnamon', alias: 'Basically tea', quip: 'Tastes like tea that went to art school.', tags: ['Jasmine', 'Bergamot', 'Blueberry', 'Lemon zest', 'Tea-like'], note: 'Sharp, floral, a bit smug.' },
+    { name: 'City', alias: 'The polite one', quip: 'Fruit-forward and polite. Will text you back within a day.', tags: ['Peach tea', 'Honeysuckle', 'Red apple', 'Orange blossom', 'Raw honey'] },
+    { name: 'City+', alias: 'The crowd-pleaser', quip: 'Behaves at dinner parties. Brings a bottle.', tags: ['Milk chocolate', 'Hazelnut', 'Brown sugar', 'Stone fruit', 'Caramel'] },
+    { name: 'Full City', alias: 'Chocolate with a spine', quip: 'Our bestseller. Please don’t tell the others.', tags: ['Dark chocolate', 'Toasted walnut', 'Molasses', 'Baked plum', 'Cedar'] },
+    { name: 'Vienna', alias: 'Past second crack', quip: 'The oils came out to see what the noise was.', tags: ['Bitter cocoa', 'Burnt sugar', 'Smoked maple', 'Tobacco leaf', 'Espresso crust'] },
+    { name: 'French', alias: 'The cult favourite', quip: 'Basically a campfire with opinions. We salute you.', tags: ['Charred oak', 'Burnt toast', 'Campfire', 'Black liquorice', 'Zero regrets'] }
+  ];
+  const TAGCOL = ['var(--yellow)', 'var(--mint)', 'var(--paper)', 'var(--pink)', 'var(--yellow)'];
+  const range = $('#roast-range'), bean = $('#bean');
+  const nameEl = $('#roastName'), noEl = $('#roastNo'), aliasEl = $('#roastAlias'), quipEl = $('#roastQuip');
+  const tagsEl = $('#tags'), dialVal = $('#dialVal'), crack = $('#crack'), crackTxt = $('#crackTxt');
+  const tempEl = $('#rTemp'), timeEl = $('#rTime'), lossEl = $('#rLoss'), priceEl = $('#rPrice'), addBtn = $('#addRoast');
+  const minisEl = $('#minis');
+  const bars = $$('#bars .blocks');
+  bars.forEach(b => { for (let i = 0; i < 10; i++) b.appendChild(document.createElement('span')); });
+  const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  const rgb = c => 'rgb(' + c.join(',') + ')';
+  function colorAt(v) {
+    const t = v / 100 * (STOPS.length - 1), i = Math.min(STOPS.length - 2, Math.floor(t));
+    return mix(STOPS[i], STOPS[i + 1], t - i);
+  }
+  // minis
+  ROASTS.forEach((r, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'mini';
+    b.setAttribute('aria-label', 'Set roast to ' + r.name); b.setAttribute('aria-pressed', 'false');
+    b.dataset.v = String(Math.round((i + .5) * 100 / 6));
+    b.innerHTML = '<svg viewBox="0 0 100 120" aria-hidden="true" style="--bean:' + rgb(STOPS[i]) + '"><use href="#i-bean"/></svg><span>' + r.name + '</span>';
+    b.addEventListener('click', () => { range.value = b.dataset.v; update(true); range.focus({ preventScroll: true }); });
+    minisEl.appendChild(b);
+  });
+  let lastIdx = -1, lastV = +range.value, crackT = 0;
+  const fmtP = n => '£' + n.toFixed(2);
+  const priceAt = v => Math.round((17.5 - v * .055) * 2) / 2;
+  function pop(label) {
+    crackTxt.textContent = label;
+    crack.classList.remove('on'); void crack.offsetWidth; crack.classList.add('on');
+    bean.classList.remove('pop'); void bean.getBoundingClientRect(); bean.classList.add('pop');
+    clearTimeout(crackT); crackT = setTimeout(() => { crack.classList.remove('on'); bean.classList.remove('pop'); }, 1200);
+  }
+  function update(fromClick) {
+    const v = +range.value;
+    const idx = Math.min(5, Math.floor(v / (100 / 6)));
+    const R = ROASTS[idx], c = colorAt(v);
+    bean.style.setProperty('--bean', rgb(c));
+    bean.style.setProperty('--shade', rgb(mix(c, [0, 0, 0], .32)));
+    bean.style.setProperty('--crease', rgb(mix(c, [0, 0, 0], .45)));
+    bean.style.setProperty('--wr', String(clamp(1 - v / 60, 0, 1).toFixed(2)));
+    bean.style.setProperty('--sheen', String(clamp((v - 42) / 45, 0, .92).toFixed(2)));
+    bean.style.setProperty('--smoke', String(clamp((v - 72) / 22, 0, 1).toFixed(2)));
+    nameEl.textContent = R.name;
+    noEl.textContent = 'Roast 0' + (idx + 1) + ' / 06';
+    aliasEl.textContent = R.alias; quipEl.textContent = R.quip;
+    dialVal.textContent = v + ' / 100';
+    range.setAttribute('aria-valuetext', R.name + ', ' + v + ' out of 100');
+    const temp = Math.round(194 + v * .55), mins = 9 + v * .06, m = Math.floor(mins), s = Math.round((mins - m) * 60);
+    tempEl.textContent = temp + '°C';
+    timeEl.textContent = m + ':' + String(s).padStart(2, '0');
+    lossEl.textContent = Math.round(12 + v * .08) + '%';
+    const price = priceAt(v);
+    priceEl.textContent = fmtP(price);
+    addBtn.dataset.price = String(price);
+    if (idx !== lastIdx) {
+      tagsEl.innerHTML = '';
+      R.tags.forEach((t, i) => { const li = document.createElement('li'); li.textContent = t; li.style.background = TAGCOL[i % 5]; li.style.setProperty('--n', i); li.style.transform = 'rotate(' + [-2, 1.5, -1, 2, -1.5][i % 5] + 'deg)'; if (i === 3) { li.style.background = 'var(--pink)'; } tagsEl.appendChild(li); });
+      $$('.mini', minisEl).forEach((b, i) => b.setAttribute('aria-pressed', String(i === idx)));
+      lastIdx = idx;
+    }
+    const acid = clamp(Math.round(10 - v / 11), 1, 10), sweet = clamp(Math.round(3 + 6 * (1 - Math.abs(v - 48) / 52)), 2, 9), body = clamp(Math.round(2 + v / 12.5), 1, 10), bit = clamp(Math.round(1 + v / 11.5), 1, 10);
+    [acid, sweet, body, bit].forEach((n, i) => {
+      $$('span', bars[i]).forEach((sp, k) => sp.classList.toggle('on', k < n));
+      bars[i].setAttribute('aria-label', ['Acidity', 'Sweetness', 'Body', 'Bitterness'][i] + ' ' + n + ' out of 10');
+    });
+    // cracks
+    if (!fromClick || true) {
+      if ((lastV < 10 && v >= 10) || (lastV >= 10 && v < 10)) pop('POP!');
+      if ((lastV < 60 && v >= 60) || (lastV >= 60 && v < 60)) pop('POP! POP!');
+    }
+    lastV = v;
+  }
+  range.addEventListener('input', () => update(false));
+  update(true);
+  addBtn.addEventListener('click', e => {
+    const v = +range.value, R = ROASTS[Math.min(5, Math.floor(v / (100 / 6)))];
+    window.__addToBag({ id: 'dial-' + R.name, name: 'Dial blend: ' + R.name, meta: 'Roast ' + v + '/100, 250 g', price: priceAt(v) }, e.currentTarget);
+  });
+  // gentle intro sweep when scrolled into view
+  const sec = $('#roast');
+  if ('IntersectionObserver' in window && !reduce) {
+    const from = 8, to = +range.value; range.value = from; update(true);
+    const io = new IntersectionObserver(es => es.forEach(en => {
+      if (!en.isIntersecting) return; io.disconnect();
+      const t0 = performance.now(), d = 1500;
+      (function step(now) {
+        const k = clamp((now - t0) / d, 0, 1), e = 1 - Math.pow(1 - k, 3);
+        range.value = String(Math.round(from + (to - from) * e)); update(true);
+        if (k < 1) requestAnimationFrame(step);
+      })(t0);
+    }), { threshold: .35 });
+    io.observe(sec);
+  }
+})();
+
+/* =========================================================
+   BREW CALCULATOR + CLOCK
+   ========================================================= */
+(() => {
+  const coffee = $('#coffee'), water = $('#water'), ratio = $('#ratio');
+  const chips = $$('input[name=ratio]');
+  const num = el => { const v = parseFloat(el.value); return isFinite(v) ? v : 0; };
+  const r1 = n => Math.round(n * 10) / 10;
+  const MODES = {
+    espresso: { grind: 'Fine, table salt’s angry cousin', temp: '93°C', time: '0:28', total: 28 },
+    cold: { grind: 'Coarse, like sea salt', temp: 'Cold. Fridge.', time: '14 h', total: 0 },
+    strong: { grind: 'Medium-fine, sugar-ish', temp: '95°C', time: '3:15', total: 195 },
+    filter: { grind: 'Medium, like beach sand', temp: '94°C', time: '3:00', total: 180 },
+    gentle: { grind: 'Medium-coarse, sea-salt', temp: '92°C', time: '3:30', total: 210 }
+  };
+  const modeFor = r => r <= 3.5 ? 'espresso' : r <= 9.5 ? 'cold' : r <= 15 ? 'strong' : r <= 17 ? 'filter' : 'gentle';
+  const verdict = r => r < 2.5 ? 'Espresso. Small, violent, correct.' : r < 6 ? 'Ristretto-ish. Enjoy your heartbeat.' : r < 10 ? 'Concentrate. Dilute it, or dilute your plans.' : r < 13 ? 'Stout. For people with things to do and no time to do them.' : r < 15 ? 'Bold. Good with milk, better with a grudge.' : r < 17 ? 'The sweet spot. Balanced, bright, only slightly smug.' : r < 19 ? 'Gentle. Tea-adjacent. Fine. We’ll allow it.' : 'That’s not coffee, that’s brown water with ambitions.';
+  const liquid = $('#liquid'), tk = [$('#tk1'), $('#tk2'), $('#tk3')];
+  const stepsEl = $('#steps'), clockEl = $('#clock'), targetV = $('#targetV'), timerGo = $('#timerGo'), timerReset = $('#timerReset'), timerMsg = $('#timerMsg');
+  let plan = [], planTotal = 0, timer = null;
+
+  function buildPlan(c, w, mode) {
+    const mm = t => Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
+    let steps;
+    if (mode === 'espresso') {
+      steps = [
+        { l: 'Dose, tamp, lock in', n: 'Level and firm. No heroics.', d: 0, to: 0 },
+        { l: 'Pre-infuse', n: 'Gentle. Let the puck wake up.', d: 6, to: Math.round(w * .12) },
+        { l: 'Pull', n: 'Steady stream, like honey off a spoon.', d: 22, to: Math.round(w) }
+      ];
+    } else if (mode === 'cold') {
+      steps = [
+        { l: 'Combine', n: 'Coarse grounds, cold water, big jar.', d: 0, to: Math.round(w) },
+        { l: 'Steep in the fridge', n: 'Fourteen hours. Go to bed. Genuinely.', d: 0, to: Math.round(w) },
+        { l: 'Filter + dilute 1:1', n: 'Paper filter, then water or milk. Ice, obviously.', d: 0, to: Math.round(w * 2) }
+      ];
+    } else {
+      const total = MODES[mode].total, bloom = Math.round(Math.min(c * 2, w * .4)), p1 = Math.round(w * .6);
+      steps = [
+        { l: 'Bloom', n: 'Wet everything, swirl, watch it puff up and gasp.', d: 40, to: bloom },
+        { l: 'First pour', n: 'Slow spirals from the middle. Don’t hit the sides.', d: 40, to: p1 },
+        { l: 'Second pour', n: 'Same again, up to the full weight.', d: 40, to: Math.round(w) },
+        { l: 'Drawdown', n: 'Hands off. Let gravity finish the job.', d: total - 120, to: Math.round(w) }
+      ];
+    }
+    let t = 0;
+    steps.forEach(s => { s.at = t; t += s.d; s.time = s.d ? mm(s.at) + '–' + mm(s.at + s.d) : (mode === 'cold' ? '14 h' : '—'); });
+    return { steps, total: t };
+  }
+
+  function render(fromTimerReset) {
+    const c = num(coffee), w = num(water), r = num(ratio) || 1;
+    const mode = modeFor(r), M = MODES[mode];
+    $('#resNum').textContent = String(Math.round(w));
+    const cups = w / 250;
+    const amount = w < 130 ? 'about ' + Math.max(1, Math.round(w / 30)) + (Math.round(w / 30) === 1 ? ' shot.' : ' shots.') : 'about ' + r1(cups) + (r1(cups) === 1 ? ' cup.' : ' cups.');
+    $('#resLine').textContent = 'for ' + r1(c) + ' g of coffee at 1:' + (Number.isInteger(r) ? r : r.toFixed(1)) + ', ' + amount;
+    $('#verdict').textContent = verdict(r);
+    $('#stGrind').textContent = M.grind; $('#stTemp').textContent = M.temp; $('#stTime').textContent = M.time; $('#stCups').textContent = String(r1(cups));
+    chips.forEach(ch => { ch.checked = Math.abs(+ch.value - r) < .001; });
+    const max = w <= 500 ? 500 : w <= 1000 ? 1000 : w <= 2000 ? 2000 : 4000;
+    liquid.style.transform = 'scaleY(' + clamp(w / max, .02, 1).toFixed(3) + ')';
+    tk[0].textContent = Math.round(max * .25) ; tk[1].textContent = Math.round(max * .5); tk[2].textContent = Math.round(max * .75);
+    const P = buildPlan(c, w, mode); plan = P.steps; planTotal = P.total;
+    stepsEl.innerHTML = '';
+    plan.forEach((s, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<div><b></b><em></em></div><span class="tt"><strong></strong>to <span></span> g</span>';
+      $('b', li).textContent = s.l; $('em', li).textContent = s.n;
+      $('.tt strong', li).textContent = s.time; $('.tt > span', li).textContent = s.to;
+      stepsEl.appendChild(li);
+    });
+    resetTimer();
+  }
+  function resetTimer() {
+    if (timer) { clearInterval(timer); timer = null; }
+    timerGo.textContent = 'Start';
+    clockEl.textContent = '0:00';
+    targetV.textContent = '0 g';
+    $$('li', stepsEl).forEach(li => li.classList.remove('now', 'done'));
+    const cold = planTotal === 0;
+    timerGo.disabled = cold;
+    timerMsg.textContent = cold ? 'Clock disabled. Some things you cannot rush. Sleep on it.' : 'Press start when the kettle stops screaming.';
+  }
+  function tick(t0) {
+    const el = (performance.now() - t0) / 1000;
+    const secs = Math.min(planTotal, Math.floor(el));
+    clockEl.textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0');
+    let cur = plan.length - 1;
+    for (let i = 0; i < plan.length; i++) { if (el < plan[i].at + plan[i].d) { cur = i; break; } }
+    const s = plan[cur];
+    const prev = cur ? plan[cur - 1].to : 0;
+    const k = s.d ? clamp((el - s.at) / s.d, 0, 1) : 1;
+    targetV.textContent = Math.round(prev + (s.to - prev) * k) + ' g';
+    $$('li', stepsEl).forEach((li, i) => { li.classList.toggle('now', i === cur && el < planTotal); li.classList.toggle('done', i < cur || el >= planTotal); });
+    timerMsg.textContent = el >= planTotal ? 'Done. Drink it. Don’t just stand there.' : plan[cur].l + ': ' + plan[cur].n;
+    if (el >= planTotal) { clearInterval(timer); timer = null; timerGo.textContent = 'Again'; targetV.textContent = Math.round(plan[plan.length - 1].to) + ' g'; toast('Brewed. Now shut up and drink it.'); }
+  }
+  timerGo.addEventListener('click', () => {
+    if (timer) { resetTimer(); return; }
+    const t0 = performance.now(); timerGo.textContent = 'Stop';
+    timer = setInterval(() => tick(t0), 100); tick(t0);
+  });
+  timerReset.addEventListener('click', resetTimer);
+
+  // wiring: coffee <-> water through the ratio
+  coffee.addEventListener('input', () => { water.value = String(Math.round(num(coffee) * (num(ratio) || 1))); render(); });
+  water.addEventListener('input', () => { coffee.value = String(r1(num(water) / (num(ratio) || 1))); render(); });
+  ratio.addEventListener('input', () => { water.value = String(Math.round(num(coffee) * (num(ratio) || 1))); render(); });
+  chips.forEach(ch => ch.addEventListener('change', () => { ratio.value = ch.value; water.value = String(Math.round(num(coffee) * +ch.value)); render(); }));
+  $$('.stepper button').forEach(b => b.addEventListener('click', () => {
+    const t = $('#' + b.dataset.t), step = parseFloat(b.dataset.s);
+    t.value = String(clamp(r1(num(t) + step), parseFloat(t.min), parseFloat(t.max)));
+    t.dispatchEvent(new Event('input', { bubbles: true }));
+  }));
+  [coffee, water, ratio].forEach(el => el.addEventListener('change', () => {
+    const lo = parseFloat(el.min), hi = parseFloat(el.max);
+    el.value = String(clamp(num(el) || lo, lo, hi)); el.dispatchEvent(new Event('input', { bubbles: true }));
+  }));
+  render();
+})();
+
+/* =========================================================
+   PRODUCT CARDS: hover flips (CSS) + tap / button flips
+   ========================================================= */
+$$('.flip').forEach(card => {
+  const fb = $('.flipbtn', card), ub = $('.unflip', card);
+  const set = (f, focus) => {
+    card.classList.toggle('is-flipped', f);
+    fb.setAttribute('aria-pressed', String(f));
+    if (focus) (f ? ub : fb).focus({ preventScroll: true });
+  };
+  fb.setAttribute('aria-pressed', 'false');
+  fb.addEventListener('click', e => { e.stopPropagation(); set(!card.classList.contains('is-flipped'), true); });
+  ub.addEventListener('click', e => { e.stopPropagation(); set(false, true); });
+  card.addEventListener('click', e => {
+    if (e.target.closest('button, a')) return;
+    if (window.matchMedia('(hover:none)').matches) set(!card.classList.contains('is-flipped'), false);
+  });
+});
+
+/* =========================================================
+   BAG
+   ========================================================= */
+(() => {
+  const bagEl = $('#bag'), scrim = $('#scrim'), btn = $('#bagBtn'), list = $('#bagList'), count = $('#bagCount'), totalEl = $('#bagTotal');
+  const items = new Map();
+  const fmt = n => '£' + n.toFixed(2);
+  function open(o) {
+    bagEl.classList.toggle('open', o); scrim.classList.toggle('open', o);
+    btn.setAttribute('aria-expanded', String(o));
+    if (o) $('#bagClose').focus({ preventScroll: true }); else btn.focus({ preventScroll: true });
+  }
+  function draw() {
+    list.innerHTML = '';
+    let n = 0, total = 0;
+    items.forEach(it => {
+      n += it.qty; total += it.qty * it.price;
+      const li = document.createElement('li'); li.className = 'bag-item';
+      li.innerHTML = '<div><b></b><small></small></div><div class="pr"></div><div class="qty"><button type="button" aria-label="One less">&minus;</button><span></span><button type="button" aria-label="One more">+</button></div>';
+      $('b', li).textContent = it.name; $('small', li).textContent = it.meta; $('.pr', li).textContent = fmt(it.price * it.qty);
+      $('.qty span', li).textContent = it.qty;
+      const [minus, plus] = $$('.qty button', li);
+      minus.addEventListener('click', () => { it.qty--; if (it.qty <= 0) items.delete(it.id); draw(); });
+      plus.addEventListener('click', () => { it.qty++; draw(); });
+      list.appendChild(li);
+    });
+    if (!items.size) { const li = document.createElement('li'); li.className = 'empty'; li.innerHTML = 'Your bag is empty.<small>So, presumably, is your mug.</small>'; list.appendChild(li); }
+    count.textContent = String(n); totalEl.textContent = fmt(total);
+  }
+  function burst(from) {
+    if (reduce || !from) return;
+    const r = from.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const b = btn.getBoundingClientRect();
+    for (let i = 0; i < 9; i++) {
+      const holder = document.createElement('div');
+      holder.innerHTML = '<svg class="bb" viewBox="0 0 100 120" aria-hidden="true"><use href="#i-bean"/></svg>';
+      const s = holder.firstChild;
+      s.style.left = x + 'px'; s.style.top = y + 'px';
+      s.style.setProperty('--bean', ['#7f4b26', '#5a3319', '#a86f3c'][i % 3]);
+      const a = (i / 9) * Math.PI * 2 + Math.random(), d = 40 + Math.random() * 70;
+      s.style.setProperty('--dx', (Math.cos(a) * d + (b.left - x) * .25) + 'px');
+      s.style.setProperty('--dy', (Math.sin(a) * d - 30 + (b.top - y) * .25) + 'px');
+      s.style.setProperty('--rot', (Math.random() * 540 - 270) + 'deg');
+      document.body.appendChild(s); setTimeout(() => s.remove(), 1000);
+    }
+  }
+  window.__addToBag = (p, from) => {
+    const it = items.get(p.id) || { id: p.id, name: p.name, meta: p.meta, price: p.price, qty: 0 };
+    it.qty++; it.price = p.price; it.meta = p.meta; items.set(p.id, it); draw();
+    btn.classList.remove('bump'); void btn.offsetWidth; btn.classList.add('bump');
+    burst(from);
+    toast(['In the bag. Your kettle is nervous.', 'Added. Brenda approves.', 'Bagged. Bold choice.', 'Noted. Please drink responsibly.'][Math.floor(Math.random() * 4)]);
+  };
+  $$('[data-add]').forEach(b => b.addEventListener('click', () => window.__addToBag({ id: b.dataset.name, name: b.dataset.name, meta: b.dataset.meta, price: parseFloat(b.dataset.price) }, b)));
+  btn.addEventListener('click', () => open(!bagEl.classList.contains('open')));
+  $('#bagClose').addEventListener('click', () => open(false));
+  scrim.addEventListener('click', () => open(false));
+  addEventListener('keydown', e => { if (e.key === 'Escape' && bagEl.classList.contains('open')) open(false); });
+  $('#checkout').addEventListener('click', () => { toast(items.size ? 'This is a demo. Go and buy real coffee.' : 'Nothing to check out. Bold.'); });
+  draw();
+})();
+
+/* ---- newsletter ---- */
+$('#joinForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const em = $('#email');
+  if (!em.value || !/^\S+@\S+\.\S+$/.test(em.value)) { toast('That is not an email. It is a cry for help.'); em.focus(); return; }
+  toast('You’re in. First initiation rite: drink some water.'); em.value = '';
+});
+
+/* ---- easter egg: triple-click the logo to shuffle the palette ---- */
+(() => {
+  const logo = $('#logo'); let n = 0, t = 0, rot = 0;
+  const sets = [['#ffe500', '#ff4fa3', '#7dffb2', '#2f4bff'], ['#7dffb2', '#ffe500', '#ff4fa3', '#2f4bff'], ['#ff4fa3', '#7dffb2', '#2f4bff', '#ffe500'], ['#2f4bff', '#ff4fa3', '#ffe500', '#7dffb2']];
+  logo.addEventListener('click', () => {
+    n++; clearTimeout(t); t = setTimeout(() => n = 0, 800);
+    if (n >= 3) {
+      n = 0; rot = (rot + 1) % 4; const s = sets[rot];
+      // section backgrounds swap round
+      $('.hero').style.backgroundColor = s[0]; $('.roast').style.backgroundColor = s[1]; $('.brew').style.backgroundColor = s[2]; $('.rules').style.backgroundColor = s[3];
+      $('.rules').style.color = s[3] === '#ffe500' || s[3] === '#7dffb2' ? '#111' : '#fffbe6';
+      toast('Palette shuffled. No refunds.');
+    }
+  });
+})();
+})();
+</script>
+</body>
+</html>

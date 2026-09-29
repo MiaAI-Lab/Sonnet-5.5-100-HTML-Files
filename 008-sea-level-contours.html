@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#eadfc4">
+<title>Contour: Rising Tides — a survey of the Skerry Isles</title>
+<meta name="description" content="An interactive topographic map of a fictional archipelago. Raise the sea from 0 to +12 metres and watch the shoreline recompute, the lowlands flood and the villages turn red.">
+<style>
+:root{--paper:#eadfc4;--paper2:#e0d3b3;--brown:#8a5a2b;--index:#5e3a17;--sea:#4b8fa8;--shallow:#a6cfd9;--green:#7a8f4a;--red:#b83b2e;--ink:#3b2a17;
+--hum:"Gill Sans","Gill Sans MT",Optima,Calibri,"Segoe UI",Ubuntu,Cantarell,sans-serif;
+--type:"American Typewriter","Courier New",Courier,"Nimbus Mono PS",monospace}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{position:fixed;inset:0;height:100vh;height:100dvh;overflow:hidden;background:var(--paper);color:var(--ink);font-family:var(--hum);-webkit-tap-highlight-color:transparent}
+canvas{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+#view{touch-action:none;cursor:crosshair}
+.card{position:absolute;background:rgba(238,228,201,.93);border:1.5px solid var(--index);box-shadow:0 0 0 3px rgba(238,228,201,.93),0 0 0 4px rgba(94,58,23,.7),3px 5px 0 4px rgba(59,42,23,.12)}
+.title{left:clamp(16px,2.4vw,40px);top:clamp(16px,2.6vh,34px);padding:14px 22px 14px 20px;max-width:min(560px,calc(100vw - 150px));pointer-events:none}
+.title h1{margin:0;font:600 clamp(22px,2.6vw,36px)/1.02 var(--hum);font-variant:small-caps;letter-spacing:.09em;color:var(--index);white-space:nowrap}
+.title p{margin:8px 0 0;font:400 11px/1.5 var(--type);letter-spacing:.04em;color:var(--brown)}
+.legend{left:clamp(16px,2.4vw,40px);bottom:clamp(16px,2.6vh,34px);padding:10px 14px 8px;width:196px;pointer-events:none}
+.legend svg{display:block;width:100%;height:auto}
+.compass{position:absolute;width:clamp(84px,9vw,132px);left:clamp(230px,17vw,270px);bottom:clamp(10px,2vh,26px);pointer-events:none;opacity:.92}
+.scalebar{position:absolute;left:clamp(230px,17vw,270px);bottom:clamp(120px,17vh,168px);width:150px;pointer-events:none}
+.panel{right:clamp(14px,2vw,32px);top:50%;transform:translateY(-50%);width:clamp(112px,9.5vw,142px);padding:14px 12px 14px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.panel h2{margin:0;font:600 12px/1 var(--hum);font-variant:small-caps;letter-spacing:.2em;color:var(--index)}
+.lvl{font:700 clamp(22px,2.2vw,30px)/1 var(--type);color:var(--index);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.lvl small{font-size:.5em;color:var(--brown);margin-left:2px}
+.lvl .sg{color:var(--red);font-size:.55em;display:block;text-align:center;min-height:1.1em;letter-spacing:.02em}
+.slider{position:relative;width:64px;height:min(38vh,340px);min-height:180px;touch-action:none;cursor:ns-resize;outline:none}
+.slider .rail{position:absolute;left:38px;top:0;bottom:0;width:6px;border:1.2px solid var(--index);background:linear-gradient(180deg,var(--paper) 0,var(--paper2) 100%)}
+.slider .fill{position:absolute;left:38px;bottom:0;width:6px;background:var(--sea);border:1.2px solid var(--index);border-top:0;height:0;box-sizing:border-box}
+.slider .ticks{position:absolute;left:0;top:0;bottom:0;width:36px}
+.slider .ticks i{position:absolute;right:0;height:0;border-top:1.2px solid var(--index);width:9px}
+.slider .ticks i.m{width:16px}
+.slider .ticks b{position:absolute;left:0;transform:translateY(-50%);font:400 10px/1 var(--type);color:var(--brown)}
+.slider .knob{position:absolute;left:24px;width:34px;height:20px;margin-top:-10px;background:var(--paper);border:1.6px solid var(--index);box-shadow:2px 3px 0 rgba(59,42,23,.25);border-radius:2px}
+.slider .knob::before{content:"";position:absolute;left:5px;right:5px;top:9px;border-top:1.6px solid var(--red)}
+.slider:focus-visible .knob{outline:2px solid var(--red);outline-offset:3px}
+.stats{width:100%;display:grid;gap:9px;font:400 10px/1.25 var(--type);color:var(--brown);border-top:1px solid rgba(94,58,23,.5);padding-top:10px}
+.stats b{display:block;font:700 17px/1.1 var(--type);color:var(--index);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.stats .risk b.hot{color:var(--red)}
+.surge{width:100%;padding:9px 6px;border:1.6px solid var(--red);background:transparent;color:var(--red);font:700 10.5px/1.2 var(--hum);letter-spacing:.16em;text-transform:uppercase;cursor:pointer;transition:background .3s,color .3s}
+.surge:hover:not(:disabled){background:var(--red);color:var(--paper)}
+.surge:disabled{opacity:.7;cursor:default;background:rgba(184,59,46,.12);animation:pulse 1s infinite}
+.surge:focus-visible{outline:2px solid var(--index);outline-offset:3px}
+@keyframes pulse{50%{background:rgba(184,59,46,.28)}}
+.tip{position:absolute;left:0;top:0;pointer-events:none;padding:7px 10px 8px;background:rgba(238,228,201,.95);border:1.2px solid var(--index);font:400 11px/1.5 var(--type);color:var(--index);white-space:nowrap;opacity:0;transition:opacity .2s;will-change:transform}
+.tip b{color:var(--red)}
+.tip.on{opacity:1}
+.hint{position:absolute;left:50%;bottom:clamp(14px,2.4vh,28px);transform:translateX(-50%);margin:0;font:italic 400 13px/1.4 var(--hum);color:var(--brown);letter-spacing:.03em;pointer-events:none;transition:opacity 1.4s}
+.hint.gone{opacity:0}
+.warn{position:absolute;left:50%;top:clamp(16px,3vh,36px);transform:translateX(-50%);padding:6px 16px;border:1.6px solid var(--red);background:rgba(238,228,201,.94);color:var(--red);font:700 12px/1 var(--hum);letter-spacing:.3em;text-transform:uppercase;opacity:0;pointer-events:none;transition:opacity .4s}
+.warn.on{opacity:1}
+@media (max-width:760px){
+  .legend,.compass{display:none}
+  .scalebar{left:16px;bottom:16px}
+  .panel{width:98px;padding:10px 8px}
+  .title{padding:10px 14px}
+  .title p{font-size:9.5px}
+  .hint{display:none}
+  .slider{height:min(30vh,240px)}
+}
+@media (max-height:640px){.slider{height:min(30vh,200px);min-height:120px}.panel{gap:8px}}
+@media (prefers-reduced-motion:reduce){.surge:disabled{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="base" aria-hidden="true"></canvas>
+<canvas id="view" role="img" aria-label="Topographic map of the fictional Skerry Isles with contour lines, hillshading and a sea that rises with the slider. Move the pointer to read elevation and place names."  tabindex="0"></canvas>
+
+<header class="card title"><h1>Contour: Rising Tides</h1><p>Survey Sheet 4 &middot; the Skerry Isles &middot; contour interval 20 m, index lines every 100 m</p></header>
+
+<div class="card legend" role="group" aria-label="Legend">
+<svg viewBox="0 0 196 176" role="img" aria-label="Map legend">
+<text x="0" y="11" font-family="Gill Sans,Optima,Calibri,sans-serif" font-size="11" letter-spacing="2.2" fill="#5e3a17" font-weight="700">LEGEND</text>
+<g font-family="Courier New,Courier,monospace" font-size="9.5" fill="#5e3a17">
+<line x1="0" y1="26" x2="34" y2="26" stroke="#8a5a2b" stroke-width="1"/><text x="44" y="29">Contour, 20 m</text>
+<line x1="0" y1="42" x2="34" y2="42" stroke="#5e3a17" stroke-width="2.2"/><text x="44" y="45">Index contour, 100 m</text>
+<line x1="0" y1="58" x2="34" y2="58" stroke="#8a5a2b" stroke-width=".9" stroke-dasharray="3 3" opacity=".8"/><text x="44" y="61">Supplementary 5, 10 m</text>
+<rect x="0" y="69" width="34" height="12" fill="#7a8f4a" opacity=".65"/><text x="44" y="78">Lowland</text>
+<rect x="0" y="87" width="34" height="12" fill="#a6cfd9"/><path d="M2 99l8-12M8 99l8-12M14 99l8-12M20 99l8-12M26 99l8-12" stroke="#3b6f86" stroke-width=".8" fill="none"/><text x="44" y="96">Shallows</text>
+<rect x="0" y="105" width="34" height="12" fill="#4b8fa8"/><text x="44" y="114">Open sea</text>
+<rect x="13" y="124" width="8" height="8" fill="#3b2a17"/><text x="44" y="132">Village</text>
+<rect x="13" y="142" width="8" height="8" fill="#b83b2e"/><circle cx="17" cy="146" r="9" fill="none" stroke="#b83b2e" stroke-width="1"/><text x="44" y="150">Village flooded</text>
+<path d="M12 168l5-9 5 9z" fill="#5e3a17"/><text x="44" y="168">Summit</text>
+</g></svg></div>
+
+<svg class="compass" viewBox="-60 -60 120 120" aria-hidden="true" focusable="false">
+<circle r="46" fill="none" stroke="#5e3a17" stroke-width="1"/><circle r="37" fill="none" stroke="#8a5a2b" stroke-width=".6"/>
+<g stroke="#5e3a17" stroke-width=".8"><path d="M0-46v-8M0 46v8M-46 0h-8M46 0h8"/></g>
+<path d="M0-54L6-6 0 0-6-6Z M0 54L-6 6 0 0 6 6Z M-54 0L-6-6 0 0-6 6Z M54 0L6 6 0 0 6-6Z" fill="#5e3a17" opacity=".85"/>
+<path d="M0-54L6-6 0 0Z M0 54L-6 6 0 0Z M-54 0L-6-6 0 0Z M54 0L6 6 0 0Z" fill="#eadfc4"/>
+<path d="M0-54L6-6 0 0-6-6ZM0 54L-6 6 0 0 6 6ZM-54 0L-6-6 0 0-6 6ZM54 0L6 6 0 0 6-6Z" fill="none" stroke="#5e3a17" stroke-width=".8"/>
+<g stroke="#8a5a2b" stroke-width=".8" fill="#8a5a2b"><path d="M0-30L4-4 0 0-4-4Z" transform="rotate(45)"/><path d="M0-30L4-4 0 0-4-4Z" transform="rotate(135)"/><path d="M0-30L4-4 0 0-4-4Z" transform="rotate(225)"/><path d="M0-30L4-4 0 0-4-4Z" transform="rotate(315)"/></g>
+<text y="-58" x="0" text-anchor="middle" font-family="Gill Sans,Optima,Calibri,sans-serif" font-size="12" font-weight="700" fill="#b83b2e">N</text>
+<circle r="3" fill="#b83b2e"/></svg>
+
+<svg class="scalebar" viewBox="0 0 150 34" aria-hidden="true" focusable="false">
+<g fill="#eadfc4" stroke="#5e3a17" stroke-width="1"><rect x="4" y="12" width="35" height="7"/><rect x="39" y="12" width="35" height="7" fill="#5e3a17"/><rect x="74" y="12" width="35" height="7"/><rect x="109" y="12" width="35" height="7" fill="#5e3a17"/></g>
+<g font-family="Courier New,Courier,monospace" font-size="9" fill="#5e3a17" text-anchor="middle"><text x="4" y="9">0</text><text x="74" y="9">1</text><text x="128" y="9">2 km</text><text x="74" y="31" font-size="8">scale 1 : 25 000</text></g></svg>
+
+<aside class="card panel" aria-label="Sea level controls">
+  <h2>Sea level</h2>
+  <div class="lvl" id="lvl">+0.0<small>m</small><span class="sg" id="lvlSg">&nbsp;</span></div>
+  <div class="slider" id="slider" role="slider" tabindex="0" aria-orientation="vertical" aria-label="Sea level rise in metres" aria-valuemin="0" aria-valuemax="12" aria-valuenow="0" aria-valuetext="0.0 metres">
+    <div class="ticks" id="ticks"></div><div class="rail"></div><div class="fill" id="fill"></div><div class="knob" id="knob"></div>
+  </div>
+  <div class="stats">
+    <div>Land remaining<b id="land">100.0%</b></div>
+    <div class="risk">Villages at risk<b id="risk">0 / 5</b></div>
+  </div>
+  <button class="surge" id="surge" type="button">Storm surge +2 m</button>
+</aside>
+
+<p class="warn" id="warn" aria-hidden="true">Storm surge warning</p>
+<p class="hint" id="hint">Drag the gauge to raise the sea &middot; move over the map to read the ground</p>
+<div class="tip" id="tip" aria-hidden="true"></div>
+
+<script>
+(function(){
+'use strict';
+var doc=document,win=window;
+function $(id){return doc.getElementById(id)}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function lerp(a,b,t){return a+(b-a)*t}
+function sm(a,b,x){var t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)}
+var mqR=win.matchMedia('(prefers-reduced-motion: reduce)'),reduce=mqR.matches;
+if(mqR.addEventListener)mqR.addEventListener('change',function(e){reduce=e.matches});
+var baseC=$('base'),viewC=$('view'),bx=null,vx=null;
+try{bx=baseC.getContext('2d');vx=viewC.getContext('2d')}catch(e){}
+if(!bx||!vx)return;
+
+/* ---------------------------------------------------------------- noise */
+var seed=7;
+function hash2(x,y){var n=Math.sin(x*127.1+y*311.7+seed*74.7)*43758.5453;return n-Math.floor(n)}
+function vn(x,y){var i=Math.floor(x),j=Math.floor(y),fx=x-i,fy=y-j;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
+  return lerp(lerp(hash2(i,j),hash2(i+1,j),fx),lerp(hash2(i,j+1),hash2(i+1,j+1),fx),fy)}
+function fbm(x,y){return vn(x,y)*.5+vn(x*2.03,y*2.03)*.26+vn(x*4.1,y*4.1)*.15+vn(x*8.3,y*8.3)*.09}
+var BLOBS=[[.24,.36,.19,1],[.36,.62,.14,.9],[.5,.3,.12,.8],[.55,.56,.2,1],[.7,.42,.13,.85],[.66,.74,.1,.75],[.16,.66,.09,.7],[.42,.83,.08,.6],[.8,.6,.08,.55]];
+
+/* ---------------------------------------------------------------- state */
+var W=0,H=0,dpr=1,cs=4,gw=0,gh=0,ELEV=null,FL=null,QUE=null,LAND0=0,landCount=0;
+var level=0,effLevel=-1,surgeT=-1,shore=null,shoreN=0,villages=[],places=[],route=[],shipT=.2;
+var wat=doc.createElement('canvas'),watX=wat.getContext('2d'),shim=doc.createElement('canvas'),shimX=shim.getContext('2d'),hatchP=null,tmp=doc.createElement('canvas'),tmpX=tmp.getContext('2d'),small=doc.createElement('canvas'),smallX=small.getContext('2d'),shal=doc.createElement('canvas'),shalX=shal.getContext('2d');
+var streak=doc.createElement('canvas');
+var ptr={x:-1,y:-1,on:false,kx:0,ky:0};
+
+function elevAt(u,v,asp){
+  var m=0;
+  for(var i=0;i<BLOBS.length;i++){
+    var b=BLOBS[i],dx=(u-b[0])*asp,dy=v-b[1],d=Math.sqrt(dx*dx+dy*dy)/b[2];
+    if(d<1.3)m=Math.max(m,b[3]*Math.pow(1-d/1.3,1.25));
+  }
+  var e=m*.98+(fbm(u*asp*6.5,v*6.5)-.5)*1.05*(.28+m)-.02;
+  return e;
+}
+function build(){
+  W=win.innerWidth;H=win.innerHeight;dpr=Math.min(win.devicePixelRatio||1,1.5);
+  var pix=W*H*dpr*dpr,cap=3.4e6;if(pix>cap)dpr*=Math.sqrt(cap/pix);
+  cs=W*H>1.1e6?5:4;
+  baseC.width=viewC.width=Math.round(W*dpr);baseC.height=viewC.height=Math.round(H*dpr);
+  gw=Math.ceil(W/cs)+2;gh=Math.ceil(H/cs)+2;
+  ELEV=new Float32Array(gw*gh);FL=new Uint8Array(gw*gh);QUE=new Int32Array(gw*gh);
+  var asp=W/H,portrait=asp<.85,i,j;
+  landCount=0;
+  for(j=0;j<gh;j++)for(i=0;i<gw;i++){
+    var u=Math.min(1,i*cs/W),v=Math.min(1,j*cs/H),e=portrait?elevAt(v*.8+.1,1-u*.95,1/asp*.9):elevAt(u,v,asp);
+    var edge=Math.min(u,v,1-u,1-v);e-=Math.max(0,.09-edge)*4;
+    var h;
+    if(e>.3){var t=clamp((e-.3)/.7,0,1);h=175*Math.pow(t,1.45)+.15}
+    else h=-(.3-e)*170;
+    ELEV[j*gw+i]=h;
+    if(h>0)landCount++;
+  }
+  LAND0=landCount;
+  placeVillages();
+  buildRoute();
+  small.width=gw;small.height=gh;shal.width=gw;shal.height=gh;
+  wat.width=viewC.width;wat.height=viewC.height;
+  buildBase();buildPatterns();
+  effLevel=-99;setLevel(level,true);
+}
+
+/* ---------------------------------------------------------------- places */
+var VN=['Port Calder','Merrow','Saltreach','Hollin Cove','Tarn End'],TARGET=[1.4,3.3,5.6,8.3,10.9];
+function placeVillages(){
+  villages=[];places=[];
+  var used=[],R=0x9e3779b9,rnd=function(){R=(R*1664525+1013904223)|0;return (R>>>8)/16777216};
+  for(var k=0;k<5;k++){
+    var best=null,bs=1e9;
+    for(var n=0;n<9000;n++){
+      var i=3+((rnd()*(gw-6))|0),j=3+((rnd()*(gh-6))|0),h=ELEV[j*gw+i];
+      if(h<TARGET[k]-.55||h>TARGET[k]+.55)continue;
+      var near=false;for(var d=-6;d<=6&&!near;d++)for(var e=-6;e<=6;e++){if(ELEV[(j+d)*gw+i+e]<=0){near=true;break}}
+      if(!near)continue;
+      var ok=true;for(var q=0;q<used.length;q++){var dx=used[q][0]-i,dy=used[q][1]-j;if(dx*dx+dy*dy<(150/cs)*(150/cs)){ok=false;break}}
+      if(!ok)continue;
+      var sc=Math.abs(h-TARGET[k])+rnd()*.3;if(sc<bs){bs=sc;best=[i,j,h]}
+      if(n>2500&&best)break;
+    }
+    if(!best){
+      for(var t=0;t<gw*gh;t++){var ii=t%gw,jj=(t/gw)|0,hh=ELEV[t];if(hh>TARGET[k]-.9&&hh<TARGET[k]+.9&&ii>3&&jj>3&&ii<gw-3&&jj<gh-3){best=[ii,jj,hh];break}}
+    }
+    if(best){used.push(best);villages.push({i:best[0],j:best[1],h:best[2],name:VN[k],flooded:false})}
+  }
+  villages.forEach(function(v){places.push({x:v.i*cs,y:v.j*cs,name:v.name,kind:'village'})});
+  /* summits and named waters */
+  var peaks=[],sn=['Mt Corrin','Cairn Hollow','The Wether'];
+  for(var t2=0;t2<gw*gh;t2+=3){
+    var i2=t2%gw,j2=(t2/gw)|0,h2=ELEV[t2];
+    if(h2<70||i2<3||j2<3||i2>gw-4||j2>gh-4)continue;
+    var top=true;for(var a=-4;a<=4&&top;a+=2)for(var b=-4;b<=4;b+=2)if(ELEV[(j2+a)*gw+i2+b]>h2){top=false;break}
+    if(!top)continue;
+    var far=true;for(var p=0;p<peaks.length;p++){var ddx=peaks[p].i-i2,ddy=peaks[p].j-j2;if(ddx*ddx+ddy*ddy<(170/cs)*(170/cs)){far=false;break}}
+    if(far)peaks.push({i:i2,j:j2,h:h2});
+  }
+  peaks.sort(function(a,b){return b.h-a.h});
+  peaks=peaks.slice(0,3);
+  peaks.forEach(function(p,k){places.push({x:p.i*cs,y:p.j*cs,name:sn[k]+' ('+Math.round(p.h)+' m)',kind:'summit'})});
+  places.peaks=peaks;
+  var wn=[['Sable Bay',.09,.5],['Gannet Sound',.5,.94],['The Narrows',.42,.5],['Corrin Deep',.9,.2]];
+  wn.forEach(function(w){places.push({x:w[1]*W,y:w[2]*H,name:w[0],kind:'water'})});
+}
+function buildRoute(){
+  route=[];var m=Math.min(W,H)*.045+18,n=64;
+  for(var i=0;i<n;i++){
+    var a=i/n*Math.PI*2,c=Math.cos(a),s=Math.sin(a),e=6;
+    var x=W/2+Math.sign(c)*Math.pow(Math.abs(c),1/e)*(W/2-m-cs*3),y=H/2+Math.sign(s)*Math.pow(Math.abs(s),1/e)*(H/2-m-cs*3);
+    route.push([x,y]);
+  }
+}
+
+/* ---------------------------------------------------------------- static layers */
+function landCol(h,shade,o){
+  var t=sm(0,55,h),r=lerp(122,222,t),g=lerp(143,205,t),b=lerp(74,158,t);
+  var k=.62+.6*shade;o[0]=clamp(r*k,0,255);o[1]=clamp(g*k,0,255);o[2]=clamp(b*k,0,255);
+}
+function buildBase(){
+  var c=bx,x,y,i,j;
+  c.setTransform(dpr,0,0,dpr,0,0);
+  c.fillStyle='#eadfc4';c.fillRect(0,0,W,H);
+  /* paper: mottling, fibres and foxing */
+  var R=0x51ed270b,rnd=function(){R=(R*1664525+1013904223)|0;return (R>>>8)/16777216};
+  for(i=0;i<26;i++){var px=rnd()*W,py=rnd()*H,pr=(60+rnd()*220),g=c.createRadialGradient(px,py,0,px,py,pr);g.addColorStop(0,'rgba(150,110,60,'+(.035+rnd()*.05)+')');g.addColorStop(1,'rgba(150,110,60,0)');c.fillStyle=g;c.fillRect(px-pr,py-pr,pr*2,pr*2)}
+  for(i=0;i<2600;i++){c.fillStyle=rnd()<.5?'rgba(120,84,40,'+(.03+rnd()*.05)+')':'rgba(255,250,235,'+(.05+rnd()*.08)+')';c.fillRect(rnd()*W,rnd()*H,.6+rnd()*1.8,.6+rnd()*.9)}
+  /* land raster with hillshade, at grid resolution */
+  var img=smallX.createImageData(gw,gh),d=img.data,col=[0,0,0];
+  for(j=0;j<gh;j++)for(i=0;i<gw;i++){
+    var k=j*gw+i,h=ELEV[k];
+    if(h<=0){d[k*4+3]=0;continue}
+    var hl=ELEV[k-(i>0?1:0)],hr=ELEV[k+(i<gw-1?1:0)],hu=ELEV[k-(j>0?gw:0)],hd=ELEV[k+(j<gh-1?gw:0)];
+    hl=Math.max(0,hl);hr=Math.max(0,hr);hu=Math.max(0,hu);hd=Math.max(0,hd);
+    var dzx=(hr-hl)/(2*cs)*9,dzy=(hd-hu)/(2*cs)*9,inv=1/Math.sqrt(dzx*dzx+dzy*dzy+1);
+    var shade=clamp((-dzx*inv*-.62+-dzy*inv*-.62+inv*.5)*1.05,0,1.15);
+    landCol(h,shade,col);
+    d[k*4]=col[0];d[k*4+1]=col[1];d[k*4+2]=col[2];d[k*4+3]=clamp(h*90,0,255);
+  }
+  smallX.putImageData(img,0,0);
+  c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';
+  c.drawImage(small,0,0,gw,gh,0,0,gw*cs,gh*cs);
+  /* contour lines by marching squares */
+  var lv,idxSegs=[];
+  c.lineJoin='round';c.lineCap='round';
+  [5,10].forEach(function(L){
+    c.strokeStyle='rgba(138,90,43,.55)';c.lineWidth=.8;c.setLineDash([3,3.5]);c.beginPath();
+    march(ELEV,L,function(x1,y1,x2,y2){c.moveTo(x1*cs,y1*cs);c.lineTo(x2*cs,y2*cs)});c.stroke();
+  });
+  c.setLineDash([]);
+  for(lv=20;lv<=180;lv+=20){
+    var idx=(lv%100===0);
+    c.strokeStyle=idx?'#5e3a17':'rgba(138,90,43,.85)';c.lineWidth=idx?2:.9;c.beginPath();
+    march(ELEV,lv,function(x1,y1,x2,y2){c.moveTo(x1*cs,y1*cs);c.lineTo(x2*cs,y2*cs);if(idx)idxSegs.push([x1*cs,y1*cs,x2*cs,y2*cs])});
+    c.stroke();
+  }
+  labelIndex(c,idxSegs);
+  /* neatline with tick marks and coordinates */
+  c.strokeStyle='#5e3a17';c.lineWidth=1.4;c.strokeRect(10,10,W-20,H-20);c.lineWidth=.7;c.strokeRect(15,15,W-30,H-30);
+  c.font='9px "Courier New",monospace';c.fillStyle='#5e3a17';
+  for(x=15+Math.round((W-30)/12);x<W-15;x+=Math.round((W-30)/12)){c.beginPath();c.moveTo(x,10);c.lineTo(x,15);c.moveTo(x,H-15);c.lineTo(x,H-10);c.stroke()}
+  for(y=15+Math.round((H-30)/8);y<H-15;y+=Math.round((H-30)/8)){c.beginPath();c.moveTo(10,y);c.lineTo(15,y);c.moveTo(W-15,y);c.lineTo(W-10,y);c.stroke()}
+  /* summit triangles and water names */
+  places.forEach(function(p){
+    if(p.kind==='summit'){c.fillStyle='#5e3a17';c.beginPath();c.moveTo(p.x,p.y-5);c.lineTo(p.x+4.5,p.y+3);c.lineTo(p.x-4.5,p.y+3);c.fill();
+      c.font='italic 11px "Gill Sans",Optima,Calibri,sans-serif';c.fillStyle='#5e3a17';c.textAlign='left';c.strokeStyle='rgba(234,223,196,.85)';c.lineWidth=3;c.strokeText(p.name,p.x+8,p.y+3);c.fillText(p.name,p.x+8,p.y+3)}
+    else if(p.kind==='water'){c.save();c.font='italic 13px "Gill Sans",Optima,Calibri,sans-serif';c.fillStyle='rgba(30,70,95,.75)';c.textAlign='center';c.translate(p.x,p.y);c.fillText(p.name.split('').join(' '),0,0);c.restore()}
+  });
+}
+/* marching squares: calls emit(x1,y1,x2,y2) in grid units */
+function march(F,L,emit){
+  for(var j=0;j<gh-1;j++){
+    for(var i=0;i<gw-1;i++){
+      var k=j*gw+i,v0=F[k]-L,v1=F[k+1]-L,v2=F[k+gw+1]-L,v3=F[k+gw]-L;
+      var idx=(v0>0?1:0)|(v1>0?2:0)|(v2>0?4:0)|(v3>0?8:0);
+      if(idx===0||idx===15)continue;
+      var e0x=i+v0/(v0-v1),e0y=j,e1x=i+1,e1y=j+v1/(v1-v2),e2x=i+v3/(v3-v2),e2y=j+1,e3x=i,e3y=j+v0/(v0-v3);
+      switch(idx){
+        case 1:case 14:emit(e3x,e3y,e0x,e0y);break;
+        case 2:case 13:emit(e0x,e0y,e1x,e1y);break;
+        case 3:case 12:emit(e3x,e3y,e1x,e1y);break;
+        case 4:case 11:emit(e1x,e1y,e2x,e2y);break;
+        case 5:emit(e3x,e3y,e0x,e0y);emit(e1x,e1y,e2x,e2y);break;
+        case 6:case 9:emit(e0x,e0y,e2x,e2y);break;
+        case 7:case 8:emit(e3x,e3y,e2x,e2y);break;
+        case 10:emit(e0x,e0y,e1x,e1y);emit(e2x,e2y,e3x,e3y);break;
+      }
+    }
+  }
+}
+function labelIndex(c,segs){
+  var map={},chains=[],key=function(x,y){return Math.round(x*2)+','+Math.round(y*2)};
+  segs.forEach(function(s,n){var a=key(s[0],s[1]),b=key(s[2],s[3]);(map[a]=map[a]||[]).push([n,0]);(map[b]=map[b]||[]).push([n,1])});
+  var used=new Uint8Array(segs.length);
+  for(var n=0;n<segs.length;n++){
+    if(used[n])continue;used[n]=1;
+    var pts=[[segs[n][0],segs[n][1]],[segs[n][2],segs[n][3]]];
+    for(var dir=0;dir<2;dir++){
+      for(var guard=0;guard<4000;guard++){
+        var end=dir?pts[0]:pts[pts.length-1],lst=map[key(end[0],end[1])],nx=null;
+        if(lst)for(var q=0;q<lst.length;q++){if(!used[lst[q][0]]){nx=lst[q];break}}
+        if(!nx)break;
+        used[nx[0]]=1;var s=segs[nx[0]],np=nx[1]===0?[s[2],s[3]]:[s[0],s[1]];
+        if(dir)pts.unshift(np);else pts.push(np);
+      }
+    }
+    if(pts.length>36)chains.push(pts);
+  }
+  c.font='700 10px "Courier New",Courier,monospace';c.textAlign='center';c.textBaseline='middle';
+  chains.forEach(function(pts,ci){
+    var acc=0,next=90+ci*37%120,i;
+    for(i=1;i<pts.length-4;i++){
+      var dx=pts[i][0]-pts[i-1][0],dy=pts[i][1]-pts[i-1][1];acc+=Math.sqrt(dx*dx+dy*dy);
+      if(acc>=next){
+        next=acc+300;
+        var a=pts[Math.max(0,i-4)],b=pts[Math.min(pts.length-1,i+4)],ang=Math.atan2(b[1]-a[1],b[0]-a[0]);
+        if(ang>Math.PI/2||ang<-Math.PI/2)ang+=Math.PI;
+        c.save();c.translate(pts[i][0],pts[i][1]);c.rotate(ang);
+        c.fillStyle='#eadfc4';c.fillRect(-13,-6,26,12);c.fillStyle='#5e3a17';c.fillText('100',0,.5);c.restore();
+      }
+    }
+  });
+}
+function buildPatterns(){
+  hatchP=doc.createElement('canvas');hatchP.width=Math.round(W*dpr);hatchP.height=Math.round(H*dpr);
+  var h=hatchP.getContext('2d');h.setTransform(dpr,0,0,dpr,0,0);h.strokeStyle='rgba(38,92,118,.75)';h.lineWidth=.8;h.beginPath();
+  for(var x=-H;x<W+H;x+=5.2){h.moveTo(x,H);h.lineTo(x+H,0)}
+  h.stroke();
+  streak.width=512;streak.height=256;var s=streak.getContext('2d');
+  s.clearRect(0,0,512,256);var R=99,rnd=function(){R=(R*1664525+1013904223)|0;return (R>>>8)/16777216};
+  s.lineCap='round';
+  for(var i=0;i<95;i++){s.strokeStyle='rgba(255,255,255,'+(.14+rnd()*.2)+')';s.lineWidth=1+rnd()*1.6;var x0=rnd()*512,y0=rnd()*256,l=14+rnd()*40;s.beginPath();s.moveTo(x0,y0);s.quadraticCurveTo(x0+l*.5,y0-3,x0+l,y0);s.stroke()}
+  shim.width=viewC.width;shim.height=viewC.height;tmp.width=viewC.width;tmp.height=viewC.height;
+}
+
+/* ---------------------------------------------------------------- sea level: flood fill, shoreline, water raster */
+function setLevel(L,force){
+  if(!force&&Math.abs(L-effLevel)<.004)return;
+  effLevel=L;
+  var i,j,n=gw*gh,qh=0,qt=0,k;
+  FL.fill(0);
+  for(i=0;i<gw;i++){k=i;if(ELEV[k]<L&&!FL[k]){FL[k]=1;QUE[qt++]=k}k=(gh-1)*gw+i;if(ELEV[k]<L&&!FL[k]){FL[k]=1;QUE[qt++]=k}}
+  for(j=0;j<gh;j++){k=j*gw;if(ELEV[k]<L&&!FL[k]){FL[k]=1;QUE[qt++]=k}k=j*gw+gw-1;if(ELEV[k]<L&&!FL[k]){FL[k]=1;QUE[qt++]=k}}
+  while(qh<qt){
+    k=QUE[qh++];var x=k%gw,y=(k/gw)|0;
+    if(x>0&&!FL[k-1]&&ELEV[k-1]<L){FL[k-1]=1;QUE[qt++]=k-1}
+    if(x<gw-1&&!FL[k+1]&&ELEV[k+1]<L){FL[k+1]=1;QUE[qt++]=k+1}
+    if(y>0&&!FL[k-gw]&&ELEV[k-gw]<L){FL[k-gw]=1;QUE[qt++]=k-gw}
+    if(y<gh-1&&!FL[k+gw]&&ELEV[k+gw]<L){FL[k+gw]=1;QUE[qt++]=k+gw}
+  }
+  /* shoreline field: unreachable low ground stays dry */
+  var img=smallX.createImageData(gw,gh),d=img.data,dry=0,sh=shalX.createImageData(gw,gh),ds=sh.data,F=SHF||(SHF=new Float32Array(n));
+  for(k=0;k<n;k++){
+    var h=ELEV[k];
+    if(FL[k]){F[k]=h-L}else F[k]=Math.max(h-L,.02);
+    if(FL[k]){
+      var dep=L-h;
+      var t=sm(0,26,dep),r=lerp(166,75,t),g=lerp(207,143,t),b=lerp(217,168,t);
+      var a=h>0?lerp(.5,.72,sm(0,6,dep)):lerp(.7,.84,t);
+      d[k*4]=r;d[k*4+1]=g;d[k*4+2]=b;d[k*4+3]=a*255;
+      if(dep<4.5){ds[k*4+3]=255*(1-dep/4.5)}
+    }
+    if(h>0&&FL[k]===0)dry++;
+  }
+  smallX.putImageData(img,0,0);shalX.putImageData(sh,0,0);
+  /* land remaining and villages */
+  var atRisk=0;
+  villages.forEach(function(v){v.flooded=FL[v.j*gw+v.i]===1||ELEV[v.j*gw+v.i]<L;if(v.flooded)atRisk++});
+  landPct=dry/LAND0*100;riskN=atRisk;
+  /* shoreline segments */
+  var cap=gw*gh*2;if(!shore||shore.length<cap*2)shore=new Float32Array(cap*2);
+  shoreN=0;
+  march(F,0,function(x1,y1,x2,y2){if(shoreN<cap){var o=shoreN*4;shore[o]=x1;shore[o+1]=y1;shore[o+2]=x2;shore[o+3]=y2;shoreN++}});
+  /* cache the scaled water raster + hatched shallows */
+  var wc=watX;wc.setTransform(1,0,0,1,0,0);wc.clearRect(0,0,wat.width,wat.height);
+  wc.imageSmoothingEnabled=true;wc.imageSmoothingQuality='high';
+  wc.drawImage(small,0,0,gw,gh,0,0,gw*cs*dpr,gh*cs*dpr);
+  tmpX.setTransform(1,0,0,1,0,0);tmpX.clearRect(0,0,tmp.width,tmp.height);
+  tmpX.drawImage(shal,0,0,gw,gh,0,0,gw*cs*dpr,gh*cs*dpr);
+  tmpX.globalCompositeOperation='source-in';tmpX.drawImage(hatchP,0,0);tmpX.globalCompositeOperation='source-over';
+  wc.globalAlpha=.55;wc.drawImage(tmp,0,0);wc.globalAlpha=1;
+  updateReadouts();
+}
+var SHF=null,landPct=100,riskN=0;
+var readL=$('land'),readR=$('risk'),lvlEl=$('lvl'),lvlSg=$('lvlSg'),slider=$('slider'),knob=$('knob'),fill=$('fill'),tip=$('tip'),warn=$('warn'),surgeB=$('surge');
+var shownLand=100;
+function updateReadouts(){
+  readR.textContent=riskN+' / '+villages.length;readR.className=riskN?'hot':'';
+}
+
+/* ---------------------------------------------------------------- the slider */
+var MAXL=12;
+(function ticks(){
+  var t=$('ticks'),h='';
+  for(var m=0;m<=12;m++){var p=(1-m/12)*100;h+='<i class="'+(m%3===0?'m':'')+'" style="top:'+p+'%"></i>';if(m%3===0)h+='<b style="top:'+p+'%">+'+m+'</b>'}
+  t.innerHTML=h;
+})();
+function placeKnob(){
+  var p=1-level/MAXL;knob.style.top=(p*100)+'%';fill.style.height=(level/MAXL*100)+'%';
+  slider.setAttribute('aria-valuenow',level.toFixed(1));slider.setAttribute('aria-valuetext',level.toFixed(1)+' metres');
+}
+function showLevel(e){
+  var s=(Math.round(e*10)/10).toFixed(1);
+  var extra=surgeT>=0?e-level:0;
+  lvlEl.firstChild.nodeValue='+'+s;
+  lvlSg.textContent=extra>.05?'surge +'+extra.toFixed(1):' ';
+}
+function setFromPointer(cy){
+  var r=slider.getBoundingClientRect(),p=clamp((cy-r.top)/r.height,0,1);
+  level=Math.round((1-p)*MAXL*10)/10;placeKnob();hideHint();
+}
+var drag=false;
+slider.addEventListener('pointerdown',function(e){drag=true;slider.setPointerCapture(e.pointerId);setFromPointer(e.clientY);e.preventDefault()});
+slider.addEventListener('pointermove',function(e){if(drag)setFromPointer(e.clientY)});
+slider.addEventListener('pointerup',function(){drag=false});
+slider.addEventListener('pointercancel',function(){drag=false});
+slider.addEventListener('keydown',function(e){
+  var st=e.shiftKey?1:.1,k=e.key,l=level;
+  if(k==='ArrowUp'||k==='ArrowRight')l+=st;else if(k==='ArrowDown'||k==='ArrowLeft')l-=st;else if(k==='PageUp')l+=1;else if(k==='PageDown')l-=1;else if(k==='Home')l=0;else if(k==='End')l=MAXL;else return;
+  e.preventDefault();level=clamp(Math.round(l*10)/10,0,MAXL);placeKnob();hideHint();
+});
+win.addEventListener('wheel',function(e){if(e.target===viewC){level=clamp(Math.round((level-Math.sign(e.deltaY)*.5)*10)/10,0,MAXL);placeKnob()}},{passive:true});
+var hint=$('hint');function hideHint(){hint.classList.add('gone')}setTimeout(hideHint,22000);
+surgeB.addEventListener('click',function(){if(surgeT>=0)return;surgeT=0;surgeB.disabled=true;surgeB.textContent='Surge in progress…';warn.classList.add('on');hideHint()});
+function surgeAmt(t){
+  var env=t<1.3?sm(0,1.3,t):t<4.4?1:1-sm(4.4,7.6,t);
+  return 2*env*(t<4.4?(.9+.1*Math.sin(t*5.5)):1);
+}
+
+/* ---------------------------------------------------------------- pointer: crosshair, elevation, nearest place */
+function fmtLL(x,y){
+  var lat=56+10/60-(y/H)*(14/60),lon=6+30/60+(x/W)*(26/60);
+  function dm(v,p,n){var d=Math.floor(v),m=(v-d)*60;return p+' '+(d<10?'0':'')+d+'° '+(m<10?'0':'')+m.toFixed(2)+'′'}
+  return dm(lat,'N')+'  '+dm(lon,'W');
+}
+function elevHere(x,y){
+  var fi=clamp(x/cs,0,gw-1.001),fj=clamp(y/cs,0,gh-1.001),i=fi|0,j=fj|0,tx=fi-i,ty=fj-j,k=j*gw+i;
+  return lerp(lerp(ELEV[k],ELEV[k+1],tx),lerp(ELEV[k+gw],ELEV[k+gw+1],tx),ty);
+}
+function onMove(e){ptr.x=e.clientX;ptr.y=e.clientY;ptr.on=true}
+viewC.addEventListener('pointermove',onMove);
+viewC.addEventListener('pointerdown',function(e){onMove(e);hideHint()});
+viewC.addEventListener('pointerleave',function(){ptr.on=false;tip.classList.remove('on')});
+viewC.addEventListener('keydown',function(e){
+  var st=e.shiftKey?40:10,k=e.key;
+  if(!ptr.on){ptr.x=W/2;ptr.y=H/2;ptr.on=true}
+  if(k==='ArrowLeft')ptr.x-=st;else if(k==='ArrowRight')ptr.x+=st;else if(k==='ArrowUp')ptr.y-=st;else if(k==='ArrowDown')ptr.y+=st;else return;
+  ptr.x=clamp(ptr.x,0,W);ptr.y=clamp(ptr.y,0,H);e.preventDefault();
+});
+viewC.addEventListener('blur',function(){if(!ptr.mouse){ptr.on=false;tip.classList.remove('on')}});
+var tipT=0;
+function updateTip(dt){
+  if(!ptr.on)return;
+  tipT+=dt;if(tipT<.05)return;tipT=0;
+  var h=elevHere(ptr.x,ptr.y),wet=h<effLevel&&FL[clamp(Math.round(ptr.y/cs),0,gh-1)*gw+clamp(Math.round(ptr.x/cs),0,gw-1)]===1,best=null,bd=1e9;
+  places.forEach(function(p){var dx=p.x-ptr.x,dy=p.y-ptr.y,d=dx*dx+dy*dy;if(d<bd){bd=d;best=p}});
+  var dist=Math.sqrt(bd)*(2/(W>760?300:220));
+  var et=h>0?'<b>'+h.toFixed(1)+' m</b> above datum':(wet&&h>0?'':'sea, <b>'+(-h).toFixed(0)+' m</b> deep');
+  if(h>0&&wet)et='<b>'+h.toFixed(1)+' m</b> — <b>under water</b>';
+  tip.innerHTML=et+'<br>'+fmtLL(ptr.x,ptr.y)+'<br>nearest: '+(best?best.name:'—')+' · '+dist.toFixed(1)+' km';
+  var w=tip.offsetWidth||220,x=ptr.x+18,y=ptr.y+18;if(x+w>W-10)x=ptr.x-w-18;if(y+70>H)y=ptr.y-80;
+  tip.style.transform='translate3d('+Math.round(x)+'px,'+Math.round(y)+'px,0)';tip.classList.add('on');
+}
+
+/* ---------------------------------------------------------------- frame */
+var last=performance.now(),T=0,tg=0,paused=false,fN=0;
+doc.addEventListener('visibilitychange',function(){paused=doc.hidden;last=performance.now()});
+function drawShip(c,x,y,ang,t){
+  c.save();c.translate(x,y);c.rotate(ang);
+  c.strokeStyle='rgba(255,255,255,.55)';c.lineWidth=1.2;c.beginPath();c.moveTo(-9,0);c.lineTo(-34,-6);c.moveTo(-9,0);c.lineTo(-34,6);c.stroke();
+  c.fillStyle='#3b2a17';c.beginPath();c.moveTo(-9,-3);c.lineTo(9,-3);c.lineTo(12,0);c.lineTo(9,3);c.lineTo(-9,3);c.closePath();c.fill();
+  c.fillStyle='#eadfc4';c.strokeStyle='#3b2a17';c.lineWidth=1;
+  c.beginPath();c.moveTo(-1,-3);c.lineTo(-1,-11);c.lineTo(6,-3);c.closePath();c.fill();c.stroke();
+  c.beginPath();c.moveTo(-3,-3);c.lineTo(-3,-9);c.lineTo(-8,-3);c.closePath();c.fill();c.stroke();
+  c.restore();
+}
+function frame(now){
+  requestAnimationFrame(frame);
+  if(paused)return;
+  var raw=(now-last)/1000;last=now;if(raw<=0)return;var dt=Math.min(raw,1/20);fN++;
+  T+=dt;
+  var eff=level;
+  if(surgeT>=0){
+    surgeT+=dt;eff=level+surgeAmt(surgeT)*(reduce?.7:1);
+    if(surgeT>8){surgeT=-1;surgeB.disabled=false;surgeB.textContent='Storm surge +2 m';warn.classList.remove('on')}
+  }
+  if(Math.abs(eff-effLevel)>.004&&(surgeT<0||fN%2===0))setLevel(eff,false);
+  showLevel(eff);
+  shownLand+=(landPct-shownLand)*Math.min(1,dt*7);
+  readL.textContent=shownLand.toFixed(1)+'%';
+  /* compose */
+  var c=vx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,viewC.width,viewC.height);
+  c.globalAlpha=1;c.drawImage(wat,0,0);
+  /* shimmer, kept inside the water by the water's own alpha */
+  if(!reduce){
+    var sx=shimX;sx.setTransform(1,0,0,1,0,0);sx.globalCompositeOperation='copy';sx.drawImage(wat,0,0);
+    sx.globalCompositeOperation='source-in';
+    var ox=(T*9)%512,oy=(Math.sin(T*.4)*10);
+    var pat=sx.createPattern(streak,'repeat');sx.setTransform(dpr*1.2,0,0,dpr*1.2,-ox*dpr,oy*dpr);sx.fillStyle=pat;
+    sx.fillRect(ox,-oy-40,shim.width/(dpr*1.2)+512,shim.height/(dpr*1.2)+80);
+    sx.globalCompositeOperation='source-over';sx.setTransform(1,0,0,1,0,0);
+    c.globalAlpha=.55+.25*Math.sin(T*1.3);c.drawImage(shim,0,0);c.globalAlpha=1;
+  }
+  c.setTransform(dpr,0,0,dpr,0,0);
+  /* wavy shoreline */
+  c.lineCap='round';c.strokeStyle='rgba(26,72,96,.9)';c.lineWidth=1.5;c.beginPath();
+  var amp=reduce?0:1.3,tw=T*1.7;
+  for(var i=0;i<shoreN;i++){
+    var o=i*4,x1=shore[o]*cs,y1=shore[o+1]*cs,x2=shore[o+2]*cs,y2=shore[o+3]*cs;
+    c.moveTo(x1+Math.sin(y1*.11+tw)*amp,y1+Math.cos(x1*.13+tw*.8)*amp);c.lineTo(x2+Math.sin(y2*.11+tw)*amp,y2+Math.cos(x2*.13+tw*.8)*amp);
+  }
+  c.stroke();
+  /* villages */
+  villages.forEach(function(v,k){
+    var x=v.i*cs,y=v.j*cs;
+    if(v.flooded){
+      var pu=reduce?.5:(.5+.5*Math.sin(T*3+k));
+      c.strokeStyle='rgba(184,59,46,'+(.75-pu*.5)+')';c.lineWidth=1.3;c.beginPath();c.arc(x,y,7+pu*8,0,6.283);c.stroke();
+      c.fillStyle='#b83b2e';
+    }else c.fillStyle='#3b2a17';
+    c.fillRect(x-3.5,y-3.5,7,7);c.fillStyle=v.flooded?'#b83b2e':'#3b2a17';
+    c.font='italic 11px "Gill Sans",Optima,Calibri,sans-serif';c.textAlign='left';c.textBaseline='alphabetic';
+    c.strokeStyle='rgba(234,223,196,.85)';c.lineWidth=3;c.strokeText(v.name,x+8,y-6);c.fillText(v.name,x+8,y-6);
+  });
+  /* the ship */
+  shipT+=dt*(reduce?.004:.011);
+  var pf=(shipT%1)*route.length,ia=Math.floor(pf)%route.length,ib=(ia+1)%route.length,ft=pf-Math.floor(pf),p=route[ia],q=route[ib];
+  var sx2=lerp(p[0],q[0],ft),sy2=lerp(p[1],q[1],ft)+Math.sin(T*1.6)*.8,ang=Math.atan2(q[1]-p[1],q[0]-p[0]);
+  drawShip(c,sx2,sy2,ang,T);
+  /* the crosshair */
+  if(ptr.on){
+    var px=ptr.x,py=ptr.y,g=9;
+    c.strokeStyle='rgba(184,59,46,.9)';c.lineWidth=1;c.beginPath();
+    c.moveTo(0,py);c.lineTo(px-g,py);c.moveTo(px+g,py);c.lineTo(W,py);c.moveTo(px,0);c.lineTo(px,py-g);c.moveTo(px,py+g);c.lineTo(px,H);c.stroke();
+    c.beginPath();c.arc(px,py,g-2,0,6.283);c.stroke();
+    c.font='9px "Courier New",monospace';c.fillStyle='#b83b2e';c.textAlign='left';
+  }
+  updateTip(dt);
+}
+var rt=0;
+win.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(build,180)});
+placeKnob();build();
+requestAnimationFrame(function(t){last=t;frame(t)});
+})();
+</script>
+</body>
+</html>

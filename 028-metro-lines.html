@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f5f0">
+<title>Metro Lumen — network map</title>
+<meta name="description" content="Metro Lumen: a fictional 1970s-modernist subway map. Hover stations for arrivals, click two stations to plan a route, isolate lines from the legend and watch the trains run.">
+<style>
+:root{
+  --paper:#f7f5f0; --ink:#1a1a1f; --mute:#6f6e72; --rule:#dcd8cf;
+  --red:#e63946; --blue:#1d70b8; --green:#2a9d5c; --amber:#f4a300; --violet:#7b3fa0; --ring:#8e8e94;
+  --river:#cfe6f2; --park:#dcecd3;
+  --sans:"Helvetica Neue",Helvetica,"Nimbus Sans",Arial,"Liberation Sans",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{ box-sizing:border-box }
+html,body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); -webkit-font-smoothing:antialiased }
+button{ font:inherit; color:inherit; margin:0; padding:0; border:0; background:none; cursor:pointer }
+:focus-visible{ outline:3px solid var(--ink); outline-offset:3px; border-radius:4px }
+.sr{ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
+body{ min-height:100vh; min-height:100dvh; display:flex; flex-direction:column }
+
+/* ---- header lockup ---- */
+.top{ display:flex; align-items:center; gap:18px; padding:22px clamp(16px,3vw,44px) 10px; flex-wrap:wrap }
+.roundel{ width:58px; height:58px; flex:none }
+.brand h1{ margin:0; font:800 clamp(26px,3.4vw,44px)/1 var(--sans); letter-spacing:.14em; text-transform:uppercase }
+.brand p{ margin:6px 0 0; font:500 12px/1.3 var(--sans); letter-spacing:.2em; text-transform:uppercase; color:var(--mute) }
+.tools{ margin-left:auto; display:flex; gap:10px; flex-wrap:wrap }
+.tool{ height:40px; padding:0 18px; border-radius:99px; border:2px solid var(--ink); font:700 12px/1 var(--sans); letter-spacing:.14em; text-transform:uppercase; transition:background .2s,color .2s }
+.tool:hover{ background:var(--ink); color:var(--paper) }
+.tool[aria-pressed="true"]{ background:var(--red); border-color:var(--red); color:#fff }
+
+/* ---- layout ---- */
+.wrap{ flex:1; display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:clamp(12px,2vw,28px); padding:6px clamp(16px,3vw,44px) 26px; align-items:start }
+.mapbox{ min-width:0; border-top:6px solid var(--ink); background:var(--paper) }
+.scroller{ overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch }
+.map{ position:relative; min-width:860px }
+.map svg{ display:block; width:100%; height:auto }
+.map .btns{ position:absolute; inset:0 }
+.sb{ position:absolute; width:30px; height:30px; margin:-15px 0 0 -15px; border-radius:50%; background:transparent }
+.sb:focus-visible{ outline:3px solid var(--ink); outline-offset:1px; border-radius:50% }
+.card{ position:absolute; z-index:5; width:236px; padding:12px 14px 12px; background:#fff; border:2px solid var(--ink); border-radius:10px; pointer-events:none; opacity:0; transform:translateY(6px); transition:opacity .16s,transform .16s; box-shadow:5px 5px 0 rgba(26,26,31,.14) }
+.card.on{ opacity:1; transform:none }
+.card h3{ margin:0 0 7px; font:800 15px/1.15 var(--sans); letter-spacing:.02em }
+.card .chips{ display:flex; gap:5px; flex-wrap:wrap; margin-bottom:9px }
+.chip{ display:inline-block; padding:3px 8px 3px; border-radius:99px; color:#fff; font:700 10.5px/1.2 var(--sans); letter-spacing:.06em; text-transform:uppercase }
+.card ul{ margin:0; padding:0; list-style:none; display:grid; gap:5px }
+.card li{ display:grid; grid-template-columns:8px 1fr auto; gap:8px; align-items:center; font-size:12px }
+.card li i{ width:8px; height:8px; border-radius:50% }
+.card li b{ font:700 12px/1 var(--sans); font-variant-numeric:tabular-nums }
+.card .foot{ margin:9px 0 0; font-size:10.5px; color:var(--mute) }
+
+/* ---- svg parts ---- */
+.ln,.ix,.tr,.lb,.st{ transition:opacity .25s }
+.dim{ opacity:.13 }
+.lb{ font:600 13.5px/1 var(--sans); fill:var(--ink); pointer-events:none; stroke:var(--paper); stroke-width:4px; stroke-linejoin:round }
+.lb.x{ font-weight:800 }
+.zl{ font:700 10px/1 var(--sans); letter-spacing:.24em; fill:#a29f98 }
+.rl{ font:italic 500 13px/1 var(--sans); fill:#6aa3c1; letter-spacing:.06em }
+.route path{ fill:none; stroke-linecap:round; stroke-linejoin:round }
+.route{ filter:drop-shadow(0 0 5px rgba(255,255,255,.95)) drop-shadow(0 0 12px rgba(29,112,184,.55)) }
+.pin{ font:800 12px/1 var(--sans); fill:#fff; text-anchor:middle }
+.pulse{ transform-box:fill-box; transform-origin:center; fill:none; stroke:var(--ink); stroke-width:2; opacity:0 }
+.rush .pulse{ animation:pulse 2.2s ease-out infinite }
+@keyframes pulse{ 0%{ opacity:.55; transform:scale(1) } 100%{ opacity:0; transform:scale(2.6) } }
+.tr circle.b{ fill:#fff; stroke-width:3.5 }
+.tr{ pointer-events:none }
+.tr circle.h{ opacity:.28 }
+
+/* ---- side ---- */
+.side{ display:grid; gap:18px; position:sticky; top:14px }
+.side h2{ margin:0 0 10px; font:800 12px/1 var(--sans); letter-spacing:.22em; text-transform:uppercase }
+.legend{ display:grid; gap:4px }
+.lg{ display:flex; align-items:center; gap:12px; padding:6px 10px; border-radius:8px; text-align:left; font:700 14px/1.2 var(--sans); transition:background .15s }
+.lg:hover,.lg:focus-visible,.lg.on{ background:#ece9e0 }
+.lg i{ flex:none; width:34px; height:10px; border-radius:5px }
+.lg span{ flex:1 }
+.lg small{ font:500 11px/1 var(--sans); color:var(--mute); letter-spacing:.06em }
+.routebox{ border-top:6px solid var(--ink); padding-top:14px }
+.hintp{ margin:0; font-size:13px; line-height:1.5; color:var(--mute) }
+.ends{ display:grid; gap:6px; margin:0 0 12px; font:700 13px/1.2 var(--sans) }
+.ends div{ display:flex; gap:10px; align-items:center }
+.ends b{ flex:none; width:22px; height:22px; border-radius:50%; background:var(--ink); color:#fff; display:grid; place-items:center; font-size:11px }
+.tot{ display:flex; align-items:baseline; gap:10px; margin:0 0 10px; padding-bottom:10px; border-bottom:1px solid var(--rule) }
+.tot strong{ font:800 46px/1 var(--sans); letter-spacing:-.03em; font-variant-numeric:tabular-nums }
+.tot span{ font:600 12px/1.3 var(--sans); letter-spacing:.14em; text-transform:uppercase; color:var(--mute) }
+.steps{ margin:0; padding:0; list-style:none; display:grid; gap:10px }
+.steps li{ display:grid; grid-template-columns:14px 1fr; gap:10px; font-size:13.5px; line-height:1.4 }
+.steps li i{ width:14px; border-radius:7px; margin-top:3px; min-height:34px }
+.steps em{ font-style:normal; color:var(--mute); font-size:12px }
+.clear{ margin-top:12px; font:700 11px/1 var(--sans); letter-spacing:.16em; text-transform:uppercase; text-decoration:underline; text-underline-offset:4px }
+.fine{ margin:0; font-size:11px; color:var(--mute); line-height:1.5 }
+
+@media (max-width:900px){
+  .wrap{ grid-template-columns:1fr }
+  .side{ position:static }
+  .tools{ margin-left:0; width:100% }
+  .sb{ width:36px; height:36px; margin:-18px 0 0 -18px }
+}
+@media (prefers-reduced-motion:reduce){ .rush .pulse{ animation:none } .card,.ln,.ix,.tr,.lb,.st{ transition:none } }
+</style>
+</head>
+<body>
+<header class="top">
+  <svg class="roundel" viewBox="0 0 64 64" role="img" aria-label="Metro Lumen roundel">
+    <circle cx="32" cy="32" r="25" fill="none" stroke="#e63946" stroke-width="9"/>
+    <rect x="1" y="24" width="62" height="16" fill="#1d70b8"/>
+    <text x="32" y="36.4" text-anchor="middle" font-family="Helvetica Neue,Helvetica,Nimbus Sans,Arial,sans-serif" font-weight="800" font-size="10.5" letter-spacing="1.2" fill="#fff">LUMEN</text>
+  </svg>
+  <div class="brand">
+    <h1>Metro Lumen</h1>
+    <p>Network map · five lines and the Ring · zones 1–3</p>
+  </div>
+  <div class="tools">
+    <button class="tool" id="rush" type="button" aria-pressed="false">Rush hour</button>
+    <button class="tool" id="clear" type="button">Clear route</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="mapbox" aria-label="Network map">
+    <div class="scroller" tabindex="-1">
+      <div class="map" id="map">
+        <svg id="svg" viewBox="0 0 1200 790" role="img" aria-label="Metro Lumen network map with five coloured lines and a grey ring line. Use the station buttons to explore.">
+          <rect x="0" y="0" width="1200" height="790" fill="#f7f5f0"/>
+          <rect x="60" y="48" width="1010" height="660" rx="70" fill="#1d70b8" opacity=".035"/>
+          <rect x="268" y="204" width="452" height="308" rx="56" fill="#1d70b8" opacity=".06"/>
+          <text class="zl" x="282" y="500">ZONE 1</text>
+          <text class="zl" x="76" y="696">ZONE 2</text>
+          <text class="zl" x="1010" y="770">ZONE 3</text>
+          <path id="river" d="M -20 548 H 190 L 250 608 H 560 L 660 708 L 760 768 H 1220" fill="none" stroke="#cfe6f2" stroke-width="44" stroke-linejoin="round"/>
+          <text class="rl"><textPath href="#river" startOffset="34%">River Lum</textPath></text>
+          <rect x="612" y="112" width="96" height="84" rx="14" fill="#dcecd3"/>
+          <text class="zl" x="622" y="130" style="fill:#7fae78">PARK</text>
+          <rect x="126" y="336" width="128" height="58" rx="14" fill="#dcecd3"/>
+          <text class="zl" x="136" y="354" style="fill:#7fae78">GARDENS</text>
+          <g id="gLines"></g>
+          <g id="gRoute" class="route"></g>
+          <g id="gSt"></g>
+          <g id="gTr"></g>
+          <g id="gLb"></g>
+        </svg>
+        <div class="btns" id="btns"></div>
+        <div class="card" id="card" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <section aria-labelledby="h-leg">
+      <h2 id="h-leg">Lines</h2>
+      <div class="legend" id="legend"></div>
+    </section>
+    <section class="routebox" aria-labelledby="h-rt">
+      <h2 id="h-rt">Journey planner</h2>
+      <div id="routeOut"><p class="hintp">Choose a start and a destination — click two stations on the map, or tab to a station and press Enter. Hover a station for the next trains.</p></div>
+    </section>
+    <p class="fine">Illustrative network. Times, headways and station names are fictional.</p>
+  </aside>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = s => document.querySelector(s);
+  const svgEl = (t, a, p) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const svg = $('#svg'), gLines = $('#gLines'), gRoute = $('#gRoute'), gSt = $('#gSt'), gTr = $('#gTr'), gLb = $('#gLb');
+  const btns = $('#btns'), card = $('#card'), map = $('#map'), routeOut = $('#routeOut');
+
+  /* ---------- the network ---------- */
+  const LINES = {
+    red:    { name: 'Red',    color: '#e63946', head: 4, pts: [[100, 300], [650, 300], [750, 400], [1100, 400]], st: ['westgate', 'fernhill', 'central', 'market', 'cathedral', 'eastgate', 'skyport'] },
+    blue:   { name: 'Blue',   color: '#1d70b8', head: 5, pts: [[400, 80], [400, 560], [320, 640], [120, 640]], st: ['northpoint', 'observatory', 'central', 'oldtown', 'southbank', 'lantern', 'bayside'] },
+    green:  { name: 'Green',  color: '#2a9d5c', head: 6, pts: [[550, 100], [550, 580], [650, 680], [950, 680]], st: ['parkside', 'botanic', 'market', 'guildhall', 'foundry', 'harbour', 'docks'] },
+    amber:  { name: 'Amber',  color: '#f4a300', head: 7, pts: [[100, 420], [720, 420], [820, 520], [1100, 520]], st: ['kestrel', 'kiln', 'oldtown', 'guildhall', 'tannery', 'ironbridge', 'cinder'] },
+    violet: { name: 'Violet', color: '#7b3fa0', head: 8, pts: [[700, 80], [850, 230], [850, 740]], st: ['aurora', 'belvedere', 'eastgate', 'ironbridge', 'harbour', 'sunset'] },
+    ring:   { name: 'Ring',   color: '#8e8e94', head: 5, loop: true, pts: [[350, 230], [650, 230], [700, 280], [700, 440], [650, 490], [350, 490], [300, 440], [300, 280]], st: ['observatory', 'botanic', 'cathedral', 'tannery', 'foundry', 'southbank', 'kiln', 'fernhill'] }
+  };
+  const KEYS = ['red', 'blue', 'green', 'amber', 'violet', 'ring'];
+  /* id: name, x, y, label placement */
+  const ST = {
+    westgate: ['Westgate', 100, 300, 'ne'], fernhill: ['Fernhill', 300, 300, 'nw'], central: ['Lumen Central', 400, 300, 'sw'], market: ['Market Square', 550, 300, 'se'],
+    cathedral: ['Cathedral', 700, 350, 'e'], eastgate: ['Eastgate', 850, 400, 'se'], skyport: ['Skyport', 1100, 400, 'n'],
+    northpoint: ['Northpoint', 400, 80, 'w'], observatory: ['Observatory', 400, 230, 'nw'], oldtown: ['Old Town', 400, 420, 'sw'], southbank: ['Southbank', 400, 490, 'sw'],
+    lantern: ['Lantern Bay', 240, 640, 's'], bayside: ['Bayside', 120, 640, 's'],
+    parkside: ['Parkside', 550, 100, 'e'], botanic: ['Botanic', 550, 230, 'ne'], guildhall: ['Guildhall', 550, 420, 'se'], foundry: ['Foundry', 550, 490, 'se'],
+    harbour: ['Harbour Cross', 850, 680, 'nw'], docks: ['Lumen Docks', 950, 680, 'e'],
+    kestrel: ['Kestrel Hill', 100, 420, 'ne'], kiln: ['Kiln Lane', 300, 420, 'sw'], tannery: ['Tannery Gate', 700, 420, 'sw'], ironbridge: ['Ironbridge', 850, 520, 'se'], cinder: ['Cinder Point', 1100, 520, 's'],
+    aurora: ['Aurora Park', 700, 80, 'w'], belvedere: ['Belvedere', 850, 230, 'e'], sunset: ['Sunset Pier', 850, 740, 'e']
+  };
+  const IDS = Object.keys(ST);
+  IDS.forEach(id => { ST[id].id = id; ST[id].lines = []; });
+  KEYS.forEach(k => LINES[k].st.forEach(id => ST[id].lines.push(k)));
+
+  /* rounded polyline path */
+  function roundPath(pts, r, closed) {
+    const n = pts.length, P = (i) => pts[(i + n) % n];
+    const cut = (a, b, c) => {
+      const d1 = Math.hypot(a[0] - b[0], a[1] - b[1]), d2 = Math.hypot(c[0] - b[0], c[1] - b[1]), k = Math.min(r, d1 / 2, d2 / 2);
+      return [[b[0] + (a[0] - b[0]) / d1 * k, b[1] + (a[1] - b[1]) / d1 * k], [b[0] + (c[0] - b[0]) / d2 * k, b[1] + (c[1] - b[1]) / d2 * k]];
+    };
+    let d = '';
+    if (closed) {
+      for (let i = 0; i < n; i++) { const c = cut(P(i - 1), P(i), P(i + 1)); d += (i ? 'L' : 'M') + c[0][0].toFixed(1) + ' ' + c[0][1].toFixed(1) + 'Q' + P(i)[0] + ' ' + P(i)[1] + ' ' + c[1][0].toFixed(1) + ' ' + c[1][1].toFixed(1); }
+      return d + 'Z';
+    }
+    d = 'M' + pts[0][0] + ' ' + pts[0][1];
+    for (let i = 1; i < n - 1; i++) { const c = cut(pts[i - 1], pts[i], pts[i + 1]); d += 'L' + c[0][0].toFixed(1) + ' ' + c[0][1].toFixed(1) + 'Q' + pts[i][0] + ' ' + pts[i][1] + ' ' + c[1][0].toFixed(1) + ' ' + c[1][1].toFixed(1); }
+    return d + 'L' + pts[n - 1][0] + ' ' + pts[n - 1][1];
+  }
+
+  /* ---------- build the drawing ---------- */
+  const lineEls = {}, stEls = {}, lbEls = {};
+  KEYS.forEach(k => {
+    const L = LINES[k], g = svgEl('g', { class: 'ln', 'data-l': k }, gLines);
+    L.path = svgEl('path', { d: roundPath(L.pts, k === 'ring' ? 16 : 24, !!L.loop), fill: 'none', stroke: L.color, 'stroke-width': k === 'ring' ? 5 : 9, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, g);
+    L.len = L.path.getTotalLength(); L.g = g; lineEls[k] = g;
+    L.pos = L.st.map(id => { let best = 0, bd = 1e9; for (let s = 0; s < L.len; s += 2) { const p = L.path.getPointAtLength(s), d = Math.hypot(p.x - ST[id][1], p.y - ST[id][2]); if (d < bd) { bd = d; best = s; } } return best; });
+  });
+  const LB = { e: [14, 5, 0, 'start'], w: [-14, 5, 0, 'end'], n: [0, -15, 0, 'middle'], s: [0, 25, 0, 'middle'], ne: [8, -9, -45, 'start'], nw: [-8, -9, 45, 'end'], se: [8, 18, 45, 'start'], sw: [-8, 18, -45, 'end'] };
+  IDS.forEach(id => {
+    const s = ST[id], x = s[1], y = s[2], ix = s.lines.length > 1, ls = s.lines.join(' ');
+    const g = svgEl('g', { class: 'st', 'data-l': ls }, gSt);
+    if (ix) { svgEl('circle', { class: 'pulse', cx: x, cy: y, r: 10 }, g); svgEl('circle', { cx: x, cy: y, r: 10, fill: '#fff', stroke: '#1a1a1f', 'stroke-width': 3.5 }, g); }
+    else svgEl('circle', { cx: x, cy: y, r: 6.5, fill: '#fff', stroke: LINES[s.lines[0]].color, 'stroke-width': 3.5 }, g);
+    stEls[id] = g;
+    const q = LB[s[3]], t = svgEl('text', { class: 'lb' + (ix ? ' x' : ''), 'data-l': ls, x: x + q[0], y: y + q[1], 'text-anchor': q[3] }, gLb);
+    if (q[2]) t.setAttribute('transform', 'rotate(' + q[2] + ' ' + (x + q[0]) + ' ' + (y + q[1]) + ')');
+    t.setAttribute('paint-order', 'stroke'); t.textContent = s[0]; lbEls[id] = t;
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'sb'; b.dataset.id = id;
+    b.style.left = (x / 1200 * 100) + '%'; b.style.top = (y / 790 * 100) + '%';
+    b.setAttribute('aria-label', s[0] + ', ' + s.lines.map(k => LINES[k].name).join(' and ') + (s.lines.length > 1 ? ', interchange' : ''));
+    btns.appendChild(b);
+  });
+
+  /* legend */
+  const legend = $('#legend');
+  KEYS.forEach(k => {
+    const L = LINES[k], b = document.createElement('button'); b.type = 'button'; b.className = 'lg'; b.dataset.l = k;
+    b.innerHTML = '<i style="background:' + L.color + (k === 'ring' ? ';height:5px' : '') + '"></i><span>' + L.name + (k === 'ring' ? ' line' : ' line') + '</span><small>' + L.st.length + ' stations</small>';
+    legend.appendChild(b);
+  });
+  function isolate(k) {
+    const all = svg.querySelectorAll('[data-l]');
+    all.forEach(e => e.classList.toggle('dim', !!k && (' ' + e.getAttribute('data-l') + ' ').indexOf(' ' + k + ' ') < 0));
+    Array.from(legend.children).forEach(b => b.classList.toggle('on', b.dataset.l === k));
+  }
+  legend.addEventListener('pointerover', e => { const b = e.target.closest('.lg'); if (b) isolate(b.dataset.l); });
+  legend.addEventListener('pointerleave', () => isolate(null));
+  legend.addEventListener('focusin', e => { const b = e.target.closest('.lg'); if (b) isolate(b.dataset.l); });
+  legend.addEventListener('focusout', () => isolate(null));
+
+  /* ---------- arrivals card ---------- */
+  let rush = false;
+  const term = (k, dir) => { const L = LINES[k]; if (L.loop) return dir ? 'Outer loop' : 'Inner loop'; return ST[L.st[dir ? L.st.length - 1 : 0]][0]; };
+  function hash(s) { let h = 7; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 9973; return h; }
+  function arrivals(id, k, dir) {
+    const h = LINES[k].head * (rush ? 0.6 : 1), t = Date.now() / 60000, off = hash(id + k + dir) % 100 / 100 * h;
+    const n1 = h - ((t + off) % h);
+    return [n1, n1 + h];
+  }
+  const fmt = m => m < 0.6 ? 'now' : Math.round(m) + ' min';
+  function showCard(id) {
+    const s = ST[id]; let h = '<h3>' + s[0] + '</h3><div class="chips">' + s.lines.map(k => '<span class="chip" style="background:' + LINES[k].color + '">' + LINES[k].name + '</span>').join('') + '</div><ul>';
+    s.lines.forEach(k => { const L = LINES[k], i = L.st.indexOf(id); [1, 0].forEach(dir => {
+      if (!L.loop && ((dir && i === L.st.length - 1) || (!dir && i === 0))) return;
+      const a = arrivals(id, k, dir); h += '<li><i style="background:' + L.color + '"></i><span>' + term(k, dir) + '</span><b>' + fmt(a[0]) + ' · ' + fmt(a[1]) + '</b></li>'; }); });
+    card.innerHTML = h + '</ul><p class="foot">Next arrivals' + (rush ? ' · rush hour service' : '') + '</p>';
+    const mw = map.clientWidth, mh = map.clientHeight, x = s[1] / 1200 * mw, y = s[2] / 790 * mh, cwid = 236;
+    let left = x + 22, top = y - 20; if (left + cwid > mw - 6) left = x - cwid - 22; if (top + 170 > mh) top = mh - 176; if (top < 4) top = 4;
+    card.style.left = left + 'px'; card.style.top = top + 'px'; card.classList.add('on');
+  }
+  const hideCard = () => card.classList.remove('on');
+  btns.addEventListener('pointerover', e => { const b = e.target.closest('.sb'); if (b) showCard(b.dataset.id); });
+  btns.addEventListener('pointerleave', hideCard);
+  btns.addEventListener('focusin', e => { const b = e.target.closest('.sb'); if (b) showCard(b.dataset.id); });
+  btns.addEventListener('focusout', hideCard);
+
+  /* ---------- routing: Dijkstra over (station, line) with interchange penalty ---------- */
+  const edges = {}; /* node -> [{to, w, line?}] */
+  const node = (id, k) => id + '|' + k;
+  function buildGraph() {
+    for (const n in edges) delete edges[n];
+    const add = (a, b, w, k) => { (edges[a] = edges[a] || []).push({ to: b, w: w, k: k }); };
+    const pen = rush ? 5 : 4;
+    KEYS.forEach(k => { const L = LINES[k], n = L.st.length, m = L.loop ? n : n - 1;
+      for (let i = 0; i < m; i++) { const a = L.st[i], b = L.st[(i + 1) % n], d = Math.hypot(ST[a][1] - ST[b][1], ST[a][2] - ST[b][2]), w = Math.max(1.4, d / 85 + 0.6); add(node(a, k), node(b, k), w, k); add(node(b, k), node(a, k), w, k); } });
+    IDS.forEach(id => { const ls = ST[id].lines; for (let i = 0; i < ls.length; i++) for (let j = 0; j < ls.length; j++) if (i !== j) add(node(id, ls[i]), node(id, ls[j]), pen, null); });
+  }
+  function plan(a, b) {
+    const dist = {}, prev = {}, done = {}; const q = [];
+    ST[a].lines.forEach(k => { dist[node(a, k)] = 0; q.push(node(a, k)); });
+    while (q.length) {
+      let bi = 0; for (let i = 1; i < q.length; i++) if (dist[q[i]] < dist[q[bi]]) bi = i;
+      const u = q.splice(bi, 1)[0]; if (done[u]) continue; done[u] = true;
+      (edges[u] || []).forEach(e => { const nd = dist[u] + e.w; if (dist[e.to] === undefined || nd < dist[e.to]) { dist[e.to] = nd; prev[e.to] = u; q.push(e.to); } });
+    }
+    let best = null; ST[b].lines.forEach(k => { const n = node(b, k); if (dist[n] !== undefined && (!best || dist[n] < dist[best])) best = n; });
+    if (!best) return null;
+    const path = [best]; while (prev[path[0]]) path.unshift(prev[path[0]]);
+    return { path: path.map(n => n.split('|')), minutes: dist[best] };
+  }
+
+  /* ---------- journey UI ---------- */
+  let from = null, to = null;
+  const ends = { from: null, to: null };
+  function arcOf(k, a, b, fwd) { const L = LINES[k]; return { x: L.pos[L.st.indexOf(a)], y: L.pos[L.st.indexOf(b)] }; }
+  function drawLeg(k, a, b, dir) {
+    const L = LINES[k], pa = L.pos[L.st.indexOf(a)], pb = L.pos[L.st.indexOf(b)], n = L.len;
+    const seg = (x, len) => [['#fff', 17], [L.color, 10]].forEach(c => {
+      svgEl('path', { d: L.path.getAttribute('d'), stroke: c[0], 'stroke-width': c[1], 'stroke-dasharray': len.toFixed(1) + ' ' + (n * 2).toFixed(1), 'stroke-dashoffset': (-x).toFixed(1) }, gRoute);
+    });
+    if (!L.loop) { seg(Math.min(pa, pb), Math.abs(pb - pa)); return; }
+    const start = dir > 0 ? pa : pb, end = dir > 0 ? pb : pa, len = ((end - start) % n + n) % n;
+    if (start + len <= n) seg(start, len); else { seg(start, n - start); seg(0, start + len - n); }
+  }
+  function pinAt(id, txt, cls) { const s = ST[id]; svgEl('circle', { cx: s[1], cy: s[2] - 30, r: 12, fill: '#1a1a1f', stroke: '#fff', 'stroke-width': 2.5 }, gRoute); const t = svgEl('text', { class: 'pin', x: s[1], y: s[2] - 26 }, gRoute); t.textContent = txt; svgEl('path', { d: 'M' + s[1] + ' ' + (s[2] - 18) + 'l-5 -5h10z', fill: '#1a1a1f', stroke: 'none' }, gRoute); }
+  function clearRoute(keepStart) {
+    gRoute.innerHTML = ''; to = null; if (!keepStart) from = null;
+    routeOut.innerHTML = '<p class="hintp">Choose a start and a destination — click two stations on the map, or tab to a station and press Enter. Hover a station for the next trains.</p>';
+  }
+  function render() {
+    gRoute.innerHTML = '';
+    if (!from) { clearRoute(); return; }
+    if (!to) { pinAt(from, 'A'); routeOut.innerHTML = '<div class="ends"><div><b>A</b>' + ST[from][0] + '</div></div><p class="hintp">Now pick a destination.</p>'; return; }
+    const r = plan(from, to);
+    if (!r) { routeOut.innerHTML = '<p class="hintp">No route found.</p>'; return; }
+    const legs = []; r.path.forEach(p => {
+      const last = legs[legs.length - 1];
+      if (last && last.k === p[1]) { last.to = p[0]; last.stops++; } else legs.push({ k: p[1], from: p[0], to: p[0], stops: 0 });
+    });
+    const real = legs.filter(l => l.stops > 0);
+    real.forEach(l => {
+      const L = LINES[l.k], i0 = L.st.indexOf(l.from), i1 = L.st.indexOf(l.to), n = L.st.length;
+      let dir; if (L.loop) { const fw = ((i1 - i0) % n + n) % n, bw = n - fw; dir = fw <= bw ? 1 : -1; } else dir = i1 > i0 ? 1 : -1;
+      l.dir = dir; l.toward = L.loop ? (dir > 0 ? 'the outer loop' : 'the inner loop') : ST[L.st[dir > 0 ? n - 1 : 0]][0];
+      drawLeg(l.k, l.from, l.to, dir);
+    });
+    pinAt(from, 'A'); pinAt(to, 'B');
+    const changes = Math.max(0, real.length - 1), mins = Math.round(r.minutes);
+    let h = '<div class="ends"><div><b>A</b>' + ST[from][0] + '</div><div><b>B</b>' + ST[to][0] + '</div></div>';
+    h += '<p class="tot"><strong>' + mins + '</strong><span>minutes · ' + (changes ? changes + (changes > 1 ? ' changes' : ' change') : 'direct') + '</span></p><ol class="steps">';
+    real.forEach((l, i) => { const L = LINES[l.k];
+      h += '<li><i style="background:' + L.color + '"></i><div>Board <b>' + L.name + '</b> toward ' + l.toward + '<br><em>' + l.stops + (l.stops > 1 ? ' stops' : ' stop') + ' to ' + ST[l.to][0] + (i < real.length - 1 ? ' · change at ' + ST[l.to][0] : '') + '</em></div></li>'; });
+    h += '<li><i style="background:#1a1a1f"></i><div>Alight at <b>' + ST[to][0] + '</b><br><em>Arrive ' + new Date(Date.now() + mins * 60000).toTimeString().slice(0, 5) + '</em></div></li></ol><button class="clear" id="clr2" type="button">Clear route</button>';
+    routeOut.innerHTML = h; const c2 = $('#clr2'); if (c2) c2.addEventListener('click', () => clearRoute());
+  }
+  btns.addEventListener('click', e => {
+    const b = e.target.closest('.sb'); if (!b) return; const id = b.dataset.id;
+    if (!from || (from && to)) { from = id; to = null; }
+    else if (id === from) { from = null; }
+    else to = id;
+    render();
+  });
+  $('#clear').addEventListener('click', () => clearRoute());
+  addEventListener('keydown', e => { if (e.key === 'Escape') { clearRoute(); hideCard(); } });
+
+  /* ---------- trains: dots with an ease into and out of every station ---------- */
+  const trains = [];
+  const ease = t => 0.5 - 0.5 * Math.cos(Math.PI * t);
+  function spawnTrains() {
+    trains.length = 0; gTr.innerHTML = '';
+    KEYS.forEach(k => {
+      const L = LINES[k], n = L.st.length, count = (k === 'ring' ? 4 : 2) * (rush ? 2 : 1) + (k === 'red' ? 1 : 0);
+      for (let i = 0; i < count; i++) {
+        const g = svgEl('g', { class: 'tr', 'data-l': k }, gTr);
+        svgEl('circle', { class: 'h', r: 12, fill: L.color }, g); svgEl('circle', { class: 'b', r: 6.2, stroke: k === 'ring' ? '#6b6b72' : L.color }, g);
+        trains.push({ k: k, g: g, seg: (i * 3 + Math.floor(Math.random() * n)) % (L.loop ? n : n - 1), t: Math.random(), dir: L.loop ? (i % 2 ? -1 : 1) : (i % 2 ? -1 : 1), dwell: 0 });
+      }
+    });
+  }
+  function segLen(L, i) { const n = L.st.length, a = L.pos[i], b = L.pos[(i + 1) % n]; return L.loop && i === n - 1 ? (b + L.len - a) : Math.abs(b - a); }
+  function place(tr) {
+    const L = LINES[tr.k], n = L.st.length, i = tr.seg, e = ease(tr.t);
+    const a = L.pos[i], b = L.pos[(i + 1) % n]; let s;
+    if (L.loop) { const bb = i === n - 1 ? b + L.len : b; s = ((a + (bb - a) * e) % L.len + L.len) % L.len; }
+    else s = a + (b - a) * e;
+    const p = L.path.getPointAtLength(s); tr.g.setAttribute('transform', 'translate(' + p.x.toFixed(1) + ' ' + p.y.toFixed(1) + ')');
+  }
+  function tick(dt) {
+    const sp = rush ? 105 : 74;
+    trains.forEach(tr => {
+      const L = LINES[tr.k], n = L.st.length, m = L.loop ? n : n - 1;
+      if (tr.dwell > 0) { tr.dwell -= dt; place(tr); return; }
+      const len = Math.max(30, segLen(L, tr.seg));
+      tr.t += tr.dir * (sp * dt) / len;
+      if (tr.t >= 1 || tr.t <= 0) {
+        const fwd = tr.dir > 0; tr.dwell = 0.7 + Math.random() * 0.5;
+        if (L.loop) { tr.seg = ((tr.seg + tr.dir) % m + m) % m; tr.t = fwd ? 0 : 1; }
+        else { const ns = tr.seg + tr.dir; if (ns < 0 || ns >= m) { tr.dir = -tr.dir; tr.t = fwd ? 1 : 0; } else { tr.seg = ns; tr.t = fwd ? 0 : 1; } }
+      }
+      place(tr);
+    });
+  }
+  $('#rush').addEventListener('click', e => {
+    rush = !rush; e.currentTarget.setAttribute('aria-pressed', String(rush)); svg.classList.toggle('rush', rush);
+    spawnTrains(); buildGraph(); if (from && to) render();
+  });
+
+  /* ---------- go ---------- */
+  buildGraph(); spawnTrains();
+  let last = 0, raf = 0;
+  function frame(now) { raf = requestAnimationFrame(frame); const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now; tick(reduce ? dt * 0.35 : dt); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } });
+  raf = requestAnimationFrame(t => { last = t; frame(t); });
+})();
+</script>
+</body>
+</html>

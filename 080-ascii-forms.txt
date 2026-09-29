@@ -1,0 +1,23 @@
+==================== PROMPT ====================
+Create "Glyph Forms", a real-time ASCII-art renderer of rotating 3D objects. A monospaced grid (~120×56 cells scaled to fill the viewport, drawn with canvas fillText per row or one <pre> update per frame — choose the fastest reliable method and compute cell size from measureText) renders a luminance-mapped ASCII image of a 3D scene computed in JS: (1) the classic spinning torus with a proper z-buffer and Lambert lighting, (2) a trefoil-knot tube, (3) a sphere with a moving light, (4) an icosahedron/cube wireframe with depth shading, (5) a terrain heightfield flyover, (6) animated metaballs ("Fluid"). Character ramps: classic " .:-=+*#%@", blocks " ░▒▓█", and a custom "ink" ramp. Colour modes: "Amber phosphor" (#ffb000 on #140c00), "Ice" (#bfe9ff on #050b14), "Ink on paper" (#1a1a1a on #f2eee3), "Rainbow" (per-character HSL by depth, curated). Controls: object chips, ramp chips, colour chips, sliders for rotation speed and resolution (character size); dragging over the render moves the light toward the pointer; drag with a modifier or two fingers rotates manually with inertia; Space pauses. Overlay: fps counter and characters-drawn count; a header with a hand-made ASCII title; footer math caption "x = R cos θ …". Smooth ~60 fps with a single monospace font. Playful, geeky, beautiful.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Glyph Forms
+
+==================== DESCRIPTION ====================
+A full-window text-mode 3D renderer. The canvas is divided into a monospaced grid whose cell size comes from measureText (about 120 columns on desktop, fewer on phones), and every frame six procedurally computed solids are sampled into a luminance and depth buffer and printed as characters, one fillText per row. Forms: a z-buffered Lambert torus, a trefoil-knot tube, a sphere with an orbiting light, a depth-shaded icosahedron-in-cube wireframe, a flying heightfield terrain and animated metaballs. Three character ramps (classic, blocks, ink) and four colourways (amber phosphor, ice, ink on paper, rainbow with hue mapped to depth) restyle the same scene. A hand-drawn box-character title, hairline plates, live fps and glyph counters and a footer showing the maths of the current form complete the geeky terminal mood.
+
+==================== TECHNIQUES ====================
+- Grid sized from measureText of a single monospace font, aspect-corrected projection so circles stay round in tall cells.
+- Point-splatting with a z-buffer at cell resolution and Lambert shading from a movable light vector (torus, trefoil).
+- Analytic per-cell ray shading for the sphere and per-cell field evaluation with gradient normals for metaballs.
+- Rotation matrix built from three angles, perspective divide, edge rasterisation with depth-dependent brightness for the wireframe.
+- Column-wise occlusion sweep for a heightfield terrain flyover with distance fog.
+- One fillText per row for mono colourways; bucketed HSL styles per character for the rainbow mode.
+- Ramp mapping by luminance with slight gamma, three ramps, four themes driven by CSS variables.
+- Manual rotation with inertia (modifier-drag or two fingers), exponential light easing, fps smoothing.
+
+==================== INTERACTION ====================
+Move or drag over the render and the light follows the pointer. Hold Shift or Alt while dragging, or use two fingers, to spin the object by hand with inertia. Chips choose the form, the character ramp and the colourway; keys 1 to 6 also pick the form; sliders set spin speed and glyph size (auto fits about 120 columns). Space pauses. With prefers-reduced-motion the automatic spin is slowed. The layout adapts down to 360 px phones; the control panel hides on very short screens.

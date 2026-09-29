@@ -1,0 +1,23 @@
+==================== PROMPT ====================
+Build "Physarum", a real-time slime-mould transport-network simulation on canvas. Implementation: ~40,000 agents (scaled by screen size) each with position and heading; each step senses the trail map at three sensors (left/front/right at a set angle and distance), turns toward the higher concentration with small noise, moves forward and deposits trail; the trail map (~480×270 float array) is diffused (3×3 blur) and decayed each frame. Render the trail through a warm palette (dark brown #120a05, burnt orange #c2410c, amber #f59e0b, pale gold #fde68a, cream #fffbe6) using ImageData at low resolution, scaled up smoothly with a subtle glow (draw crisp plus blurred additive). Food: click places "oat flakes" (attractors emitting chemo-attractant) and veins form to connect them; shift-click adds repellent light. Presets: "Web" (default), "Rings", "Cells", "Tokyo" (food points laid out like a rail network). Sliders: sensor angle, sensor distance, turn speed, decay; a time-lapse toggle (2× / 4×). Title "PHYSARUM · polycephalum" in a scientific-plate serif with small caps and short captions explaining what is visible. Use typed arrays and avoid per-frame allocations. Hypnotic and performant.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Physarum Polycephalum
+
+==================== DESCRIPTION ====================
+A living slime-mould specimen presented as "Plate XIV" of a scientific atlas. About 40,000 agents (fewer on small screens) crawl a 455x285-cell trail map, sensing left, front and right, turning toward stronger trail and depositing more, while the map is blurred and decayed each step. The trail is coloured through a dark-brown to cream ramp and drawn as a crisp canvas plus a blurred additive glow, with a slow travelling pulse along the veins. Oat flakes attract, lamps repel; four presets (Web, Rings, Cells, Tokyo rail map) set the parameters, food layout and starting distribution. The interface is a serif plate: title with small caps, figure captions with leader labels drawn on the canvas, a hairline ruler frame, a parameters panel and a live readout.
+
+==================== TECHNIQUES ====================
+- Physarum agent model on Float32Array trail, chemo-attractant/repellent field and agent arrays; no per-frame allocations in the loops
+- Separable 3x3 box blur with decay; food fields as Gaussian bumps, repellent light as flat-top discs, soft repulsive rim
+- Fed agents re-emerge at random oat flakes so traffic (and veins) run between food sources
+- 1024-step palette lookup and Uint32 ImageData writes at low resolution, upscaled with smoothing plus a blurred additive glow canvas
+- Overlay canvas for flakes, pulsing attractant rings, lamps, figure markers and cursor
+- Adaptive agent count to hold frame rate; warm-up steps and a fast growth burst on load
+- Scientific-plate typography: small caps, italics, ruler ticks, crop marks, roman-numeral presets
+- Custom range inputs, toggles, keyboard shortcuts and a hide-interface mode
+
+==================== INTERACTION ====================
+Click or tap to place an oat flake (click an existing flake to eat it, drag to trail several); Shift-click, right-click or the Light tool places a repelling lamp. Preset chips (or keys 1-4) load Web, Rings, Cells or Tokyo. Sliders tune sensor angle, sensor distance, turn speed and decay live. Time-lapse buttons (or T) run 1x, 2x or 4x. Pause (Space), Reseed (R), Clear (C), Light tool (L), and H hides the plate. On phones the panel collapses to a Tune drawer. With prefers-reduced-motion the simulation runs at reduced speed with no travelling pulse or growth burst.

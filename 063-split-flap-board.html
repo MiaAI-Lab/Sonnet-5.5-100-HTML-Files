@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Departures · Terminal 0 — a split-flap board</title>
+<meta name="description" content="A tactile Solari-style split-flap departure board: mechanical flips, clacking sound, a message plaque and a gate map for every flight.">
+<meta name="theme-color" content="#0b0b0d">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0b0b0d;--frame:#141417;--frame2:#232328;--cell:#17171a;--cell2:#1f1f23;
+  --ink:#f4f1e8;--dim:#8d8a80;--amber:#ffb02e;--green:#7ed6a0;--red:#ff5a4a;--brass:#c8a24e;
+  --font:"Arial Narrow","Helvetica Neue Condensed","Nimbus Sans Narrow","Liberation Sans Narrow","Roboto Condensed","Franklin Gothic Medium Cond","Arial",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --cw:clamp(13px,min(calc((100vw - 170px)/44.5),calc((100vh - 400px)/15.6)),38px);
+}
+@supports (height:100dvh){:root{--cw:clamp(13px,min(calc((100vw - 170px)/44.5),calc((100dvh - 400px)/15.6)),38px)}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;min-height:100vh;min-height:100dvh;color:var(--ink);font-family:var(--font);
+  background:radial-gradient(90% 50% at 50% 0%,#232327 0%,transparent 70%),var(--bg);overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.sr{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+
+.wrap{position:relative;max-width:1560px;margin:0 auto;padding:0 clamp(10px,2vw,30px) 30px}
+.rods{position:absolute;left:0;right:0;top:0;height:34px;pointer-events:none}
+.rods i{position:absolute;top:0;bottom:-2px;width:10px;border-radius:0 0 2px 2px;background:linear-gradient(90deg,#333,#7a7a80 40%,#2a2a2e)}
+.rods i:first-child{left:14%}.rods i:last-child{right:14%}
+
+.board{position:relative;margin-top:30px;padding:clamp(12px,1.8vw,26px);border-radius:14px;
+  background:linear-gradient(160deg,#26262b,#121215 40%,#0e0e10);
+  box-shadow:0 0 0 2px #050506,0 0 0 4px #2e2e33,inset 0 2px 0 rgba(255,255,255,.1),inset 0 -3px 0 rgba(0,0,0,.6),0 40px 60px -20px rgba(0,0,0,.9)}
+.board::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background-image:var(--grain,none);opacity:.5}
+.rivet{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#8a8a90,#2c2c30 60%,#111);box-shadow:0 1px 1px rgba(0,0,0,.8),inset 0 0 0 1px rgba(0,0,0,.4)}
+.rivet.a{left:8px;top:8px}.rivet.b{right:8px;top:8px}.rivet.c{left:8px;bottom:8px}.rivet.d{right:8px;bottom:8px}
+.rivet.e{left:50%;top:8px;margin-left:-6px}.rivet.f{left:50%;bottom:8px;margin-left:-6px}
+
+.top{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:6px 6px 14px}
+.title{margin:0;line-height:.9;text-transform:uppercase}
+.title b{display:block;font:700 clamp(30px,5.2vw,74px)/.88 var(--font);letter-spacing:.02em;color:var(--ink)}
+.title span{display:flex;align-items:center;gap:10px;margin-top:8px;font:600 clamp(11px,1.3vw,16px)/1 var(--mono);letter-spacing:.34em;color:var(--amber)}
+.title svg{width:1.6em;height:1.6em;fill:var(--amber)}
+.right{display:flex;align-items:center;gap:clamp(10px,2vw,26px)}
+.clockwrap{text-align:right}
+.clockwrap small{display:block;margin-bottom:6px;font:600 9px/1 var(--mono);letter-spacing:.3em;color:var(--dim);text-transform:uppercase}
+.clock{display:flex;align-items:center;gap:calc(var(--cw)*.14)}
+.clock .colon{font:700 calc(var(--cw)*1.3)/1 var(--font);color:var(--ink);opacity:.8;padding:0 1px;transform:translateY(-.06em)}
+.snd{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;border:0;cursor:pointer;
+  background:radial-gradient(circle at 35% 28%,#efd58c,#b98f3d 55%,#6a4c17);box-shadow:0 3px 6px rgba(0,0,0,.7),inset 0 1px 1px rgba(255,255,255,.6);color:#2b1d07;transition:transform .2s}
+.snd:active{transform:scale(.93)}
+.snd svg{width:22px;height:22px}
+.snd .wv{display:none}.snd[aria-pressed="true"] .wv{display:inline}.snd[aria-pressed="true"] .xx{display:none}
+
+.cols{display:grid;grid-template-columns:minmax(0,1fr);position:relative;padding:0 6px}
+.head,.row{display:grid;grid-template-columns:auto auto auto auto auto;justify-content:space-between;column-gap:calc(var(--cw)*.9);align-items:center}
+.head{padding:8px 8px 6px;margin-bottom:6px;font:600 clamp(9px,.85vw,12px)/1 var(--mono);letter-spacing:.24em;color:var(--dim);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.08)}
+.msgrow{display:flex;justify-content:center;padding:8px;margin:0 0 10px;border-radius:8px;background:rgba(0,0,0,.35);box-shadow:inset 0 2px 8px rgba(0,0,0,.6)}
+.line{display:flex;gap:calc(var(--cw)*.06)}
+.rows{list-style:none;margin:0;padding:0;display:grid;gap:calc(var(--cw)*.2)}
+.row{position:relative;padding:calc(var(--cw)*.13) 8px;border-radius:7px;transition:background-color .35s,box-shadow .35s}
+.row:hover{background:rgba(255,255,255,.035)}
+.row.sel{background:linear-gradient(90deg,rgba(255,176,46,.16),rgba(255,176,46,.05));box-shadow:inset 3px 0 0 var(--amber)}
+.rowhit{position:absolute;inset:0;z-index:3;border:0;background:transparent;cursor:pointer;border-radius:7px}
+.grp{display:flex;gap:calc(var(--cw)*.06)}
+
+/* ---- a single split-flap module ---- */
+.cell{position:relative;display:block;flex:none;width:var(--cw);height:calc(var(--cw)*1.42);perspective:calc(var(--cw)*6);--ink:var(--ink);border-radius:calc(var(--cw)*.08);
+  box-shadow:0 0 0 1px rgba(0,0,0,.9),0 2px 3px rgba(0,0,0,.6)}
+.cell i{position:absolute;left:0;right:0;height:50%;overflow:hidden;font-style:normal;background:var(--cell)}
+.cell .t{top:0;border-radius:calc(var(--cw)*.08) calc(var(--cw)*.08) 0 0;background:linear-gradient(180deg,#232327,var(--cell) 70%)}
+.cell .b{bottom:0;border-radius:0 0 calc(var(--cw)*.08) calc(var(--cw)*.08);background:linear-gradient(180deg,#141416,#1b1b1e)}
+.cell i::before{content:attr(data-c);position:absolute;left:0;right:0;height:200%;display:flex;align-items:center;justify-content:center;
+  font:700 calc(var(--cw)*1.32)/1 var(--font);color:var(--ink);text-transform:uppercase;transform:scaleX(.86);text-shadow:0 1px 0 rgba(0,0,0,.6)}
+.cell .t::before,.cell .ft::before{top:0}
+.cell .b::before,.cell .fb::before{bottom:0}
+.cell .f{z-index:2;backface-visibility:hidden;-webkit-backface-visibility:hidden;will-change:transform}
+.cell .ft{top:0;transform-origin:50% 100%;background:linear-gradient(180deg,#26262b,#1a1a1d)}
+.cell .fb{bottom:0;transform-origin:50% 0;background:linear-gradient(180deg,#1a1a1d,#212125)}
+.cell .f::after{content:"";position:absolute;inset:0;background:#000;opacity:var(--s,0)}
+.cell::after{content:"";position:absolute;left:0;right:0;top:50%;height:max(1.5px,calc(var(--cw)*.05));margin-top:calc(var(--cw)*-.025);z-index:3;
+  background:linear-gradient(180deg,#000,#0a0a0b);box-shadow:0 1px 0 rgba(255,255,255,.06)}
+.cell::before{content:"";position:absolute;top:50%;left:-1px;right:-1px;height:calc(var(--cw)*.14);margin-top:calc(var(--cw)*-.07);z-index:4;pointer-events:none;
+  background:radial-gradient(circle at 0 50%,#555 0 28%,transparent 30%),radial-gradient(circle at 100% 50%,#555 0 28%,transparent 30%)}
+.st-ok{--ink:var(--green)}.st-warn{--ink:var(--amber)}.st-bad{--ink:var(--red)}
+.blink .cell{animation:blink 2.6s ease-in-out infinite}
+@keyframes blink{0%,60%,100%{filter:none}80%{filter:brightness(.55)}}
+
+/* ---- plaque + drawer ---- */
+.deck{position:relative;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px;margin:16px 6px 0}
+.plaque{position:relative;flex:1 1 420px;display:flex;align-items:center;gap:14px;padding:12px 22px;border-radius:8px;
+  background:linear-gradient(180deg,#e2c67c,#b98f3d 48%,#916b25);box-shadow:0 5px 12px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -2px 0 rgba(60,35,5,.5);color:#2b1d07}
+.plaque::before,.plaque::after{content:"";position:absolute;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f3e2ad,#8a6a28 60%,#4b3410);box-shadow:0 1px 1px rgba(0,0,0,.5)}
+.plaque::before{left:7px}.plaque::after{right:7px}
+.plaque label{flex:none;font:700 10px/1.2 var(--mono);letter-spacing:.2em;text-transform:uppercase;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.plaque input{flex:1;min-width:0;height:38px;padding:0 12px;border:0;border-radius:4px;background:rgba(60,35,5,.16);box-shadow:inset 0 2px 4px rgba(60,35,5,.5),0 1px 0 rgba(255,255,255,.4);
+  font:700 19px/1 var(--font);letter-spacing:.1em;text-transform:uppercase;color:#2b1d07}
+.plaque input::placeholder{color:rgba(43,29,7,.5)}
+.plaque button{flex:none;height:38px;padding:0 16px;border:0;border-radius:4px;cursor:pointer;background:#1c1409;color:#f0d68c;font:700 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;box-shadow:0 2px 3px rgba(0,0,0,.5)}
+.plaque button:active{transform:translateY(1px)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:transparent;cursor:pointer;font:600 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.chips button:hover{color:var(--ink);border-color:rgba(255,255,255,.35)}
+
+.drawer{display:grid;grid-template-rows:0fr;transition:grid-template-rows .6s cubic-bezier(.2,.8,.2,1),margin .6s;margin:0 6px;visibility:hidden}
+.drawer.open{grid-template-rows:1fr;margin-top:16px;visibility:visible}
+.drawer>div{min-height:0;overflow:hidden}
+.plate{display:grid;grid-template-columns:minmax(220px,340px) 1fr;gap:clamp(14px,3vw,40px);padding:20px;border-radius:10px;background:linear-gradient(180deg,#1b1b1f,#111114);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),inset 0 2px 0 rgba(255,255,255,.05)}
+.map{width:100%;height:auto;display:block;border-radius:6px;background:#0d0d0f}
+.map .wing{fill:#1a1a1e;stroke:#3a3a40;stroke-width:1}
+.map .gate{fill:#26262b}
+.map .gate.on{fill:var(--amber)}
+.map text{font:600 9px var(--mono);fill:#77746c;letter-spacing:.1em}
+.map .path{fill:none;stroke:var(--amber);stroke-width:2.2;stroke-dasharray:5 5;animation:march 1s linear infinite}
+@keyframes march{to{stroke-dashoffset:-20}}
+.info h2{margin:0 0 4px;font:700 clamp(26px,3.4vw,44px)/1 var(--font);letter-spacing:.02em;text-transform:uppercase}
+.info .meta{margin:0 0 14px;font:500 11px/1.5 var(--mono);letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+.info dl{display:grid;grid-template-columns:repeat(4,auto);gap:10px 28px;margin:0 0 16px;justify-content:start}
+.info dt{font:600 9px/1 var(--mono);letter-spacing:.24em;color:var(--dim);text-transform:uppercase;margin-bottom:5px}
+.info dd{margin:0;font:700 22px/1 var(--font);text-transform:uppercase}
+.cd{display:flex;align-items:center;gap:6px}
+.cd .cell{--cw:24px}
+.cd .colon{font:700 30px/1 var(--font);opacity:.7}
+.cdlabel{margin:0 0 8px;font:600 10px/1 var(--mono);letter-spacing:.24em;color:var(--amber);text-transform:uppercase}
+.close{margin-top:16px;padding:9px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:transparent;cursor:pointer;font:600 10px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.close:hover{color:var(--ink)}
+.foot{margin:18px 6px 0;text-align:center;font:500 10px/1.6 var(--mono);letter-spacing:.14em;color:#5f5c55;text-transform:uppercase}
+
+@media (max-width:760px){
+  :root{--cw:calc((100vw - 84px)/24.5)}
+  .title b{font-size:38px}
+  .head{display:none}
+  .row{grid-template-columns:auto auto auto;grid-template-areas:"time dest gate" "flight status status";row-gap:calc(var(--cw)*.2);padding:calc(var(--cw)*.2) 6px}
+  .row .g-time{grid-area:time}.row .g-dest{grid-area:dest}.row .g-gate{grid-area:gate}
+  .row .g-flight{grid-area:flight}.row .g-status{grid-area:status;justify-self:end}
+  .rows{gap:calc(var(--cw)*.35)}
+  .msgrow .line .cell:nth-child(n+21){display:none}
+  .plate{grid-template-columns:1fr}
+  .info dl{grid-template-columns:repeat(2,auto)}
+  .plaque{flex-wrap:wrap;padding:14px 22px}
+  .plaque label{width:100%}
+  .top{align-items:center}
+  .clockwrap small{display:none}
+  .clock{--cw:min(24px,calc((100vw - 230px)/8))}
+  .snd{width:40px;height:40px}
+  .right{gap:8px}
+}
+@media (prefers-reduced-motion:reduce){.blink .cell,.map .path{animation:none}.drawer{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="rods" aria-hidden="true"><i></i><i></i></div>
+<main class="board" id="board">
+  <i class="rivet a" aria-hidden="true"></i><i class="rivet b" aria-hidden="true"></i><i class="rivet c" aria-hidden="true"></i><i class="rivet d" aria-hidden="true"></i><i class="rivet e" aria-hidden="true"></i><i class="rivet f" aria-hidden="true"></i>
+  <header class="top">
+    <h1 class="title"><b>Departures</b><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15.5v-2L13.5 9V3.5a1.5 1.5 0 0 0-3 0V9L3 13.5v2l7.5-2.2V18L8.5 19.500V21L12 20l3.500 1v-1.500L13.500 18v-4.700z"/></svg>Terminal 0</span></h1>
+    <div class="right">
+      <div class="clockwrap"><small>Local time</small><div class="clock" id="clock" role="timer" aria-label="Local time"></div></div>
+      <button class="snd" id="snd" type="button" aria-pressed="false" aria-label="Board sound">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.500 9.500h3.600L12 5.400v13.200l-4.900-4.100H3.500z" fill="currentColor"/><path class="wv" d="M15.400 8.600a5 5 0 0 1 0 6.800M18.200 6a8.800 8.800 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.900" stroke-linecap="round"/><path class="xx" d="m15.200 9.400 5.200 5.200m0-5.200-5.200 5.200" fill="none" stroke="currentColor" stroke-width="1.900" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+  <div class="cols">
+    <div class="head" aria-hidden="true"><span>Time</span><span>Flight</span><span>Destination</span><span>Gate</span><span>Status</span></div>
+    <div class="msgrow"><div class="line" id="msg" role="img" aria-label="Message line"></div></div>
+    <ol class="rows" id="rows" aria-label="Departures"></ol>
+  </div>
+  <div class="deck">
+    <form class="plaque" id="plaque" autocomplete="off">
+      <label for="msgIn">Board a message</label>
+      <input id="msgIn" type="text" maxlength="90" placeholder="Happy birthday Mia" spellcheck="false">
+      <button type="submit">Board it</button>
+    </form>
+    <div class="chips" role="group" aria-label="Suggested messages">
+      <button type="button" data-m="Happy birthday Mia">Happy birthday</button>
+      <button type="button" data-m="Gate zero you are here">You are here</button>
+      <button type="button" data-m="Safe travels and soft landings">Safe travels</button>
+    </div>
+  </div>
+  <section class="drawer" id="drawer" aria-label="Flight details"><div>
+    <div class="plate">
+      <svg class="map" id="map" viewBox="0 0 320 240" role="img" aria-label="Terminal map"></svg>
+      <div class="info">
+        <h2 id="iTitle">NV 204 · Lisbon</h2>
+        <p class="meta" id="iMeta"></p>
+        <dl>
+          <div><dt>Departs</dt><dd id="iTime"></dd></div>
+          <div><dt>Gate</dt><dd id="iGate"></dd></div>
+          <div><dt>Status</dt><dd id="iStatus"></dd></div>
+          <div><dt>Walk</dt><dd id="iWalk"></dd></div>
+        </dl>
+        <p class="cdlabel" id="cdLabel">Boarding closes in</p>
+        <div class="cd" id="cd"></div>
+        <button class="close" id="close" type="button">Close plate</button>
+      </div>
+    </div>
+  </div></section>
+  <p class="foot">Fictional flights, airlines and timings · no passengers were delayed in the making of this board</p>
+</main>
+</div>
+<div class="sr" id="live" aria-live="polite" aria-atomic="true"></div>
+<table class="sr" id="srTable"><caption>Departures board summary</caption><thead><tr><th>Time</th><th>Flight</th><th>Destination</th><th>Gate</th><th>Status</th></tr></thead><tbody id="srBody"></tbody></table>
+
+<script>
+(function(){
+'use strict';
+const doc=document,$=id=>doc.getElementById(id);
+const reduce=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+const ALN=' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const DIG='0123456789';
+const MSG=' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,!?\'-:&/';
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+(function(){try{const c=doc.createElement('canvas');c.width=c.height=120;const x=c.getContext('2d'),im=x.createImageData(120,120),d=im.data;
+  for(let i=0;i<d.length;i+=4){const v=Math.random()<.5?255:0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=(Math.random()*14)|0}
+  x.putImageData(im,0,0);doc.documentElement.style.setProperty('--grain','url("'+c.toDataURL('image/png')+'")')}catch(e){}})();
+
+/* ---------------- sound: short noise ticks, batched per frame ---------------- */
+let actx=null,master=null,noise=null,soundOn=false,tickCount=0;
+function initAudio(){
+  if(actx)return true;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return false;
+    actx=new AC();master=actx.createGain();master.gain.value=.2;
+    const comp=actx.createDynamicsCompressor();master.connect(comp);comp.connect(actx.destination);
+    const len=Math.floor(actx.sampleRate*.3);noise=actx.createBuffer(1,len,actx.sampleRate);
+    const d=noise.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+    return true;
+  }catch(e){actx=null;return false}
+}
+function clack(n){
+  if(!soundOn||!actx)return;
+  try{
+    const t=actx.currentTime+.002,cnt=Math.min(n,6);
+    for(let k=0;k<cnt;k++){
+      const s=actx.createBufferSource();s.buffer=noise;s.playbackRate.value=.8+Math.random()*.5;
+      const f=actx.createBiquadFilter();f.type='bandpass';f.frequency.value=1800+Math.random()*2200;f.Q.value=1.1;
+      const g=actx.createGain(),tt=t+k*.006+Math.random()*.004;
+      g.gain.setValueAtTime(.0001,tt);g.gain.exponentialRampToValueAtTime((.9+n*.02)*(.5+Math.random()*.5),tt+.0012);g.gain.exponentialRampToValueAtTime(.0001,tt+.014);
+      s.connect(f);f.connect(g);g.connect(master);s.start(tt,Math.random()*.2);s.stop(tt+.03);
+    }
+    const o=actx.createOscillator(),og=actx.createGain();o.type='sine';o.frequency.setValueAtTime(190,t);o.frequency.exponentialRampToValueAtTime(90,t+.03);
+    og.gain.setValueAtTime(.0001,t);og.gain.exponentialRampToValueAtTime(.35,t+.002);og.gain.exponentialRampToValueAtTime(.0001,t+.04);
+    o.connect(og);og.connect(master);o.start(t);o.stop(t+.05);
+  }catch(e){}
+}
+
+/* ---------------- the flap module ---------------- */
+const active=new Set();
+class Cell{
+  constructor(seq,init){
+    this.seq=seq;this.i=Math.max(0,seq.indexOf(init||' '));this.tgt=this.i;this.wait=0;this.fp=0;this.flip=false;this.ni=0;this.dur=58;
+    const el=doc.createElement('span');el.className='cell';
+    el.innerHTML='<i class="t" data-c="'+this.ch()+'"></i><i class="b" data-c="'+this.ch()+'"></i>';
+    this.el=el;this.t=el.firstChild;this.b=el.lastChild;this.ft=null;this.fb=null;
+  }
+  ch(i){const c=this.seq[i==null?this.i:i];return c===' '?' ':c}
+  ensureFlaps(){
+    if(this.ft)return;
+    this.ft=doc.createElement('i');this.ft.className='f ft';this.fb=doc.createElement('i');this.fb.className='f fb';
+    this.ft.style.display=this.fb.style.display='none';this.el.appendChild(this.ft);this.el.appendChild(this.fb);
+  }
+  set(c,delay,ink){
+    const ix=this.seq.indexOf(c);if(ix<0)return;
+    if(ink!==undefined)this.el.className='cell '+(ink||'');
+    this.tgt=ix;this.wait=performance.now()+(delay||0);
+    if(this.i!==this.tgt){active.add(this)}
+  }
+  setNow(c){const ix=this.seq.indexOf(c);if(ix<0)return;this.i=this.tgt=ix;const v=this.ch();this.t.dataset.c=v;this.b.dataset.c=v}
+  update(now){
+    if(now<this.wait)return true;
+    if(!this.flip){
+      if(this.i===this.tgt)return false;
+      this.ensureFlaps();
+      this.ni=(this.i+1)%this.seq.length;
+      this.t.dataset.c=this.ch(this.ni);
+      this.ft.dataset.c=this.ch();this.fb.dataset.c=this.ch(this.ni);
+      this.dur=this.ni===this.tgt?92:(reduce?30:58);
+      this.fp=now;this.flip=true;this.ft.style.display='block';this.fb.style.display='none';
+    }
+    const p=(now-this.fp)/this.dur;
+    if(p<.5){const q=p/.5;this.ft.style.transform='rotateX('+(-90*q*q).toFixed(1)+'deg)';this.ft.style.setProperty('--s',(q*.6).toFixed(2))}
+    else if(p<1){
+      this.ft.style.display='none';this.fb.style.display='block';
+      const q=(p-.5)/.5,a=90*(1-q)*(1-q)*(1-q*.35);
+      this.fb.style.transform='rotateX('+a.toFixed(1)+'deg)';this.fb.style.setProperty('--s',((1-q)*.6).toFixed(2));
+    }else{
+      this.i=this.ni;this.b.dataset.c=this.ch();
+      this.ft.style.display=this.fb.style.display='none';this.flip=false;tickCount++;
+      this.fp+=this.dur;
+      if(this.i===this.tgt)return false;
+      return this.update(now);
+    }
+    return true;
+  }
+}
+let raf=0;
+function loop(now){
+  raf=requestAnimationFrame(loop);
+  if(doc.hidden)return;
+  tickCount=0;
+  active.forEach(function(c){if(!c.update(now))active.delete(c)});
+  if(tickCount)clack(tickCount);
+}
+
+/* ---------------- data ---------------- */
+const CITIES=['LISBON','REYKJAVIK','OSAKA','MARRAKECH','COPENHAGEN','VALPARAISO','TALLINN','CAPE TOWN','SINGAPORE','VANCOUVER','KATHMANDU','ISTANBUL','HELSINKI','ZANZIBAR','DUBROVNIK','MONTEVIDEO','AUCKLAND','NAIROBI','SANTIAGO','BERGEN','SEVILLE','TASHKENT','BUENOS AIRES','ULAANBAATAR','PORTO','HAVANA'];
+const AIR={NV:['Nova Vega Air','A321neo'],QZ:['Quartz Lines','B787-9'],XL:['Xylo Airways','A350-900'],ZV:['Zenith Vale','E195-E2'],VQ:['Vesper Quay','A220-300'],KX:['Kestrel Express','ATR 72-600']};
+const STAT={
+  'BOARDING':['st-ok','ok'],'ON TIME':['st-ok','ok'],'DELAYED':['st-warn','warn'],
+  'GATE CHANGE':['st-warn','warn'],'CANCELLED':['st-bad','bad'],'FINAL CALL':['st-bad','bad']
+};
+const fmt=n=>('0'+n).slice(-2);
+let baseMin=(function(){const d=new Date();return Math.ceil((d.getHours()*60+d.getMinutes()+18)/5)*5})();
+function minStr(m){m=((m%1440)+1440)%1440;return fmt(Math.floor(m/60))+':'+fmt(m%60)}
+function statusFor(i){
+  const r=Math.random();
+  if(i<2)return r<.4?'BOARDING':r<.7?'FINAL CALL':r<.9?'DELAYED':'CANCELLED';
+  if(i<5)return r<.45?'ON TIME':r<.7?'BOARDING':r<.85?'DELAYED':'GATE CHANGE';
+  return r<.6?'ON TIME':r<.8?'DELAYED':r<.93?'GATE CHANGE':'CANCELLED';
+}
+function newFlight(i,minute){
+  const code=pick(Object.keys(AIR));
+  return{min:minute,time:minStr(minute),flight:code+' '+(100+Math.floor(Math.random()*880)),dest:pick(CITIES),
+    gate:pick(['A','B','C','D'])+fmt(1+Math.floor(Math.random()*14)),status:statusFor(i)};
+}
+const flights=[];
+(function(){let m=baseMin;for(let i=0;i<10;i++){flights.push(newFlight(i,m));m+=5*(1+Math.floor(Math.random()*3))}
+  const used={};flights.forEach(function(f){while(used[f.dest])f.dest=pick(CITIES);used[f.dest]=1});
+  flights[0].dest='LISBON';flights[0].flight='NV 204';flights[0].status='BOARDING';flights[1].dest='REYKJAVIK';flights[2].dest='OSAKA';flights[2].status='DELAYED'})();
+
+/* ---------------- build the board ---------------- */
+const W={time:5,flight:6,dest:12,gate:3,status:11};
+const rowsEl=$('rows'),rowObjs=[];
+function mkGroup(cls,n,seqFn){
+  const g=doc.createElement('span');g.className='grp '+cls;const cells=[];
+  for(let k=0;k<n;k++){const c=new Cell(seqFn(k),' ');g.appendChild(c.el);cells.push(c)}
+  return{el:g,cells:cells};
+}
+flights.forEach(function(f,i){
+  const li=doc.createElement('li');li.className='row';
+  const time=mkGroup('g-time',5,k=>k===2?':':DIG),flight=mkGroup('g-flight',6,()=>ALN),dest=mkGroup('g-dest',12,()=>ALN),gate=mkGroup('g-gate',3,()=>ALN),status=mkGroup('g-status',11,()=>ALN);
+  time.cells[2].setNow(':');
+  const hit=doc.createElement('button');hit.type='button';hit.className='rowhit';hit.dataset.i=i;
+  li.appendChild(hit);[time,flight,dest,gate,status].forEach(g=>li.appendChild(g.el));
+  rowsEl.appendChild(li);
+  rowObjs.push({li:li,hit:hit,time:time,flight:flight,dest:dest,gate:gate,status:status,busy:0});
+});
+time0();function time0(){}
+/* start every module a few flips shy of its letter so the power-on is a ripple, not a full alphabet */
+function pad(s,n){s=String(s);while(s.length<n)s+=' ';return s.slice(0,n)}
+function writeRow(i,f,base,opts){
+  const r=rowObjs[i],o=opts||{},cls=STAT[f.status][0];
+  const jobs=[
+    [r.time.cells,f.time,0],[r.flight.cells,pad(f.flight,6),1],[r.dest.cells,pad(f.dest,12),2],[r.gate.cells,pad(f.gate,3),3],[r.status.cells,pad(f.status,11),4]
+  ];
+  let maxD=0;
+  jobs.forEach(function(j){
+    if(o.only&&o.only.indexOf(j[2])<0)return;
+    j[0].forEach(function(c,k){
+      const ch=j[1][k];
+      if(o.power){const ix=c.seq.indexOf(ch);if(ix>=0){c.i=(ix-6-Math.floor(Math.random()*6)+c.seq.length*4)%c.seq.length;const v=c.ch();c.t.dataset.c=v;c.b.dataset.c=v}}
+      const d=base+j[2]*70+k*38+Math.random()*30;maxD=Math.max(maxD,d);
+      c.set(ch,d,j[2]===4?cls:undefined);
+    });
+  });
+  r.hit.setAttribute('aria-label','Flight '+f.flight+' to '+f.dest+', '+f.time+', gate '+f.gate+', '+f.status.toLowerCase()+'. Open flight details.');
+  r.li.classList.toggle('blink',f.status==='FINAL CALL'||f.status==='GATE CHANGE');
+  r.status.el.className='grp g-status '+cls+(f.status==='FINAL CALL'||f.status==='GATE CHANGE'?' blink':'');
+  return maxD;
+}
+function refreshSummary(changed){
+  const b=$('srBody');b.textContent='';
+  flights.forEach(function(f){const tr=doc.createElement('tr');[f.time,f.flight,f.dest,f.gate,f.status].forEach(function(t){const td=doc.createElement('td');td.textContent=t;tr.appendChild(td)});b.appendChild(tr)});
+  if(changed)$('live').textContent='Update: flight '+changed.flight+' to '+changed.dest+', '+changed.time+', gate '+changed.gate+': '+changed.status.toLowerCase()+'.';
+}
+
+/* ---------------- clock ---------------- */
+const clockEl=$('clock'),clockCells=[];
+(function(){
+  for(let g=0;g<3;g++){
+    for(let k=0;k<2;k++){const c=new Cell(DIG,'0');clockEl.appendChild(c.el);clockCells.push(c)}
+    if(g<2){const s=doc.createElement('span');s.className='colon';s.textContent=':';s.setAttribute('aria-hidden','true');clockEl.appendChild(s)}
+  }
+})();
+function tickClock(){
+  const d=new Date(),s=fmt(d.getHours())+fmt(d.getMinutes())+fmt(d.getSeconds());
+  for(let i=0;i<6;i++)clockCells[i].set(s[i],0);
+}
+
+/* ---------------- message line ---------------- */
+const msgEl=$('msg'),msgCells=[];
+for(let i=0;i<37;i++){const c=new Cell(MSG,' ');msgEl.appendChild(c.el);msgCells.push(c)}
+const narrow=window.matchMedia('(max-width: 760px)');
+const msgCap=()=>narrow.matches?20:37;
+let msgTimer=0,msgPages=[],msgPi=0;
+function paginate(text,cap){
+  const words=text.split(/\s+/).filter(Boolean),pages=[];let cur='';
+  words.forEach(function(w){
+    while(w.length>cap){if(cur){pages.push(cur);cur=''}pages.push(w.slice(0,cap));w=w.slice(cap)}
+    if((cur?cur+' '+w:w).length>cap){pages.push(cur);cur=w}else cur=cur?cur+' '+w:w;
+  });
+  if(cur)pages.push(cur);
+  return pages.length?pages:[''];
+}
+function showLine(text,delay){
+  const cap=msgCap(),s=text.slice(0,cap),left=Math.floor((cap-s.length)/2);
+  for(let i=0;i<37;i++){
+    const ch=i>=left&&i<left+s.length?s[i-left]:' ';
+    msgCells[i].set(ch,(delay||0)+i*26+Math.random()*24);
+  }
+  msgEl.setAttribute('aria-label','Message: '+text);
+}
+function boardMessage(raw){
+  const t=raw.toUpperCase().replace(/[^A-Z0-9 .,!?'\-:&\/]/g,'').replace(/\s+/g,' ').trim();
+  if(!t)return;
+  clearInterval(msgTimer);msgPages=paginate(t,msgCap());msgPi=0;
+  showLine(msgPages[0],0);$('live').textContent='Message on the board: '+t;
+  if(msgPages.length>1)msgTimer=setInterval(function(){msgPi=(msgPi+1)%msgPages.length;showLine(msgPages[msgPi],0)},3600);
+}
+
+/* ---------------- detail plate ---------------- */
+let selected=-1,cdCells=[];
+(function(){const cd=$('cd');for(let g=0;g<3;g++){for(let k=0;k<2;k++){const c=new Cell(DIG,'0');cd.appendChild(c.el);cdCells.push(c)}
+  if(g<2){const s=doc.createElement('span');s.className='colon';s.textContent=':';s.setAttribute('aria-hidden','true');cd.appendChild(s)}}})();
+const WING={A:[160,32,'h'],B:[290,120,'v'],C:[160,208,'h'],D:[30,120,'v']};
+function buildMap(gate){
+  const map=$('map'),L=gate[0],n=parseInt(gate.slice(1),10);
+  let s='<rect x="1" y="1" width="318" height="238" fill="none" stroke="#2a2a2f"/>';
+  s+='<rect class="wing" x="140" y="20" width="40" height="80" rx="3"/><rect class="wing" x="140" y="140" width="40" height="80" rx="3"/><rect class="wing" x="180" y="100" width="110" height="40" rx="3"/><rect class="wing" x="30" y="100" width="110" height="40" rx="3"/>';
+  s+='<circle cx="160" cy="120" r="24" fill="#111114" stroke="#3a3a40"/><text x="160" y="118" text-anchor="middle">YOU ARE</text><text x="160" y="129" text-anchor="middle">HERE</text>';
+  let gx=0,gy=0,pts='';
+  for(let k=1;k<=14;k++){
+    const f=(k-.5)/14;let x,y,w=8,h=8;
+    if(L==='A'){y=24+(1-f)*68;x=k%2?132:180;}
+    else if(L==='C'){y=144+f*68;x=k%2?132:180;}
+    else if(L==='B'){x=186+f*98;y=k%2?92:140;}
+    else{x=34+(1-f)*98;y=k%2?92:140;}
+    /* draw gates only for the chosen pier, tiny squares */
+    s+='<rect class="gate'+(k===n?' on':'')+'" x="'+x+'" y="'+y+'" width="8" height="8" rx="1"/>';
+    if(k===n){gx=x+4;gy=y+4}
+  }
+  ['A','B','C','D'].forEach(function(p){if(p===L)return;const t={A:[160,15],B:[300,124],C:[160,234],D:[18,124]}[p];s+='<text x="'+t[0]+'" y="'+t[1]+'" text-anchor="middle" fill="#55524b">'+p+'</text>'});
+  const lt={A:[160,15],B:[300,124],C:[160,234],D:[18,124]}[L];s+='<text x="'+lt[0]+'" y="'+lt[1]+'" text-anchor="middle" style="fill:#ffb02e">PIER '+L+'</text>';
+  if(L==='A'||L==='C')pts='M160 120 L160 '+gy+' L'+gx+' '+gy;else pts='M160 120 L'+gx+' 120 L'+gx+' '+gy;
+  s+='<path class="path" d="'+pts+'"/>';
+  map.innerHTML=s;
+  return Math.round(2+n*.6+(L==='B'||L==='D'?1.5:1));
+}
+function fillPlate(i){
+  const f=flights[i],air=AIR[f.flight.slice(0,2)]||['Independent','A320'];
+  $('iTitle').textContent=f.flight+' · '+f.dest;
+  $('iMeta').textContent=air[0]+' · '+air[1]+' · Terminal 0';
+  $('iTime').textContent=f.time;$('iGate').textContent=f.gate;$('iStatus').textContent=f.status;
+  $('iStatus').className=STAT[f.status][0];
+  $('iWalk').textContent=buildMap(f.gate)+' min';
+  $('cdLabel').textContent=f.status==='CANCELLED'?'Rebooking desk open':f.status==='ON TIME'||f.status==='DELAYED'?'Boarding opens in':'Gate closes in';
+}
+function tickCountdown(){
+  if(selected<0)return;
+  const f=flights[selected],d=new Date(),nowS=d.getHours()*3600+d.getMinutes()*60+d.getSeconds();
+  let target=f.min*60-(f.status==='ON TIME'||f.status==='DELAYED'?35*60:15*60)+(f.status==='DELAYED'?40*60:0);
+  let left=target-nowS;if(left<0)left=0;
+  if(f.status==='CANCELLED')left=0;
+  const h=Math.min(99,Math.floor(left/3600)),m=Math.floor(left%3600/60),s=left%60,str=fmt(h)+fmt(m)+fmt(s);
+  for(let i=0;i<6;i++)cdCells[i].set(str[i],i*20);
+}
+function selectRow(i){
+  rowObjs.forEach(function(r,k){r.li.classList.toggle('sel',k===i)});
+  selected=i;fillPlate(i);
+  $('drawer').classList.add('open');tickCountdown();
+  const dr=$('drawer');setTimeout(function(){if(dr.getBoundingClientRect().bottom>window.innerHeight)dr.scrollIntoView({behavior:reduce?'auto':'smooth',block:'nearest'})},250);
+}
+rowsEl.addEventListener('click',function(e){const b=e.target.closest('.rowhit');if(!b)return;const i=+b.dataset.i;if(selected===i){closePlate();return}selectRow(i)});
+function closePlate(){selected=-1;rowObjs.forEach(r=>r.li.classList.remove('sel'));$('drawer').classList.remove('open')}
+$('close').addEventListener('click',closePlate);
+
+/* ---------------- board life ---------------- */
+function rewrite(){
+  const cand=[];rowObjs.forEach((r,i)=>{if(performance.now()>r.busy)cand.push(i)});
+  if(!cand.length)return;
+  const i=pick(cand),f=flights[i],full=Math.random()<.5;
+  if(full){
+    const lo=i?flights[i-1].min+5:baseMin,hi=i<9?flights[i+1].min-1:lo+25;
+    const m=Math.min(hi,lo+5*Math.floor(rnd(0,Math.max(1,(hi-lo)/5))));
+    const n=newFlight(i,Math.max(lo,m));
+    const used=flights.map(x=>x.dest);while(used.indexOf(n.dest)>=0)n.dest=pick(CITIES);
+    flights[i]=n;
+  }else{
+    let s;do{s=statusFor(i)}while(s===f.status);f.status=s;
+    if(s==='DELAYED'){f.min+=5*(1+Math.floor(Math.random()*3));f.time=minStr(f.min)}
+    if(s==='GATE CHANGE'){f.gate=pick(['A','B','C','D'])+fmt(1+Math.floor(Math.random()*14))}
+  }
+  const d=writeRow(i,flights[i],0,full?{}:{only:[0,3,4]});
+  rowObjs[i].busy=performance.now()+d+2500;
+  refreshSummary(flights[i]);
+  if(selected===i){fillPlate(i);tickCountdown()}
+}
+function schedule(){setTimeout(function(){if(!doc.hidden)rewrite();schedule()},rnd(2600,5200))}
+
+/* ---------------- controls ---------------- */
+const sndBtn=$('snd');
+sndBtn.addEventListener('click',function(){
+  soundOn=!soundOn;sndBtn.setAttribute('aria-pressed',String(soundOn));
+  if(soundOn){initAudio();if(actx&&actx.state==='suspended')actx.resume();clack(4)}
+});
+$('plaque').addEventListener('submit',function(e){e.preventDefault();boardMessage($('msgIn').value);});
+$$chips();function $$chips(){Array.prototype.forEach.call(doc.querySelectorAll('.chips button'),function(b){b.addEventListener('click',function(){$('msgIn').value=b.dataset.m;boardMessage(b.dataset.m)})})}
+if(narrow.addEventListener)narrow.addEventListener('change',function(){if(msgPages.length)showLine(msgPages[msgPi],0)});
+
+/* ---------------- boot: power-on ripple ---------------- */
+flights.forEach(function(f,i){rowObjs[i].busy=performance.now()+4000;writeRow(i,f,300+i*170,{power:true})});
+refreshSummary();
+(function(){
+  const cap=msgCap();const text='WELCOME TO TERMINAL 0 · MIND THE GAP'.replace('·','-');
+  const s=cap<37?'WELCOME TO TERMINAL 0':text,left=Math.floor((cap-s.length)/2);
+  msgCells.forEach(function(c,i){
+    const ch=i>=left&&i<left+s.length?s[i-left]:' ',ix=MSG.indexOf(ch);
+    c.i=(ix-5-Math.floor(Math.random()*6)+MSG.length*4)%MSG.length;const v=c.ch();c.t.dataset.c=v;c.b.dataset.c=v;
+    c.set(ch,120+i*30+Math.random()*30);
+  });
+})();
+clockCells.forEach(function(c){c.i=(c.i+7)%10;const v=c.ch();c.t.dataset.c=v;c.b.dataset.c=v});
+tickClock();setInterval(function(){tickClock();tickCountdown()},1000);
+setTimeout(schedule,4500);
+raf=requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

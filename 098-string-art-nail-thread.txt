@@ -1,0 +1,25 @@
+==================== PROMPT ====================
+Create "Nail & Thread", mathematical string art on a wooden board. A ring of N brass nails (N adjustable 60–360, default 200) pressed into a dark walnut board (#3a2416 with wood grain from layered gradients and SVG noise, vignette, top-left lighting, small shadows under each nail); threads connect nail i to nail (i × m mod N) for a multiplier m — the classic times-table circle producing a cardioid (m=2), nephroid (m=3) and beyond. Threads are thin (0.6–0.9px) with additive blending in coloured silk: a gradient along nail index from coral #ff6f59 through amber #ffb84d, cream #fff1c9 and teal #4dd8c4 to periwinkle #7b8cff, giving a luminous woven look with glints where threads overlap. Animation: m animates smoothly (fractional m — endpoints lerp between neighbouring integer mappings so the shape morphs continuously), sweeping from 2 toward N/2 with slow easing and pausing at pleasing integers, with the curve name appearing ("Cardioid", "Nephroid", "Trefoil-ish", "Quadrifolium"…). Controls: a beautiful large circular dial (or slider) for m, nail count, thread opacity, palette chips (Silk; Ink on Paper: black threads on cream; Neon: cyan/magenta on black), Play/Pause, a "Draw threads one by one" mode (threads appear sequentially like a maker winding them, with a needle point moving), and "Reveal envelope" overlaying the analytic envelope curve in thin gold. Arrow keys adjust m by 0.1. Type: a refined old-style serif brass plaque "y = x · m (mod N)" and a one-line explainer "The envelope of these chords is a cardioid."
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Nail & Thread
+
+==================== DESCRIPTION ====================
+A square walnut board (layered grain gradients, two SVG turbulence filters, vignette and top-left light) carries a ring of brass nails with individual drop shadows and engraved numbering. Silk threads join nail i to nail i x m (mod N) using additive blending on a transparent canvas laid over the wood, so overlaps flare into luminous glints. The multiplier m sweeps continuously, morphing between cardioid, nephroid and higher epicycloids while the curve name fades in beside a live brass plaque reading "y = x . m (mod N)" and a one-line explainer. A large knurled brass dial, nail-count and opacity sliders, three palettes (Silk, Ink on Paper, Neon), a needle-and-thread winding mode and an analytic gold envelope complete the workbench.
+
+==================== TECHNIQUES ====================
+- Three stacked canvases: nail shadows, additive thread layer (CSS screen or multiply blend), nail heads with pre-rendered radial-gradient brass sprites
+- Fractional multiplier: each thread's far end is placed at angle 2*pi*(i*m mod N)/N, so the picture morphs continuously between integer maps
+- Analytic envelope z(t) = (m e^(i(phi+t)) + e^(i(phi+m t))) / (m+1) drawn as a gold SVG path with a soft glow filter
+- Wood built from repeating-linear-gradients plus two feTurbulence grain filters, inner bevel highlights and vignette
+- Palette gradient along nail index; glow pass plus thin core pass per thread; thread alpha auto-scaled by nail count
+- Sweep state machine: eased moves between pleasing integer stops with holds, ping-pong direction, curve names for epicycloids
+- Draw-one-by-one mode with a moving SVG needle and partially drawn current thread
+- Circular knurled dial (conic gradients) with square-root mapping for fine control at low m, engraved tick labels regenerated per nail count
+- Brass plaque with screws, engraved-text shadows, old-style serif type
+- Dirty-flag rendering so the canvases only redraw when something changes
+
+==================== INTERACTION ====================
+Drag the dial (or press Left/Right/Up/Down) to change m in 0.1 steps; manual changes pause the automatic sweep. Nail count slider (60 to 360) and thread opacity slider reshape the piece live. Palette chips switch between Silk, Ink on Paper and Neon (the board itself re-themes). Play/Pause toggles the sweep (Space), "Reveal envelope" (E) overlays the gold envelope, and "Draw threads one by one" (W) winds the threads sequentially with a needle. With prefers-reduced-motion the sweep starts paused and moves are shortened. Rendering pauses when the tab is hidden.

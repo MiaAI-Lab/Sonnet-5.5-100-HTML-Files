@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>ORNITHOPTER Mk.IV — wing linkage &amp; fuselage, sheet 3 of 7</title>
+<script>document.documentElement.className='js';</script>
+<style>
+/* ==========================================================
+   KITTIWAKE & DRAKE — ORNITHOPTER Mk.IV, sheet 3 of 7
+   one blueprint, drawn line by line, then set turning
+   ========================================================== */
+:root{
+  --bp:#0c3c8c;--bp-d:#072a68;--bp-dd:#051f4f;--white:#dff3ff;--cyan:#7fd0ff;--orange:#ffb36b;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --hand:"Apple Chancery","Z003","URW Chancery L","Lucida Handwriting","Segoe Script","Bradley Hand",cursive;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bp-d);color:var(--white);overflow:hidden;overscroll-behavior:none}
+body{height:100vh;height:100dvh;font-family:var(--mono);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,input{font:inherit;color:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#table{position:fixed;inset:0;background:radial-gradient(120% 100% at 50% 40%,#0a3277 0,var(--bp-d) 65%,var(--bp-dd) 100%)}
+#sheet{display:block;width:100%;height:100%;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#sheet.drag{cursor:grabbing}
+
+/* ---------- linework ---------- */
+svg text{fill:var(--white);font-family:var(--mono);font-size:11px;letter-spacing:-.02em;text-transform:uppercase;pointer-events:none}
+svg .s{font-size:8.5px}
+svg .m{font-size:13px}
+svg .l{font-size:17px}
+svg .xl{font-size:26px}
+svg .b{font-weight:700}
+svg .c{fill:var(--cyan)}
+svg .mid{text-anchor:middle}
+svg .end{text-anchor:end}
+svg .hand{font-family:var(--hand);font-style:italic;text-transform:none;letter-spacing:0;font-size:17px;fill:var(--white)}
+svg .ln{fill:none;stroke:var(--white);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+svg .ln1{fill:none;stroke:var(--white);stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+svg .hv{fill:none;stroke:var(--white);stroke-width:3.2;stroke-linecap:round}
+svg .tn{fill:none;stroke:var(--cyan);stroke-width:.9;stroke-linecap:round}
+svg .fl{fill:var(--white)}
+svg .cl{fill:none;stroke:var(--cyan);stroke-width:.9;stroke-dasharray:15 3 3 3}
+svg .hid{fill:none;stroke:var(--cyan);stroke-width:.9;stroke-dasharray:5 4}
+svg .dl{fill:none;stroke:var(--cyan);stroke-width:1}
+svg .ah{fill:var(--cyan)}
+svg .rev{fill:none;stroke:var(--orange);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+svg .revf{fill:var(--orange)}
+svg .ball circle{fill:var(--bp);stroke:var(--white);stroke-width:1.5;transition:fill .2s}
+svg .ball text{font-size:12px;font-weight:700;text-anchor:middle;transition:fill .2s}
+svg .ball .ld{fill:none;stroke:var(--white);stroke-width:1;transition:stroke .2s}
+svg .ball .dot{fill:var(--white);stroke:none}
+svg .brow{cursor:pointer;outline:none}
+svg .brow rect.bg{fill:transparent;transition:fill .2s}
+svg .brow.on rect.bg,svg .brow:focus-visible rect.bg{fill:rgba(127,208,255,.24)}
+svg .brow:focus-visible rect.bg{stroke:var(--white);stroke-width:1.2}
+svg .brow text{font-size:11.5px}
+svg.hl [data-part]{opacity:.2!important}
+svg.hl [data-part].on{opacity:1!important;filter:drop-shadow(0 0 4px rgba(127,208,255,.95))}
+svg .dim text{font-size:10.5px}
+svg.hl .ball.on circle{fill:var(--white)}
+svg.hl .ball.on text{fill:var(--bp)}
+svg [data-part]{transition:opacity .25s}
+#minorGrid{transition:opacity .4s}
+.lowzoom #minorGrid{opacity:0}
+
+/* ---------- drawing on ---------- */
+.js .draw{stroke-dasharray:1 3;stroke-dashoffset:1.02;animation:draw 1.5s cubic-bezier(.45,0,.2,1) forwards;animation-delay:var(--d,0s)}
+@keyframes draw{to{stroke-dashoffset:0}}
+.js .fade{opacity:0;animation:fadein .9s ease forwards;animation-delay:var(--d,0s)}
+@keyframes fadein{to{opacity:1}}
+.rm .draw,.rm .fade{animation:none!important;stroke-dashoffset:0!important;opacity:1!important}
+
+/* ---------- overlay controls ---------- */
+.rig{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom));translate:-50% 0;width:min(94vw,520px);padding:10px 14px 11px;border:1px solid var(--cyan);background:rgba(5,31,79,.86);
+  box-shadow:0 10px 40px rgba(0,0,0,.4),inset 0 0 0 3px rgba(127,208,255,.08);z-index:10;backdrop-filter:blur(2px)}
+.rig::before,.rig::after{content:"";position:absolute;width:9px;height:9px;border:1px solid var(--white)}
+.rig::before{left:-4px;top:-4px;border-width:1px 0 0 1px}
+.rig::after{right:-4px;bottom:-4px;border-width:0 1px 1px 0}
+.rig-row{display:flex;align-items:center;gap:12px}
+.pb{flex:none;width:38px;height:38px;border:1px solid var(--cyan);background:rgba(127,208,255,.1);display:grid;place-items:center;cursor:pointer;transition:background .2s}
+.pb:hover{background:rgba(127,208,255,.28)}
+.pb svg{width:16px;height:16px;fill:var(--white)}
+.pb .ic-play{display:none}
+.pb[aria-pressed="false"] .ic-play{display:block}
+.pb[aria-pressed="false"] .ic-pause{display:none}
+.rig label{flex:none;font-size:11px;letter-spacing:.14em;color:var(--cyan)}
+.rig output{flex:none;width:2.6em;text-align:right;font-size:13px;font-weight:700}
+.rig input[type=range]{flex:1;min-width:60px;-webkit-appearance:none;appearance:none;height:28px;background:transparent;cursor:pointer;margin:0}
+.rig input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--white) var(--p,40%),rgba(127,208,255,.35) var(--p,40%))}
+.rig input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;margin-top:-6px;background:var(--bp);border:2px solid var(--white);transform:rotate(45deg)}
+.rig input[type=range]::-moz-range-track{height:2px;background:rgba(127,208,255,.35)}
+.rig input[type=range]::-moz-range-progress{height:2px;background:var(--white)}
+.rig input[type=range]::-moz-range-thumb{width:10px;height:10px;background:var(--bp);border:2px solid var(--white);border-radius:0;transform:rotate(45deg)}
+.ro{margin:7px 0 0;font-size:10.5px;letter-spacing:.05em;color:var(--cyan);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ro b{color:var(--white);font-weight:700}
+button:focus-visible,input:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+.views{position:fixed;right:max(14px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:70vw;z-index:10}
+.views button{padding:8px 11px 7px;border:1px solid rgba(127,208,255,.7);background:rgba(5,31,79,.78);font-size:11px;letter-spacing:.14em;cursor:pointer;text-transform:uppercase;transition:background .2s,border-color .2s}
+.views button:hover{background:rgba(127,208,255,.25);border-color:var(--white)}
+.views button[aria-pressed="true"]{background:var(--white);color:var(--bp);border-color:var(--white)}
+.hintbox{position:fixed;left:50%;translate:-50% 0;top:max(10px,env(safe-area-inset-top));z-index:9;width:max-content;max-width:min(52vw,380px);margin:0;padding:7px 11px;border:1px solid rgba(127,208,255,.5);background:rgba(5,31,79,.7);font-size:10.5px;line-height:1.5;letter-spacing:.06em;color:var(--cyan);text-transform:uppercase;transition:opacity .8s}
+.hintbox.gone{opacity:0;pointer-events:none}
+.mcap{display:none}
+@media (max-width:640px){
+  .rig{width:calc(100vw - 20px);padding:8px 10px 9px}
+  .rig label{display:none}
+  .views{left:10px;right:10px;top:auto;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 88px);max-width:none;justify-content:center}
+  .views button{padding:9px 10px 8px;font-size:10.5px}
+  .hintbox{display:none}
+  .mcap{display:block;position:fixed;top:max(20px,env(safe-area-inset-top));left:16px;right:16px;margin:0;text-align:center;z-index:9;pointer-events:none;text-transform:uppercase;text-shadow:0 0 12px rgba(5,31,79,.9)}
+  .mcap b{display:block;font-size:20px;letter-spacing:.06em}
+  .mcap span{display:block;margin-top:5px;font-size:10px;letter-spacing:.1em;color:var(--cyan);line-height:1.5}
+}
+@media (prefers-reduced-motion:reduce){
+  .hintbox,.views button,.pb{transition:none}
+}
+</style>
+</head>
+<body>
+
+<main id="table">
+<svg id="sheet" viewBox="0 0 1600 1100" role="img" aria-labelledby="sTitle sDesc" focusable="false">
+<title id="sTitle">Ornithopter Mk.IV, wing linkage and fuselage, sheet 3 of 7</title>
+<desc id="sDesc">A blueprint of a fictional human-powered flapping-wing aircraft: side elevation with pilot, pedal drive, chain and gearbox; plan view with twin-spar wings whose tips sweep as they flap; and a front-elevation section A-A showing the counter-rotating crank gears, connecting rods and rocker levers. A bill of materials, revision table and title block are drawn at the right. Use the crank RPM slider to speed the mechanism up or slow it down.</desc>
+<defs>
+  <pattern id="minorG" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M10 0H0V10" fill="none" stroke="#7fd0ff" stroke-opacity=".13" stroke-width=".7"/></pattern>
+  <pattern id="majorG" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#7fd0ff" stroke-opacity=".26" stroke-width=".9"/></pattern>
+  <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0V6" stroke="#dff3ff" stroke-width="1.1" stroke-opacity=".85"/></pattern>
+  <pattern id="hatchS" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><path d="M0 0V4" stroke="#7fd0ff" stroke-width=".8" stroke-opacity=".8"/></pattern>
+  <pattern id="fabric" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(28)"><path d="M0 0V5" stroke="#7fd0ff" stroke-width=".7" stroke-opacity=".55"/></pattern>
+  <pattern id="paperNoise" width="128" height="128" patternUnits="userSpaceOnUse"><image id="noiseImg" x="0" y="0" width="128" height="128" preserveAspectRatio="none"/></pattern>
+  <radialGradient id="vig" cx="50%" cy="46%" r="75%"><stop offset="55%" stop-color="#03163d" stop-opacity="0"/><stop offset="100%" stop-color="#03163d" stop-opacity=".55"/></radialGradient>
+  <linearGradient id="creaseV" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#03163d" stop-opacity="0"/><stop offset=".46" stop-color="#03163d" stop-opacity=".22"/><stop offset=".5" stop-color="#dff3ff" stop-opacity=".2"/><stop offset=".54" stop-color="#03163d" stop-opacity=".16"/><stop offset="1" stop-color="#03163d" stop-opacity="0"/></linearGradient>
+  <linearGradient id="creaseH" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#03163d" stop-opacity="0"/><stop offset=".46" stop-color="#03163d" stop-opacity=".2"/><stop offset=".5" stop-color="#dff3ff" stop-opacity=".18"/><stop offset=".55" stop-color="#03163d" stop-opacity=".14"/><stop offset="1" stop-color="#03163d" stop-opacity="0"/></linearGradient>
+  <radialGradient id="ring" cx="50%" cy="50%" r="50%"><stop offset="78%" stop-color="#d9a566" stop-opacity="0"/><stop offset="89%" stop-color="#d9a566" stop-opacity=".2"/><stop offset="93%" stop-color="#a06a30" stop-opacity=".34"/><stop offset="100%" stop-color="#d9a566" stop-opacity="0"/></radialGradient>
+  <radialGradient id="ringIn" cx="46%" cy="52%" r="50%"><stop offset="0" stop-color="#d9a566" stop-opacity=".03"/><stop offset="100%" stop-color="#d9a566" stop-opacity=".1"/></radialGradient>
+  <filter id="soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="1.1"/></filter>
+</defs>
+
+<!-- ============ paper ============ -->
+<rect id="paper" width="1600" height="1100" fill="#0c3c8c"/>
+<rect id="minorGrid" width="1600" height="1100" fill="url(#minorG)"/>
+<rect width="1600" height="1100" fill="url(#majorG)"/>
+<rect width="1600" height="1100" fill="url(#paperNoise)" opacity=".5"/>
+
+<!-- ============ frame, zones, title block, tables (stage 1) ============ -->
+<g id="frame" data-st="1">
+  <rect class="tn draw" x="14" y="14" width="1572" height="1072"/>
+  <rect class="ln draw" x="40" y="40" width="1520" height="1020" style="stroke-width:2.6"/>
+  <path class="tn draw" d="M230 14V40M420 14V40M610 14V40M800 14V40M990 14V40M1180 14V40M1370 14V40M230 1060V1086M420 1060V1086M610 1060V1086M800 1060V1086M990 1060V1086M1180 1060V1086M1370 1060V1086M14 210H40M14 380H40M14 550H40M14 720H40M14 890H40M1560 210H1586M1560 380H1586M1560 550H1586M1560 720H1586M1560 890H1586"/>
+  <g class="fade"><text class="m mid c" x="135" y="31">1</text><text class="m mid c" x="325" y="31">2</text><text class="m mid c" x="515" y="31">3</text><text class="m mid c" x="705" y="31">4</text><text class="m mid c" x="895" y="31">5</text><text class="m mid c" x="1085" y="31">6</text><text class="m mid c" x="1275" y="31">7</text><text class="m mid c" x="1465" y="31">8</text>
+  <text class="m mid c" x="135" y="1079">1</text><text class="m mid c" x="325" y="1079">2</text><text class="m mid c" x="515" y="1079">3</text><text class="m mid c" x="705" y="1079">4</text><text class="m mid c" x="895" y="1079">5</text><text class="m mid c" x="1085" y="1079">6</text><text class="m mid c" x="1275" y="1079">7</text><text class="m mid c" x="1465" y="1079">8</text>
+  <text class="m mid c" x="27" y="129">A</text><text class="m mid c" x="27" y="299">B</text><text class="m mid c" x="27" y="469">C</text><text class="m mid c" x="27" y="639">D</text><text class="m mid c" x="27" y="809">E</text><text class="m mid c" x="27" y="979">F</text>
+  <text class="m mid c" x="1573" y="129">A</text><text class="m mid c" x="1573" y="299">B</text><text class="m mid c" x="1573" y="469">C</text><text class="m mid c" x="1573" y="639">D</text><text class="m mid c" x="1573" y="809">E</text><text class="m mid c" x="1573" y="979">F</text></g>
+  <path class="ln1 draw" d="M800 14V40M14 550H40" style="stroke-width:3"/>
+  <text class="l b fade" x="64" y="74">ORNITHOPTER Mk.IV &#8212; WING LINKAGE &amp; FUSELAGE</text>
+  <text class="s c fade" x="65" y="90">GENERAL ARRANGEMENT &#183; MECHANISM STUDY &#183; HUMAN-POWERED FLAPPING-WING AIRCRAFT &#183; SHEET 3 OF 7</text>
+
+  <!-- title block -->
+  <g id="titleblock">
+    <path class="ln draw" d="M1040 900H1560V1060H1040Z"/>
+    <path class="ln1 draw" d="M1040 950H1560M1040 1005H1560M1420 900V950M1110 1005V1060M1190 1005V1060M1270 1005V1060M1350 1005V1060M1450 1005V1060"/>
+    <g class="fade">
+      <text class="l b" x="1052" y="924">KITTIWAKE &amp; DRAKE</text>
+      <text class="s c" x="1052" y="940">AEROMECHANICAL WORKS &#183; WORKSHOP 9 &#183; EST. 1931</text>
+      <text class="xl b" x="1052" y="983">ORNITHOPTER Mk.IV</text>
+      <text class="m" x="1052" y="999">WING LINKAGE &amp; FUSELAGE</text>
+      <text class="s c" x="1046" y="1015">SCALE</text><text class="m b" x="1046" y="1044">1:20</text>
+      <text class="s c" x="1116" y="1015">SHEET</text><text class="m b" x="1116" y="1044">3 OF 7</text>
+      <text class="s c" x="1196" y="1015">DRAWN</text><text class="m b" x="1196" y="1044">E.R.V.</text>
+      <text class="s c" x="1276" y="1015">CHECKED</text><text class="m b" x="1276" y="1044">T.H.</text>
+      <text class="s c" x="1356" y="1015">DATE</text><text class="m b" x="1356" y="1044">09.11.62</text>
+      <text class="s c" x="1456" y="1015">DWG NO. &#183; REV</text><text class="m b" x="1456" y="1044">KD-IV-003 D</text>
+    </g>
+    <g class="draw-g">
+      <path class="ln1 draw" d="M1436 934C1450 912 1476 912 1496 928C1512 912 1536 914 1548 934C1530 926 1512 930 1496 940C1478 928 1454 928 1436 934Z"/>
+      <path class="ln1 draw" d="M1496 928V946"/>
+    </g>
+  </g>
+
+  <!-- revision table -->
+  <g id="revtable">
+    <path class="ln1 draw" d="M1040 822H1560V896H1040ZM1040 838H1560M1075 822V896M1400 822V896M1480 822V896"/>
+    <path class="ln1 draw" d="M1040 853H1560M1040 867H1560M1040 881H1560" style="stroke-opacity:.6"/>
+    <g class="fade">
+      <text class="s c" x="1046" y="833">REV</text><text class="s c" x="1082" y="833">DESCRIPTION</text><text class="s c" x="1406" y="833">DATE</text><text class="s c" x="1486" y="833">BY</text>
+      <text class="s" x="1052" y="849">A</text><text class="s" x="1082" y="849">FIRST ISSUE FOR CHECKING</text><text class="s" x="1406" y="849">14.02.62</text><text class="s" x="1486" y="849">E.R.V.</text>
+      <text class="s" x="1052" y="863">B</text><text class="s" x="1082" y="863">CRANK THROW 150 TO 170 &#183; LEVER LENGTHENED</text><text class="s" x="1406" y="863">22.05.62</text><text class="s" x="1486" y="863">E.R.V.</text>
+      <text class="s" x="1052" y="877">C</text><text class="s" x="1082" y="877">WING RIBS 36 TO 48 &#183; MEMBRANE ADDED</text><text class="s" x="1406" y="877">03.09.62</text><text class="s" x="1486" y="877">T.H.</text>
+      <text class="s b" x="1052" y="892" style="fill:#ffb36b">D</text><text class="s b" x="1082" y="892" style="fill:#ffb36b">GEARBOX TO PYLON HEAD &#183; RATIO 2.5:1</text><text class="s" x="1406" y="892">09.11.62</text><text class="s" x="1486" y="892">E.R.V.</text>
+    </g>
+  </g>
+
+  <!-- bill of materials -->
+  <g id="bom">
+    <path class="ln draw" d="M1040 440H1560V812H1040Z"/>
+    <path class="ln1 draw" d="M1040 468H1560M1078 440V812M1362 440V812M1406 440V812"/>
+    <path class="tn draw" d="M1040 496H1560M1040 524H1560M1040 552H1560M1040 580H1560M1040 608H1560M1040 636H1560M1040 664H1560M1040 692H1560M1040 720H1560M1040 748H1560M1040 776H1560"/>
+    <g class="fade">
+      <text class="s c mid" x="1059" y="458">ITEM</text><text class="s c" x="1088" y="458">DESCRIPTION</text><text class="s c mid" x="1384" y="458">QTY</text><text class="s c" x="1414" y="458">MATERIAL / SPEC</text>
+      <text class="l b" x="1044" y="431">BILL OF MATERIALS</text><text class="s c end" x="1558" y="431">ALL MASSES AND SPECS ARE ILLUSTRATIVE</text>
+    </g>
+    <g class="fade" id="bomrows">
+      <g class="brow" data-part="1" tabindex="0" role="button" aria-label="Item 1, fuselage frame"><rect class="bg" x="1041" y="469" width="518" height="27"/><text class="mid b" x="1059" y="487">1</text><text x="1088" y="487">FUSELAGE FRAME, TUBE TRUSS</text><text class="mid" x="1384" y="487">1</text><text x="1414" y="487">CR-MO 4130 &#216;25</text></g>
+      <g class="brow" data-part="2" tabindex="0" role="button" aria-label="Item 2, pilot seat and harness"><rect class="bg" x="1041" y="497" width="518" height="27"/><text class="mid b" x="1059" y="515">2</text><text x="1088" y="515">PILOT SEAT &amp; HARNESS</text><text class="mid" x="1384" y="515">1</text><text x="1414" y="515">AL + WEBBING</text></g>
+      <g class="brow" data-part="3" tabindex="0" role="button" aria-label="Item 3, pedal crank set"><rect class="bg" x="1041" y="525" width="518" height="27"/><text class="mid b" x="1059" y="543">3</text><text x="1088" y="543">PEDAL CRANK SET, 170 MM</text><text class="mid" x="1384" y="543">1</text><text x="1414" y="543">7075-T6</text></g>
+      <g class="brow" data-part="4" tabindex="0" role="button" aria-label="Item 4, chain drive"><rect class="bg" x="1041" y="553" width="518" height="27"/><text class="mid b" x="1059" y="571">4</text><text x="1088" y="571">CHAIN DRIVE 08B, 2.5 : 1</text><text class="mid" x="1384" y="571">1</text><text x="1414" y="571">STEEL Z24 / Z60</text></g>
+      <g class="brow" data-part="5" tabindex="0" role="button" aria-label="Item 5, gearbox housing"><rect class="bg" x="1041" y="581" width="518" height="27"/><text class="mid b" x="1059" y="599">5</text><text x="1088" y="599">GEARBOX HOUSING</text><text class="mid" x="1384" y="599">1</text><text x="1414" y="599">AL 6061-T6</text></g>
+      <g class="brow" data-part="6" tabindex="0" role="button" aria-label="Item 6, crank gear pair"><rect class="bg" x="1041" y="609" width="518" height="27"/><text class="mid b" x="1059" y="627">6</text><text x="1088" y="627">CRANK GEAR PAIR, Z20 M4</text><text class="mid" x="1384" y="627">2</text><text x="1414" y="627">STEEL 16MNCR5</text></g>
+      <g class="brow" data-part="7" tabindex="0" role="button" aria-label="Item 7, connecting rod"><rect class="bg" x="1041" y="637" width="518" height="27"/><text class="mid b" x="1059" y="655">7</text><text x="1088" y="655">CONNECTING ROD, 336 MM</text><text class="mid" x="1384" y="655">2</text><text x="1414" y="655">TI-6AL-4V TUBE</text></g>
+      <g class="brow" data-part="8" tabindex="0" role="button" aria-label="Item 8, rocker lever"><rect class="bg" x="1041" y="665" width="518" height="27"/><text class="mid b" x="1059" y="683">8</text><text x="1088" y="683">ROCKER LEVER, 189 MM</text><text class="mid" x="1384" y="683">2</text><text x="1414" y="683">AL 7075-T6</text></g>
+      <g class="brow" data-part="9" tabindex="0" role="button" aria-label="Item 9, twin wing spars"><rect class="bg" x="1041" y="693" width="518" height="27"/><text class="mid b" x="1059" y="711">9</text><text x="1088" y="711">WING SPAR, TWIN &#216;45</text><text class="mid" x="1384" y="711">4</text><text x="1414" y="711">CARBON / EPOXY</text></g>
+      <g class="brow" data-part="10" tabindex="0" role="button" aria-label="Item 10, wing ribs"><rect class="bg" x="1041" y="721" width="518" height="27"/><text class="mid b" x="1059" y="739">10</text><text x="1088" y="739">WING RIB, 3 MM</text><text class="mid" x="1384" y="739">48</text><text x="1414" y="739">BALSA, CARBON CAP</text></g>
+      <g class="brow" data-part="11" tabindex="0" role="button" aria-label="Item 11, wing membrane"><rect class="bg" x="1041" y="749" width="518" height="27"/><text class="mid b" x="1059" y="767">11</text><text x="1088" y="767">WING MEMBRANE, 38 G/M&#178;</text><text class="mid" x="1384" y="767">2</text><text x="1414" y="767">RIPSTOP NYLON</text></g>
+      <g class="brow" data-part="12" tabindex="0" role="button" aria-label="Item 12, tail boom and empennage"><rect class="bg" x="1041" y="777" width="518" height="34"/><text class="mid b" x="1059" y="798">12</text><text x="1088" y="798">TAIL BOOM &amp; EMPENNAGE</text><text class="mid" x="1384" y="798">1</text><text x="1414" y="798">CR-MO + FOAM</text></g>
+    </g>
+  </g>
+</g>
+
+<!-- ============ views ============ -->
+<text class="l b fade" data-st="2" x="72" y="462">SIDE ELEVATION</text><text class="s c fade" data-st="2" x="72" y="474">SCALE 1:20 &#183; PILOT AND PEDAL DRIVE SHOWN IN MID-STROKE</text>
+<text class="l b fade" data-st="2" x="72" y="1040">PLAN</text><text class="s c fade" data-st="2" x="72" y="1052">SCALE 1:20 &#183; WINGS SHOWN AT MEAN FLAP ANGLE (DASHED) AND LIVE</text>
+
+<!-- ---------- SIDE ELEVATION (nose to the left) ---------- -->
+<g id="side">
+  <g data-st="2">
+    <path class="cl fade" d="M96 205H430"/>
+    <path class="cl fade" d="M100 300H230"/>
+    <path class="hv draw" d="M96 418H330"/>
+    <path class="tn draw" d="M104 418l-9 9M122 418l-9 9M140 418l-9 9M158 418l-9 9M176 418l-9 9M194 418l-9 9M212 418l-9 9M230 418l-9 9M248 418l-9 9M266 418l-9 9M284 418l-9 9M302 418l-9 9M320 418l-9 9"/>
+  </g>
+  <g data-part="1" data-st="2">
+    <path class="ln draw" d="M150 286L230 268L330 262L470 262L880 278"/>
+    <path class="ln draw" d="M150 326L215 352L330 362L440 352L500 318L880 290"/>
+    <path class="ln draw" d="M150 286C130 292 124 300 126 306C124 312 130 320 150 326"/>
+    <path class="ln1 draw" d="M230 268L215 352M330 262V362M392 262V357M465 262V338M230 268L330 362M330 262L392 357M392 262L465 338"/>
+    <path class="ln1 draw" d="M500 318L540 265L600 311L660 269L720 302L780 274L840 293L880 278M540 265V315M600 267V311M660 269V306M720 272V302M780 274V297M840 276V293"/>
+    <path class="ln1 draw" d="M318 262L346 234M422 262L394 234M326 254H414"/>
+    <path class="ln1 draw" d="M285 394m-24 0a24 24 0 1 0 48 0a24 24 0 1 0 -48 0M300 362L288 392M270 362L282 392M285 394m-19 0a19 19 0 1 0 38 0a19 19 0 1 0 -38 0"/>
+    <path class="ln1 draw" d="M215 352L220 340M330 362L326 346M470 262L470 250"/>
+    <g class="fade" style="--d:0s">
+      <circle class="fl" cx="230" cy="268" r="2.6"/><circle class="fl" cx="330" cy="262" r="2.6"/><circle class="fl" cx="392" cy="262" r="2.6"/><circle class="fl" cx="470" cy="262" r="2.6"/><circle class="fl" cx="215" cy="352" r="2.6"/><circle class="fl" cx="330" cy="362" r="2.6"/><circle class="fl" cx="392" cy="357" r="2.6"/><circle class="fl" cx="440" cy="352" r="2.6"/><circle class="fl" cx="500" cy="318" r="2.6"/>
+    </g>
+  </g>
+  <g data-part="12" data-st="2">
+    <path class="ln draw" d="M846 278L872 198L898 198L906 284"/>
+    <path class="hv draw" d="M826 285H920"/>
+    <path class="ln1 draw" d="M872 198L868 284M886 198L888 284M858 240H902"/>
+    <path class="ln1 draw" d="M906 282L930 282L930 288L906 288" style="stroke-opacity:.9"/>
+  </g>
+  <g data-part="2" data-st="2">
+    <path class="ln draw" d="M322 262C334 236 400 232 424 262"/>
+    <path class="hv draw" d="M282 342H318M318 342L364 292"/>
+    <path class="ln1 draw" d="M312 338L354 290"/>
+    <circle class="ln fade" cx="368" cy="276" r="13"/>
+    <path class="ln1 draw" d="M298 336L352 290M352 292L326 306"/>
+  </g>
+  <g data-part="3" data-st="2">
+    <circle class="ln1 fade" cx="190" cy="300" r="8"/><circle class="ln1 fade" cx="190" cy="300" r="2.6"/>
+  </g>
+  <g data-part="5" data-st="2">
+    <rect class="ln draw" x="331" y="180" width="78" height="54" rx="8"/>
+    <path class="ln1 draw" d="M340 190h60M340 224h60"/>
+    <circle class="fl fade" cx="340" cy="189" r="2"/><circle class="fl fade" cx="400" cy="189" r="2"/><circle class="fl fade" cx="340" cy="225" r="2"/><circle class="fl fade" cx="400" cy="225" r="2"/>
+  </g>
+  <g data-st="2">
+    <path class="cl fade" d="M370 150V250"/>
+  </g>
+  <!-- edge-on crank gears, rods, levers (see section A-A) -->
+  <g data-part="6" data-st="2"><rect class="ln1 fade" x="376" y="196" width="8" height="24"/></g>
+  <g data-part="7" data-st="2"><path class="ln1 draw" d="M392 214L397 206M392 214L389 224"/></g>
+  <g data-part="8" data-st="2"><path class="ln1 draw" d="M386 198L398 202"/></g>
+
+  <!-- chain + sprockets (dynamic geometry filled by script) -->
+  <g data-part="4" data-st="3">
+    <path id="chain" class="ln1 fade" fill="none" style="stroke-dasharray:3 2"/>
+    <circle id="chainring" class="ln1 fade" cx="190" cy="300" r="5.2" style="stroke-dasharray:1.6 1.6"/>
+    <g class="fade" id="bigSprocket"><circle class="ln1" cx="350" cy="207" r="17.5" style="stroke-dasharray:2.2 1.4"/><circle class="ln1" cx="350" cy="207" r="14"/><circle class="ln1" cx="350" cy="207" r="3"/><path class="ln1" d="M350 207H364" id="spk"/></g>
+  </g>
+  <!-- pedal crank + legs (dynamic) -->
+  <g data-part="3" data-st="3">
+    <path id="crankA" class="hv fade" d="M190 300L190 288"/><path id="crankB" class="hv fade" d="M190 300L190 312"/>
+    <rect id="pedA" class="ln1 fade" x="-4" y="-1.6" width="8" height="3.2" transform="translate(190 288)"/><rect id="pedB" class="ln1 fade" x="-4" y="-1.6" width="8" height="3.2" transform="translate(190 312)"/>
+  </g>
+  <g data-part="2" data-st="3">
+    <polyline id="legN" class="ln1 fade" fill="none" points="298,334 250,320 190,312"/>
+    <polyline id="legF" class="hid fade" fill="none" points="298,334 250,320 190,288"/>
+  </g>
+
+  <!-- centre of gravity -->
+  <g data-st="4">
+    <circle class="ln1 fade" cx="412" cy="322" r="7"/>
+    <path class="fl fade" d="M412 322V315A7 7 0 0 1 419 322ZM412 322V329A7 7 0 0 1 405 322Z"/>
+    <path class="tn fade" d="M401 322H423M412 311V333"/>
+    <text class="s c fade" x="424" y="340">C.G. AT 28% MAC</text>
+  </g>
+  <!-- section marks A-A -->
+  <g data-st="4">
+    <path class="hv fade" d="M370 152V238M370 152h-26M370 238h-26" style="stroke-dasharray:14 4 4 4;stroke-width:2.4"/>
+    <path class="ah fade" d="M344 152l9-4v8zM344 238l9-4v8z"/>
+    <text class="l b fade" x="376" y="146">A</text><text class="l b fade" x="376" y="256">A</text>
+  </g>
+
+  <!-- dynamic wing seen edge-on-ish -->
+  <g id="sideWing" data-st="3">
+    <polygon id="sw_mem" data-part="11" class="fade" fill="url(#fabric)" stroke="none"/>
+    <path id="sw_ribs" data-part="10" class="tn fade" fill="none" style="stroke-opacity:.9"/>
+    <polyline id="sw_f" data-part="9" class="ln fade" fill="none"/>
+    <polyline id="sw_r" data-part="9" class="ln fade" fill="none"/>
+    <circle class="ln1 fade" cx="370" cy="205" r="5"/><path class="ln1 fade" d="M364 205H376M370 199V211"/>
+  </g>
+</g>
+
+<!-- ---------- PLAN VIEW ---------- -->
+<g id="plan">
+  <g data-st="2">
+    <path class="cl fade" d="M100 775H935"/>
+    <path class="ln1 draw" d="M104 767V783M110 767V783" style="stroke-opacity:.8"/><path class="ln1 draw" d="M928 767V783M922 767V783" style="stroke-opacity:.8"/>
+  </g>
+  <g data-part="1" data-st="2">
+    <path class="ln draw" d="M130 775C130 758 150 752 190 752L470 758V792L190 798C150 798 130 792 130 775Z"/>
+    <path class="ln draw" d="M470 764L880 772M470 786L880 778"/>
+    <path class="ln1 draw" d="M200 752V798M260 753V797M320 755V795M392 757V793M470 758V792"/>
+    <path class="ln1 draw" d="M470 764L540 771V779L470 786M540 771V779M600 772V778M660 773V777M720 774V776M780 775V775"/>
+  </g>
+  <g data-part="12" data-st="2">
+    <path class="ln draw" d="M836 703L884 709V841L836 847Z"/>
+    <path class="ln1 draw" d="M872 707V843"/><path class="hv draw" d="M826 775H892" style="stroke-width:5"/>
+    <path class="ln1 draw" d="M872 707L884 709V841L872 843Z" fill="url(#hatchS)" style="stroke-opacity:.6"/>
+  </g>
+  <g data-part="5" data-st="2">
+    <rect class="ln draw" x="331" y="756" width="78" height="38" rx="7"/>
+    <circle class="fl fade" cx="339" cy="763" r="2"/><circle class="fl fade" cx="401" cy="763" r="2"/><circle class="fl fade" cx="339" cy="787" r="2"/><circle class="fl fade" cx="401" cy="787" r="2"/>
+  </g>
+  <g data-part="2" data-st="2">
+    <circle class="ln fade" cx="368" cy="775" r="12"/>
+    <path class="ln1 draw" d="M356 766L352 784M380 766L384 784M352 770L306 762M352 780L306 788M306 762L262 764M306 788L262 786M262 764L212 768M262 786L212 782"/>
+  </g>
+  <g data-part="3" data-st="2">
+    <path class="ln1 draw" d="M190 758V792"/><rect class="ln1 fade" x="184" y="754" width="12" height="6"/><rect class="ln1 fade" x="184" y="790" width="12" height="6"/>
+  </g>
+  <g data-part="4" data-st="3">
+    <path id="chainP" class="ln1 fade" fill="none" d="M190 768L350 768M190 782L350 782" style="stroke-dasharray:3 2"/>
+  </g>
+  <!-- reference: wings at mean flap angle -->
+  <g data-st="3"><polygon id="pw_mean" class="hid fade" fill="none"/><polygon id="pw_meanB" class="hid fade" fill="none"/></g>
+  <!-- live wings -->
+  <g id="planWing" data-st="3">
+    <polygon id="pw_memT" data-part="11" class="fade" fill="url(#fabric)" stroke="none"/>
+    <polygon id="pw_memB" data-part="11" class="fade" fill="url(#fabric)" stroke="none"/>
+    <path id="pw_ribsT" data-part="10" class="tn fade" fill="none" style="stroke-opacity:.95"/>
+    <path id="pw_ribsB" data-part="10" class="tn fade" fill="none" style="stroke-opacity:.95"/>
+    <polyline id="pw_leT" data-part="11" class="ln1 fade" fill="none"/><polyline id="pw_teT" data-part="11" class="ln1 fade" fill="none"/>
+    <polyline id="pw_leB" data-part="11" class="ln1 fade" fill="none"/><polyline id="pw_teB" data-part="11" class="ln1 fade" fill="none"/>
+    <polyline id="pw_fT" data-part="9" class="ln fade" fill="none"/><polyline id="pw_rT" data-part="9" class="ln fade" fill="none"/>
+    <polyline id="pw_fB" data-part="9" class="ln fade" fill="none"/><polyline id="pw_rB" data-part="9" class="ln fade" fill="none"/>
+    <polyline id="tipT" class="hid fade" fill="none" style="stroke:#dff3ff;stroke-opacity:.8"/><polyline id="tipB" class="hid fade" fill="none" style="stroke:#dff3ff;stroke-opacity:.8"/>
+    <circle id="tipTd" class="fl fade" r="3.2"/><circle id="tipBd" class="fl fade" r="3.2"/>
+    <circle class="ln1 fade" cx="342" cy="758" r="4"/><circle class="ln1 fade" cx="397" cy="758" r="4"/><circle class="ln1 fade" cx="342" cy="792" r="4"/><circle class="ln1 fade" cx="397" cy="792" r="4"/>
+  </g>
+</g>
+
+<!-- ---------- SECTION A-A (front elevation, scale 1:5) ---------- -->
+<g id="sect">
+  <g data-st="2">
+    <rect class="tn draw" x="1048" y="64" width="504" height="356"/>
+    <path class="tn draw" d="M1048 64l10 0M1048 64l0 10M1552 64l-10 0M1552 64l0 10M1048 420l10 0M1048 420l0 -10M1552 420l-10 0M1552 420l0 -10"/>
+    <path class="cl fade" d="M1300 84V418"/>
+    <path class="cl fade" d="M1096 250H1504"/>
+    <path class="cl fade" d="M1096 210H1504"/>
+  </g>
+  <text class="l b fade" data-st="2" x="1062" y="90">SECTION A&#8211;A</text>
+  <text class="s c fade" data-st="2" x="1062" y="104">WING DRIVE &#183; FRONT ELEVATION LOOKING FORWARD &#183; SCALE 1:5</text>
+  <!-- fixed structure: cut faces -->
+  <g data-part="5" data-st="2">
+    <path class="ln draw" d="M1190 302H1410V312H1190ZM1204 194H1396V202H1204Z"/>
+    <path class="ln1 draw" d="M1190 302V262M1190 238V202M1410 302V262M1410 238V202" style="stroke-opacity:.9"/>
+    <rect class="fade" x="1190" y="302" width="220" height="10" fill="url(#hatch)"/><rect class="fade" x="1204" y="194" width="192" height="8" fill="url(#hatch)"/>
+    <path class="ln draw" d="M1198 200L1150 195A15 15 0 0 0 1150 225L1198 220Z"/><path class="fade" d="M1198 200L1150 195A15 15 0 0 0 1150 225L1198 220Z" fill="url(#hatch)"/>
+    <path class="ln draw" d="M1402 200L1450 195A15 15 0 0 1 1450 225L1402 220Z"/><path class="fade" d="M1402 200L1450 195A15 15 0 0 1 1450 225L1402 220Z" fill="url(#hatch)"/>
+  </g>
+  <g data-part="1" data-st="2">
+    <path class="ln draw" d="M1244 344a12 12 0 1 0 24 0a12 12 0 1 0 -24 0M1332 344a12 12 0 1 0 24 0a12 12 0 1 0 -24 0M1286 384a14 14 0 1 0 28 0a14 14 0 1 0 -28 0"/>
+    <path class="fade" fill-rule="evenodd" fill="url(#hatch)" d="M1244 344a12 12 0 1 0 24 0a12 12 0 1 0 -24 0M1248 344a8 8 0 1 1 16 0a8 8 0 1 1 -16 0M1332 344a12 12 0 1 0 24 0a12 12 0 1 0 -24 0M1336 344a8 8 0 1 1 16 0a8 8 0 1 1 -16 0M1286 384a14 14 0 1 0 28 0a14 14 0 1 0 -28 0M1290 384a10 10 0 1 1 20 0a10 10 0 1 1 -20 0"/>
+    <path class="ln1 draw" d="M1256 332L1236 312M1344 332L1364 312M1264 353L1290 374M1336 353L1310 374"/>
+  </g>
+  <!-- gears -->
+  <g id="gearL" data-part="6" data-st="3"><path id="gearLp" class="ln fade" fill="none"/><circle class="ln1 fade" r="13" fill="url(#hatch)"/><path class="ln1 fade" d="M0 0H26"/><circle class="ln fade" cx="26" cy="0" r="5.5" style="fill:#0c3c8c"/><circle class="fl fade" cx="26" cy="0" r="1.6"/></g>
+  <g id="gearR" data-part="6" data-st="3"><path id="gearRp" class="ln fade" fill="none"/><circle class="ln1 fade" r="9" fill="url(#hatch)"/><path class="ln1 fade" d="M0 0H-26"/><circle class="ln fade" cx="-26" cy="0" r="5.5" style="fill:#0c3c8c"/><circle class="fl fade" cx="-26" cy="0" r="1.6"/></g>
+  <!-- rods, levers, spars (dynamic) -->
+  <g data-part="7" data-st="3"><line id="rodL" class="ln fade" style="stroke-width:3.4"/><line id="rodR" class="ln fade" style="stroke-width:3.4"/></g>
+  <g data-part="8" data-st="3"><line id="levL" class="hv fade"/><line id="levR" class="hv fade"/><circle id="bL" class="ln fade" r="4.6" style="fill:#0c3c8c"/><circle id="bR" class="ln fade" r="4.6" style="fill:#0c3c8c"/></g>
+  <g data-part="9" data-st="3">
+    <line id="sparL" class="hv fade" style="stroke-width:5"/><line id="sparR" class="hv fade" style="stroke-width:5"/>
+    <line id="sparL2" class="ln1 fade"/><line id="sparR2" class="ln1 fade"/>
+    <path id="brkL" class="ln1 fade" d="M-8 -8L-2 -3L-8 2L-2 7L-8 12" style="stroke-width:1.6"/><path id="brkR" class="ln1 fade" d="M8 -8L2 -3L8 2L2 7L8 12" style="stroke-width:1.6"/>
+  </g>
+  <g data-st="3"><circle class="ln fade" cx="1150" cy="210" r="6.5" style="fill:#0c3c8c"/><circle class="fl fade" cx="1150" cy="210" r="1.8"/><circle class="ln fade" cx="1450" cy="210" r="6.5" style="fill:#0c3c8c"/><circle class="fl fade" cx="1450" cy="210" r="1.8"/></g>
+  <text id="psiT" class="m b fade" data-st="4" x="1062" y="370">FLAP &#968; = +0.0&#176;</text>
+  <text class="s c fade" data-st="4" x="1062" y="384">WING ELEVATION FROM THE CRANK-ROCKER</text>
+  <text class="s fade" data-st="4" x="1062" y="411">GEAR CENTRES 252 &#183; CRANK R 91 &#183; ROD 336 &#183; LEVER 189</text>
+  <text class="hand fade" data-st="4" x="1312" y="126" style="font-size:15px">rods must clear the gear teeth</text>
+  <text class="hand fade" data-st="4" x="1348" y="142" style="font-size:15px">at about 186&#176;. check!</text>
+  <path class="tn draw" data-st="4" d="M1340 146C1326 170 1300 196 1276 222M1276 222l9-5M1276 222l3-10"/>
+</g>
+
+<!-- ============ dimensions (stage 4) ============ -->
+<g id="dims" data-st="4">
+  <!-- side -->
+  <path class="tn draw" d="M126 312V446M900 292V446M96 205V420"/>
+  <g class="dim" data-a="126,440" data-b="900,440" data-t="10 840 OVERALL LENGTH" data-o="-6"/>
+  <g class="dim" data-a="104,205" data-b="104,418" data-t="2 980" data-o="-6" data-v="1"/>
+  <path class="tn draw" d="M470 262H490M470 352H490"/>
+  <g class="dim" data-a="484,262" data-b="484,352" data-t="1 260" data-o="-6" data-v="1"/>
+  <!-- plan -->
+  <path class="tn draw" d="M420 559H985M420 991H985M836 703H915M836 847H915"/>
+  <g class="dim" data-a="975,559" data-b="975,991" data-t="6 050 WINGSPAN" data-o="-6" data-v="1"/>
+  <g class="dim" data-a="908,703" data-b="908,847" data-t="2 020" data-o="-6" data-v="1"/>
+  <path class="tn draw" d="M320 752V734M430 752V734"/>
+  <g class="dim" data-a="320,738" data-b="430,738" data-t="1 540" data-o="-5"/>
+  <!-- section -->
+  <path class="tn draw" d="M1264 296V338M1336 296V338"/>
+  <g class="dim" data-a="1264,330" data-b="1336,330" data-t="252" data-o="-5"/>
+  <g class="dim" data-a="1150,176" data-b="1300,176" data-t="525" data-o="-5"/>
+  <path class="tn draw" d="M1150 190V170M1300 190V170"/>
+  <g class="dim" data-a="1118,210" data-b="1118,250" data-t="140" data-o="-5" data-v="1"/>
+  <path class="tn draw" d="M1096 210H1122M1096 250H1122"/>
+</g>
+
+<!-- ============ callouts, notes, revision (stage 4) ============ -->
+<g id="callouts" data-st="4">
+  <g class="ball" data-part="1" data-at="606,222" data-to="600,268"/>
+  <g class="ball" data-part="1" data-at="236,724" data-to="250,753"/>
+  <g class="ball" data-part="2" data-at="338,412" data-to="318,344"/>
+  <g class="ball" data-part="3" data-at="150,346" data-to="190,306"/>
+  <g class="ball" data-part="4" data-at="238,212" data-to="256,262"/>
+  <g class="ball" data-part="5" data-at="466,212" data-to="409,206"/>
+  <g class="ball" data-part="5" data-at="452,716" data-to="406,760"/>
+  <g class="ball" data-part="6" data-at="1246,140" data-to="1258,226"/>
+  <g class="ball" data-part="7" data-at="1212,336" data-to="1207,262"/>
+  <g class="ball" data-part="8" data-at="1122,296" data-to="1170,238"/>
+  <g class="ball" data-part="9" data-at="284,704" data-to="338,690"/>
+  <g class="ball" data-part="10" data-at="470,640" data-to="382,690"/>
+  <g class="ball" data-part="11" data-at="460,588" data-to="392,626"/>
+  <g class="ball" data-part="12" data-at="826,214" data-to="864,242"/>
+  <g class="ball" data-part="12" data-at="860,684" data-to="860,716"/>
+  <g class="ball" data-part="9" data-at="1490,170" data-to="1446,196"/>
+</g>
+
+<!-- general notes -->
+<g id="notes" data-st="4" class="fade">
+  <path class="ln1" d="M72 528H304" style="stroke-opacity:.8"/>
+  <text class="m b" x="72" y="522">GENERAL NOTES</text>
+  <text class="s" x="72" y="546">1. ALL DIMENSIONS IN MM UNLESS NOTED.</text>
+  <text class="s" x="72" y="560">2. TUBE CR-MO 4130 &#216;25 &#215; 1.2 UNLESS</text>
+  <text class="s" x="72" y="572">   OTHERWISE NOTED.</text>
+  <text class="s" x="72" y="586">3. FASTENERS AN3 / AN4, SAFETY-WIRED.</text>
+  <text class="s" x="72" y="600">4. RATIO PEDAL : WING CRANK = 2.5 : 1.</text>
+  <text class="s" x="72" y="614">5. FLAP STROKE 63.5&#176; TOTAL: DOWNSTROKE</text>
+  <text class="s" x="72" y="626">   166&#176; OF CRANK, UPSTROKE 194&#176;.</text>
+  <text class="s" x="72" y="640">6. EMPENNAGE SHEET 4, CONTROLS SHEET 5.</text>
+  <text class="s c" x="72" y="656">DO NOT SCALE FROM THIS DRAWING.</text>
+</g>
+
+<!-- revision cloud + tag -->
+<g id="revg" data-st="4">
+  <path id="cloud" class="rev draw" fill="none"/>
+  <path class="rev draw" d="M452 122l13 -22l13 22Z"/>
+  <text class="s b revf fade" x="465" y="118" style="text-anchor:middle;fill:#ffb36b">D</text>
+  <path class="rev draw" d="M458 122L436 176" style="stroke-width:1.4"/>
+  <text class="hand fade" x="484" y="112" style="fill:#ffb36b;font-size:15px">gearbox moved to</text>
+  <text class="hand fade" x="484" y="128" style="fill:#ffb36b;font-size:15px">the pylon head, 2.5:1</text>
+</g>
+
+<!-- hand notes -->
+<g data-st="4">
+  <path class="tn draw" d="M112 706H68M68 706l9 -3M68 706l9 3"/><text class="s c fade" x="72" y="698">DIRECTION OF FLIGHT</text>
+  <text class="hand fade" x="92" y="236">knee clearance??</text>
+  <text class="hand fade" x="92" y="254">check w/ T.H. before</text>
+  <text class="hand fade" x="92" y="272">we cut any tube!</text>
+  <path class="tn draw" d="M150 278C160 296 174 298 184 296M184 296l-9 -3M184 296l-5 -8"/>
+  <text class="hand fade" x="540" y="196">wing flexes, tip lags the root</text>
+  <text class="hand fade" x="540" y="214">by ~40&#176;. that is the point.</text>
+  <path class="tn draw" d="M536 208C500 200 470 170 440 150M440 150l9 3M440 150l3 9" style="stroke-opacity:.8"/>
+  <text class="hand fade" x="440" y="528" style="font-size:16px">tips sweep fore-aft as they beat</text>
+  <text class="hand fade" x="440" y="546" style="font-size:14px;fill:#7fd0ff">(dashed loop = tip trace)</text>
+  <text class="hand fade" x="96" y="1004" style="font-size:15px">(coffee is not a structural member)</text>
+  <text class="hand fade" x="700" y="932" style="font-size:16px">no flying above 8 m/s, please.</text>
+  <text class="hand fade" x="700" y="950" style="font-size:16px">the wind has opinions.</text>
+</g>
+
+<!-- ============ paper wear (on top, no pointer events) ============ -->
+<g id="wear" pointer-events="none">
+  <rect x="770" y="0" width="60" height="1100" fill="url(#creaseV)"/>
+  <rect x="0" y="520" width="1600" height="60" fill="url(#creaseH)"/>
+  <g transform="translate(176 902)"><circle r="58" fill="url(#ringIn)"/><circle r="58" fill="url(#ring)"/><circle r="56" fill="none" stroke="#b57a3a" stroke-opacity=".16" stroke-width="1.4" filter="url(#soft)"/><circle cx="62" cy="34" r="20" fill="url(#ring)" opacity=".55" transform="rotate(14)"/></g>
+  <rect width="1600" height="1100" fill="url(#vig)"/>
+</g>
+</svg>
+</main>
+
+<p class="hintbox" id="hint">Drag to pan &middot; wheel or pinch to zoom &middot; hover a bill-of-materials row to find the part</p>
+<p class="mcap" aria-hidden="true"><b>ORNITHOPTER Mk.IV</b><span>Wing linkage &amp; fuselage &middot; sheet 3 of 7<br>pinch to zoom &middot; drag to pan &middot; tap a view below</span></p>
+
+<nav class="views" aria-label="Views">
+  <button type="button" data-view="fit" aria-pressed="true">Sheet</button>
+  <button type="button" data-view="side" aria-pressed="false">Side</button>
+  <button type="button" data-view="plan" aria-pressed="false">Plan</button>
+  <button type="button" data-view="sect" aria-pressed="false">Section A&#8211;A</button>
+  <button type="button" data-view="bom" aria-pressed="false">BOM</button>
+</nav>
+
+<section class="rig" aria-label="Test rig controls">
+  <div class="rig-row">
+    <button class="pb" id="play" type="button" aria-pressed="true" aria-label="Pause the mechanism">
+      <svg class="ic-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2h4v12H3zM9 2h4v12H9z"/></svg>
+      <svg class="ic-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5l11 6.5-11 6.5z"/></svg>
+    </button>
+    <label for="rpm">CRANK RPM</label>
+    <input id="rpm" type="range" min="4" max="60" step="1" value="24" aria-label="Crank RPM">
+    <output id="rpmO" for="rpm">24</output>
+  </div>
+  <p class="ro" id="ro" aria-live="off"></p>
+</section>
+
+<div class="sr"><table>
+  <caption>Bill of materials, ornithopter Mk.IV sheet 3 (illustrative)</caption>
+  <thead><tr><th>Item</th><th>Description</th><th>Qty</th><th>Material</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Fuselage frame, tube truss</td><td>1</td><td>Cr-Mo 4130</td></tr>
+    <tr><td>2</td><td>Pilot seat and harness</td><td>1</td><td>Aluminium and webbing</td></tr>
+    <tr><td>3</td><td>Pedal crank set, 170 mm</td><td>1</td><td>7075-T6</td></tr>
+    <tr><td>4</td><td>Chain drive 08B, 2.5 to 1</td><td>1</td><td>Steel</td></tr>
+    <tr><td>5</td><td>Gearbox housing</td><td>1</td><td>Aluminium 6061-T6</td></tr>
+    <tr><td>6</td><td>Crank gear pair, 20 teeth module 4</td><td>2</td><td>Steel 16MnCr5</td></tr>
+    <tr><td>7</td><td>Connecting rod, 336 mm</td><td>2</td><td>Titanium tube</td></tr>
+    <tr><td>8</td><td>Rocker lever, 189 mm</td><td>2</td><td>Aluminium 7075-T6</td></tr>
+    <tr><td>9</td><td>Wing spar, twin</td><td>4</td><td>Carbon and epoxy</td></tr>
+    <tr><td>10</td><td>Wing rib, 3 mm</td><td>48</td><td>Balsa with carbon caps</td></tr>
+    <tr><td>11</td><td>Wing membrane</td><td>2</td><td>Ripstop nylon</td></tr>
+    <tr><td>12</td><td>Tail boom and empennage</td><td>1</td><td>Cr-Mo and foam</td></tr>
+  </tbody>
+</table></div>
+
+<script>
+(function(){
+'use strict';
+var NS='http://www.w3.org/2000/svg',doc=document,root=doc.documentElement;
+function $(id){return doc.getElementById(id)}
+var reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+if(reduce)root.classList.add('rm');
+var svg=$('sheet'),TAU=Math.PI*2,D2R=Math.PI/180;
+function el(tag,attrs,parent){var e=doc.createElementNS(NS,tag),k;for(k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
+
+/* ---------------- paper noise tile (drawn once, tiny) ---------------- */
+try{
+  var nc=doc.createElement('canvas');nc.width=nc.height=128;
+  var ng=nc.getContext('2d'),nd=ng.createImageData(128,128),s=29,q;
+  for(q=0;q<128*128;q++){s=(Math.imul(s,1664525)+1013904223)>>>0;var v=s>>>24;nd.data[q*4]=nd.data[q*4+1]=255;nd.data[q*4+2]=255;nd.data[q*4+3]=v>236?46:(v<20?26:0)}
+  ng.putImageData(nd,0,0);
+  $('noiseImg').setAttribute('href',nc.toDataURL('image/png'));
+}catch(e){}
+
+/* ---------------- geometry: the crank-rocker (front elevation, 1 px = 3.5 mm) ---------------- */
+var SX=1300,SY=250;                       /* centre of the gear pair, sheet coordinates */
+var GLx=-36,GLy=0,HLx=-150,HLy=40,CA=26,CB=96,CC=54,NT=20,GR=36,TOOTH=8,SPARL=118;
+function omegaAt(phi){
+  var ax=GLx+CA*Math.cos(phi),ay=GLy+CA*Math.sin(phi),dx=ax-HLx,dy=ay-HLy,D=Math.sqrt(dx*dx+dy*dy);
+  var cg=(CC*CC+D*D-CB*CB)/(2*CC*D);cg=cg>1?1:cg<-1?-1:cg;
+  return Math.atan2(dy,dx)-Math.acos(cg);
+}
+var TN=720,omTab=new Float32Array(TN+1),gTab=new Float32Array(TN+1),omMin=9,omMax=-9,i;
+for(i=0;i<=TN;i++){var o=omegaAt(i/TN*TAU);omTab[i]=o;if(o<omMin)omMin=o;if(o>omMax)omMax=o}
+var omMid=(omMin+omMax)/2,omHalf=(omMax-omMin)/2;
+for(i=0;i<=TN;i++)gTab[i]=-(omTab[i]-omMid)/omHalf;         /* +1 = wing at the top of its stroke */
+function tab(t,phi){var u=phi/TAU;u-=Math.floor(u);var x=u*TN,j=x|0,f=x-j;return t[j]*(1-f)+t[j+1]*f}
+var HALFDEG=omHalf/D2R,TH0=4;                                 /* degrees */
+
+/* gear outlines */
+function gearPath(r,n,phase){
+  var ro=r+TOOTH*.55,ri=r-TOOTH*.45,p=TAU/n,d='',k,a,pts=[[-.5,ri],[-.22,ri],[-.13,ro],[.13,ro],[.22,ri]],j;
+  for(k=0;k<n;k++){
+    a=phase+k*p;
+    for(j=0;j<pts.length;j++){d+=(k===0&&j===0?'M':'L')+(Math.cos(a+pts[j][0]*p)*pts[j][1]).toFixed(2)+' '+(Math.sin(a+pts[j][0]*p)*pts[j][1]).toFixed(2)}
+  }
+  return d+'Z';
+}
+$('gearLp').setAttribute('d',gearPath(GR,NT,0));
+$('gearRp').setAttribute('d',gearPath(GR,NT,Math.PI/NT));
+
+/* revision cloud: scalloped arcs round a rectangle */
+function cloud(x,y,w,h,r){
+  var d='M'+x+' '+y,nx=Math.max(3,Math.round(w/r/2)),ny=Math.max(3,Math.round(h/r/2)),i,sx=w/nx,sy=h/ny;
+  for(i=0;i<nx;i++)d+='a'+(sx*.62).toFixed(1)+' '+(sx*.62).toFixed(1)+' 0 0 1 '+sx.toFixed(1)+' 0';
+  for(i=0;i<ny;i++)d+='a'+(sy*.62).toFixed(1)+' '+(sy*.62).toFixed(1)+' 0 0 1 0 '+sy.toFixed(1);
+  for(i=0;i<nx;i++)d+='a'+(sx*.62).toFixed(1)+' '+(sx*.62).toFixed(1)+' 0 0 1 '+(-sx).toFixed(1)+' 0';
+  for(i=0;i<ny;i++)d+='a'+(sy*.62).toFixed(1)+' '+(sy*.62).toFixed(1)+' 0 0 1 0 '+(-sy).toFixed(1);
+  return d+'Z';
+}
+$('cloud').setAttribute('d',cloud(318,168,124,80,9));
+
+/* dimension lines with arrowheads, built from data attributes */
+Array.prototype.forEach.call(doc.querySelectorAll('.dim'),function(g){
+  var a=g.getAttribute('data-a').split(',').map(Number),b=g.getAttribute('data-b').split(',').map(Number),t=g.getAttribute('data-t'),o=+g.getAttribute('data-o')||-5,vert=g.getAttribute('data-v')==='1';
+  var dx=b[0]-a[0],dy=b[1]-a[1],L=Math.sqrt(dx*dx+dy*dy),ux=dx/L,uy=dy/L,px=-uy,py=ux,al=9,aw=2.8;
+  el('line',{'class':'dl draw',x1:a[0],y1:a[1],x2:b[0],y2:b[1]},g);
+  function head(x,y,sx,sy){el('path',{'class':'ah fade',d:'M'+x+' '+y+'L'+(x+sx*al+px*aw)+' '+(y+sy*al+py*aw)+'L'+(x+sx*al-px*aw)+' '+(y+sy*al-py*aw)+'Z'},g)}
+  head(a[0],a[1],ux,uy);head(b[0],b[1],-ux,-uy);
+  var mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2,tx=el('text',{'class':'fade mid',x:mx,y:my},g);
+  tx.textContent=t;
+  if(vert){tx.setAttribute('transform','translate('+(mx+o)+' '+my+') rotate(-90)');tx.setAttribute('x',0);tx.setAttribute('y',0)}
+  else{tx.setAttribute('y',my+o)}
+});
+/* numbered balloons with leaders */
+Array.prototype.forEach.call(doc.querySelectorAll('.ball'),function(g){
+  var a=g.getAttribute('data-at').split(',').map(Number),b=g.getAttribute('data-to').split(',').map(Number),n=g.getAttribute('data-part');
+  var dx=b[0]-a[0],dy=b[1]-a[1],L=Math.sqrt(dx*dx+dy*dy),ux=dx/L,uy=dy/L;
+  el('path',{'class':'ld draw',d:'M'+(a[0]+ux*12.5).toFixed(1)+' '+(a[1]+uy*12.5).toFixed(1)+'L'+b[0]+' '+b[1]},g);
+  el('circle',{'class':'dot fade',cx:b[0],cy:b[1],r:2.6},g);
+  el('circle',{'class':'fade',cx:a[0],cy:a[1],r:12.5},g);
+  var t=el('text',{'class':'fade',x:a[0],y:a[1]+4.2},g);t.textContent=n;
+});
+
+/* chain outline round two sprockets (tangent lines + sampled arcs) */
+var CR=[190,300,5.2],CS=[350,207,17.5];
+(function(){
+  var dx=CS[0]-CR[0],dy=CS[1]-CR[1],d=Math.sqrt(dx*dx+dy*dy),th=Math.atan2(dy,dx),be=Math.acos((CR[2]-CS[2])/d),pts=[],k,a,st;
+  function P(c,r,ang){return (c[0]+r*Math.cos(ang)).toFixed(1)+' '+(c[1]+r*Math.sin(ang)).toFixed(1)}
+  var path='M'+P(CR,CR[2],th+be)+'L'+P(CS,CS[2],th+be);
+  for(k=1;k<=16;k++){a=th+be-(k/16)*(2*be);path+='L'+P(CS,CS[2],a)}
+  path+='L'+P(CR,CR[2],th-be);
+  for(k=1;k<=16;k++){a=th-be-(k/16)*(TAU-2*be);path+='L'+P(CR,CR[2],a)}
+  $('chain').setAttribute('d',path+'Z');
+})();
+
+/* ---------------- staged draw-on ---------------- */
+var stageBase={1:0,2:.9,3:2.4,4:3.7},stageStep={1:.035,2:.02,3:.03,4:.03};
+(function(){
+  var counters={1:0,2:0,3:0,4:0};
+  Array.prototype.forEach.call(svg.querySelectorAll('.draw'),function(e){e.setAttribute('pathLength','1')});
+  var all=svg.querySelectorAll('.draw,.fade');
+  Array.prototype.forEach.call(all,function(e){
+    var g=e.closest('[data-st]'),st=g?+g.getAttribute('data-st'):1;
+    if(e.classList.contains('fade')&&e.tagName==='g'&&!g)return;
+    var n=counters[st]++;
+    var d=stageBase[st]+Math.min(n*stageStep[st],st===2?1.5:1.3);
+    if(e.classList.contains('fade'))d+=.25;
+    e.style.setProperty('--d',d.toFixed(2)+'s');
+  });
+})();
+
+/* ---------------- wing model ---------------- */
+var NSEG=5,LSEG=40,LAG=.13,TILT=.42,SWB=30,NR=12;
+var ys=new Float32Array(NSEG+1),zs=new Float32Array(NSEG+1);
+function wingStations(phi){
+  var k,th,y=0,z=0;ys[0]=0;zs[0]=0;
+  for(k=0;k<NSEG;k++){
+    th=(TH0+HALFDEG*(1-.06*k)*tab(gTab,phi-LAG*k))*D2R;
+    y+=LSEG*Math.cos(th);z+=LSEG*Math.sin(th);ys[k+1]=y;zs[k+1]=z;
+  }
+}
+function lerpSt(s,arr){var t=s*NSEG,j=t>=NSEG?NSEG-1:t|0,f=t-j;return arr[j]*(1-f)+arr[j+1]*f}
+function chord(s){return 110-52*s}
+function leX(s){return 320+SWB*s}
+var RIBY=[0,0,0,0,0,0,0,0,0,0,0,0,0],RIBX=[0,0,0,0,0,0,0,0,0,0,0,0,0],RIBZ=[0,0,0,0,0,0,0,0,0,0,0,0,0];
+function f1(n){return (Math.round(n*10)/10)}
+var TRN=180,tipHistT=[],tipHistB=[],lastTr=-99;
+function pts(list){var s='',i;for(i=0;i<list.length;i+=2)s+=f1(list[i])+','+f1(list[i+1])+' ';return s}
+function planWings(phi,ghost){
+  var zz=ghost?null:zs,i,s,y,z,c,x,le=[],te=[],fs=[],rs=[],ribsT='',ribsB='';
+  var Y=ghost?function(sv){return sv*LSEG*NSEG*Math.cos(TH0*D2R)}:function(sv){return lerpSt(sv,ys)};
+  var Z=ghost?function(sv){return sv*LSEG*NSEG*Math.sin(TH0*D2R)}:function(sv){return lerpSt(sv,zs)};
+  var leT=[],teT=[],leB=[],teB=[],fT=[],rT=[],fB=[],rB=[],mT=[],mB=[];
+  for(i=0;i<=NR;i++){
+    s=i/NR;y=Y(s);z=Z(s);c=chord(s);x=leX(s)+TILT*z;
+    var yT=758-y,yB=792+y;
+    leT.push(x,yT);teT.push(x+c,yT);leB.push(x,yB);teB.push(x+c,yB);
+    fT.push(x+.2*c,yT);rT.push(x+.72*c,yT);fB.push(x+.2*c,yB);rB.push(x+.72*c,yB);
+    ribsT+='M'+f1(x)+' '+f1(yT)+'H'+f1(x+c);ribsB+='M'+f1(x)+' '+f1(yB)+'H'+f1(x+c);
+    RIBX[i]=x;RIBY[i]=y;RIBZ[i]=z;
+  }
+  var polyT=leT.slice(),polyB=leB.slice(),j;
+  for(j=teT.length-2;j>=0;j-=2)polyT.push(teT[j],teT[j+1]);
+  for(j=teB.length-2;j>=0;j-=2)polyB.push(teB[j],teB[j+1]);
+  return {leT:leT,teT:teT,leB:leB,teB:teB,fT:fT,rT:rT,fB:fB,rB:rB,polyT:polyT,polyB:polyB,ribsT:ribsT,ribsB:ribsB};
+}
+var ghostW=planWings(0,true);
+$('pw_mean').setAttribute('points',pts(ghostW.polyT));$('pw_meanB').setAttribute('points',pts(ghostW.polyB));
+
+/* ---------------- pilot legs (two-bone IK) and pedals ---------------- */
+var HIP=[298,334],THIGH=64,SHIN=64,CRK=12,CAX=190,CAY=300;
+function knee(fx,fy){
+  var dx=fx-HIP[0],dy=fy-HIP[1],d=Math.sqrt(dx*dx+dy*dy);if(d>THIGH+SHIN-.5)d=THIGH+SHIN-.5;
+  var a=(THIGH*THIGH-SHIN*SHIN+d*d)/(2*d),h=Math.sqrt(Math.max(0,THIGH*THIGH-a*a)),ux=dx/Math.sqrt(dx*dx+dy*dy),uy=dy/Math.sqrt(dx*dx+dy*dy);
+  var mx=HIP[0]+ux*a,my=HIP[1]+uy*a,k1x=mx-uy*h,k1y=my+ux*h,k2x=mx+uy*h,k2y=my-ux*h;
+  return k1y<k2y?[k1x,k1y]:[k2x,k2y];
+}
+
+/* ---------------- main update ---------------- */
+var phi=reduce?1.2:0,rpm=0,target=24,playing=!reduce,lastPsi=null,tSt=0;
+var gL=$('gearL'),gR=$('gearR'),rodL=$('rodL'),rodR=$('rodR'),levL=$('levL'),levR=$('levR'),bL=$('bL'),bR=$('bR'),sparL=$('sparL'),sparR=$('sparR'),sparL2=$('sparL2'),sparR2=$('sparR2'),brkL=$('brkL'),brkR=$('brkR'),psiT=$('psiT');
+function setLine(l,x1,y1,x2,y2){l.setAttribute('x1',f1(x1));l.setAttribute('y1',f1(y1));l.setAttribute('x2',f1(x2));l.setAttribute('y2',f1(y2))}
+function update(){
+  var om=tab(omTab,phi),deg=phi/D2R;
+  /* section A-A */
+  gL.setAttribute('transform','translate('+(SX+GLx)+' '+SY+') rotate('+(-deg).toFixed(2)+')');
+  gR.setAttribute('transform','translate('+(SX-GLx)+' '+SY+') rotate('+deg.toFixed(2)+')');
+  var ax=GLx+CA*Math.cos(phi),ay=GLy+CA*Math.sin(phi),bx=HLx+CC*Math.cos(om),by=HLy+CC*Math.sin(om);
+  setLine(rodL,SX+ax,SY-ay,SX+bx,SY-by);setLine(rodR,SX-ax,SY-ay,SX-bx,SY-by);
+  setLine(levL,SX+HLx,SY-HLy,SX+bx,SY-by);setLine(levR,SX-HLx,SY-HLy,SX-bx,SY-by);
+  bL.setAttribute('cx',f1(SX+bx));bL.setAttribute('cy',f1(SY-by));bR.setAttribute('cx',f1(SX-bx));bR.setAttribute('cy',f1(SY-by));
+  var th=TH0*D2R+(omMid-om),sx=-Math.cos(th),sy=-Math.sin(th);     /* elevation th, outward = -x (left wing) */
+  var hx=SX+HLx,hy=SY-HLy;
+  setLine(sparL,hx,hy,hx+sx*SPARL,hy+sy*SPARL);setLine(sparR,2*SX-hx,hy,2*SX-hx-sx*SPARL,hy+sy*SPARL);
+  var nx=-sy*2.6,ny=sx*2.6;
+  setLine(sparL2,hx+nx,hy+ny,hx+sx*SPARL+nx,hy+sy*SPARL+ny);setLine(sparR2,2*SX-hx-nx,hy+ny,2*SX-hx-sx*SPARL-nx,hy+sy*SPARL+ny);
+  var ang=Math.atan2(sy,sx)/D2R;
+  brkL.setAttribute('transform','translate('+f1(hx+sx*SPARL)+' '+f1(hy+sy*SPARL)+') rotate('+f1(ang)+') scale(-1 1)');
+  brkR.setAttribute('transform','translate('+f1(2*SX-hx-sx*SPARL)+' '+f1(hy+sy*SPARL)+') rotate('+f1(180-ang)+')');
+  var psi=th/D2R;
+  if(lastPsi===null||Math.abs(psi-lastPsi)>.15){lastPsi=psi;psiT.textContent='FLAP ψ = '+(psi>=0?'+':'')+psi.toFixed(1)+'°'}
+  /* side: pedals, chain, legs, sprockets */
+  var pa=phi*2.5*-1,cx=Math.cos(pa),cy=Math.sin(pa),p1x=CAX+CRK*cx,p1y=CAY+CRK*cy,p2x=CAX-CRK*cx,p2y=CAY-CRK*cy;
+  $('crankA').setAttribute('d','M'+CAX+' '+CAY+'L'+f1(p1x)+' '+f1(p1y));$('crankB').setAttribute('d','M'+CAX+' '+CAY+'L'+f1(p2x)+' '+f1(p2y));
+  $('pedA').setAttribute('transform','translate('+f1(p1x)+' '+f1(p1y)+')');$('pedB').setAttribute('transform','translate('+f1(p2x)+' '+f1(p2y)+')');
+  var k1=knee(p1x,p1y),k2=knee(p2x,p2y);
+  $('legN').setAttribute('points',HIP[0]+','+HIP[1]+' '+f1(k1[0])+','+f1(k1[1])+' '+f1(p1x)+','+f1(p1y));
+  $('legF').setAttribute('points',HIP[0]+','+HIP[1]+' '+f1(k2[0])+','+f1(k2[1])+' '+f1(p2x)+','+f1(p2y));
+  var chainOff=(pa*CR[2]/2.2)%10;
+  $('chain').style.strokeDashoffset=(-chainOff).toFixed(2);$('chainP').style.strokeDashoffset=(-chainOff).toFixed(2);
+  $('chainring').setAttribute('transform','rotate('+f1(pa/D2R)+' '+CR[0]+' '+CR[1]+')');
+  $('spk').setAttribute('transform','rotate('+f1(pa/D2R/2.5)+' '+CS[0]+' '+CS[1]+')');
+  /* wings */
+  wingStations(phi);
+  var W=planWings(phi,false);
+  $('pw_memT').setAttribute('points',pts(W.polyT));$('pw_memB').setAttribute('points',pts(W.polyB));
+  $('pw_ribsT').setAttribute('d',W.ribsT);$('pw_ribsB').setAttribute('d',W.ribsB);
+  $('pw_leT').setAttribute('points',pts(W.leT));$('pw_teT').setAttribute('points',pts(W.teT));$('pw_leB').setAttribute('points',pts(W.leB));$('pw_teB').setAttribute('points',pts(W.teB));
+  $('pw_fT').setAttribute('points',pts(W.fT));$('pw_rT').setAttribute('points',pts(W.rT));$('pw_fB').setAttribute('points',pts(W.fB));$('pw_rB').setAttribute('points',pts(W.rB));
+  var tx=(W.leT[2*NR]+W.teT[2*NR])/2,tyT=W.leT[2*NR+1],tyB=W.leB[2*NR+1];
+  $('tipTd').setAttribute('cx',f1(W.leT[2*NR]));$('tipTd').setAttribute('cy',f1(tyT));$('tipBd').setAttribute('cx',f1(W.leB[2*NR]));$('tipBd').setAttribute('cy',f1(tyB));
+  if(Math.abs(phi-lastTr)>=2*D2R){
+    lastTr=phi;tipHistT.push(f1(W.leT[2*NR])+','+f1(tyT));tipHistB.push(f1(W.leB[2*NR])+','+f1(tyB));
+    if(tipHistT.length>TRN){tipHistT.shift();tipHistB.shift()}
+    $('tipT').setAttribute('points',tipHistT.join(' '));$('tipB').setAttribute('points',tipHistB.join(' '));
+  }
+  /* side elevation of the wing: spars projected on x-z */
+  var fx='',rx='',ribs='',mem='',memR='',i2,sv,zv,cxv,xl,yv;
+  for(i2=0;i2<=NR;i2++){
+    sv=i2/NR;zv=RIBZ[i2];cxv=chord(sv);xl=RIBX[i2];yv=205-zv;
+    fx+=f1(xl+.2*cxv)+','+f1(yv)+' ';rx+=f1(xl+.72*cxv)+','+f1(yv)+' ';
+    ribs+='M'+f1(xl+.2*cxv)+' '+f1(yv)+'H'+f1(xl+.72*cxv);
+    mem+=f1(xl+.2*cxv)+','+f1(yv)+' ';memR=f1(xl+.72*cxv)+','+f1(yv)+' '+memR;
+  }
+  $('sw_f').setAttribute('points',fx);$('sw_r').setAttribute('points',rx);$('sw_ribs').setAttribute('d',ribs);$('sw_mem').setAttribute('points',mem+memR);
+}
+
+/* ---------------- readouts + controls ---------------- */
+var roEl=$('ro'),rpmIn=$('rpm'),rpmO=$('rpmO'),playBtn=$('play'),roT=0;
+function fillRange(){rpmIn.style.setProperty('--p',((rpmIn.value-rpmIn.min)/(rpmIn.max-rpmIn.min)*100)+'%')}
+function readout(){
+  var f=rpm/60,psi=lastPsi===null?0:lastPsi;
+  roEl.innerHTML='CRANK <b>'+rpm.toFixed(0)+'</b> RPM &middot; PEDAL <b>'+(rpm*2.5).toFixed(0)+'</b> RPM &middot; BEAT <b>'+f.toFixed(2)+'</b> HZ &middot; &#968; <b>'+(psi>=0?'+':'')+psi.toFixed(1)+'&deg;</b>';
+}
+rpmIn.addEventListener('input',function(){target=+rpmIn.value;rpmO.textContent=rpmIn.value;fillRange();if(!playing&&!reduce){}});
+fillRange();
+function setPlay(p){playing=p;playBtn.setAttribute('aria-pressed',p?'true':'false');playBtn.setAttribute('aria-label',p?'Pause the mechanism':'Play the mechanism')}
+playBtn.addEventListener('click',function(){setPlay(!playing)});
+if(reduce)setPlay(false);
+addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var tg=e.target&&e.target.tagName;
+  if(e.key===' '&&tg!=='BUTTON'&&tg!=='INPUT'&&!(e.target.classList&&e.target.classList.contains('brow'))){e.preventDefault();setPlay(!playing)}
+  else if(e.key==='+'||e.key==='='){zoomBy(1.25)}
+  else if(e.key==='-'||e.key==='_'){zoomBy(.8)}
+  else if(e.key==='0'){flyView('fit')}
+});
+
+/* ---------------- BOM hover / focus highlighting ---------------- */
+var pinned=null;
+function lightPart(n,on){
+  var list=svg.querySelectorAll('[data-part="'+n+'"]'),i;
+  for(i=0;i<list.length;i++)list[i].classList.toggle('on',on);
+  svg.classList.toggle('hl',on);
+}
+Array.prototype.forEach.call(doc.querySelectorAll('.brow'),function(r){
+  var n=r.getAttribute('data-part');
+  r.addEventListener('pointerenter',function(e){if(e.pointerType==='mouse'&&pinned===null)lightPart(n,true)});
+  r.addEventListener('pointerleave',function(e){if(e.pointerType==='mouse'&&pinned===null)lightPart(n,false)});
+  r.addEventListener('focus',function(){if(pinned===null)lightPart(n,true)});
+  r.addEventListener('blur',function(){if(pinned===null)lightPart(n,false)});
+  r.addEventListener('click',function(){
+    if(pinned===n){lightPart(n,false);pinned=null;return}
+    if(pinned!==null)lightPart(pinned,false);
+    pinned=n;lightPart(n,true);
+  });
+  r.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();r.dispatchEvent(new Event('click'))}});
+});
+Array.prototype.forEach.call(doc.querySelectorAll('.ball'),function(b){b.addEventListener('pointerenter',function(e){if(e.pointerType==='mouse'&&pinned===null)lightPart(b.getAttribute('data-part'),true)});b.addEventListener('pointerleave',function(e){if(e.pointerType==='mouse'&&pinned===null)lightPart(b.getAttribute('data-part'),false)})});
+
+/* ---------------- pan / zoom (viewBox always matches the screen aspect) ---------------- */
+var SW=1600,SH=1100,view={cx:800,cy:550,k:1},cw=1,ch=1,kFit=1,anim=null,hintEl=$('hint');
+var rigEl=doc.querySelector('.rig'),padB=0,padT=0;
+function measure(){
+  cw=Math.max(1,svg.clientWidth);ch=Math.max(1,svg.clientHeight);
+  padB=cw<=640?196:0;padT=cw<=640?112:0;
+  kFit=Math.min(cw/SW,(ch-padB-padT)/SH)*.985;
+  /* keep the control rig clear of the title block on wide screens */
+  if(cw>640){var left=(cw-SW*kFit)/2;rigEl.style.left=Math.max(rigEl.offsetWidth/2+10,left+705*kFit)+'px'}
+  else rigEl.style.left='50%';
+}
+function fitCy(){return SH/2+(padB-padT)/(2*kFit)}
+/* a tall phone starts on the two main views; everything else is a tap or a pinch away */
+function homeView(){
+  if(cw<=640&&ch>cw*1.2){
+    var r=[40,40,980,1030],k=Math.min((cw-14)/r[2],(ch-padB-padT-14)/r[3]);
+    return {cx:r[0]+r[2]/2,cy:r[1]+r[3]/2+(padB-padT)/(2*k),k:k,home:true};
+  }
+  return {cx:SW/2,cy:fitCy(),k:kFit,home:false};
+}
+function apply(){
+  var vw=cw/view.k,vh=ch/view.k;
+  svg.setAttribute('viewBox',f1(view.cx-vw/2)+' '+f1(view.cy-vh/2)+' '+f1(vw)+' '+f1(vh));
+  svg.classList.toggle('lowzoom',view.k<.62);
+}
+function clampView(){
+  var minK=kFit*.8,maxK=kFit*9;
+  view.k=Math.max(minK,Math.min(maxK,view.k));
+  var vw=cw/view.k,vh=ch/view.k,m=110/view.k;      /* keep at least ~110 px of the sheet on screen */
+  view.cx=Math.max(-vw/2+m,Math.min(SW+vw/2-m,view.cx));
+  view.cy=Math.max(-vh/2+m,Math.min(SH+vh/2-m,view.cy));
+}
+function setView(cx,cy,k){view.cx=cx;view.cy=cy;view.k=k;clampView();apply()}
+function ease(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2}
+function flyTo(cx,cy,k,ms){
+  atHome=false;
+  if(reduce||!ms){setView(cx,cy,k);return}
+  var a={cx:view.cx,cy:view.cy,k:view.k,t0:performance.now(),ms:ms,to:{cx:cx,cy:cy,k:k}};anim=a;
+}
+function stepAnim(now){
+  if(!anim)return;
+  var t=Math.min(1,(now-anim.t0)/anim.ms),e=ease(t),lk=Math.log(anim.k),tk=Math.log(anim.to.k);
+  view.k=Math.exp(lk+(tk-lk)*e);view.cx=anim.cx+(anim.to.cx-anim.cx)*e;view.cy=anim.cy+(anim.to.cy-anim.cy)*e;
+  clampView();apply();if(t>=1)anim=null;
+}
+var VIEWS={fit:null,side:[60,80,960,400],plan:[60,480,960,580],sect:[1040,58,520,376],bom:[1030,430,540,640]};
+function flyView(name){
+  var v=VIEWS[name],b=doc.querySelectorAll('.views button'),i;
+  for(i=0;i<b.length;i++)b[i].setAttribute('aria-pressed',b[i].getAttribute('data-view')===name?'true':'false');
+  if(!v){flyTo(SW/2,fitCy(),kFit,900);atHome=!homeView().home;return}
+  var pad=cw<=640?padB+6:110,k=Math.min((cw-20)/v[2],(ch-pad-padT-10)/v[3]);
+  flyTo(v[0]+v[2]/2,v[1]+v[3]/2+(pad-padT)/(2*k),k,900);
+}
+function zoomBy(f,px,py){
+  var ax=px===undefined?view.cx:px,ay=py===undefined?view.cy:py,nk=Math.max(kFit*.8,Math.min(kFit*9,view.k*f)),r=view.k/nk;
+  view.cx=ax+(view.cx-ax)*r;view.cy=ay+(view.cy-ay)*r;view.k=nk;clampView();apply();anim=null;atHome=false;
+}
+function toUser(clientX,clientY){var r=svg.getBoundingClientRect();return [view.cx+(clientX-r.left-cw/2)/view.k,view.cy+(clientY-r.top-ch/2)/view.k]}
+Array.prototype.forEach.call(doc.querySelectorAll('.views button'),function(b){b.addEventListener('click',function(){flyView(b.getAttribute('data-view'))})});
+
+var ptrs={},pinch=null,dragging=false,dragStart=null,moved=0;
+svg.addEventListener('pointerdown',function(e){
+  if(e.target.closest&&e.target.closest('.brow'))return;
+  ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+  try{svg.setPointerCapture(e.pointerId)}catch(err){}
+  var n=Object.keys(ptrs).length;anim=null;
+  if(n===1){dragging=true;moved=0;dragStart={x:e.clientX,y:e.clientY,cx:view.cx,cy:view.cy}}
+  else if(n===2){var ids=Object.keys(ptrs),a=ptrs[ids[0]],b=ptrs[ids[1]];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),k:view.k,mx:(a.x+b.x)/2,my:(a.y+b.y)/2};dragging=false}
+  hideHint();
+});
+svg.addEventListener('pointermove',function(e){
+  if(!ptrs[e.pointerId])return;
+  ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+  var ids=Object.keys(ptrs);
+  if(ids.length>=2&&pinch){
+    var a=ptrs[ids[0]],b=ptrs[ids[1]],d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2,u=toUser(mx,my);
+    var nk=Math.max(kFit*.8,Math.min(kFit*9,pinch.k*d/pinch.d)),r=view.k/nk;
+    view.cx=u[0]+(view.cx-u[0])*r;view.cy=u[1]+(view.cy-u[1])*r;view.k=nk;
+    view.cx-= (mx-pinch.mx)/view.k;view.cy-=(my-pinch.my)/view.k;pinch.mx=mx;pinch.my=my;
+    clampView();apply();atHome=false;
+  }else if(dragging&&dragStart){
+    var dx=e.clientX-dragStart.x,dy=e.clientY-dragStart.y;moved=Math.max(moved,Math.hypot(dx,dy));
+    if(moved>3){svg.classList.add('drag');view.cx=dragStart.cx-dx/view.k;view.cy=dragStart.cy-dy/view.k;clampView();apply();atHome=false}
+  }
+});
+function endPtr(e){
+  delete ptrs[e.pointerId];
+  if(Object.keys(ptrs).length<2)pinch=null;
+  if(Object.keys(ptrs).length===0){dragging=false;svg.classList.remove('drag')}
+}
+svg.addEventListener('pointerup',endPtr);svg.addEventListener('pointercancel',endPtr);
+svg.addEventListener('wheel',function(e){
+  e.preventDefault();hideHint();
+  var u=toUser(e.clientX,e.clientY);zoomBy(Math.exp(-e.deltaY*(e.deltaMode===1?.05:.0016)),u[0],u[1]);
+  var b=doc.querySelectorAll('.views button'),i;for(i=0;i<b.length;i++)b[i].setAttribute('aria-pressed','false');
+},{passive:false});
+svg.addEventListener('dblclick',function(e){
+  if(e.target.closest&&e.target.closest('.brow'))return;
+  var u=toUser(e.clientX,e.clientY);
+  if(view.k>kFit*1.6)flyView('fit');else flyTo(u[0],u[1],kFit*2.6,700);
+});
+var hintGone=false;function hideHint(){if(!hintGone){hintGone=true;hintEl.classList.add('gone')}}
+setTimeout(hideHint,14000);
+
+var rz=0;
+addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){var wasHome=atHome;measure();if(wasHome){var h=homeView();view.cx=h.cx;view.cy=h.cy;view.k=h.k}clampView();apply()},80)});
+
+/* ---------------- loop ---------------- */
+var last=0;
+function frame(t){
+  requestAnimationFrame(frame);
+  if(doc.hidden){last=t;return}
+  var dt=last?Math.min(.05,(t-last)/1000):.016;last=t;
+  stepAnim(t);
+  var tgt=(playing&&(reduce||t>tStart))?target:0;
+  rpm+=(tgt-rpm)*(1-Math.exp(-dt/(playing?.6:.35)));
+  if(!playing&&rpm<.05)rpm=0;
+  var moving=rpm>0;
+  if(moving||frameForce){phi+=rpm*TAU/60*dt;if(phi>TAU*64)phi-=TAU*64;update();frameForce=false}
+  if(t-roT>140){roT=t;readout()}
+}
+var frameForce=true,tStart=4300,atHome=true;   /* the mechanism starts turning once the sheet has been drawn */
+measure();
+(function(){var h=homeView();view.cx=h.cx;view.cy=h.cy;view.k=h.k;if(h.home){var b=doc.querySelectorAll('.views button'),i;for(i=0;i<b.length;i++)b[i].setAttribute('aria-pressed','false')}})();
+clampView();apply();
+update();readout();
+requestAnimationFrame(function(t){last=t;frame(t)});
+})();
+</script>
+</body>
+</html>

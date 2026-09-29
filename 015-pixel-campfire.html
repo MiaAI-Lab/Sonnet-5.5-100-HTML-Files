@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Last Light at Camp — Pixel Campfire</title>
+<meta name="description" content="A low-resolution pixel-art campfire at night: Doom-fire flames, Bayer-dithered sky, a sitting camper toasting a marshmallow, and firelight that flickers across every pixel. Click to feed the fire, hold to blow.">
+<meta name="theme-color" content="#0b1026">
+<style>
+:root{
+  --sky:#0b1026;
+  --night:#161c47;
+  --edge:#3a4690;
+  --cream:#fff6d5;
+  --amber:#ffd23f;
+  --ember:#f26b1d;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0b1026;overflow:hidden;overscroll-behavior:none}
+body{position:fixed;inset:0;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+#scene{
+  position:absolute;left:0;top:0;display:block;touch-action:none;cursor:crosshair;outline:none;
+  image-rendering:crisp-edges;image-rendering:pixelated;
+  background:#0b1026;
+}
+#scene:focus-visible{outline:3px solid var(--amber);outline-offset:-6px}
+.snd{
+  position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));z-index:5;
+  display:flex;align-items:center;gap:10px;padding:10px 14px 10px 12px;border:0;border-radius:0;cursor:pointer;
+  color:#c9d3ff;background:#141a3f;
+  font:700 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+  box-shadow:0 -3px 0 0 #0b1026,0 3px 0 0 #0b1026,-3px 0 0 0 #0b1026,3px 0 0 0 #0b1026,inset 0 0 0 2px #3a4690,inset 0 -3px 0 0 #232a67;
+  transition:color .15s,background .15s;
+}
+.snd:hover{color:#fff6d5;background:#1a2150}
+.snd:active{transform:translateY(2px)}
+.snd:focus-visible{outline:3px solid var(--amber);outline-offset:5px}
+.snd svg{width:14px;height:12px;flex:none}
+.snd .waves{display:none}
+.snd[aria-pressed="true"]{color:#ffd23f}
+.snd[aria-pressed="true"] .waves{display:inline}
+.snd b{font-weight:700;min-width:2.2em;text-align:left}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:420px){.snd{padding:9px 11px 9px 10px;font-size:10px;letter-spacing:.12em}}
+</style>
+</head>
+<body>
+<canvas id="scene" width="240" height="135" tabindex="0" role="img" aria-label="Pixel-art night scene: a campfire burning inside a ring of stones, a small tent with a glowing interior, and a camper toasting a marshmallow under a crescent moon. Click or press Space to throw a log on the fire; hold the mouse button to blow on it."></canvas>
+<button class="snd" id="snd" type="button" aria-pressed="false" aria-label="Fire crackle sound">
+  <svg viewBox="0 0 14 12" shape-rendering="crispEdges" aria-hidden="true" focusable="false"><path fill="currentColor" d="M0 4h3V3h1V2h1v8H4V9H3V8H0z"/><path class="waves" fill="currentColor" d="M7 4h1v4H7zM9 2h1v8H9zM11 0h1v12h-1z"/></svg>
+  <span>Crackle</span><b id="sndState">Off</b>
+</button>
+<p class="vh" aria-live="polite" id="live"></p>
+
+<script>
+(function () {
+'use strict';
+
+var cv = document.getElementById('scene');
+var ctx = cv.getContext('2d', { alpha: false });
+var sndBtn = document.getElementById('snd'), sndState = document.getElementById('sndState'), live = document.getElementById('live');
+var reduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)').matches : false;
+
+/* ============================================================
+   small helpers
+   ============================================================ */
+var seedState = 1;
+function seed(s) { seedState = s >>> 0; }
+function srnd() {                                   /* seeded (static layout) */
+  seedState = (seedState + 0x6D2B79F5) >>> 0;
+  var t = seedState; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function hash2(x, y) {
+  var h = Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function rgbOf(h) { return [(h >> 16) & 255, (h >> 8) & 255, h & 255]; }
+function pack(c) { return (255 << 24) | (c[2] << 16) | (c[1] << 8) | c[0]; }
+function mixc(a, b, t) { return [Math.round(lerp(a[0], b[0], t)), Math.round(lerp(a[1], b[1], t)), Math.round(lerp(a[2], b[2], t))]; }
+function P(h) { return pack(rgbOf(h)); }
+
+/* ordered dither: 4x4 Bayer matrix */
+var BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(function (v) { return (v + 0.5) / 16; });
+function bay(x, y) { return BAY[((y & 3) << 2) | (x & 3)]; }
+
+/* ============================================================
+   palette: everything on screen comes from these ramps
+   ============================================================ */
+var LV = 6;                                          /* light levels per material */
+function makeRamp(night, lit) {
+  var a = rgbOf(night), b = rgbOf(lit), r = new Uint32Array(LV), i;
+  for (i = 0; i < LV; i++) r[i] = pack(mixc(a, b, Math.pow(i / (LV - 1), 0.92)));
+  return r;
+}
+var M = {
+  gF: makeRamp(0x111a34, 0x76523a), g: makeRamp(0x0d1329, 0x8a5630), gN: makeRamp(0x0a0f23, 0x6e4226),
+  dirt: makeRamp(0x1a1d38, 0x9c6a45), grass: makeRamp(0x12283a, 0x8f9a45), peb: makeRamp(0x1c2240, 0xc99a6a),
+  ash: makeRamp(0x0b0a14, 0x40261f),
+  lD: makeRamp(0x1c1420, 0x5a2a14), lM: makeRamp(0x2a1c26, 0x8a4420), lL: makeRamp(0x3a2a34, 0xc8703a),
+  lE: makeRamp(0x4a3a44, 0xf0c890), lR: makeRamp(0x382a34, 0xb98452),
+  sD: makeRamp(0x181c38, 0x54403e), sM: makeRamp(0x2a3054, 0xb59b86), sL: makeRamp(0x4a5688, 0xf6dcb0),
+  tA: makeRamp(0x1d3b4a, 0x7fb08c), tB: makeRamp(0x142a37, 0x4d7d6a), tC: makeRamp(0x2b5566, 0xb6d8a0),
+  tS: makeRamp(0x0a0f24, 0x2a1c1a), pole: makeRamp(0x2a2030, 0xa86a34),
+  skin: makeRamp(0x4a3d62, 0xf4b98d), hair: makeRamp(0x1a1428, 0x5a3220), bean: makeRamp(0x4a4a6a, 0xfff0d0),
+  band: makeRamp(0x5a4830, 0xffc247), jack: makeRamp(0x3a2340, 0xe2603a), jackD: makeRamp(0x241a36, 0xa8402c),
+  pant: makeRamp(0x1a2148, 0x7d5f8f), boot: makeRamp(0x150f1a, 0x5a3220), stick: makeRamp(0x7a6048, 0xe6bc7c), kO: makeRamp(0x0a0810, 0x2a1a1c)
+};
+var EYE = P(0x0b1026);
+/* 16 heat steps: black > deep red > orange > yellow > white */
+var FIRE = [0, 0x1a0505, 0x3a0e07, 0x5a1508, 0x7a1f0b, 0x9a2a0d, 0xb93a10, 0xdd5514, 0xf26b1d, 0xf68320, 0xf99c25, 0xfbb92f, 0xffd23f, 0xffe27a, 0xfff0b0, 0xfff6d5].map(function (h, i) { return i ? P(h) : 0; });
+var GLOW = [0x5a1508, 0xa83a12, 0xf26b1d, 0xffb02a, 0xffd23f, 0xffe9a0].map(P);   /* tent interior */
+var TOAST = [0xf4efe6, 0xf0e2b8, 0xe0b45a, 0xb8742a, 0x6a3a1c, 0x2a1a12].map(P);
+var SPARK = [0xfff6d5, 0xffd23f, 0xf26b1d, 0x7a1f0b].map(P);
+
+/* ============================================================
+   hand-authored sprite maps
+   ============================================================ */
+var TENT = [
+  ".................p.................",
+  ".................p.................",
+  ".................S.................",
+  "................SaS................",
+  "................SaS................",
+  "...............SbaaS...............",
+  "..............SbbaacS..............",
+  ".............SbbbaaacS.............",
+  ".............SbbbaaacS.............",
+  "............SbbbbaaaacS............",
+  "...........SbbbbSiSaaacS...........",
+  "..........SbbbbbSiSaaaacS..........",
+  ".........SbbbbbSiiiSaaaacS.........",
+  ".........SbbbbbSiiiSaaaacS.........",
+  "........SbbbbbSiiiiiSaaaacS........",
+  ".......SbbbbbbSiiiiiSaaaaacS.......",
+  "......SbbbbbbSiiiiiiiSaaaaacS......",
+  "......SbbbbbbSiiiiiiiSaaaaacS......",
+  ".....SbbbbbbSiiiiiiiiiSaaaaacS.....",
+  "....SbbbbbbbSiiiiiiiiiSaaaaaacS....",
+  "...SbbbbbbbSiiiiiiiiiiiSaaaaaacS...",
+  "..SbbbbbbbbSiiiiiiiiiiiSaaaaaaacS..",
+  "..SbbbbbbbSiiiiiiiiiiiiiSaaaaaacS..",
+  ".SbbbbbbbbSiiiiiiiiiiiiiSaaaaaaacS.",
+  "SbbbbbbbbSiiiiiiiiiiiiiiiSaaaaaaacS"
+];
+var CHAR = [                    /* camper, facing the fire (left), sitting on a log */
+  "......KKK.........",
+  ".....KHHHK........",
+  "....KhhhhhhK......",
+  "...KhhhhhhhhK.....",
+  "...KHHHHHHHHK.....",
+  "...KssssssyyK.....",
+  "..KsssessyyyK.....",
+  "..KKssssssyK......",
+  "...KffffffK.......",
+  "..KffffffffKK.....",
+  ".KjjjjjjjjjjjK....",
+  "KsjjjjjjjjjjjjK...",
+  "KsjJjjjjjjjjjjK...",
+  ".KjjJjjjjjjjjjK...",
+  ".KPPPPPPPPPPPK....",
+  "KPPPPPPPPPPPPPK...",
+  "KPPKKKKKKKKPPK....",
+  "KbKK.......KbbK...",
+  ".KK.........KK...."
+];
+var LOG_H = [
+  "..llllllllllllllllllll..",
+  ".eerBBBBBBBBBBBBBBBBree.",
+  "eerrBBBBBBBBBBBBBBBBrree",
+  "eerrbBBBBBBBBBBBBBBbrree",
+  ".eerbbbbbbbbbbbbbbbbree.",
+  "..bbbbbbbbbbbbbbbbbbbb.."
+];
+var LOG_S = [
+  ".llllllllll.",
+  "eerBBBBBBree",
+  "eerbbbbbbree",
+  ".bbbbbbbbbb."
+];
+var LOG_UR = [
+  "..................llre",
+  "...............lllBBre",
+  "............lllBBBBBre",
+  "..........llBBBBBBbb..",
+  ".......lllBBBBBbbb....",
+  "....lllBBBBBbbb.......",
+  "..llBBBBBBbb..........",
+  "llBBBBBbbb............",
+  "BBBBbbb...............",
+  "BBbb..................",
+  "bb...................."
+];
+var LOG_UL = [
+  "erll..................",
+  "erBBlll...............",
+  "erBBBBBlll............",
+  "..bbBBBBBBll..........",
+  "....bbbBBBBBlll.......",
+  ".......bbbBBBBBlll....",
+  "..........bbBBBBBBll..",
+  "............bbbBBBBBll",
+  "...............bbbBBBB",
+  "..................bbBB",
+  "....................bb"
+];
+var STONE = {
+  A: [".hhhh..", "hhsssh.", "hsssssk", ".kssskk", "..kkk.."],
+  B: ["..hhhh..", ".hhssshh", "hssssssk", ".kssssk.", "..kkkk.."],
+  C: [".hhh..", "hsssh.", "hssssk", ".kkkk."]
+};
+/* stone anchor = bottom centre, offsets from the hearth centre */
+var RING_BACK = [[-22, -1, 'B'], [-19, -4, 'C'], [-14, -6, 'A'], [-8, -7, 'C'], [-1, -7, 'B'], [6, -7, 'C'], [12, -6, 'A'], [18, -4, 'B'], [22, -1, 'A']];
+var RING_FRONT = [[-21, 2, 'A'], [-16, 4, 'B'], [-10, 5, 'A'], [-4, 6, 'C'], [2, 6, 'B'], [8, 5, 'A'], [14, 4, 'C'], [20, 2, 'B']];
+
+function compile(rows) {
+  var h = rows.length, w = rows[0].length, d = new Uint8Array(w * h), x, y;
+  for (y = 0; y < h; y++) for (x = 0; x < w; x++) d[y * w + x] = rows[y].charCodeAt(x);
+  return { w: w, h: h, d: d };
+}
+var S_TENT = compile(TENT), S_CHAR = compile(CHAR), S_LOGH = compile(LOG_H), S_LOGS = compile(LOG_S), S_LUR = compile(LOG_UR), S_LUL = compile(LOG_UL);
+var S_STONE = { A: compile(STONE.A), B: compile(STONE.B), C: compile(STONE.C) };
+
+/* code -> ramp tables (char code of the map symbol) */
+function cc(c) { return c.charCodeAt(0); }
+var R_TENT = [], R_CHAR = [], R_LOG = [], R_STONE = [];
+R_TENT[cc('a')] = M.tA; R_TENT[cc('b')] = M.tB; R_TENT[cc('c')] = M.tC; R_TENT[cc('S')] = M.tS; R_TENT[cc('p')] = M.pole;
+R_CHAR[cc('H')] = M.band; R_CHAR[cc('h')] = M.bean; R_CHAR[cc('s')] = M.skin; R_CHAR[cc('y')] = M.hair; R_CHAR[cc('f')] = M.band;
+R_CHAR[cc('K')] = M.kO; R_CHAR[cc('j')] = M.jack; R_CHAR[cc('J')] = M.jackD; R_CHAR[cc('P')] = M.pant; R_CHAR[cc('b')] = M.boot;
+R_LOG[cc('l')] = M.lL; R_LOG[cc('B')] = M.lM; R_LOG[cc('b')] = M.lD; R_LOG[cc('e')] = M.lE; R_LOG[cc('r')] = M.lR;
+R_STONE[cc('h')] = M.sL; R_STONE[cc('s')] = M.sM; R_STONE[cc('k')] = M.sD;
+
+/* ============================================================
+   5x7 bitmap font (hand-authored, rows joined by "/")
+   ============================================================ */
+var FONT_SRC = {
+  'A': '.###./#...#/#...#/#####/#...#/#...#/#...#', 'B': '####./#...#/#...#/####./#...#/#...#/####.',
+  'C': '.####/#..../#..../#..../#..../#..../.####', 'D': '####./#...#/#...#/#...#/#...#/#...#/####.',
+  'E': '#####/#..../#..../####./#..../#..../#####', 'F': '#####/#..../#..../####./#..../#..../#....',
+  'G': '.####/#..../#..../#.###/#...#/#...#/.###.', 'H': '#...#/#...#/#...#/#####/#...#/#...#/#...#',
+  'I': '#####/..#../..#../..#../..#../..#../#####', 'J': '..###/...#./...#./...#./...#./#..#./.##..',
+  'K': '#...#/#..#./#.#../##.../#.#../#..#./#...#', 'L': '#..../#..../#..../#..../#..../#..../#####',
+  'M': '#...#/##.##/#.#.#/#.#.#/#...#/#...#/#...#', 'N': '#...#/##..#/#.#.#/#..##/#...#/#...#/#...#',
+  'O': '.###./#...#/#...#/#...#/#...#/#...#/.###.', 'P': '####./#...#/#...#/####./#..../#..../#....',
+  'Q': '.###./#...#/#...#/#...#/#.#.#/#..#./.##.#', 'R': '####./#...#/#...#/####./#.#../#..#./#...#',
+  'S': '.####/#..../#..../.###./....#/....#/####.', 'T': '#####/..#../..#../..#../..#../..#../..#..',
+  'U': '#...#/#...#/#...#/#...#/#...#/#...#/.###.', 'V': '#...#/#...#/#...#/#...#/#...#/.#.#./..#..',
+  'W': '#...#/#...#/#...#/#.#.#/#.#.#/##.##/#...#', 'X': '#...#/#...#/.#.#./..#../.#.#./#...#/#...#',
+  'Y': '#...#/#...#/.#.#./..#../..#../..#../..#..', 'Z': '#####/....#/...#./..#../.#.../#..../#####',
+  '0': '.###./#...#/#..##/#.#.#/##..#/#...#/.###.', '1': '..#../.##../..#../..#../..#../..#../.###.',
+  '2': '.###./#...#/....#/...#./..#../.#.../#####', '3': '####./....#/....#/.###./....#/....#/####.',
+  '4': '...#./..##./.#.#./#..#./#####/...#./...#.', '5': '#####/#..../####./....#/....#/#...#/.###.',
+  '6': '.###./#..../#..../####./#...#/#...#/.###.', '7': '#####/....#/...#./..#../.#.../.#.../.#...',
+  '8': '.###./#...#/#...#/.###./#...#/#...#/.###.', '9': '.###./#...#/#...#/.####/....#/....#/.###.',
+  '.': '...../...../...../...../...../.##../.##..', ',': '...../...../...../...../.##../..#../.#...',
+  '!': '..#../..#../..#../..#../..#../...../..#..', '?': '.###./#...#/....#/...#./..#../...../..#..',
+  ':': '...../.##../.##../...../.##../.##../.....', '-': '...../...../...../.###./...../...../.....',
+  ' ': '...../...../...../...../...../...../.....'
+};
+var FONT = {};
+Object.keys(FONT_SRC).forEach(function (k) { FONT[k] = FONT_SRC[k].split('/'); });
+
+/* ============================================================
+   scene state
+   ============================================================ */
+var W = 240, H = 135, SC = 1, DPR = 1, img = null, buf = null;
+var isPortrait = false, gy = 89, hy = 112, fx = 120, tcx = 60, tby = 108, ccx = 166, cby = 116, moonX = 190, moonY = 26;
+var skyBase = null, ridgeTop = null, gMat = null, LF = null, LT = null;
+var stars = [], farTrees = [], midTrees = [], nearTrees = [];
+var FW = 46, FH = 48, heat = new Uint8Array(FW * FH), fireY0 = 0, fireX0 = 0;
+var SKY = [], SKYN = 0;
+var M_GF = 1, M_G = 2, M_GN = 3, M_DIRT = 4, M_GRASS = 5, M_PEB = 6, M_ASH = 7;
+var GROUND_RAMPS = [null, M.gF, M.g, M.gN, M.dirt, M.grass, M.peb, M.ash];
+
+/* dynamic state */
+var fuel = 0.95, surge = 0, wind = 0, windGoal = 0, fireI = 1, lantI = 1, flick = 0, flickGoal = 0;
+var logsThrown = 0, firstAction = false, hintMode = 0;
+var down = false, downT = 0, ptrX = 0, ptrY = 0, blowing = false, keyBlow = 0;
+var sparks = [], smokes = [], logProj = null, gust = [];
+var mm = { toast: 0, phase: 0, t: 0, burnT: 0 };
+var shoot = { on: false, t: 0, x: 0, y: 0, vx: 0, vy: 0, next: 9 };
+var simT = 0, fireAcc = 0, crackleT = 0.5, hintSince = 0, hintLast = 'throw', fadeT = 0, audioClock = 0;
+
+function makePools() {
+  var i; sparks = []; smokes = []; gust = [];
+  for (i = 0; i < 90; i++) sparks.push({ a: false, x: 0, y: 0, vx: 0, vy: 0, l: 0, ml: 1 });
+  for (i = 0; i < 30; i++) smokes.push({ a: false, x: 0, y: 0, vx: 0, l: 0, ml: 1 });
+  for (i = 0; i < 14; i++) gust.push({ a: false, x: 0, y: 0, l: 0 });
+}
+makePools();
+
+/* ============================================================
+   layout / static layers
+   ============================================================ */
+function layout() {
+  DPR = Math.min(window.devicePixelRatio || 1, 3);
+  var vw = window.innerWidth, vh = window.innerHeight, vwD = vw * DPR, vhD = vh * DPR;
+  var portrait = vh > vw * 1.12;
+  SC = portrait ? Math.max(2, Math.round(vwD / 132)) : Math.max(2, Math.round(vhD / 135));
+  W = Math.ceil(vwD / SC); H = Math.ceil(vhD / SC);
+  cv.width = W; cv.height = H;
+  var offX = Math.floor((vwD - W * SC) / 2), offY = Math.floor((vhD - H * SC) / 2);
+  cv.style.width = (W * SC / DPR) + 'px'; cv.style.height = (H * SC / DPR) + 'px';
+  cv.style.left = (offX / DPR) + 'px'; cv.style.top = (offY / DPR) + 'px';
+  img = ctx.createImageData(W, H); buf = new Uint32Array(img.data.buffer);
+  buildStatic(portrait);
+}
+
+function buildStatic(portrait) {
+  var x, y, i, n;
+  isPortrait = portrait;
+  seed(20240611);
+  gy = Math.round(H * (portrait ? 0.665 : 0.655));
+  hy = Math.round(H * (portrait ? 0.825 : 0.83));
+  fx = W >> 1;
+  tcx = fx - clamp(Math.round(W * 0.26), 41, 62); tby = hy - 4;
+  ccx = fx + clamp(Math.round(W * 0.19), 33, 48); cby = hy + 7;
+  moonX = Math.round(W * (portrait ? 0.74 : 0.8)); moonY = Math.round(H * (portrait ? 0.15 : 0.2));
+  fireX0 = fx - (FW >> 1); fireY0 = hy - 8 - (FH - 1);
+
+  /* sky ramp (8 dithered steps + 3 halo steps) */
+  SKY = [];
+  for (i = 0; i < 8; i++) SKY.push(pack(mixc(rgbOf(0x0b1026), rgbOf(0x232a57), i / 7)));
+  SKY.push(P(0x2d3670), P(0x3a4584), P(0x4a5aa0)); SKYN = SKY.length;
+
+  skyBase = new Uint32Array(W * H); ridgeTop = new Int16Array(W);
+  var ridge2 = new Int16Array(W), RC1 = P(0x1a2150), RC2 = P(0x141a44), R1 = 0x1a2150;
+  for (x = 0; x < W; x++) {
+    ridgeTop[x] = Math.round(gy - 11 - 5 * Math.sin(x * 0.045 + 0.7) - 3.2 * Math.sin(x * 0.11 + 2.1) - 2 * Math.sin(x * 0.021 + 4));
+    ridge2[x] = Math.round(gy - 4 - 3 * Math.sin(x * 0.07 + 2.4) - 2 * Math.sin(x * 0.16 + 0.3) - 1.5 * Math.sin(x * 0.033 + 1));
+  }
+  var haloR = 30;
+  for (y = 0; y < H; y++) {
+    for (x = 0; x < W; x++) {
+      var v = Math.pow(clamp(y / gy, 0, 1), 1.12) * 7;
+      var dx = x - moonX, dy = y - moonY, dd = Math.sqrt(dx * dx + dy * dy);
+      if (dd < haloR) { var hh = 1 - dd / haloR; v += hh * hh * 3.6; }
+      var b = v | 0, f = v - b;
+      if (f > bay(x, y)) b++;
+      skyBase[y * W + x] = SKY[b > SKYN - 1 ? SKYN - 1 : b];
+    }
+  }
+  /* two far hill layers with dithered crests */
+  for (x = 0; x < W; x++) {
+    for (y = ridgeTop[x] - 2; y < gy + 2; y++) {
+      if (y < 0 || y >= H) continue;
+      var edge = y - ridgeTop[x];
+      if (edge < 0) { if (bay(x, y) < 0.34 * (edge + 3) / 3) skyBase[y * W + x] = RC1; }
+      else skyBase[y * W + x] = RC1;
+    }
+    for (y = ridge2[x] - 2; y < gy + 2; y++) {
+      if (y < 0 || y >= H) continue;
+      var e2 = y - ridge2[x];
+      if (e2 < 0) { if (bay(x, y) < 0.4 * (e2 + 3) / 3) skyBase[y * W + x] = RC2; }
+      else skyBase[y * W + x] = RC2;
+    }
+  }
+  paintMoon();
+  buf = new Uint32Array(img.data.buffer);
+
+  /* stars */
+  stars = []; n = Math.round(W * gy / 190);
+  for (i = 0; i < n; i++) {
+    var sx = 1 + Math.floor(srnd() * (W - 2)), sy = 2 + Math.floor(srnd() * Math.max(4, ridgeTop[Math.min(W - 1, sx)] - 8));
+    if (sy < 15 && Math.abs(sx - fx) < 64) continue;               /* keep the title clear */
+    if (Math.hypot(sx - moonX, sy - moonY) < 13) continue;
+    var r = srnd(), kind = r < 0.68 ? 0 : r < 0.92 ? 1 : 2;
+    stars.push({ x: sx, y: sy, k: kind, ph: srnd() * 6.28, sp: 0.6 + srnd() * 1.8, c: srnd() < 0.25 ? 1 : srnd() < 0.3 ? 2 : 0 });
+  }
+
+  /* trees */
+  farTrees = []; midTrees = []; nearTrees = [];
+  for (x = -4; x < W + 8; x += 6 + Math.floor(srnd() * 7)) farTrees.push(makePine(x, gy + 2, 20 + Math.floor(srnd() * 14), 9 + Math.floor(srnd() * 5), 4, 1.7));
+  for (x = 4; x < W; x += 20 + Math.floor(srnd() * 16)) midTrees.push(makePine(x, gy + 5, 34 + Math.floor(srnd() * 14), 13 + Math.floor(srnd() * 4), 5, 2.4));
+  var nh = Math.round(H * (portrait ? 0.34 : 0.52));
+  if (portrait) {
+    nearTrees.push(makePine(-1, hy + 12, nh + 8, 15, 6, 3.4), makePine(W + 1, hy + 13, nh + 4, 15, 6, 3.4));
+  } else {
+    nearTrees.push(makePine(1, hy + 12, nh + 6, 20, 6, 3.6), makePine(15, hy + 17, Math.round(nh * 0.72), 14, 5, 3.2));
+    nearTrees.push(makePine(W - 2, hy + 13, nh + 2, 21, 6, 3.6), makePine(W - 17, hy + 18, Math.round(nh * 0.66), 14, 5, 3.2));
+  }
+
+  /* ground materials */
+  gMat = new Uint8Array(W * H);
+  var drx = 46, dry = 12;
+  for (y = gy; y < H; y++) {
+    for (x = 0; x < W; x++) {
+      var t = (y - gy) / Math.max(1, H - gy), m;
+      var tt = t + (bay(x, y) - 0.5) * 0.16;
+      m = tt < 0.3 ? M_GF : tt < 0.74 ? M_G : M_GN;
+      var qx = (x - fx) / drx, qy = (y - (hy + 1)) / dry, q = qx * qx + qy * qy;
+      if (q < 0.5 || (q < 1 && bay(x, y) > (q - 0.5) * 2)) m = M_DIRT;
+      var hv = hash2(x, y * 7 + 3);
+      if (hv < 0.018 && q > 0.35) m = M_GRASS;
+      else if (hv > 0.985 && q > 0.2) m = M_PEB;
+      gMat[y * W + x] = m;
+    }
+  }
+  /* grass tufts grow upwards */
+  for (y = gy + 2; y < H; y++) for (x = 0; x < W; x++) {
+    if (gMat[y * W + x] === M_GRASS && y > 0 && gMat[(y - 1) * W + x] !== M_DIRT && hash2(x * 3, y) < 0.7) gMat[(y - 1) * W + x] = M_GRASS;
+  }
+  /* ash bed inside the ring */
+  for (y = hy - 7; y <= hy + 3; y++) for (x = fx - 20; x <= fx + 20; x++) {
+    var ax = (x - fx) / 19, ay = (y - (hy - 2)) / 5;
+    if (ax * ax + ay * ay < 1 && y >= 0 && y < H) gMat[y * W + x] = M_ASH;
+  }
+
+  /* light falloff maps */
+  LF = new Float32Array(W * H); LT = new Float32Array(W * H);
+  var lcy = hy - 9, R2 = 27 * 27, lx = tcx, ly = tby - 3, T2 = 14 * 14;
+  for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+    i = y * W + x;
+    var ddx = x - fx, ddy = (y - lcy) * 1.4;
+    LF[i] = 1 / (1 + (ddx * ddx + ddy * ddy) / R2);
+    var tx = x - lx, ty = (y - ly) * 1.2, td2 = tx * tx + ty * ty;
+    LT[i] = Math.max(0, 1 / (1 + td2 / T2) - 0.1);
+  }
+  /* projectile / marshmallow reset positions depend on layout */
+  mm.phase = 0; mm.toast = 0; mm.t = 0;
+}
+
+/* pine silhouette: half-width per row, tiered like a spruce */
+function makePine(cx, base, h, mw, tiers, sway) {
+  var p = new Uint8Array(h), trunk = Math.max(3, Math.round(h * 0.07)), body = h - trunk, th = body / tiers, r;
+  for (r = 0; r < h; r++) {
+    if (r >= body) { p[r] = 1; continue; }
+    var k = Math.floor(r / th), u = (r - k * th) / th;
+    var env = mw * (0.16 + 0.84 * (r / body)), m = 0.5 + 0.5 * u;
+    p[r] = Math.max(1, Math.round(env * m));
+  }
+  return { x: cx, base: base, h: h, p: p, ph: srnd() * 6.28, sw: sway };
+}
+
+function paintMoon() {
+  var R = 8.4, tones = [P(0xf4efd6), P(0xdcd5b0), P(0xbcb48f), P(0x948e72)];
+  var craters = [[-2.5, -2.4, 2.3], [3, 1.2, 1.9], [-1, 4.4, 1.5], [4.2, -4, 1.3], [-4.6, 2.2, 1.2], [0.6, -5.4, 1.0]];
+  var lx = -0.55, ly = -0.6, lz = 0.58, cx, cy, dx, dy, k, r2, nz, l, ti;
+  for (cy = -9; cy <= 9; cy++) for (cx = -9; cx <= 9; cx++) {
+    dx = cx; dy = cy; r2 = dx * dx + dy * dy;
+    if (r2 > R * R) continue;
+    nz = Math.sqrt(Math.max(0, 1 - r2 / (R * R)));
+    l = (dx / R) * lx + (dy / R) * ly + nz * lz;
+    var v = l > 0.62 ? 0 : l > 0.36 ? 1 : l > 0.14 ? 2 : 3;
+    var wx = moonX + cx, wy = moonY + cy;
+    var f = l > 0.62 ? 0 : l > 0.36 ? (0.62 - l) / 0.26 : l > 0.14 ? (0.36 - l) / 0.22 : 0.5;
+    ti = v + (f > bay(wx, wy) && v < 3 ? 1 : 0);
+    for (k = 0; k < craters.length; k++) {
+      var ddx = dx - craters[k][0], ddy = dy - craters[k][1];
+      if (ddx * ddx + ddy * ddy < craters[k][2] * craters[k][2]) { ti = Math.min(3, ti + 1); }
+    }
+    if (wx >= 0 && wx < W && wy >= 0 && wy < H) skyBase[wy * W + wx] = tones[ti];
+  }
+}
+
+/* ============================================================
+   drawing primitives
+   ============================================================ */
+function put(x, y, c) { if (x >= 0 && x < W && y >= 0 && y < H) buf[y * W + x] = c; }
+function lightIdx(x, y) {
+  var i = y * W + x, L = fireI * LF[i] + lantI * LT[i];
+  if (L > 1) L = 1;
+  var v = L * (LV - 1), b = v | 0;
+  if (v - b > bay(x, y)) b++;
+  return b > LV - 1 ? LV - 1 : b;
+}
+function litPut(x, y, ramp) { if (x >= 0 && x < W && y >= 0 && y < H) buf[y * W + x] = ramp[lightIdx(x, y)]; }
+function drawSprite(s, x0, y0, ramps, flip) {
+  var x, y, c, wx, wy, r;
+  for (y = 0; y < s.h; y++) {
+    wy = y0 + y; if (wy < 0 || wy >= H) continue;
+    for (x = 0; x < s.w; x++) {
+      c = s.d[y * s.w + (flip ? s.w - 1 - x : x)]; if (c === 46) continue;
+      wx = x0 + x; if (wx < 0 || wx >= W) continue;
+      if (c === 101 && ramps === R_CHAR) { buf[wy * W + wx] = EYE; continue; }
+      r = ramps[c]; if (!r) continue;
+      buf[wy * W + wx] = r[lightIdx(wx, wy)];
+    }
+  }
+}
+
+/* ============================================================
+   layers
+   ============================================================ */
+function drawStars(t) {
+  var i, s, b, col;
+  var pal = [[P(0x6b78c4), P(0xcfd8ff), P(0xffffff)], [P(0x8a7a6a), P(0xffe9b0), P(0xfff6d5)], [P(0x5a70c8), P(0x9fb3ff), P(0xdfe6ff)]];
+  var tw = reduce ? 0.35 : 1;
+  for (i = 0; i < stars.length; i++) {
+    s = stars[i]; if (s.y >= ridgeTop[s.x] - 2) continue;
+    b = 0.5 + 0.5 * Math.sin(t * s.sp * tw + s.ph);
+    col = pal[s.c];
+    if (s.k === 0) { put(s.x, s.y, b > 0.66 ? col[2] : b > 0.25 ? col[1] : col[0]); }
+    else if (s.k === 1) {
+      put(s.x, s.y, col[2]);
+      if (b > 0.5) { put(s.x - 1, s.y, col[0]); put(s.x + 1, s.y, col[0]); put(s.x, s.y - 1, col[0]); put(s.x, s.y + 1, col[0]); }
+    } else {
+      put(s.x, s.y, col[2]);
+      put(s.x - 1, s.y, col[1]); put(s.x + 1, s.y, col[1]); put(s.x, s.y - 1, col[1]); put(s.x, s.y + 1, col[1]);
+      if (b > 0.72) { put(s.x - 2, s.y, col[0]); put(s.x + 2, s.y, col[0]); put(s.x, s.y - 2, col[0]); put(s.x, s.y + 2, col[0]); }
+    }
+  }
+}
+function drawShoot(dt, t) {
+  var i, c = [P(0xffffff), P(0xcfd8ff), P(0x8a96d8), P(0x4a5599), P(0x2c356f)];
+  if (reduce) return;
+  if (!shoot.on) {
+    shoot.next -= dt;
+    if (shoot.next <= 0) {
+      shoot.on = true; shoot.t = 0; shoot.x = W * (0.15 + Math.random() * 0.5); shoot.y = 4 + Math.random() * gy * 0.3;
+      shoot.vx = 60 + Math.random() * 30; shoot.vy = 22 + Math.random() * 16; shoot.next = 16 + Math.random() * 26;
+    }
+    return;
+  }
+  shoot.t += dt; shoot.x += shoot.vx * dt; shoot.y += shoot.vy * dt;
+  if (shoot.t > 0.9 || shoot.x > W + 6) { shoot.on = false; return; }
+  var fade = shoot.t > 0.6 ? 1 - (shoot.t - 0.6) / 0.3 : 1;
+  for (i = 0; i < 5; i++) {
+    var px = Math.round(shoot.x - i * shoot.vx * 0.022), py = Math.round(shoot.y - i * shoot.vy * 0.022);
+    if (py < ridgeTop[clamp(px, 0, W - 1)] - 2 && (fade > 0.5 || bay(px, py) < fade * 2)) put(px, py, c[i]);
+  }
+}
+function drawTrees(list, col, t, wobble) {
+  var i, r, tr, y, off, hw, x0, x1, x, sw;
+  for (i = 0; i < list.length; i++) {
+    tr = list[i];
+    for (r = 0; r < tr.h; r++) {
+      y = tr.base - tr.h + r; if (y < 0 || y >= H) continue;
+      sw = tr.sw * wobble * (1 - r / tr.h);
+      off = Math.round(Math.sin(t * 0.85 + tr.ph + r * 0.035) * sw * 0.9 + wind * sw * 1.4);
+      hw = tr.p[r]; x0 = tr.x - hw + off; x1 = tr.x + hw + off;
+      if (x0 < 0) x0 = 0; if (x1 >= W) x1 = W - 1;
+      for (x = x0; x <= x1; x++) buf[y * W + x] = col;
+    }
+  }
+}
+function drawNearTrees(t) {
+  var i, r, tr, y, off, hw, x0, x1, sw, litL, litR;
+  var col = P(0x070a1f);
+  for (i = 0; i < nearTrees.length; i++) {
+    tr = nearTrees[i];
+    for (r = 0; r < tr.h; r++) {
+      y = tr.base - tr.h + r; if (y < 0 || y >= H) continue;
+      sw = tr.sw * (reduce ? 0.4 : 1) * (1 - r / tr.h);
+      off = Math.round(Math.sin(t * 0.7 + tr.ph + r * 0.03) * sw * 0.9 + wind * sw * 1.6);
+      hw = tr.p[r]; x0 = tr.x - hw + off; x1 = tr.x + hw + off;
+      var x;
+      for (x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) buf[y * W + x] = col;
+      /* warm rim on the side that faces the fire */
+      var rimX = tr.x < fx ? x1 : x0;
+      if (rimX >= 0 && rimX < W && y > hy - 34) {
+        var li = LF[y * W + rimX] * fireI * 1.6;
+        if (li > bay(rimX, y) * 0.9) buf[y * W + rimX] = M.lD[Math.min(LV - 1, 1 + ((li * 3) | 0))];
+      }
+    }
+  }
+  /* owl eyes in the right-hand pine */
+  var oc = ((t % 11) > 3.2 && (t % 11) < 8.4) && !((t % 11) > 5.6 && (t % 11) < 5.75);
+  if (oc && nearTrees.length > 2) {
+    var ot = nearTrees[2], oy = ot.base - Math.round(ot.h * 0.62), ox = ot.x - 8;
+    put(ox, oy, P(0xffd23f)); put(ox + 3, oy, P(0xffd23f));
+  }
+}
+function drawGround() {
+  var x, y, i, m, r;
+  for (y = gy; y < H; y++) for (x = 0; x < W; x++) {
+    i = y * W + x; m = gMat[i]; r = GROUND_RAMPS[m];
+    if (!r) continue;
+    buf[i] = r[lightIdx(x, y)];
+  }
+}
+function drawTent(t) {
+  var s = S_TENT, x0 = tcx - 17, y0 = tby - (s.h - 1), x, y, c, wx, wy, r, i;
+  var top = y0 + 8, bot = y0 + s.h - 1;
+  for (y = 0; y < s.h; y++) {
+    wy = y0 + y; if (wy < 0 || wy >= H) continue;
+    for (x = 0; x < s.w; x++) {
+      c = s.d[y * s.w + x]; if (c === 46) continue;
+      wx = x0 + x; if (wx < 0 || wx >= W) continue;
+      if (c === 105) {                                   /* glowing interior */
+        var vy = (wy - top) / (bot - top + 1), vx = Math.abs(wx - tcx) / 8;
+        var g = 0.28 + 0.62 * vy - 0.12 * vx + (lantI - 1) * 0.6 + (hash2(wx, wy) - 0.5) * 0.08;
+        var q = clamp(g, 0, 0.999) * (GLOW.length - 1), b = q | 0;
+        if (q - b > bay(wx, wy)) b++;
+        buf[wy * W + wx] = GLOW[b > GLOW.length - 1 ? GLOW.length - 1 : b];
+        continue;
+      }
+      r = R_TENT[c]; if (!r) continue;
+      buf[wy * W + wx] = r[lightIdx(wx, wy)];
+    }
+  }
+  /* ground shadow of the tent */
+  for (x = x0 + 1; x < x0 + s.w - 1; x++) { i = (tby + 1) * W + x; if (bay(x, tby + 1) < 0.5 && tby + 1 < H) buf[i] = M.g[0]; }
+}
+function drawStones(list) {
+  var i, a, s, x0, y0;
+  for (i = 0; i < list.length; i++) {
+    a = list[i]; s = S_STONE[a[2]];
+    x0 = fx + a[0] - (s.w >> 1); y0 = hy + a[1] - s.h + 1;
+    drawSprite(s, x0, y0, R_STONE, (i & 1) === 1);
+  }
+}
+function drawLogsBurning() {                       /* freshly thrown logs sit inside the flames */
+  var n = Math.min(3, Math.round(fuel * 2.4)), i;
+  var slots = [[-9, -12], [-2, -14], [-13, -15]];
+  for (i = 0; i < n; i++) drawSprite(S_LOGS, fx + slots[i][0], hy + slots[i][1], R_LOG, i === 1);
+}
+function drawLogsCross() {                         /* the crossed base logs stand in front of the flame roots */
+  drawSprite(S_LUR, fx - 11, hy - 11, R_LOG, false);
+  drawSprite(S_LUL, fx - 11, hy - 11, R_LOG, false);
+}
+function drawLogFront(t) {
+  var x0 = fx - 12, y0 = hy - 5, s = S_LOGH, x, y, c, wx, wy, r, hv;
+  for (y = 0; y < s.h; y++) for (x = 0; x < s.w; x++) {
+    c = s.d[y * s.w + x]; if (c === 46) continue;
+    wx = x0 + x; wy = y0 + y;
+    if ((c === 108 || c === 114) && y < 2) {                                  /* glowing embers along the top edge */
+      hv = hash2(wx, wy);
+      if (((hv * 9 + (t * 3.2 | 0)) % 6) < 1.2) { buf[wy * W + wx] = FIRE[5 + (((hv * 100) | 0) % 5)]; continue; }
+    }
+    r = R_LOG[c]; if (!r) continue;
+    buf[wy * W + wx] = r[Math.min(LV - 1, lightIdx(wx, wy) + (y < 3 ? 0 : 0))];
+  }
+}
+function drawAshEmbers(t) {
+  var x, y, hv;
+  for (y = hy - 6; y <= hy + 1; y++) for (x = fx - 18; x <= fx + 18; x++) {
+    if (gMat[y * W + x] !== M_ASH) continue;
+    hv = hash2(x + 17, y * 5);
+    if (hv < 0.16 * (0.4 + fuel * 0.6)) {
+      var ph = (hv * 40 + t * (1.2 + hv * 2)) % 1;
+      buf[y * W + x] = FIRE[3 + (((ph < 0.5 ? ph : 1 - ph) * 2 * 5) | 0)];
+    }
+  }
+}
+function drawFire() {
+  var x, y, v, wy, wx;
+  for (y = 0; y < FH; y++) {
+    wy = fireY0 + y; if (wy < 0 || wy >= H) continue;
+    for (x = 0; x < FW; x++) {
+      v = heat[y * FW + x]; if (v < 2) continue;
+      wx = fireX0 + x; if (wx < 0 || wx >= W) continue;
+      buf[wy * W + wx] = FIRE[v];
+    }
+  }
+}
+function fireStep() {
+  var x, y, v, r, dx, dst, cx = FW >> 1, sh, pe, ws, i, d, edge, dec, wA = Math.abs(wind), wS = wind > 0 ? 1 : -1;
+  var f = clamp(fuel + surge * 0.55, 0.15, 1.7);
+  sh = Math.round(5 + f * 9); pe = clamp(0.66 - f * 0.42, 0.06, 0.52);
+  for (x = 0; x < FW; x++) {
+    d = Math.abs(x - cx);
+    heat[(FH - 1) * FW + x] = d <= sh ? (d > sh - 3 ? 10 + ((Math.random() * 5) | 0) : 15) : 0;
+  }
+  for (x = 0; x < FW; x++) {
+    for (y = 1; y < FH; y++) {
+      i = y * FW + x; v = heat[i];
+      if (v === 0) { heat[i - FW] = 0; continue; }
+      r = (Math.random() * 3) | 0;
+      dx = 1 - r;
+      if (wA > 0.02 && Math.random() < wA * 0.6) dx += wS;
+      edge = Math.abs(x - cx) / (sh + 4);
+      dec = (r & 1) + (Math.random() < pe ? 1 : 0) + (edge > 0.5 && Math.random() < (edge - 0.4) * 1.8 ? 1 : 0);
+      if (surge > 0.05 && Math.random() < 0.1) dec = Math.max(0, dec - 1);
+      dst = x + dx; if (dst < 0) dst = 0; else if (dst >= FW) dst = FW - 1;
+      v -= dec; heat[(y - 1) * FW + dst] = v < 0 ? 0 : v;
+    }
+  }
+}
+function drawCharacter(t) {
+  drawSprite(S_LOGH, ccx - 14, cby - 5, R_LOG, true);
+  drawSprite(S_CHAR, ccx - 9, cby - 18, R_CHAR, false);
+}
+var stickX = 0;
+function flameEdgeX() {                             /* the camper nudges the marshmallow to the flame's right-hand edge */
+  var cyh = hy - 12 - fireY0, x;
+  if (cyh < 0 || cyh >= FH) return fx + 6;
+  for (x = FW - 1; x >= 0; x--) if (heat[cyh * FW + x] >= 7) return fireX0 + x + 1;
+  return fx + 3;
+}
+function drawStick(t, dt) {
+  var hx = ccx - 9, hy2 = cby - 18 + 11;
+  if (!stickX) stickX = fx + 8;
+  stickX += (flameEdgeX() - stickX) * Math.min(1, dt * 2.4);
+  var tx = Math.round(stickX + (reduce ? 0 : Math.sin(t * 1.9) * 0.9)), ty = hy - 12 + (reduce ? 0 : Math.round(Math.sin(t * 1.3 + 1) * 1.0));
+  /* marshmallow cycle: extend, toast, (burn), pull back, wait, repeat */
+  var px, py, k;
+  if (mm.phase === 0) {
+    mm.t += dt / 0.9; k = clamp(mm.t, 0, 1); k = 1 - (1 - k) * (1 - k);
+    px = lerp(hx - 1, tx, k); py = lerp(hy2 - 1, ty, k);
+    if (mm.t >= 1) { mm.phase = 1; mm.toast = 0; mm.burnT = 0; }
+  } else if (mm.phase === 1) {
+    px = tx; py = ty;
+    var cxh = Math.round(px - fireX0), cyh = Math.round(py - fireY0), hv = 0, i, j;
+    for (j = -1; j <= 1; j++) for (i = -2; i <= 1; i++) { var hh = heat[clamp(cyh + j, 0, FH - 1) * FW + clamp(cxh + i, 0, FW - 1)]; if (hh > hv) hv = hh; }
+    mm.toast += dt * (0.03 + 0.036 * hv) * (reduce ? 0.6 : 1);
+    if (mm.toast >= 5) { mm.burnT += dt; if (mm.burnT > 2.4) { mm.phase = 2; mm.t = 0; } }
+  } else if (mm.phase === 2) {
+    mm.t += dt / 0.9; k = clamp(mm.t, 0, 1); k = k * k;
+    px = lerp(tx, hx - 1, k); py = lerp(ty, hy2 - 1, k);
+    if (mm.t >= 1) { mm.phase = 3; mm.t = 0; }
+  } else { px = hx - 1; py = hy2 - 1; mm.t += dt; if (mm.t > 1.4) { mm.phase = 0; mm.t = 0; mm.toast = 0; } }
+  if (mm.phase === 1) { px = tx; py = ty; }
+  /* the stick (Bresenham) */
+  var x = hx, y = hy2, ex = Math.round(px), ey = Math.round(py), dx = Math.abs(ex - x), dy = -Math.abs(ey - y), sx = x < ex ? 1 : -1, sy = y < ey ? 1 : -1, err = dx + dy, e2, guard = 0;
+  while (guard++ < 90) {
+    litPut(x, y, M.stick);
+    if (x === ex && y === ey) break;
+    e2 = 2 * err; if (e2 >= dy) { err += dy; x += sx; } if (e2 <= dx) { err += dx; y += sy; }
+  }
+  /* marshmallow: 3x2 block, lighter on top, catching fire once it is charred */
+  var lv = Math.min(5, Math.floor(mm.toast)), c1 = TOAST[Math.max(0, lv - 1)], c2 = TOAST[lv];
+  if (mm.phase !== 3) {
+    put(ex - 2, ey - 1, c1); put(ex - 1, ey - 1, c1); put(ex, ey - 1, c1);
+    put(ex - 2, ey, c2); put(ex - 1, ey, c2); put(ex, ey, c2);
+    if (mm.phase === 1 && mm.toast >= 5) {
+      var fl = ((simT * 14) | 0) & 3;
+      put(ex - 1, ey - 2, FIRE[12 + (fl & 1)]); put(ex, ey - 2, FIRE[9 + fl % 3]); put(ex - 2, ey - 2, FIRE[8 + ((fl + 1) & 1)]); put(ex - 1, ey - 3, FIRE[7 + (fl & 1)]);
+    }
+  }
+}
+function drawSparks(dt, t) {
+  var i, s, f, c;
+  for (i = 0; i < sparks.length; i++) {
+    s = sparks[i]; if (!s.a) continue;
+    s.l -= dt; if (s.l <= 0) { s.a = false; continue; }
+    s.vx += (wind * 26 - s.vx) * Math.min(1, dt * 1.6) + (Math.random() - 0.5) * 22 * dt;
+    s.vy -= 5 * dt; s.x += s.vx * dt; s.y += s.vy * dt;
+    f = s.l / s.ml;
+    c = f > 0.72 ? SPARK[0] : f > 0.45 ? SPARK[1] : f > 0.2 ? SPARK[2] : SPARK[3];
+    if (f < 0.32 && ((t * 22 + i * 7) | 0) % 3 === 0) continue;                    /* blink out */
+    put(Math.round(s.x), Math.round(s.y), c);
+  }
+}
+function spawnSpark(burst) {
+  var i, s;
+  for (i = 0; i < sparks.length; i++) if (!sparks[i].a) { s = sparks[i]; break; }
+  if (!s) return;
+  var f = clamp(fuel + surge * 0.5, 0.2, 1.7);
+  s.a = true; s.x = fx + (Math.random() - 0.5) * (6 + f * 12); s.y = hy - 12 - Math.random() * (8 + f * 12);
+  s.vx = (Math.random() - 0.5) * 16 + wind * 10; s.vy = -(12 + Math.random() * 26) * (burst ? 1.5 : 1);
+  s.ml = s.l = 0.9 + Math.random() * 2.2;
+}
+function drawSmoke(dt) {
+  var i, s, a, c1 = P(0x4a5599), c2 = P(0x39427d);
+  if (Math.random() < dt * (1.6 + fuel * 2)) {
+    for (i = 0; i < smokes.length; i++) if (!smokes[i].a) {
+      s = smokes[i]; s.a = true; s.x = fx + (Math.random() - 0.5) * 10; s.y = hy - 28 - fuel * 14 - Math.random() * 6; s.vx = wind * 8 + (Math.random() - 0.5) * 3;
+      s.ml = s.l = 5 + Math.random() * 4; break;
+    }
+  }
+  for (i = 0; i < smokes.length; i++) {
+    s = smokes[i]; if (!s.a) continue;
+    s.l -= dt; if (s.l <= 0) { s.a = false; continue; }
+    s.x += (s.vx + Math.sin(s.l * 1.3 + i) * 2.4) * dt; s.y -= (5 + fuel * 4) * dt; s.vx += (wind * 9 - s.vx) * dt * 0.5;
+    a = Math.sin(3.14159 * (s.l / s.ml)) * 0.5;
+    var px = Math.round(s.x), py = Math.round(s.y);
+    if (px >= 0 && px < W && py >= 0 && py < gy && bay(px, py) < a) buf[py * W + px] = (i & 1) ? c1 : c2;
+    if (bay(px + 1, py) < a * 0.5) put(px + 1, py, c2);
+  }
+}
+function throwLog(sx, sy) {
+  if (logProj) return;
+  var tx = fx + (Math.random() * 6 - 3), ty = hy - 8, T = clamp(0.5 + Math.hypot(tx - sx, ty - sy) / 300, 0.5, 0.85), g = 220;
+  logProj = { x: sx, y: sy, vx: (tx - sx) / T, vy: (ty - sy - 0.5 * g * T * T) / T, g: g, t: 0, T: T, spin: 0 };
+  if (hintMode !== 1 || hintLast !== 'throw') { hintMode = 1; hintLast = 'throw'; hintSince = simT; }
+  firstAction = true;
+  thud(false);
+}
+function stepLog(dt) {
+  var p = logProj; if (!p) return;
+  p.t += dt; p.vy += p.g * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.spin += dt * 12;
+  var f = ((p.spin | 0) & 1), s = f ? S_LOGH : S_LOGS;
+  if (f) { drawSprite(S_LOGS, Math.round(p.x) - 6, Math.round(p.y) - 2, R_LOG, false); }
+  else {                                                     /* upright frame: 4 wide, 12 tall */
+    var ox = Math.round(p.x) - 2, oy = Math.round(p.y) - 6, yy, xx;
+    for (yy = 0; yy < 12; yy++) for (xx = 0; xx < 4; xx++) put(ox + xx, oy + yy, M.lM[lightIdx(clamp(ox + xx, 0, W - 1), clamp(oy + yy, 0, H - 1))]);
+  }
+  if (p.t >= p.T) {
+    logProj = null; fuel = Math.min(1.35, fuel + 0.3); surge = 1; logsThrown++;
+    var i; for (i = 0; i < 16; i++) spawnSpark(true);
+    thud(true); crackle(1.6); crackle(1.2);
+    live.textContent = 'A log lands on the fire.';
+  }
+}
+function drawGust(dt) {
+  var i, g, c = [P(0xcfd8ff), P(0x8a96d8), P(0x4a5599)];
+  if (blowing || keyBlow) {
+    if (Math.random() < dt * 40) for (i = 0; i < gust.length; i++) if (!gust[i].a) {
+      g = gust[i]; g.a = true; g.x = (keyBlow ? (keyBlow < 0 ? fx - 42 : fx + 42) : ptrX) + (Math.random() - 0.5) * 6; g.y = (keyBlow ? hy - 12 : ptrY) + (Math.random() - 0.5) * 16; g.l = 0.75; break;
+    }
+  }
+  for (i = 0; i < gust.length; i++) {
+    g = gust[i]; if (!g.a) continue;
+    g.l -= dt; if (g.l <= 0) { g.a = false; continue; }
+    var dir2 = wind >= 0 ? 1 : -1;
+    g.x += dir2 * 92 * dt;
+    var gx = Math.round(g.x), gyy = Math.round(g.y), len = 4, k;
+    for (k = 0; k < len; k++) put(gx - dir2 * k, gyy, c[k > 2 ? 2 : k > 0 ? 1 : 0]);
+  }
+}
+function drawText(str, x, y, col, sh) {
+  var i, ch, gl, r, c, cx = x;
+  for (i = 0; i < str.length; i++) {
+    ch = str.charAt(i); gl = FONT[ch] || FONT[' '];
+    for (r = 0; r < 7; r++) for (c = 0; c < 5; c++) if (gl[r].charAt(c) === '#') { if (sh) put(cx + c + 1, y + r + 1, sh); put(cx + c, y + r, col); }
+    cx += 6;
+  }
+}
+function textW(s) { return s.length * 6 - 1; }
+function drawCaptions(t) {
+  var title = 'LAST LIGHT AT CAMP', n = reduce ? title.length : clamp(Math.floor((t - 0.7) * 9), 0, title.length);
+  var warm = clamp(0.4 + fireI * 0.5, 0, 1), c1 = pack(mixc(rgbOf(0xc9d3ff), rgbOf(0xfff6d5), warm)), sh = P(0x0b1026);
+  var tw = textW(title), tx = (W - tw) >> 1, ty = 7;
+  if (n > 0) drawText(title.substring(0, n), tx, ty, c1, sh);
+  /* hint */
+  var lines, blink;
+  if (hintMode === 0) lines = W < 150 ? ['PRESS TO FEED', 'THE FIRE'] : ['PRESS TO FEED THE FIRE'];
+  else if (fuel < 0.46 && logProj === null) lines = W < 150 ? ['FEED THE FIRE', 'BEFORE IT DIES'] : ['FEED THE FIRE BEFORE IT DIES'];
+  else if (hintMode === 1) lines = hintLast === 'throw' ? ['HOLD TO BLOW'] : (W < 150 ? ['CLICK TO', 'THROW A LOG'] : ['CLICK TO THROW A LOG']);
+  else lines = null;
+  if (lines) {
+    blink = reduce ? true : (t % 2.4) < 1.7;
+    if (t > 2.6 && blink) {
+      var i, hc = pack(mixc(rgbOf(0x9fb0f0), rgbOf(0xffeaa8), clamp(fireI * 0.75, 0, 1)));
+      for (i = 0; i < lines.length; i++) drawText(lines[i], (W - textW(lines[i])) >> 1, H - 12 - (isPortrait ? 17 : 0) - (lines.length - 1 - i) * 9, hc, sh);
+    }
+  }
+}
+
+/* ============================================================
+   audio (opt-in): filtered-noise crackle, fire roar, wind, log thud
+   ============================================================ */
+var ac = null, master = null, nbuf = null, roar = null, windG = null, snd = false;
+function audioInit() {
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext, i, d;
+    if (!AC) return false;
+    if (!ac) {
+      ac = new AC(); master = ac.createGain(); master.gain.value = 0.42; master.connect(ac.destination);
+      nbuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate); d = nbuf.getChannelData(0);
+      for (i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      var a = ac.createBufferSource(); a.buffer = nbuf; a.loop = true;
+      var lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 380;
+      roar = ac.createGain(); roar.gain.value = 0; a.connect(lp); lp.connect(roar); roar.connect(master); a.start();
+      var b = ac.createBufferSource(); b.buffer = nbuf; b.loop = true; b.playbackRate.value = 0.8;
+      var bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.6;
+      windG = ac.createGain(); windG.gain.value = 0; b.connect(bp); bp.connect(windG); windG.connect(master); b.start();
+    }
+    if (ac.state === 'suspended') ac.resume();
+    return true;
+  } catch (e) { ac = null; return false; }
+}
+function crackle(k) {
+  if (!snd || !ac) return;
+  try {
+    var t = ac.currentTime, s = ac.createBufferSource(), bp = ac.createBiquadFilter(), g = ac.createGain(), pk = (0.05 + Math.random() * 0.13) * (k || 1);
+    s.buffer = nbuf; bp.type = 'bandpass'; bp.frequency.value = 1200 + Math.random() * 3800; bp.Q.value = 1.5 + Math.random() * 4;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(pk, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.02 + Math.random() * 0.07);
+    s.connect(bp); bp.connect(g); g.connect(master); s.start(t, Math.random() * 1.6, 0.13);
+  } catch (e) { /* ignore */ }
+}
+function thud(land) {
+  if (!snd || !ac) return;
+  try {
+    var t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(land ? 130 : 260, t); o.frequency.exponentialRampToValueAtTime(land ? 42 : 120, t + 0.16);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(land ? 0.55 : 0.18, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + (land ? 0.24 : 0.12));
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.28);
+  } catch (e) { /* ignore */ }
+}
+function audioTick() {
+  if (!snd || !ac) return;
+  try {
+    var t = ac.currentTime;
+    roar.gain.setTargetAtTime(0.028 * clamp(fireI, 0.3, 1.6), t, 0.25);
+    windG.gain.setTargetAtTime(0.11 * Math.abs(wind), t, 0.12);
+  } catch (e) { /* ignore */ }
+}
+function setSound(on) {
+  if (on) { if (!audioInit()) return; snd = true; } else {
+    snd = false; try { if (ac) { roar.gain.setTargetAtTime(0, ac.currentTime, 0.1); windG.gain.setTargetAtTime(0, ac.currentTime, 0.1); } } catch (e) { /* ignore */ }
+  }
+  sndBtn.setAttribute('aria-pressed', snd ? 'true' : 'false'); sndState.textContent = snd ? 'On' : 'Off';
+  if (snd) { crackle(1.4); }
+}
+sndBtn.addEventListener('click', function (e) {
+  setSound(!snd);
+  if (e.detail > 0) sndBtn.blur();                  /* mouse users go straight back to feeding the fire with Space */
+});
+
+/* ============================================================
+   input
+   ============================================================ */
+function toLogical(e) {
+  var r = cv.getBoundingClientRect();
+  ptrX = (e.clientX - r.left) / r.width * W; ptrY = (e.clientY - r.top) / r.height * H;
+}
+cv.addEventListener('pointerdown', function (e) {
+  if (e.button > 0) return;
+  toLogical(e); down = true; downT = performance.now(); blowing = false;
+  try { cv.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  e.preventDefault();
+});
+cv.addEventListener('pointermove', function (e) { toLogical(e); });
+function release(e) {
+  if (!down) return;
+  var dur = performance.now() - downT;
+  down = false;
+  if (!blowing && dur < 260 && e.type !== 'pointercancel') throwLog(ptrX, ptrY);
+  blowing = false;
+}
+cv.addEventListener('pointerup', release);
+cv.addEventListener('pointercancel', release);
+cv.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+window.addEventListener('keydown', function (e) {
+  if (e.target === sndBtn && (e.key === ' ' || e.key === 'Enter')) return;
+  if (e.repeat) { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.preventDefault(); return; }
+  if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); var side = Math.random() < 0.5; throwLog(side ? fx - 56 : fx + 56, hy - 40); }
+  else if (e.key === 'ArrowLeft') { keyBlow = -1; e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { keyBlow = 1; e.preventDefault(); }
+});
+window.addEventListener('keyup', function (e) { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') keyBlow = 0; });
+
+/* ============================================================
+   main loop
+   ============================================================ */
+var last = 0, started = false;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (!started) { started = true; last = now; }
+  var dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000)); last = now;
+  simT += dt; var t = simT;
+
+  /* blow / wind */
+  if (down && !blowing && performance.now() - downT > 240) { blowing = true; firstAction = true; if (hintMode === 0) { hintMode = 1; hintLast = 'blow'; hintSince = simT; } }
+  if (blowing) { var dxp = fx - ptrX; windGoal = (dxp >= 0 ? 1 : -1) * clamp(0.55 + Math.abs(dxp) / 60, 0.55, 1); }
+  else if (keyBlow) windGoal = -keyBlow;
+  else windGoal = 0;
+  wind += (windGoal - wind) * Math.min(1, dt * (windGoal ? 3.2 : 1.6)) * (reduce ? 0.6 : 1);
+  if (blowing || keyBlow) { fuel -= dt * 0.012; surge = Math.min(0.35, surge + dt * 0.4); }
+  fuel = clamp(fuel - dt * (0.0056 + Math.abs(wind) * 0.004), 0.2, 1.4);
+  surge = Math.max(0, surge - dt * 0.55);
+
+  /* light */
+  flickGoal = 0.9 + Math.random() * 0.22;
+  flick += (flickGoal - flick) * Math.min(1, dt * 12);
+  fireI = (0.5 + 0.62 * clamp(fuel, 0, 1.3) + surge * 0.55) * (reduce ? 0.95 + (flick - 1) * 0.3 : flick);
+  lantI = 0.94 + 0.06 * Math.sin(t * 7.3) + (Math.random() - 0.5) * 0.05;
+
+  /* fire cellular automaton at a fixed 30 Hz (15 Hz when reduced motion) */
+  fireAcc += dt; var stepLen = reduce ? 1 / 15 : 1 / 30, guard = 0;
+  while (fireAcc >= stepLen && guard++ < 4) { fireStep(); fireAcc -= stepLen; }
+  if (fireAcc > 0.2) fireAcc = 0;
+
+  /* crackle events */
+  crackleT -= dt;
+  if (crackleT <= 0) {
+    crackleT = (0.09 + Math.random() * 0.7) / (0.45 + fuel);
+    var n = 1 + ((Math.random() * 3) | 0), j; for (j = 0; j < n; j++) spawnSpark(false);
+    if (Math.random() < 0.6) surge = Math.min(1, surge + 0.06);
+    crackle(0.8 + fuel * 0.6);
+  }
+  if (hintMode === 1 && t - hintSince > 6.5) hintMode = 2;
+  audioClock += dt; if (audioClock > 0.25) { audioClock = 0; audioTick(); }
+
+  /* ---- compose the frame ---- */
+  buf.set(skyBase);
+  drawStars(t); drawShoot(dt, t);
+  drawTrees(farTrees, P(0x161c47), t, reduce ? 0.35 : 0.8);
+  drawTrees(midTrees, P(0x0e1339), t, reduce ? 0.4 : 1);
+  drawSmoke(dt);
+  drawGround();
+  drawTent(t);
+  drawStones(RING_BACK);
+  drawAshEmbers(t);
+  drawLogsBurning();
+  drawFire();
+  drawLogsCross();
+  drawLogFront(t);
+  drawStones(RING_FRONT);
+  drawCharacter(t);
+  drawStick(t, dt);
+  drawNearTrees(t);
+  drawSparks(dt, t);
+  drawGust(dt);
+  stepLog(dt);
+  drawCaptions(t);
+
+  /* dithered fade-in from black */
+  if (fadeT < 1.3) {
+    fadeT += dt; var fv = clamp(fadeT / 1.2, 0, 1), i, x, y;
+    if (fv < 1) for (y = 0; y < H; y++) for (x = 0; x < W; x++) if (bay(x, y) > fv) buf[y * W + x] = SKY[0];
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+layout();
+var rzT = 0;
+window.addEventListener('resize', function () { clearTimeout(rzT); rzT = setTimeout(layout, 120); });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', function () { clearTimeout(rzT); rzT = setTimeout(layout, 120); });
+document.addEventListener('visibilitychange', function () { last = performance.now(); });
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Halo Climate — Soft Dial Thermostat</title>
+<meta name="description" content="A neumorphic smart-thermostat panel: a tactile rotary dial, pressed mode keys, embossed sliders and a twelve-hour outlook, all extruded from one warm-grey material.">
+<meta name="theme-color" content="#e6e2dc">
+<noscript><style>.rise{opacity:1!important;transform:none!important}</style></noscript>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --surface:#e6e2dc;
+  --surface-hi:#ebe8e2;
+  --surface-lo:#dfdbd4;
+  --hi:#ffffff;
+  --lo:rgba(163,155,143,.55);
+  --track:#d8d3ca;
+  --ink:#37322b;
+  --ink-2:#625c52;
+  --ink-3:#8b857a;
+  --aqua:#4cc9f0;
+  --sun:#ff8a4c;
+  --accent:#a1ccb5;
+  --accent-ink:#3d7f6a;
+  --glow:rgba(161,204,181,.5);
+  --grid:rgba(110,100,85,.17);
+  --font:ui-rounded,"SF Pro Rounded","Hiragino Maru Gothic ProN","Arial Rounded MT Bold","Varela Round",Nunito,"URW Gothic","Avenir Next",Avenir,"Century Gothic",Ubuntu,Cantarell,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --d:520px;
+  --k:1.15;
+}
+*{box-sizing:border-box}
+html{color-scheme:light;-webkit-text-size-adjust:100%}
+body{
+  margin:0;min-height:100vh;min-height:100dvh;
+  background:radial-gradient(90% 70% at 28% 8%,var(--surface-hi),transparent 62%),var(--surface);
+  color:var(--ink);font-family:var(--font);
+  -webkit-font-smoothing:antialiased;
+  display:grid;place-items:center;
+  padding:clamp(12px,3.2vw,44px);
+  overflow-x:hidden;
+}
+button{font:inherit;color:inherit}
+.defs{position:absolute;width:0;height:0;overflow:hidden}
+.grain{position:fixed;inset:0;pointer-events:none;z-index:50;background-size:128px 128px;opacity:.9}
+
+/* ============ PANEL ============ */
+.stage{width:min(1260px,100%)}
+.panel{
+  position:relative;border-radius:clamp(28px,4vw,52px);
+  padding:clamp(18px,3vw,44px);
+  background:linear-gradient(145deg,var(--surface-hi),var(--surface-lo));
+  box-shadow:26px 26px 64px var(--lo),-26px -26px 64px var(--hi),inset 1px 1px 0 rgba(255,255,255,.55);
+}
+.rise{opacity:0;transform:translateY(14px);transition:opacity .9s var(--ease),transform .9s var(--ease);transition-delay:calc(var(--i,0)*80ms)}
+.ready .rise{opacity:1;transform:none}
+
+.lab{font-size:10.5px;letter-spacing:.17em;text-transform:uppercase;color:var(--ink-2);font-weight:600;line-height:1.2}
+
+/* ---- header ---- */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:clamp(14px,2.4vw,30px)}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.mark-btn{border:0;padding:0;margin:0;background:none;border-radius:50%;cursor:pointer;display:grid;place-items:center;flex:none;transition:transform .35s var(--ease)}
+.mark-btn:active{transform:scale(.9) rotate(-40deg)}
+.mark{width:44px;height:44px;display:block;filter:drop-shadow(2px 2px 3px var(--lo)) drop-shadow(-2px -2px 3px var(--hi))}
+h1{margin:0 0 3px;font-size:clamp(19px,2.2vw,24px);font-weight:600;letter-spacing:.005em;line-height:1.1}
+.topr{display:flex;align-items:center;gap:14px}
+.pill{display:flex;align-items:baseline;gap:9px;padding:10px 16px;border-radius:999px;background:var(--surface-lo);box-shadow:inset 3px 3px 7px var(--lo),inset -3px -3px 7px var(--hi);white-space:nowrap}
+.pill b{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.round-btn{
+  width:46px;height:46px;border:0;border-radius:50%;cursor:pointer;display:grid;place-items:center;color:var(--ink-2);
+  background:linear-gradient(145deg,var(--surface-hi),var(--surface-lo));
+  box-shadow:6px 6px 13px var(--lo),-6px -6px 13px var(--hi);
+  transition:box-shadow .3s var(--ease),transform .3s var(--ease),color .3s;
+}
+.round-btn svg{width:22px;height:22px}
+.round-btn:active,.round-btn[aria-pressed="true"]{box-shadow:inset 4px 4px 9px var(--lo),inset -4px -4px 9px var(--hi);color:var(--accent-ink);transform:scale(.97)}
+
+/* ---- grid ---- */
+.grid{display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:center}
+.colL{display:flex;flex-direction:column;align-items:center;gap:clamp(20px,2.6vw,32px);min-width:0;--dw:min(100%,580px,max(300px,calc(100vh - 372px)))}
+@supports (height:100dvh){.colL{--dw:min(100%,580px,max(300px,calc(100dvh - 372px)))}}
+.colR{display:flex;flex-direction:column;gap:clamp(18px,2.4vw,28px);min-width:0}
+
+/* ============ DIAL ============ */
+.dial{
+  position:relative;width:var(--dw);aspect-ratio:1/1;border-radius:50%;
+  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;
+  cursor:grab;outline:none;
+}
+.dial.grab{cursor:grabbing}
+.dial:focus-visible{outline:3px solid var(--accent-ink);outline-offset:6px}
+.plate{
+  position:absolute;inset:0;border-radius:50%;
+  background:linear-gradient(145deg,var(--surface-hi),var(--surface-lo));
+  box-shadow:18px 18px 42px var(--lo),-18px -18px 42px var(--hi),inset 2px 2px 3px rgba(255,255,255,.6);
+}
+.plate::after{ /* soft ambient halo colour bleeding from the ring */
+  content:"";position:absolute;inset:6%;border-radius:50%;
+  background:radial-gradient(closest-side,transparent 62%,var(--glow) 100%);opacity:.16;pointer-events:none;
+}
+.ring{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:3}
+.ring-dyn{z-index:5}
+.bead-halo{position:absolute;left:50%;top:50%;width:calc(var(--d)*.14);aspect-ratio:1/1;border-radius:50%;pointer-events:none;z-index:4;will-change:transform}
+.bead-halo::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(closest-side,var(--halo,var(--glow)),transparent);animation:breathe 3.4s ease-in-out infinite;will-change:opacity,transform}
+@keyframes breathe{0%,100%{opacity:.5;transform:scale(.8)}50%{opacity:1;transform:scale(1.18)}}
+.nowwrap{position:absolute;inset:0;z-index:4;pointer-events:none;will-change:transform;transition:transform .9s var(--ease)}
+.nowwrap svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+.knob{
+  position:absolute;left:50%;top:50%;width:56%;aspect-ratio:1/1;border-radius:50%;
+  transform:translate(-50%,-50%);z-index:2;
+  background:linear-gradient(145deg,#efece7,var(--surface-lo));
+  box-shadow:12px 12px 26px var(--lo),-12px -12px 26px var(--hi),inset 2px 2px 3px rgba(255,255,255,.95),inset -3px -3px 7px rgba(150,140,125,.28);
+  transition:box-shadow .35s var(--ease),transform .35s var(--ease);
+}
+.dial.grab .knob{transform:translate(-50%,-50%) scale(.982);box-shadow:7px 7px 16px var(--lo),-7px -7px 16px var(--hi),inset 2px 2px 3px rgba(255,255,255,.9),inset -3px -3px 7px rgba(150,140,125,.3)}
+.knurl{
+  position:absolute;inset:0;border-radius:50%;will-change:transform;
+  background:repeating-conic-gradient(from 0deg,rgba(105,95,80,.16) 0deg .9deg,rgba(255,255,255,.55) .9deg 1.8deg,transparent 1.8deg 3.6deg);
+  -webkit-mask-image:radial-gradient(closest-side,transparent 0 90.5%,#000 91.2% 98.6%,transparent 99.3%);
+  mask-image:radial-gradient(closest-side,transparent 0 90.5%,#000 91.2% 98.6%,transparent 99.3%);
+}
+.sheen{ /* fixed satin highlight — does not rotate with the knob */
+  position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:conic-gradient(from 200deg,rgba(255,255,255,0) 0deg,rgba(255,255,255,.5) 34deg,rgba(255,255,255,0) 78deg,rgba(120,108,92,.07) 170deg,rgba(255,255,255,0) 210deg,rgba(255,255,255,.34) 300deg,rgba(255,255,255,0) 340deg);
+  -webkit-mask-image:radial-gradient(closest-side,transparent 0 68%,#000 69% 100%);
+  mask-image:radial-gradient(closest-side,transparent 0 68%,#000 69% 100%);
+  opacity:.7;
+}
+.dimple{
+  position:absolute;left:50%;top:50%;width:calc(var(--d)*.03);aspect-ratio:1/1;border-radius:50%;z-index:4;pointer-events:none;will-change:transform;
+  background:linear-gradient(145deg,var(--surface-lo),var(--surface-hi));
+  box-shadow:inset 2px 2px 4px var(--lo),inset -2px -2px 3px var(--hi);
+}
+.dimple::after{content:"";position:absolute;inset:32%;border-radius:50%;background:var(--accent);box-shadow:0 0 8px 1px var(--glow);opacity:.9}
+.well{
+  position:absolute;left:50%;top:50%;width:39.6%;aspect-ratio:1/1;border-radius:50%;transform:translate(-50%,-50%);z-index:4;pointer-events:none;
+  background:linear-gradient(145deg,var(--surface-lo),var(--surface-hi));
+  box-shadow:inset 9px 9px 20px var(--lo),inset -9px -9px 20px var(--hi);
+  display:grid;place-items:center;
+}
+.readout{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--ink);line-height:1}
+.readout .lab{font-size:max(9px,calc(var(--d)*.0195));margin-bottom:calc(var(--d)*.008)}
+.big{display:flex;align-items:baseline;justify-content:center;font-size:calc(var(--d)*.172);font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:.95}
+.big .dec{font-size:.5em;letter-spacing:0;color:var(--ink-2);margin-left:.04em}
+.big .unit{font-size:.26em;letter-spacing:0;color:var(--ink-2);align-self:flex-start;margin:.26em 0 0 .1em;font-weight:500}
+.stat{display:flex;align-items:center;gap:calc(var(--d)*.011);margin-top:calc(var(--d)*.014);font-size:max(9px,calc(var(--d)*.02));letter-spacing:.16em;text-transform:uppercase;color:var(--ink-2);font-weight:600;white-space:nowrap}
+.stat i{position:relative;width:calc(var(--d)*.014);height:calc(var(--d)*.014);min-width:6px;min-height:6px;border-radius:50%;background:var(--ink-3);transition:background .4s}
+.stat i::after{content:"";position:absolute;inset:-4px;border-radius:50%;background:var(--glow);opacity:0;will-change:opacity,transform}
+.stat i.on{background:var(--accent)}
+.stat i.on::after{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.15;transform:scale(.7)}50%{opacity:.9;transform:scale(1.25)}}
+.sub{margin-top:calc(var(--d)*.006);font-size:max(9px,calc(var(--d)*.02));letter-spacing:.06em;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.tk{stroke:var(--ink-3);stroke-width:1.5;stroke-linecap:round;transition:stroke .3s;opacity:.85}
+.tk.mj{stroke-width:2.4}
+.tk.on{stroke:var(--ink);opacity:1}
+.nm{font-family:var(--font);font-size:calc(12px*var(--k));font-weight:600;fill:var(--ink-2);letter-spacing:.02em;transition:fill .3s}
+.nm.on{fill:var(--ink)}
+.engrave{font-family:var(--font);font-size:calc(10px*var(--k));letter-spacing:.42em;fill:var(--ink-3);font-weight:600;text-transform:uppercase}
+
+/* ============ MODES ============ */
+.modes{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px;width:var(--dw);
+  border-radius:28px;background:var(--surface-lo);
+  box-shadow:inset 6px 6px 13px var(--lo),inset -6px -6px 13px var(--hi);
+}
+.mode{
+  border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:13px 4px 11px;border-radius:19px;
+  background:linear-gradient(145deg,var(--surface-hi),var(--surface-lo));color:var(--ink-2);
+  box-shadow:5px 5px 11px var(--lo),-5px -5px 11px var(--hi);
+  transition:box-shadow .32s var(--ease),transform .32s var(--ease),color .3s,background .3s;
+  -webkit-tap-highlight-color:transparent;
+}
+.mode svg{width:24px;height:24px;transition:color .3s,filter .3s}
+.mode span{font-size:11px;letter-spacing:.15em;text-transform:uppercase;font-weight:700}
+.mode:hover{color:var(--ink)}
+.mode[aria-checked="true"]{
+  background:linear-gradient(145deg,var(--surface-lo),var(--surface-hi));color:var(--ink);transform:scale(.975);
+  box-shadow:inset 4px 4px 9px var(--lo),inset -4px -4px 9px var(--hi);
+}
+.mode[aria-checked="true"] svg{color:var(--accent-ink);filter:drop-shadow(0 0 5px var(--glow))}
+.mode:active{transform:scale(.96)}
+
+/* ============ WELL / CHART ============ */
+.inset{
+  border-radius:30px;background:var(--surface-lo);padding:18px 18px 12px;
+  box-shadow:inset 8px 8px 18px var(--lo),inset -8px -8px 18px var(--hi);
+}
+.chart-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:2px 4px 8px}
+.chart-head .lab:last-child{color:var(--ink-3);letter-spacing:.11em}
+.chartbox{position:relative;height:clamp(150px,17vw,206px)}
+#chart{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible;touch-action:pan-y;will-change:transform}
+#chart text{font-family:var(--font);font-variant-numeric:tabular-nums}
+.gl{stroke:var(--grid);stroke-width:1}
+.yl{font-size:10px;fill:var(--ink-2);font-weight:600}
+.xl{font-size:10px;fill:var(--ink-2);font-weight:600;text-anchor:middle}
+.setl{font-size:10px;fill:var(--ink-2);font-weight:700;letter-spacing:.08em}
+.nowl{font-size:9.5px;fill:var(--ink);font-weight:700;letter-spacing:.14em;text-anchor:middle}
+.tip{pointer-events:none}
+.tip rect{fill:var(--surface-hi);filter:drop-shadow(2px 2px 3px var(--lo))}
+.tip text{font-size:11px;font-weight:700;fill:var(--ink);text-anchor:middle}
+
+/* ============ SLIDERS ============ */
+.sliders{display:grid;grid-template-columns:1fr 1fr;gap:clamp(16px,2.4vw,34px)}
+.ctl{min-width:0}
+.ctl-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.ctl-head .ico{width:26px;height:26px;color:var(--ink-2);flex:none}
+.ctl-head .txt{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.ctl-head b{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.slider{position:relative;height:46px;touch-action:pan-y;cursor:pointer;user-select:none;-webkit-user-select:none;--tw:36px;--p:.5;border-radius:24px;outline:none}
+.slider:focus-visible{outline:2px solid var(--accent-ink);outline-offset:3px}
+.groove{
+  position:absolute;left:0;right:0;top:50%;height:14px;transform:translateY(-50%);border-radius:9px;overflow:hidden;
+  background:var(--track);box-shadow:inset 3px 3px 6px var(--lo),inset -3px -3px 6px var(--hi);
+}
+.fill{position:absolute;left:0;top:0;bottom:0;width:calc(var(--p)*(100% - var(--tw)) + var(--tw)/2);border-radius:9px;background:linear-gradient(90deg,rgba(76,201,240,.85),var(--accent));box-shadow:0 0 12px var(--glow)}
+.detents{position:absolute;left:calc(var(--tw)/2);right:calc(var(--tw)/2);top:calc(50% + 15px);display:flex;justify-content:space-between;pointer-events:none}
+.detents i{width:2px;height:5px;border-radius:1px;background:var(--ink-3);opacity:.7}
+.thumb{
+  position:absolute;top:50%;left:calc(var(--p)*(100% - var(--tw)));width:var(--tw);height:var(--tw);margin-top:calc(var(--tw)/-2);border-radius:50%;
+  background:linear-gradient(145deg,var(--surface-hi),var(--surface-lo));
+  box-shadow:5px 5px 11px var(--lo),-5px -5px 11px var(--hi),inset 1px 1px 2px rgba(255,255,255,.9);
+  transition:box-shadow .25s var(--ease),transform .25s var(--ease);
+}
+.thumb::after{content:"";position:absolute;inset:11px;border-radius:50%;background:var(--surface-lo);box-shadow:inset 2px 2px 3px var(--lo),inset -1px -1px 2px var(--hi)}
+.slider.grab .thumb{transform:scale(.94);box-shadow:3px 3px 7px var(--lo),-3px -3px 7px var(--hi),inset 1px 1px 2px rgba(255,255,255,.9)}
+.fan{animation:spin var(--spin,2.4s) linear infinite;will-change:transform}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ============ KEYS + COST ============ */
+.row3{display:grid;grid-template-columns:1fr 1fr 1.32fr;gap:clamp(12px,1.6vw,20px);align-items:stretch}
+.key{
+  position:relative;border:0;cursor:pointer;text-align:left;display:flex;flex-direction:column;justify-content:space-between;gap:16px;min-height:112px;
+  padding:16px 16px 14px;border-radius:26px;color:var(--ink-2);
+  background:linear-gradient(145deg,var(--surface-hi),var(--surface-lo));
+  box-shadow:8px 8px 18px var(--lo),-8px -8px 18px var(--hi);
+  transition:box-shadow .3s var(--ease),transform .3s var(--ease),background .3s,color .3s;
+  -webkit-tap-highlight-color:transparent;
+}
+.key .ic{width:28px;height:28px}
+.key b{display:block;font-size:16px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.key small{display:block;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.key .led{position:absolute;right:16px;top:16px;width:9px;height:9px;border-radius:50%;background:var(--track);box-shadow:inset 1px 1px 2px var(--lo),inset -1px -1px 1px var(--hi);transition:background .35s,box-shadow .35s}
+.key.down{transform:scale(.978);box-shadow:inset 4px 4px 10px var(--lo),inset -4px -4px 10px var(--hi)}
+.key[aria-checked="true"]{background:linear-gradient(145deg,var(--surface-lo),var(--surface-hi));transform:scale(.975);box-shadow:inset 5px 5px 12px var(--lo),inset -5px -5px 12px var(--hi);color:var(--accent-ink)}
+.key[aria-checked="true"].down{transform:scale(.955)}
+.key[aria-checked="true"] .led{background:var(--accent);box-shadow:0 0 10px 2px var(--glow),inset 0 0 0 1px rgba(255,255,255,.4)}
+.cost{
+  border-radius:26px;padding:16px 18px 14px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-width:0;
+  background:var(--surface-lo);box-shadow:inset 6px 6px 14px var(--lo),inset -6px -6px 14px var(--hi);
+}
+.cost .fig{font-size:clamp(30px,3.6vw,42px);font-weight:500;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap}
+.cost .fig sup{font-size:.5em;vertical-align:top;position:relative;top:.16em;margin-right:.06em;color:var(--ink-2);font-weight:500}
+.cost .lab{text-wrap:balance}
+.cost .cap{font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums;letter-spacing:.03em;line-height:1.35}
+.cost .cap em{font-style:normal;font-weight:700;color:var(--ink)}
+.foot{margin-top:clamp(20px,3vw,34px);display:flex;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;font-size:11px;color:var(--ink-2);letter-spacing:.03em}
+.foot span{max-width:60ch}
+kbd{font-family:var(--mono);font-size:10.5px;padding:2px 6px;border-radius:6px;background:var(--surface-lo);box-shadow:inset 1px 1px 2px var(--lo),inset -1px -1px 2px var(--hi);color:var(--ink)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+button:focus-visible{outline:2px solid var(--accent-ink);outline-offset:3px}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:920px){
+  .grid{grid-template-columns:1fr}
+  .colL{order:1}.colR{order:2}
+}
+@media (max-width:480px){
+  .sens,.tl{display:none}
+  .mark{width:38px;height:38px}
+  .brand{gap:10px}
+  h1{font-size:18px}
+  .topr{gap:10px}
+  .pill{padding:9px 13px}
+}
+@media (max-width:560px){
+  .pill .lab{display:none}
+  .row3{grid-template-columns:1fr 1fr}
+  .cost{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between}
+  .key{min-height:96px}
+  .sliders{grid-template-columns:1fr;gap:12px}
+  .mode span{font-size:10px;letter-spacing:.1em}
+  .inset{padding:14px 12px 8px}
+  .foot{font-size:10.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.01ms!important;transition-delay:0ms!important}
+  .fan,.stat i.on::after,.bead-halo::after{animation:none}
+  .stat i.on::after{opacity:.6}
+}
+</style>
+</head>
+<body>
+
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="markg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#4cc9f0"/><stop offset=".5" stop-color="#f6cf7a"/><stop offset="1" stop-color="#ff8a4c"/>
+    </linearGradient>
+  </defs>
+</svg>
+<div class="grain" id="grain" aria-hidden="true"></div>
+
+<main class="stage">
+<section class="panel" aria-labelledby="ttl">
+
+  <header class="top rise" style="--i:0">
+    <div class="brand">
+      <button type="button" class="mark-btn" id="markBtn" aria-label="Run dial calibration sweep" title="Run a calibration sweep">
+        <svg class="mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle cx="22" cy="22" r="15" fill="none" stroke="#d3cec5" stroke-width="4.5"/>
+          <path d="M11.4 32.6A15 15 0 1 1 32.6 32.6" fill="none" stroke="url(#markg)" stroke-width="4.5" stroke-linecap="round"/>
+          <circle cx="22" cy="22" r="3.2" fill="#37322b" opacity=".85"/>
+        </svg>
+      </button>
+      <div>
+        <h1 id="ttl">Halo Climate</h1>
+        <p class="lab" style="margin:0">Living room · Zone 1<span class="sens"> · 3 sensors</span></p>
+      </div>
+    </div>
+    <div class="topr">
+      <div class="pill"><span class="lab">Outside</span><b id="outside">12.4°</b></div>
+      <button class="round-btn" id="sound" type="button" aria-pressed="false" aria-label="Dial tick sound: off">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/>
+          <path id="sw1" d="M15.6 9.2a4 4 0 0 1 0 5.6"/>
+          <path id="sw2" d="M18.3 6.6a7.6 7.6 0 0 1 0 10.8"/>
+          <path id="sx" d="M16 9.5l5 5M21 9.5l-5 5" style="display:none"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <div class="colL">
+      <div class="dial rise" id="dial" style="--i:1" role="slider" tabindex="0"
+           aria-label="Target temperature" aria-valuemin="16" aria-valuemax="30" aria-valuenow="22.5" aria-valuetext="22.5 degrees Celsius">
+        <div class="plate"></div>
+        <div class="knob"><div class="knurl" id="knurl"></div><div class="sheen"></div></div>
+        <svg class="ring" viewBox="0 0 600 600" aria-hidden="true" focusable="false">
+          <defs>
+            <filter id="inset" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB">
+              <feFlood flood-color="#9a9184" flood-opacity=".85" result="d0"/>
+              <feComposite in="d0" in2="SourceAlpha" operator="out" result="d1"/>
+              <feGaussianBlur in="d1" stdDeviation="4.2" result="d2"/>
+              <feOffset in="d2" dx="4" dy="4" result="d3"/>
+              <feComposite in="d3" in2="SourceAlpha" operator="in" result="shadowDark"/>
+              <feFlood flood-color="#ffffff" flood-opacity="1" result="l0"/>
+              <feComposite in="l0" in2="SourceAlpha" operator="out" result="l1"/>
+              <feGaussianBlur in="l1" stdDeviation="3.2" result="l2"/>
+              <feOffset in="l2" dx="-3" dy="-3" result="l3"/>
+              <feComposite in="l3" in2="SourceAlpha" operator="in" result="shadowLight"/>
+              <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="shadowDark"/><feMergeNode in="shadowLight"/></feMerge>
+            </filter>
+          </defs>
+          <path d="M114.7 485.3A262 262 0 1 1 485.3 485.3" fill="none" stroke="var(--track)" stroke-width="16" stroke-linecap="round" filter="url(#inset)"/>
+          <g id="ticks"></g>
+          <g id="nums"></g>
+          <text class="engrave" x="300" y="560" text-anchor="middle">Halo · C-30</text>
+          <text class="engrave" x="126" y="528" text-anchor="middle" style="letter-spacing:.1em">16°</text>
+          <text class="engrave" x="474" y="528" text-anchor="middle" style="letter-spacing:.1em">30°</text>
+        </svg>
+        <div class="bead-halo" id="beadHalo"></div>
+        <div class="nowwrap" id="nowWrap"><svg viewBox="0 0 600 600" aria-hidden="true" focusable="false"><path d="M293.5 45.5h13L300 56.5z" fill="var(--ink)" opacity=".9"/></svg></div>
+        <svg class="ring ring-dyn" viewBox="0 0 600 600" aria-hidden="true" focusable="false">
+          <defs>
+            <mask id="mReveal" maskUnits="userSpaceOnUse" x="0" y="0" width="600" height="600">
+              <path id="rv1" d="M114.7 485.3A262 262 0 1 1 485.3 485.3" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" pathLength="1000" stroke-dasharray="1000 1000" stroke-dashoffset="1000"/>
+            </mask>
+            <g id="segs"></g>
+            <g id="glowDefs"></g>
+          </defs>
+          <g id="glowUses"></g>
+          <use href="#segs" mask="url(#mReveal)"/>
+          <g id="beadG">
+            <circle id="bead" r="8.6" fill="#fdfcfa" stroke="rgba(120,108,92,.35)" stroke-width="1"/>
+            <circle id="beadCore" r="3.4" fill="var(--accent)"/>
+          </g>
+        </svg>
+        <div class="dimple" id="dimple"></div>
+        <div class="well">
+          <div class="readout">
+            <span class="lab">Target</span>
+            <div class="big" aria-hidden="true"><span id="nInt">22</span><span class="dec" id="nDec">.5</span><span class="unit">°C</span></div>
+            <div class="stat"><i id="statDot"></i><span id="statTxt">Heating</span></div>
+            <div class="sub" id="statSub">now 21.4°</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modes rise" style="--i:2" role="radiogroup" aria-label="Climate mode" id="modes">
+        <button type="button" class="mode" role="radio" aria-checked="false" tabindex="-1" data-mode="cool">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v18M4.6 7.5l14.8 9M19.4 7.5l-14.8 9M9.6 4.8 12 6.6l2.4-1.8M9.6 19.2 12 17.4l2.4 1.8"/></svg>
+          <span>Cool</span>
+        </button>
+        <button type="button" class="mode" role="radio" aria-checked="true" tabindex="0" data-mode="heat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3c.6 3.2 5.2 5.4 5.2 10.2a5.2 5.2 0 0 1-10.4 0c0-2.1.9-3.5 2.2-4.7.1 1.9 1 2.9 2 3.2C10.3 8.7 10.7 5.6 12 3z"/></svg>
+          <span>Heat</span>
+        </button>
+        <button type="button" class="mode" role="radio" aria-checked="false" tabindex="-1" data-mode="auto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.4"/><path d="M12 3.6a8.4 8.4 0 0 1 0 16.8z" fill="currentColor" fill-opacity=".85"/></svg>
+          <span>Auto</span>
+        </button>
+        <button type="button" class="mode" role="radio" aria-checked="false" tabindex="-1" data-mode="eco">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5.2 18.8C4.6 10.4 10 5 19.2 4.8c.2 9.2-5.2 14.4-14 14zM5.2 18.8l6.6-6.6"/></svg>
+          <span>Eco</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="colR">
+
+      <section class="inset rise" style="--i:2" aria-labelledby="cht">
+        <div class="chart-head"><span class="lab" id="cht">12-hour outlook</span><span class="lab"><span class="tl">Time-lapse · </span>1 s = 1 min</span></div>
+        <div class="chartbox"><svg id="chart" role="img" aria-label="Indoor temperature over twelve hours"></svg></div>
+      </section>
+
+      <div class="sliders rise" style="--i:3">
+        <div class="ctl">
+          <div class="ctl-head">
+            <svg class="ico fan" id="fanIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 12c0-4.2 1.2-7.2 3.6-7.2 2.2 0 2.4 3 .4 4.6-.9.8-2.4 1.9-4 2.6zM12 12c3.6 2.1 4.8 5.1 3.6 7.2-1.1 1.9-3.6.6-3.6-2-.1-1.2.2-3 0-5.2zM12 12c-3.6 2.1-6.9 1.9-8-.2-1-2 1.6-3.1 3.8-2.4 1.1.4 2.7 1.3 4.2 2.6z"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/></svg>
+            <div class="txt"><span class="lab" id="fanLab">Fan speed</span><b id="fanVal">Balanced</b></div>
+          </div>
+          <div class="slider" id="fan" role="slider" tabindex="0" aria-labelledby="fanLab" aria-valuemin="1" aria-valuemax="5" aria-valuenow="3" aria-valuetext="Balanced">
+            <div class="groove"><div class="fill"></div></div>
+            <div class="detents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="thumb"></div>
+          </div>
+        </div>
+        <div class="ctl">
+          <div class="ctl-head">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <defs><clipPath id="dropClip"><path d="M12 3.6c3.4 4 6 6.9 6 10.2a6 6 0 0 1-12 0c0-3.3 2.6-6.2 6-10.2z"/></clipPath></defs>
+              <path d="M12 3.6c3.4 4 6 6.9 6 10.2a6 6 0 0 1-12 0c0-3.3 2.6-6.2 6-10.2z"/>
+              <rect id="dropLvl" x="5" y="14" width="14" height="10" fill="currentColor" stroke="none" opacity=".55" clip-path="url(#dropClip)"/>
+            </svg>
+            <div class="txt"><span class="lab" id="humLab">Humidity</span><b id="humVal">45%</b></div>
+          </div>
+          <div class="slider" id="hum" role="slider" tabindex="0" aria-labelledby="humLab" aria-valuemin="30" aria-valuemax="70" aria-valuenow="45" aria-valuetext="45 percent">
+            <div class="groove"><div class="fill"></div></div>
+            <div class="thumb"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row3 rise" style="--i:4">
+        <button type="button" class="key" id="away" role="switch" aria-checked="false">
+          <i class="led"></i>
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3.8 11.2 12 4l8.2 7.2M6 9.8V20h12V9.8M10 20v-5.2h4V20"/></svg>
+          <span><b>Away</b><small id="awayS">Off</small></span>
+        </button>
+        <button type="button" class="key" id="night" role="switch" aria-checked="false">
+          <i class="led"></i>
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M19.6 14.6A8 8 0 1 1 9.4 4.4a6.4 6.4 0 0 0 10.2 10.2z"/><path d="M16.4 4.6v3M14.9 6.1h3" /></svg>
+          <span><b>Night</b><small id="nightS">Off</small></span>
+        </button>
+        <div class="cost">
+          <span class="lab">Estimated cost today</span>
+          <div class="fig" aria-live="off"><sup>$</sup><span id="cost">0.00</span></div>
+          <div class="cap" id="costCap">—</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="foot rise" style="--i:5">
+    <span>Drag the dial, or use <kbd>↑</kbd> <kbd>↓</kbd> to nudge 0.5° and <kbd>PgUp</kbd> <kbd>PgDn</kbd> for 2°. Flick it and it keeps turning.</span>
+    <span>Illustrative simulation — temperatures, prices and schedules are invented for this demo.</span>
+  </footer>
+</section>
+</main>
+<p class="vh" id="live" aria-live="polite"></p>
+
+<script>
+(function () {
+'use strict';
+
+/* ---------- helpers ---------- */
+var $ = function (s, r) { return (r || document).querySelector(s); };
+var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+var clamp = function (v, a, b) { return Math.min(b, Math.max(a, v)); };
+var lerp = function (a, b, t) { return a + (b - a) * t; };
+var mixc = function (a, b, t) { return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]; };
+var rgb = function (c, a) { return (a === undefined ? 'rgb(' : 'rgba(') + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + (a === undefined ? ')' : ',' + a + ')'); };
+var rmq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+var REDUCE = rmq.matches;
+if (rmq.addEventListener) rmq.addEventListener('change', function (e) { REDUCE = e.matches; });
+
+/* ---------- constants ---------- */
+var MIN = 16, MAX = 30, STEP = 0.5, A0 = -135, A1 = 135, SWEEP = A1 - A0;
+var DEG_STEP = SWEEP / ((MAX - MIN) / STEP);
+var AQUA = [76, 201, 240], GOLD = [246, 207, 122], SUN = [255, 138, 76];
+var DAQ = [28, 138, 174], DGO = [170, 128, 40], DSU = [204, 86, 34];
+function ramp3(t, a, b, c) { t = clamp(t, 0, 1); return t < 0.5 ? mixc(a, b, t * 2) : mixc(b, c, (t - 0.5) * 2); }
+var ramp = function (t) { return ramp3(t, AQUA, GOLD, SUN); };
+var rampInk = function (t) { return ramp3(t, DAQ, DGO, DSU); };
+var aOf = function (v) { return A0 + (v - MIN) / (MAX - MIN) * SWEEP; };
+var vOf = function (a) { return MIN + (a - A0) / SWEEP * (MAX - MIN); };
+var quant = function (v) { return clamp(Math.round(v / STEP) * STEP, MIN, MAX); };
+var MODES = ['cool', 'heat', 'auto', 'eco'];
+var FAN_NAMES = ['', 'Whisper', 'Low', 'Balanced', 'Brisk', 'Turbo'];
+var root = document.documentElement;
+
+/* ---------- state (persisted) ---------- */
+var S = { target: 22.5, mode: 'heat', fan: 3, hum: 45, away: false, night: false, sound: false };
+try {
+  var saved = JSON.parse(localStorage.getItem('halo-climate-v1') || 'null');
+  if (saved && typeof saved === 'object') {
+    if (typeof saved.target === 'number') S.target = quant(clamp(saved.target, MIN, MAX));
+    if (MODES.indexOf(saved.mode) >= 0) S.mode = saved.mode;
+    if (isFinite(saved.fan)) S.fan = clamp(Math.round(saved.fan), 1, 5);
+    if (isFinite(saved.hum)) S.hum = clamp(Math.round(saved.hum), 30, 70);
+    S.away = saved.away === true; S.night = saved.night === true;
+  }
+} catch (e) { /* storage unavailable */ }
+function save() { try { localStorage.setItem('halo-climate-v1', JSON.stringify(S)); } catch (e) { /* ignore */ } }
+
+/* ---------- elements ---------- */
+var dial = $('#dial'), knurl = $('#knurl'), dimple = $('#dimple');
+var rv1 = $('#rv1'), bead = $('#bead'), beadCore = $('#beadCore'), beadHalo = $('#beadHalo'), nowWrap = $('#nowWrap');
+var glowPaths = [];
+var nInt = $('#nInt'), nDec = $('#nDec'), statTxt = $('#statTxt'), statDot = $('#statDot'), statSub = $('#statSub');
+var costEl = $('#cost'), costCap = $('#costCap'), outsideEl = $('#outside'), live = $('#live');
+var dialSize = 520;
+
+/* ---------- ring construction ---------- */
+function polar(r, a) { var t = a * Math.PI / 180; return [300 + r * Math.sin(t), 300 - r * Math.cos(t)]; }
+(function buildRing() {
+  var segs = '', N = 90, seg = SWEEP / N, i, p0, p1, c;
+  for (i = 0; i < N; i++) {
+    var a0 = A0 + i * seg - (i ? 0.35 : 0), a1 = A0 + (i + 1) * seg + (i < N - 1 ? 0.35 : 0);
+    p0 = polar(262, a0); p1 = polar(262, a1); c = ramp((i + 0.5) / N);
+    segs += '<path d="M' + p0[0].toFixed(2) + ' ' + p0[1].toFixed(2) + 'A262 262 0 0 1 ' + p1[0].toFixed(2) + ' ' + p1[1].toFixed(2) + '" stroke="' + rgb(c) + '" stroke-width="60" fill="none"/>';
+  }
+  $('#segs').innerHTML = segs;
+  /* cheap stepped glow: five widening, faint copies of the arc (no blur filter needed) */
+  var gd = '', gu = '', gw = [17, 24, 33, 43, 54], go = [0.2, 0.15, 0.11, 0.07, 0.04];
+  for (i = 0; i < gw.length; i++) {
+    gd += '<mask id="mg' + i + '" maskUnits="userSpaceOnUse" x="0" y="0" width="600" height="600"><path id="gp' + i + '" d="M114.7 485.3A262 262 0 1 1 485.3 485.3" fill="none" stroke="#fff" stroke-width="' + gw[i] + '" stroke-linecap="round" pathLength="1000" stroke-dasharray="1000 1000" stroke-dashoffset="1000"/></mask>';
+    gu += '<use href="#segs" mask="url(#mg' + i + ')" opacity="' + go[i] + '"/>';
+  }
+  $('#glowDefs').innerHTML = gd; $('#glowUses').innerHTML = gu;
+  for (i = 0; i < gw.length; i++) glowPaths.push($('#gp' + i));
+  var tk = '', v, a, q1, q2, major;
+  for (v = MIN; v <= MAX + 1e-6; v += STEP) {
+    a = aOf(v); major = Math.abs(v - Math.round(v)) < 1e-6;
+    q1 = polar(238, a); q2 = polar(major ? 221 : 229.5, a);
+    tk += '<line class="tk' + (major ? ' mj' : '') + '" data-v="' + v + '" x1="' + q1[0].toFixed(2) + '" y1="' + q1[1].toFixed(2) + '" x2="' + q2[0].toFixed(2) + '" y2="' + q2[1].toFixed(2) + '"/>';
+  }
+  $('#ticks').innerHTML = tk;
+  var nm = '';
+  for (v = MIN; v <= MAX; v += 2) { q1 = polar(203, aOf(v)); nm += '<text class="nm" data-v="' + v + '" x="' + q1[0].toFixed(2) + '" y="' + q1[1].toFixed(2) + '" text-anchor="middle" dominant-baseline="central">' + v + '</text>'; }
+  $('#nums').innerHTML = nm;
+})();
+var tickEls = $$('#ticks .tk'), numEls = $$('#nums .nm');
+
+/* ---------- audio (opt-in) ---------- */
+var ac = null, master = null, noiseBuf = null, lastTick = 0;
+function initAudio() {
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    if (!ac) { ac = new AC(); master = ac.createGain(); master.gain.value = 0.16; master.connect(ac.destination); }
+    if (ac.state === 'suspended') ac.resume();
+    return true;
+  } catch (e) { ac = null; return false; }
+}
+function tickSound(v) {
+  if (!S.sound || !ac) return;
+  try {
+    var t = ac.currentTime; if (t - lastTick < 0.02) return; lastTick = t;
+    var o = ac.createOscillator(), g = ac.createGain(), f = 1900 + (v - MIN) * 46;
+    o.type = 'triangle'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.42, t + 0.03);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.06);
+  } catch (e) { /* ignore */ }
+}
+function thock(low) {
+  if (!S.sound || !ac) return;
+  try {
+    var t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(low ? 130 : 190, t); o.frequency.exponentialRampToValueAtTime(low ? 62 : 84, t + 0.09);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.15);
+  } catch (e) { /* ignore */ }
+}
+var soundBtn = $('#sound');
+function paintSound() {
+  soundBtn.setAttribute('aria-pressed', S.sound ? 'true' : 'false');
+  soundBtn.setAttribute('aria-label', 'Dial tick sound: ' + (S.sound ? 'on' : 'off'));
+  $('#sw1').style.display = $('#sw2').style.display = S.sound ? '' : 'none';
+  $('#sx').style.display = S.sound ? 'none' : '';
+}
+soundBtn.addEventListener('click', function () {
+  if (!S.sound) { if (initAudio()) { S.sound = true; thock(false); } } else { S.sound = false; }
+  paintSound();
+});
+paintSound();
+
+/* ---------- ambient tint ---------- */
+var tintT = (S.target - MIN) / (MAX - MIN), tintGoal = tintT, nightAmt = S.night ? 1 : 0, nightGoal = nightAmt, tintDirty = true, tintClock = 0;
+var metaTheme = document.querySelector('meta[name="theme-color"]');
+function applyTint() {
+  var t = tintT, n = nightAmt;
+  var s = t < 0.5 ? mixc([221, 228, 231], [230, 226, 220], t * 2) : mixc([230, 226, 220], [238, 225, 211], (t - 0.5) * 2);
+  s = mixc(s, [209, 205, 198], n * 0.72);
+  var shLo = t < 0.5 ? mixc([146, 158, 165], [163, 155, 143], t * 2) : mixc([163, 155, 143], [178, 150, 125], (t - 0.5) * 2);
+  shLo = mixc(shLo, [120, 112, 102], n * 0.5);
+  var st = root.style;
+  st.setProperty('--surface', rgb(s));
+  st.setProperty('--surface-hi', rgb([Math.min(255, s[0] + 5), Math.min(255, s[1] + 5), Math.min(255, s[2] + 5)]));
+  st.setProperty('--surface-lo', rgb([s[0] - 7, s[1] - 7, s[2] - 6]));
+  st.setProperty('--track', rgb([s[0] - 14, s[1] - 14, s[2] - 13]));
+  st.setProperty('--lo', rgb(shLo, (0.55 + n * 0.08).toFixed(2)));
+  st.setProperty('--hi', 'rgba(255,255,255,' + (1 - n * 0.32).toFixed(2) + ')');
+  var ac1 = ramp(t), ai = rampInk(t);
+  st.setProperty('--accent', rgb(ac1));
+  st.setProperty('--accent-ink', rgb(ai));
+  st.setProperty('--glow', rgb(ac1, 0.5));
+  if (metaTheme) metaTheme.setAttribute('content', rgb(s));
+}
+
+/* ---------- climate simulation (time-lapse: 1 s = 1 min) ---------- */
+var nowD = new Date();
+var simT = nowD.getHours() * 60 + nowD.getMinutes() + nowD.getSeconds() / 60;
+function outdoor(t) { var h = ((t / 60) % 24 + 24) % 24; return 10.6 + 5.4 * Math.sin((h - 9.6) / 24 * 2 * Math.PI); }
+function effTarget() {
+  var e = S.target;
+  if (S.away) e = (S.mode === 'cool') ? 27.5 : 17;
+  if (S.night) e += (S.mode === 'cool') ? 1 : -1.5;
+  if (S.mode === 'eco' && !S.away) e -= 0.5;
+  return clamp(e, 12, 32);
+}
+var tin = 21.4, hvac = 0;
+function hvacStep(v, e, h, m, dtMin, t) {
+  var band = (m === 'eco') ? 0.8 : 0.25, canH = m !== 'cool', canC = m !== 'heat';
+  if (h === 0) { if (canH && v < e - band) h = 1; else if (canC && v > e + band) h = -1; }
+  else if (h === 1 && (v >= e || !canH)) h = 0;
+  else if (h === -1 && (v <= e || !canC)) h = 0;
+  var p = h === 1 ? 2.3 : h === -1 ? -2.6 : 0;
+  v += (p + 0.09 * (outdoor(t) - v)) * dtMin / 60;
+  return { v: v, h: h };
+}
+var hist = [];
+(function prefill() {
+  var v = 19.9, h = 0, t0 = simT - 250, k, r;
+  for (k = 0; k <= 250; k++) {
+    var t = t0 + k;
+    r = hvacStep(v, k < 120 ? 19.5 : 21.4, h, 'heat', 1, t); v = r.v; h = r.h;
+    if (k % 3 === 0) hist.push([t, v]);
+  }
+  tin = v + 0.0; hvac = 0;
+  hist.push([simT, tin]);
+})();
+var lastSample = simT;
+
+/* forecast for the chart */
+var FN = 97, foreGoal = new Array(FN), foreShown = new Array(FN), foreInit = false;
+function computeForecast() {
+  var v = tin, h = hvac, e = effTarget(), i, r;
+  foreGoal[0] = v;
+  for (i = 1; i < FN; i++) {
+    for (var s = 0; s < 5; s++) { r = hvacStep(v, e, h, S.mode, 1, simT + (i - 1) * 5 + s); v = r.v; h = r.h; }
+    foreGoal[i] = v;
+  }
+  if (!foreInit) { for (i = 0; i < FN; i++) foreShown[i] = foreGoal[i]; foreInit = true; }
+  if (typeof pickRange === 'function') pickRange();
+}
+
+/* cost model */
+var PRICE = 0.24;
+function powerKW(e) {
+  var to = outdoor(simT + 360), d = Math.abs(e - to);
+  var mf = { cool: 1.12, heat: 1.0, auto: 1.05, eco: 0.8 }[S.mode];
+  return 0.052 * d * mf + 0.026 * S.fan + Math.max(0, S.hum - 40) * 0.0055 + 0.09;
+}
+var BASE_KW = 0.62;
+function costNow() {
+  var hrs = simT / 60 % 24, past = BASE_KW * hrs, fut = powerKW(effTarget()) * (24 - hrs);
+  return { usd: (past + fut) * PRICE, kwh: past + fut };
+}
+var costGoal = 0, costShown = 0, yesterday = 0;
+function refreshCost() {
+  var c = costNow(); costGoal = c.usd;
+  if (!yesterday) yesterday = c.usd * 1.07;
+  var pct = Math.round((c.usd - yesterday) / yesterday * 100);
+  costCap.innerHTML = '<em>' + (pct <= 0 ? '▼ ' : '▲ ') + Math.abs(pct) + '%</em> vs yesterday<br>' + c.kwh.toFixed(1) + ' kWh · $' + PRICE.toFixed(2) + '/kWh';
+}
+
+/* ---------- readout ---------- */
+function hvacLabel() {
+  if (S.away) return 'Away hold';
+  if (hvac === 1) return 'Heating';
+  if (hvac === -1) return 'Cooling';
+  return 'Holding';
+}
+var lastStat = '';
+function paintStatus() {
+  var e = effTarget(), txt = hvacLabel();
+  if (txt !== statTxt.textContent) statTxt.textContent = txt;
+  statDot.className = hvac !== 0 ? 'on' : '';
+  var sub = 'now ' + tin.toFixed(1) + '°' + ((S.away || S.night) ? ' · aim ' + e.toFixed(1) + '°' : '');
+  if (sub !== lastStat) { statSub.textContent = sub; lastStat = sub; }
+  outsideEl.textContent = outdoor(simT).toFixed(1) + '°';
+}
+function paintTarget() {
+  var v = S.target, i = Math.floor(v + 1e-9), d = v - i >= 0.25 ? '.5' : '.0';
+  nInt.textContent = i; nDec.textContent = d;
+  dial.setAttribute('aria-valuenow', v);
+  dial.setAttribute('aria-valuetext', v.toFixed(1) + ' degrees Celsius');
+  var k; for (k = 0; k < tickEls.length; k++) tickEls[k].classList.toggle('on', +tickEls[k].getAttribute('data-v') <= v + 1e-6);
+  for (k = 0; k < numEls.length; k++) numEls[k].classList.toggle('on', Math.abs(+numEls[k].getAttribute('data-v') - v) < 1.01);
+}
+
+/* ---------- dial physics ---------- */
+var raw = A0, shown = A0, shownV = 0, vel = 0, coast = false, dragId = null, lastAng = 0, lastMoveT = 0, vEma = 0;
+var introDone = false, introStart = 0, INTRO = 1.25, lastPaintA = 1e9, sweep = null;
+var easeIO = function (u) { u = clamp(u, 0, 1); return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; };
+function startSweep() {
+  if (sweep || dragId !== null || REDUCE) return;
+  introDone = true; coast = false; vel = 0; sweep = { t0: performance.now(), from: raw, home: aOf(S.target) };
+  thock(false);
+}
+function detent(a) {
+  var u = (a - A0) / DEG_STEP, n = Math.round(u), f = u - n;
+  var s = (f < 0 ? -1 : 1) * 0.5 * Math.pow(Math.abs(f) * 2, 2.3);
+  return A0 + (n + s) * DEG_STEP;
+}
+function wrap(d) { return ((d + 540) % 360 + 360) % 360 - 180; }
+function angAt(e) {
+  var r = dial.getBoundingClientRect();
+  return Math.atan2(e.clientX - (r.left + r.width / 2), -(e.clientY - (r.top + r.height / 2))) * 180 / Math.PI;
+}
+function setTarget(q) {
+  if (q === S.target) return;
+  S.target = q; paintTarget(); tickSound(q);
+  tintGoal = (q - MIN) / (MAX - MIN); computeForecast(); refreshCost(); paintStatus();
+  if (!sweep) save();
+}
+$('#markBtn').addEventListener('click', function () { startSweep(); });
+dial.addEventListener('pointerdown', function (e) {
+  if (e.button > 0) return;
+  introDone = true; sweep = null; dragId = e.pointerId; coast = false; vel = 0; vEma = 0;
+  try { dial.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  dial.classList.add('grab');
+  var r = dial.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+  var rr = Math.hypot(dx, dy) / (r.width / 2), a = angAt(e);
+  if (rr > 0.6 && Math.abs(a) <= A1) raw = a; /* tap the ring: jump there */
+  lastAng = a; lastMoveT = performance.now();
+});
+dial.addEventListener('pointermove', function (e) {
+  if (dragId !== e.pointerId) return;
+  var a = angAt(e), d = wrap(a - lastAng), now = performance.now(), dt = Math.max(8, now - lastMoveT) / 1000;
+  raw = clamp(raw + d, A0, A1); lastAng = a;
+  vEma = lerp(vEma, d / dt, 0.4); lastMoveT = now;
+});
+function endDrag(e) {
+  if (dragId !== e.pointerId) return;
+  dragId = null; dial.classList.remove('grab');
+  var idle = performance.now() - lastMoveT;
+  vel = idle > 90 ? 0 : clamp(vEma, -900, 900);
+  coast = !REDUCE && Math.abs(vel) > 40;
+}
+dial.addEventListener('pointerup', endDrag);
+dial.addEventListener('pointercancel', endDrag);
+dial.addEventListener('keydown', function (e) {
+  var d = 0, q = quant(vOf(raw));
+  switch (e.key) {
+    case 'ArrowUp': case 'ArrowRight': d = STEP; break;
+    case 'ArrowDown': case 'ArrowLeft': d = -STEP; break;
+    case 'PageUp': d = 2; break;
+    case 'PageDown': d = -2; break;
+    case 'Home': q = MIN; d = 1e-9; break;
+    case 'End': q = MAX; d = 1e-9; break;
+    default: return;
+  }
+  e.preventDefault(); introDone = true; sweep = null; coast = false; vel = 0;
+  raw = aOf(quant(q + (Math.abs(d) < 1e-6 ? 0 : d)));
+});
+var wheelAcc = 0;
+dial.addEventListener('wheel', function (e) {
+  e.preventDefault(); introDone = true; sweep = null; wheelAcc += e.deltaY;
+  if (Math.abs(wheelAcc) >= 36) { var s = wheelAcc > 0 ? -1 : 1; wheelAcc = 0; coast = false; raw = aOf(quant(quant(vOf(raw)) + s * STEP)); }
+}, { passive: false });
+
+function stepDial(dt, now) {
+  if (!introDone) {
+    if (!introStart) introStart = now;
+    var u = clamp((now - introStart) / 1000 / INTRO, 0, 1), e1 = 1 - Math.pow(1 - u, 3.2);
+    raw = lerp(A0, aOf(S.target), e1);
+    if (u >= 1) introDone = true;
+  } else if (sweep) {
+    var su = (now - sweep.t0) / 1000;
+    if (su < 0.95) raw = lerp(sweep.from, A1, easeIO(su / 0.95));
+    else if (su < 2.05) raw = lerp(A1, A0, easeIO((su - 0.95) / 1.1));
+    else if (su < 2.9) raw = lerp(A0, sweep.home, easeIO((su - 2.05) / 0.85));
+    else { raw = sweep.home; sweep = null; save(); }
+  } else if (dragId === null) {
+    if (coast) {
+      raw += vel * dt; vel *= Math.exp(-dt * 3.6);
+      if (raw < A0) { raw = A0; vel = Math.abs(vel) * 0.28; }
+      if (raw > A1) { raw = A1; vel = -Math.abs(vel) * 0.28; }
+      if (Math.abs(vel) < 16) coast = false;
+    } else {
+      raw += (aOf(quant(vOf(raw))) - raw) * (1 - Math.exp(-dt * 15));
+    }
+  }
+  if (introDone) setTarget(quant(vOf(raw)));
+  var goal = detent(raw);
+  if (REDUCE) { shown = goal; shownV = 0; }
+  else {
+    var n = Math.min(14, Math.ceil(dt / 0.005)), h = dt / n, si;
+    for (si = 0; si < n; si++) { shownV += ((goal - shown) * 1100 - shownV * 40) * h; shown += shownV * h; }
+  }
+  shown = clamp(shown, A0 - 2, A1 + 2);
+  if (Math.abs(shown - lastPaintA) > 0.004) paintDial(shown);
+}
+function paintDial(a) {
+  lastPaintA = a;
+  knurl.style.transform = 'rotate(' + a.toFixed(2) + 'deg)';
+  var t = a * Math.PI / 180, rad = dialSize * 0.243;
+  dimple.style.transform = 'translate(-50%,-50%) translate(' + (Math.sin(t) * rad).toFixed(2) + 'px,' + (-Math.cos(t) * rad).toFixed(2) + 'px)';
+  var f = clamp((a - A0) / SWEEP, 0, 1), off = (1000 * (1 - f)).toFixed(2);
+  rv1.style.strokeDashoffset = off;
+  for (var gi = 0; gi < glowPaths.length; gi++) glowPaths[gi].style.strokeDashoffset = off;
+  var p = polar(262, clamp(a, A0, A1)), c = ramp(f);
+  bead.setAttribute('cx', p[0].toFixed(2)); bead.setAttribute('cy', p[1].toFixed(2));
+  beadCore.setAttribute('cx', p[0].toFixed(2)); beadCore.setAttribute('cy', p[1].toFixed(2));
+  var hr = dialSize * 0.4367;
+  beadHalo.style.transform = 'translate(-50%,-50%) translate(' + (Math.sin(t) * hr).toFixed(2) + 'px,' + (-Math.cos(t) * hr).toFixed(2) + 'px)';
+  beadHalo.style.setProperty('--halo', rgb(c, 0.8));
+  beadCore.setAttribute('fill', rgb(c));
+}
+if (window.ResizeObserver) {
+  new ResizeObserver(function (en) {
+    var w = en[0].contentRect.width; if (!w) return;
+    dialSize = w; dial.style.setProperty('--d', w + 'px'); dial.style.setProperty('--k', (600 / w).toFixed(4));
+    lastPaintA = 1e9;
+  }).observe(dial);
+}
+
+/* ---------- sliders ---------- */
+function makeSlider(rootEl, min, max, step, get, set, big) {
+  var p = (get() - min) / (max - min), goal = p;
+  function pos(e) { var r = rootEl.getBoundingClientRect(), pad = 18; return clamp((e.clientX - r.left - pad) / (r.width - 2 * pad), 0, 1); }
+  function apply(u) {
+    var v = clamp(Math.round((min + u * (max - min)) / step) * step, min, max);
+    if (v !== get()) set(v);
+    goal = (v - min) / (max - min);
+  }
+  rootEl.addEventListener('pointerdown', function (e) {
+    if (e.button > 0) return;
+    try { rootEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    rootEl.classList.add('grab'); apply(pos(e)); rootEl.focus({ preventScroll: true });
+  });
+  rootEl.addEventListener('pointermove', function (e) { if (rootEl.classList.contains('grab')) apply(pos(e)); });
+  var up = function () { rootEl.classList.remove('grab'); };
+  rootEl.addEventListener('pointerup', up); rootEl.addEventListener('pointercancel', up);
+  rootEl.addEventListener('keydown', function (e) {
+    var d = 0;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') d = 1; else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') d = -1;
+    else if (e.key === 'PageUp') d = 5; else if (e.key === 'PageDown') d = -5;
+    else if (e.key === 'Home') { e.preventDefault(); set(min); goal = 0; return; } else if (e.key === 'End') { e.preventDefault(); set(max); goal = 1; return; }
+    if (!d) return; e.preventDefault();
+    var v = clamp(get() + d * step, min, max); set(v); goal = (v - min) / (max - min);
+  });
+  return {
+    sync: function () { goal = (get() - min) / (max - min); },
+    tick: function (dt) {
+      if (Math.abs(goal - p) < 0.0002) { if (p !== goal) { p = goal; rootEl.style.setProperty('--p', p); } return; }
+      p += (goal - p) * (1 - Math.exp(-dt * (REDUCE ? 80 : 20))); rootEl.style.setProperty('--p', p.toFixed(4));
+    },
+    snap: function () { p = goal = (get() - min) / (max - min); rootEl.style.setProperty('--p', p); }
+  };
+}
+var fanEl = $('#fan'), humEl = $('#hum'), dropLvl = $('#dropLvl'), fanIco = $('#fanIco');
+var fanS = makeSlider(fanEl, 1, 5, 1, function () { return S.fan; }, function (v) {
+  S.fan = v; paintFan(); thock(false); refreshCost(); save();
+});
+var humS = makeSlider(humEl, 30, 70, 1, function () { return S.hum; }, function (v) {
+  S.hum = v; paintHum(); refreshCost(); save();
+});
+function paintFan() {
+  $('#fanVal').textContent = FAN_NAMES[S.fan]; fanEl.setAttribute('aria-valuenow', S.fan); fanEl.setAttribute('aria-valuetext', FAN_NAMES[S.fan]);
+  fanIco.style.setProperty('--spin', (3.3 - S.fan * 0.56).toFixed(2) + 's');
+}
+function paintHum() {
+  var h = S.hum, w = h < 35 ? 'Dry' : h <= 55 ? 'Comfortable' : 'Humid';
+  $('#humVal').textContent = h + '% · ' + w;
+  humEl.setAttribute('aria-valuenow', h); humEl.setAttribute('aria-valuetext', h + ' percent, ' + w.toLowerCase());
+  dropLvl.setAttribute('y', (20 - (h - 30) / 40 * 12).toFixed(2));
+}
+
+/* ---------- modes & keys ---------- */
+var modeBtns = $$('.mode');
+function paintModes() {
+  modeBtns.forEach(function (b) {
+    var on = b.getAttribute('data-mode') === S.mode;
+    b.setAttribute('aria-checked', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
+  });
+}
+function setMode(m, focus) {
+  if (m === S.mode) return;
+  S.mode = m; paintModes(); thock(true);
+  computeForecast(); refreshCost(); paintStatus(); save();
+  live.textContent = 'Mode: ' + m;
+  if (focus) modeBtns[MODES.indexOf(m)].focus();
+}
+modeBtns.forEach(function (b) { b.addEventListener('click', function () { setMode(b.getAttribute('data-mode')); }); });
+$('#modes').addEventListener('keydown', function (e) {
+  var k = e.key, i = MODES.indexOf(S.mode), d = 0;
+  if (k === 'ArrowRight' || k === 'ArrowDown') d = 1; else if (k === 'ArrowLeft' || k === 'ArrowUp') d = -1; else return;
+  e.preventDefault(); setMode(MODES[(i + d + 4) % 4], true);
+});
+function bindKey(btn, get, set) {
+  var off = function () { btn.classList.remove('down'); };
+  btn.addEventListener('pointerdown', function () { btn.classList.add('down'); });
+  btn.addEventListener('pointerup', off); btn.addEventListener('pointerleave', off); btn.addEventListener('pointercancel', off);
+  btn.addEventListener('click', function () { set(!get()); });
+}
+var awayBtn = $('#away'), nightBtn = $('#night');
+function paintKeys() {
+  awayBtn.setAttribute('aria-checked', S.away ? 'true' : 'false');
+  nightBtn.setAttribute('aria-checked', S.night ? 'true' : 'false');
+  $('#awayS').textContent = S.away ? 'Hold ' + (S.mode === 'cool' ? '27.5' : '17.0') + '°' : 'Off';
+  $('#nightS').textContent = S.night ? (S.mode === 'cool' ? '+1.0° quiet' : '−1.5° quiet') : 'Off';
+}
+bindKey(awayBtn, function () { return S.away; }, function (v) { S.away = v; thock(true); afterKey(); });
+bindKey(nightBtn, function () { return S.night; }, function (v) { S.night = v; nightGoal = v ? 1 : 0; thock(true); afterKey(); });
+function afterKey() { paintKeys(); computeForecast(); refreshCost(); paintStatus(); save(); }
+
+/* ---------- chart ---------- */
+var chart = $('#chart'), CW = 560, CH = 200, PL = 34, PR = 62, PT = 14, PB = 24;
+var yLo = 16, yHi = 28, yLoG = 16, yHiG = 28, hoverX = null;
+var cx = function (t) { return PL + (t - (simT - 240)) / 720 * (CW - PL - PR); };
+var cy = function (v) { return PT + (1 - (v - yLo) / (yHi - yLo)) * (CH - PT - PB); };
+function pickRange() {
+  var e = effTarget(), lo = Math.min(S.target, e, tin), hi = Math.max(S.target, e, tin), i;
+  for (i = 0; i < hist.length; i++) { if (hist[i][1] < lo) lo = hist[i][1]; if (hist[i][1] > hi) hi = hist[i][1]; }
+  for (i = 0; i < FN; i++) { if (foreGoal[i] < lo) lo = foreGoal[i]; if (foreGoal[i] > hi) hi = foreGoal[i]; }
+  lo = Math.floor(lo - 1.3); hi = Math.ceil(hi + 1.3);
+  if (hi - lo < 8) { lo = Math.floor((hi + lo) / 2 - 4); hi = lo + 8; }
+  yLoG = lo; yHiG = hi;
+}
+function layoutChart() {
+  var r = chart.getBoundingClientRect(); if (!r.width) return;
+  CW = r.width; CH = r.height; chart.setAttribute('viewBox', '0 0 ' + CW.toFixed(1) + ' ' + CH.toFixed(1));
+  drawChart();
+}
+function pad2(n) { return (n < 10 ? '0' : '') + n; }
+function drawChart() {
+  var i, pts = [], fut = [], x0 = simT - 240, span = yHi - yLo, gstep = span <= 10 ? 2 : span <= 20 ? 4 : 5, v, y;
+  var out = '<defs><linearGradient id="lg" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="' + cy(30).toFixed(1) + '" y2="' + cy(16).toFixed(1) + '">' +
+    '<stop offset="0" stop-color="#ff8a4c"/><stop offset=".5" stop-color="#f6cf7a"/><stop offset="1" stop-color="#4cc9f0"/></linearGradient>' +
+    '<linearGradient id="ag" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".3"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient>' +
+    '<clipPath id="cclip"><rect x="' + PL + '" y="0" width="' + (CW - PL - PR + 2) + '" height="' + CH + '"/></clipPath></defs>';
+  for (v = Math.ceil(yLo / gstep) * gstep; v <= yHi; v += gstep) {
+    y = cy(v);
+    if (y < PT - 1 || y > CH - PB + 1) continue;
+    out += '<line class="gl" x1="' + PL + '" x2="' + (CW - PR) + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '"/><text class="yl" x="' + (PL - 8) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end">' + v + '°</text>';
+  }
+  for (i = 0; i < hist.length; i++) if (hist[i][0] >= x0 - 3) pts.push(hist[i]);
+  for (i = 0; i < FN; i++) fut.push([simT + i * 5, foreShown[i]]);
+  var pathOf = function (arr) { var q = 'M', j; for (j = 0; j < arr.length; j++) q += (j ? 'L' : '') + cx(arr[j][0]).toFixed(1) + ' ' + cy(arr[j][1]).toFixed(1); return q; };
+  var all = pts.concat(fut.slice(1)), base = (CH - PB).toFixed(1);
+  var pd = pathOf(pts), fd = pathOf(fut), ad = pathOf(all) + 'L' + cx(all[all.length - 1][0]).toFixed(1) + ' ' + base + 'L' + cx(all[0][0]).toFixed(1) + ' ' + base + 'Z';
+  var e = effTarget(), ey = cy(e), nx = cx(simT), ny = cy(tin);
+  for (i = Math.ceil(x0 / 120) * 120; i <= simT + 480; i += 120) {
+    var hh = ((i / 60) % 24 + 24) % 24;
+    out += '<text class="xl" x="' + cx(i).toFixed(1) + '" y="' + (CH - 6) + '">' + pad2(Math.round(hh)) + ':00</text>';
+  }
+  out += '<g clip-path="url(#cclip)">';
+  out += '<path d="' + ad + '" fill="url(#ag)"/>';
+  out += '<line x1="' + PL + '" x2="' + (CW - PR) + '" y1="' + ey.toFixed(1) + '" y2="' + ey.toFixed(1) + '" stroke="var(--ink-3)" stroke-width="1" opacity=".75"/>';
+  out += '<path d="' + pd + '" fill="none" stroke="url(#lg)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity=".16"/>';
+  out += '<path d="' + pd + '" fill="none" stroke="url(#lg)" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/>';
+  out += '<path d="' + fd + '" fill="none" stroke="url(#lg)" stroke-width="2.7" stroke-linecap="round" stroke-dasharray="0.1 6.5" opacity=".95"/>';
+  out += '</g>';
+  out += '<text class="setl" x="' + (CW - PR + 8) + '" y="' + (ey + 3.6).toFixed(1) + '">' + e.toFixed(1) + '° AIM</text>';
+  out += '<line x1="' + nx.toFixed(1) + '" x2="' + nx.toFixed(1) + '" y1="' + PT + '" y2="' + (CH - PB) + '" stroke="var(--ink)" stroke-width="1" opacity=".35"/>';
+  out += '<text class="nowl" x="' + nx.toFixed(1) + '" y="' + (PT + 9) + '" dx="0" style="paint-order:stroke" stroke="var(--surface-lo)" stroke-width="4">NOW</text>';
+  out += '<circle cx="' + nx.toFixed(1) + '" cy="' + ny.toFixed(1) + '" r="9" fill="var(--accent)" opacity=".38"/><circle cx="' + nx.toFixed(1) + '" cy="' + ny.toFixed(1) + '" r="4.6" fill="#fdfcfa" stroke="var(--accent-ink)" stroke-width="1.6"/>';
+  if (hoverX !== null) {
+    var ht = x0 + (hoverX - PL) / (CW - PL - PR) * 720, hv, k;
+    if (ht <= simT) { hv = pts[0][1]; for (k = 0; k < pts.length; k++) if (pts[k][0] <= ht) hv = pts[k][1]; }
+    else { hv = foreShown[clamp(Math.round((ht - simT) / 5), 0, FN - 1)]; }
+    var hx = clamp(hoverX, PL, CW - PR), hy = cy(hv), hm = ((ht % 1440) + 1440) % 1440, label = pad2(Math.floor(hm / 60)) + ':' + pad2(Math.floor(hm % 60)) + ' · ' + hv.toFixed(1) + '°';
+    var bx = clamp(hx, PL + 44, CW - PR - 30);
+    out += '<g class="tip"><line x1="' + hx.toFixed(1) + '" x2="' + hx.toFixed(1) + '" y1="' + PT + '" y2="' + (CH - PB) + '" stroke="var(--ink-2)" stroke-width="1" opacity=".5"/>' +
+      '<circle cx="' + hx.toFixed(1) + '" cy="' + hy.toFixed(1) + '" r="4" fill="var(--ink)"/>' +
+      '<rect x="' + (bx - 44).toFixed(1) + '" y="' + (Math.max(PT + 14, hy - 38)).toFixed(1) + '" width="88" height="22" rx="11"/>' +
+      '<text x="' + bx.toFixed(1) + '" y="' + (Math.max(PT + 14, hy - 38) + 15).toFixed(1) + '">' + label + '</text></g>';
+  }
+  chart.innerHTML = out;
+}
+chart.addEventListener('pointermove', function (e) { var r = chart.getBoundingClientRect(); hoverX = e.clientX - r.left; drawChart(); });
+chart.addEventListener('pointerleave', function () { hoverX = null; drawChart(); });
+if (window.ResizeObserver) new ResizeObserver(layoutChart).observe(chart); else window.addEventListener('resize', layoutChart);
+
+/* ---------- main loop ---------- */
+var last = 0, simClock = 0, chartClock = 0, statClock = 0, lastCostStr = '';
+function paintNow() { nowWrap.style.transform = 'rotate(' + aOf(clamp(tin, MIN, MAX)).toFixed(2) + 'deg)'; }
+function frame(now) {
+  var dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+  stepDial(dt, now);
+  if (introDone || (introStart && now - introStart > INTRO * 550)) {
+    /* simulation */
+    var dm = dt * (REDUCE ? 0.5 : 1);
+    simT += dm;
+    var r = hvacStep(tin, effTarget(), hvac, S.mode, dm, simT); tin = r.v; hvac = r.h;
+    if (simT - hist[hist.length - 1][0] >= 3) { hist.push([simT, tin]); if (hist.length > 130) hist.shift(); }
+    simClock += dt; if (simClock > 0.5) { simClock = 0; computeForecast(); refreshCost(); }
+    statClock += dt; if (statClock > 0.5) { statClock = 0; paintStatus(); paintNow(); }
+  }
+  /* tweens */
+  var k = 1 - Math.exp(-dt * (REDUCE ? 60 : 3.6)), ch = false, i;
+  costShown += (costGoal - costShown) * k;
+  var cs = costShown.toFixed(2); if (cs !== lastCostStr) { costEl.textContent = cs; lastCostStr = cs; }
+  var kf = 1 - Math.exp(-dt * (REDUCE ? 60 : 5));
+  for (i = 0; i < FN; i++) { var df = foreGoal[i] - foreShown[i]; if (Math.abs(df) > 0.002) { foreShown[i] += df * kf; ch = true; } }
+  if (Math.abs(yLoG - yLo) > 0.01 || Math.abs(yHiG - yHi) > 0.01) { yLo += (yLoG - yLo) * kf; yHi += (yHiG - yHi) * kf; ch = true; }
+  chartClock += dt;
+  if (ch || chartClock > 1.1) { chartClock = 0; drawChart(); }
+  fanS.tick(dt); humS.tick(dt);
+  /* ambient tint (throttled: it repaints every surface) */
+  var tk = 1 - Math.exp(-dt * (REDUCE ? 60 : 2.4)), td = tintGoal - tintT, nd = nightGoal - nightAmt;
+  if (Math.abs(td) > 0.0008 || Math.abs(nd) > 0.001) {
+    tintT += td * tk; nightAmt += nd * tk; tintClock += dt; tintDirty = true;
+    if (tintClock > 0.09) { tintClock = 0; applyTint(); }
+  } else if (tintDirty) { tintT = tintGoal; nightAmt = nightGoal; applyTint(); tintDirty = false; }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- boot ---------- */
+(function grain() {
+  try {
+    var c = document.createElement('canvas'), x, im, d, i, v;
+    c.width = c.height = 128; x = c.getContext('2d'); im = x.createImageData(128, 128); d = im.data;
+    for (i = 0; i < d.length; i += 4) { v = 70 + Math.random() * 120; d[i] = v; d[i + 1] = v * 0.96; d[i + 2] = v * 0.9; d[i + 3] = Math.random() * 15; }
+    x.putImageData(im, 0, 0);
+    $('#grain').style.backgroundImage = 'url(' + c.toDataURL('image/png') + ')';
+  } catch (e) { /* grain is a nicety */ }
+})();
+paintTarget(); paintFan(); paintHum(); paintModes(); paintKeys();
+hvac = hvacStep(tin, effTarget(), 0, S.mode, 0, simT).h;
+fanS.snap(); humS.snap(); applyTint(); computeForecast(); yLo = yLoG; yHi = yHiG; refreshCost(); paintStatus();
+costShown = 0; paintNow();
+paintDial(A0);
+layoutChart();
+requestAnimationFrame(function (t) { last = t; document.body.classList.add('ready'); requestAnimationFrame(frame); });
+setTimeout(function () { $$('.rise').forEach(function (n) { n.classList.remove('rise'); }); }, 2600);
+document.addEventListener('visibilitychange', function () { last = performance.now(); });
+})();
+</script>
+</body>
+</html>

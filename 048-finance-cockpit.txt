@@ -1,0 +1,23 @@
+==================== PROMPT ====================
+Design an elegant light-mode wealth dashboard "Lumen Wealth — Portfolio overview" (fictional). Palette: ivory #f7f4ec, card #fffdf8 with hairline borders #e6e0d2, forest green #1f5b45 (primary, with a tint ramp), terracotta #c8553d for negatives, ink #1e2421, muted #7a7f76. Layout: a slim left rail with inline-SVG icon navigation; a top bar with greeting, date and range chips (1W 1M 3M 1Y ALL) and a search field; a hero figure card — total balance in a large sans (proportional figures) with a delta chip (+2.4% this month) and a big area/line chart in SVG (2px line, ~10% opacity area wash, crosshair and tooltip on hover showing date, value and day change, animated draw-in on load and on range change); KPI tiles (Cash, Invested, Yield, Risk score) each with a sparkline; an allocation donut (max 5 segments with 2px gaps) beside a legend list with percentages and bar meters; a sortable holdings table (symbol, name, price, day change with tiny arrows, 30-day sparkline); a "Goals" card with progress rings; a recent-activity list. Generate plausible series with a seeded PRNG and add an "illustrative data" footnote. Light/dark toggle (dark = green-black #0f1a16). Type: a precise humanist grotesque with tabular numerals only in tables. Calm, refined, no neon.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Lumen Wealth Dashboard
+
+==================== DESCRIPTION ====================
+A calm, ivory-and-forest-green wealth dashboard. A slim icon rail (a bottom tab bar on phones) frames a top bar with a time-aware greeting, today's date, range chips, a live search and a light/dark switch. The hero card shows the total balance in large proportional figures with a delta chip and a full-width SVG area chart (2 px line, 10% wash, hairline grid, crosshair and tooltip with date, value and day change) that draws in on load and on every range change. Below sit four KPI tiles with sparklines, an allocation donut with five 2 px-gapped segments beside a legend with bar meters, sortable holdings with arrows and 30-day sparklines, goal progress rings and a recent-activity list. All series come from a seeded PRNG anchored so each range's delta is consistent (1M = +2.4%), and a footnote marks the data as illustrative. Dark mode is a green-black palette with its own lifted tints.
+
+==================== TECHNIQUES ====================
+- Seeded mulberry32 PRNG and Brownian-bridge segments between fixed growth anchors so every range delta is exact and plausible
+- Inline SVG area/line chart built in JS with nice ticks, downsampling to about 260 points, clip-path reveal tween for the draw-in, crosshair, dot and edge-aware tooltip
+- Donut from stroked circles with dash arrays (2 px gaps), hover/focus linking between segments, legend rows and centre readout
+- Progress rings, sparklines and risk meter drawn as small SVGs; bar meters animate in
+- CSS custom-property theming for light and dark with saved preference (try/catch localStorage) and prefers-color-scheme default
+- Sortable table with aria-sort, tiny arrow glyphs, tabular numerals only in table and activity amounts; live search filter
+- Two-column CSS grid with sticky rail collapsing to a bottom tab bar; ResizeObserver re-render of the chart
+- Chart accessibility: keyboard arrow-key scrubbing, role=img label and an aria-live text summary of the range
+
+==================== INTERACTION ====================
+Hover or drag across the chart to read date, value and day change; on keyboard focus the chart with Tab and use the left and right arrows. Range chips redraw the line with a fresh draw-in and update the delta chip and note. Hover or focus a legend row or donut segment to isolate it. Click table headers to sort, type in the search field (or press /) to filter holdings. The sun/moon button toggles light and dark. With prefers-reduced-motion the draw-in, entrance and meter animations are skipped.

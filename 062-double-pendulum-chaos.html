@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Butterfly Effect — Sensitive Dependence</title>
+<meta name="description" content="Two hundred and forty double pendulums released a hair's breadth apart. Watch a difference of 0.0001 radians grow into a bloom of colour, and measure how quickly the future is forgotten.">
+<meta name="theme-color" content="#0d0a10">
+<style>
+/* =====================================================================
+   BUTTERFLY EFFECT · Sensitive Dependence
+   tokens · stage · type · panel · chart · controls · motion
+   ===================================================================== */
+:root{
+  color-scheme:dark;
+  --bg:#0d0a10;--bg2:#171019;
+  --ink:#f3e8d8;--ink2:#c4b3a3;--dim:#8b7a72;--faint:#54474a;--foot:#7a6a63;
+  --line:rgba(255,232,205,.12);--line2:rgba(255,232,205,.07);
+  --plum:#6a1b9a;--mag:#d81b60;--org:#ff8f00;--gold:#ffd54f;--brass:#c8a35a;
+  --didone:"Bodoni 72","Bodoni MT",Didot,"Didot LT STD","Playfair Display","Times New Roman",serif;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,P052,"Book Antiqua","URW Bookman",Georgia,serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --gut:clamp(16px,2.8vw,40px);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--serif);overflow-x:hidden}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.sr{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+
+.app{display:grid;grid-template-rows:minmax(0,1fr) auto;height:100vh;height:100dvh;min-height:600px}
+
+/* ------------------------------ stage ------------------------------ */
+.stage{position:relative;min-height:0;overflow:hidden;cursor:crosshair;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  background:
+    radial-gradient(56% 62% at 55% 48%,rgba(106,27,154,.20),transparent 68%),
+    radial-gradient(38% 40% at 55% 48%,rgba(216,27,96,.08),transparent 70%),
+    var(--bg)}
+.stage canvas{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.stage #trail,.stage #over{width:auto;height:auto}
+.trail{mix-blend-mode:screen}
+.stage #trail,.stage #over{transition:opacity .9s ease}
+.stage.rewind #trail,.stage.rewind #over{opacity:0;transition:opacity .55s ease}
+.veil{position:absolute;inset:0;pointer-events:none;
+  background:
+    var(--grain,none),
+    radial-gradient(120% 90% at 55% 48%,transparent 55%,rgba(6,4,8,.62) 100%),
+    linear-gradient(180deg,rgba(13,10,16,.5),transparent 22%);
+  background-size:180px 180px,auto,auto}
+
+.numerals{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;overflow:hidden}
+.numerals span{font:400 italic clamp(180px,42vmin,460px)/1 var(--didone);color:rgba(255,213,79,.11);letter-spacing:-.04em;opacity:0}
+.numerals span.tick{animation:tick 1s var(--ease) both}
+@keyframes tick{0%{opacity:0;transform:scale(1.14)}18%{opacity:1}100%{opacity:.0;transform:scale(.94)}}
+
+.head{position:absolute;left:var(--gut);top:clamp(16px,2.6vw,34px);pointer-events:none;z-index:2;max-width:min(560px,70vw)}
+.kicker{margin:0 0 10px;font:500 10px/1.3 var(--mono);letter-spacing:.3em;text-transform:uppercase;color:var(--brass)}
+.head h1{margin:0;font:400 clamp(34px,5vw,74px)/.92 var(--didone);letter-spacing:-.015em;color:var(--ink)}
+.head h1 em{display:block;font-style:italic;color:var(--gold);margin-left:.06em;background:linear-gradient(95deg,var(--org),var(--gold) 60%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sub{margin:14px 0 0;font:500 11px/1.5 var(--mono);letter-spacing:.06em;color:var(--ink2)}
+.sub b{font-weight:600;color:var(--ink)}
+
+.clock{position:absolute;right:var(--gut);top:clamp(16px,2.6vw,34px);z-index:2;pointer-events:none;text-align:right;font-family:var(--mono)}
+.clock .t{display:block;font:500 clamp(26px,3.2vw,44px)/1 var(--mono);letter-spacing:-.03em;color:var(--ink);font-variant-numeric:tabular-nums}
+.clock .t small{font-size:.4em;letter-spacing:.1em;color:var(--dim);margin-left:.4em}
+.clock .r{display:block;margin-top:9px;font:500 10.5px/1.6 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.clock .r b{font-weight:600;color:var(--ink2)}
+.clock .r i{font-style:normal;color:var(--gold)}
+.live{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--faint);margin-right:8px;vertical-align:.08em;transition:background-color .3s,box-shadow .3s}
+.live.on{background:var(--mag);box-shadow:0 0 0 3px rgba(216,27,96,.22),0 0 12px var(--mag);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(216,27,96,0),0 0 12px var(--mag)}}
+
+.story{position:absolute;left:var(--gut);bottom:clamp(14px,2vw,26px);z-index:2;pointer-events:none;width:min(330px,34vw)}
+.story .step{display:flex;gap:5px;margin:0 0 12px}
+.story .step i{width:18px;height:2px;border-radius:2px;background:var(--faint);transition:background-color .5s,width .5s var(--ease)}
+.story .step i.on{background:var(--gold);width:30px}
+.story p{margin:0}
+.story .txt{font:italic 400 clamp(15px,1.25vw,18px)/1.5 var(--serif);color:var(--ink);text-wrap:pretty;transition:opacity .45s,transform .6s var(--ease)}
+.story .txt.out{opacity:0;transform:translateY(6px)}
+.story .hint{margin-top:12px;font:500 10px/1.5 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.story .hint b{color:var(--brass);font-weight:600}
+
+.tip{position:absolute;z-index:3;pointer-events:none;left:0;top:0;padding:6px 9px;border-radius:6px;background:rgba(13,10,16,.82);border:1px solid var(--line);
+  font:500 10.5px/1.3 var(--mono);letter-spacing:.08em;color:var(--ink2);white-space:nowrap;opacity:0;transition:opacity .2s}
+.tip.on{opacity:1}
+.tip b{color:var(--gold);font-weight:600}
+
+/* ------------------------------ panel: controls + chart ------------------------------ */
+.panel{position:relative;z-index:4;display:grid;grid-template-columns:minmax(300px,31%) minmax(0,1fr);gap:clamp(18px,3vw,46px);align-items:stretch;
+  padding:16px var(--gut) 12px;border-top:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(23,16,25,.96),rgba(13,10,16,.99))}
+.ctrls{display:flex;flex-direction:column;justify-content:space-between;gap:10px;min-width:0}
+.ctl{min-width:0}
+.ctl .row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:0}
+.ctl label{font:600 10px/1.2 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--ink2)}
+.ctl output{font:600 11.5px/1 var(--mono);letter-spacing:.02em;color:var(--gold);white-space:nowrap}
+.ctl .note{display:block;margin-top:0;font:italic 400 12.5px/1.35 var(--serif);color:var(--dim)}
+input[type="range"]{-webkit-appearance:none;appearance:none;width:100%;height:26px;margin:0;background:transparent;cursor:pointer}
+input[type="range"]::-webkit-slider-runnable-track{height:2px;border-radius:2px;background:linear-gradient(90deg,var(--plum),var(--mag) 34%,var(--org) 68%,var(--gold))}
+input[type="range"]::-moz-range-track{height:2px;border-radius:2px;background:linear-gradient(90deg,var(--plum),var(--mag) 34%,var(--org) 68%,var(--gold))}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;margin-top:-7px;border-radius:50%;border:0;
+  background:radial-gradient(circle at 35% 30%,#f7e4ac,#c8a35a 55%,#6d4f1d);box-shadow:0 0 0 1px rgba(255,236,190,.4),0 3px 8px rgba(0,0,0,.6);transition:transform .25s var(--ease)}
+input[type="range"]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;border:0;background:radial-gradient(circle at 35% 30%,#f7e4ac,#c8a35a 55%,#6d4f1d);box-shadow:0 0 0 1px rgba(255,236,190,.4),0 3px 8px rgba(0,0,0,.6)}
+input[type="range"]:hover::-webkit-slider-thumb,input[type="range"]:active::-webkit-slider-thumb{transform:scale(1.2)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,232,205,.03);
+  font:600 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);cursor:pointer;
+  transition:background-color .25s,border-color .25s,color .25s,transform .25s var(--ease)}
+.btn:hover{background:rgba(255,232,205,.09);color:var(--ink);border-color:rgba(255,232,205,.28)}
+.btn:active{transform:scale(.96)}
+.btn svg{width:14px;height:14px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.btn.go{background:linear-gradient(95deg,rgba(216,27,96,.9),rgba(255,143,0,.9));border-color:transparent;color:#1a0d10}
+.btn.go:hover{background:linear-gradient(95deg,#ee2a72,#ffa21f);color:#1a0d10}
+.btn[aria-pressed="true"]{border-color:rgba(255,213,79,.55);color:var(--gold);background:rgba(255,213,79,.08)}
+.btn .dot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex:none;transition:background-color .25s,box-shadow .25s}
+.btn[aria-pressed="true"] .dot{background:var(--gold);box-shadow:0 0 8px var(--gold)}
+
+.chartcol{min-width:0;display:flex;flex-direction:column}
+.chartbox{position:relative;flex:1 1 auto;min-height:150px;height:clamp(150px,25vh,240px)}
+.chartbox canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+.ctitle{position:absolute;left:0;top:0;z-index:1;pointer-events:none;font:600 9.5px/1.3 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.ctitle b{color:var(--ink2);font-weight:600}
+.lyap{position:absolute;right:0;top:0;z-index:1;pointer-events:none;font:600 10.5px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--brass);text-align:right}
+.lyap b{color:var(--gold);font-weight:600}
+.foot{margin:6px 0 0;font:500 9.5px/1.4 var(--mono);letter-spacing:.1em;color:var(--foot);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.foot kbd{font:inherit;color:var(--dim);border:1px solid var(--line);border-radius:4px;padding:0 4px}
+
+/* ------------------------------ responsive ------------------------------ */
+@media (max-width:1100px){
+  .panel{grid-template-columns:minmax(260px,34%) minmax(0,1fr)}
+  .story{width:min(300px,40vw)}
+}
+@media (max-width:860px){
+  .panel{grid-template-columns:minmax(0,1fr);gap:14px}
+  .ctrls{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px}
+  .btns{grid-column:1/-1}
+  .chartbox{height:170px;flex:none}
+}
+@media (max-width:760px){
+  .app{display:block;height:auto;min-height:0}
+  .stage{height:min(70dvh,620px);min-height:440px}
+  .head{max-width:60%}
+  .head h1{font-size:clamp(32px,10vw,46px)}
+  .sub{display:none}
+  .clock .r{display:none}
+  .story{left:var(--gut);right:var(--gut);width:auto;bottom:12px}
+  .story .hint{display:none}
+  .story .txt{font-size:15px;max-width:86%}
+  .ctrls{grid-template-columns:1fr}
+  .btn{flex:1 1 auto;justify-content:center}
+  .foot{display:none}
+}
+@media (max-width:420px){
+  .kicker{letter-spacing:.2em}
+  .btn{padding:9px 10px;letter-spacing:.1em}
+}
+@media (prefers-reduced-motion:reduce){
+  .numerals span.tick{animation:none;opacity:.7}
+  .live.on{animation:none}
+  .story .txt{transition:none}
+}
+</style>
+</head>
+<body>
+<main class="app" id="app">
+  <section class="stage" id="stage" aria-label="Pendulum stage. Click or tap anywhere to choose new starting angles.">
+    <div class="numerals" id="numerals" aria-hidden="true"><span id="numTxt"></span></div>
+    <canvas class="trail" id="trail" aria-hidden="true"></canvas>
+    <canvas id="over" role="img" aria-label="Two hundred and forty double pendulums released from almost identical angles. Their outer bobs trace glowing trails in plum, magenta, orange and gold that begin as a single thread and unfold into a bloom."></canvas>
+    <div class="veil" aria-hidden="true"></div>
+
+    <header class="head">
+      <p class="kicker">Butterfly effect · a demonstration</p>
+      <h1>Sensitive <em>Dependence</em></h1>
+      <p class="sub" id="sub"><b>240</b> double pendulums · released <b>1.0×10⁻⁴</b> rad apart</p>
+    </header>
+
+    <div class="clock" id="clock" aria-hidden="true">
+      <span class="t"><i class="live" id="live"></i><span id="tNow">0.00</span><small>s</small></span>
+      <span class="r" id="rLapse" hidden>time-lapse <i id="rLapseV">×2.8</i></span>
+      <span class="r">gap grown <i id="rGrow">×1</i></span>
+      <span class="r">e-folds <b id="rEf">0.0</b></span>
+    </div>
+
+    <aside class="story" aria-label="What you are seeing">
+      <div class="step" id="steps" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <p class="txt" id="storyTxt" aria-live="polite">Two hundred and forty pendulums wait at almost the same angle.</p>
+      <p class="hint" id="hint"><b>Click</b> anywhere to place the starting pose</p>
+    </aside>
+    <div class="tip" id="tip" aria-hidden="true"></div>
+  </section>
+
+  <section class="panel" aria-label="Controls and divergence chart">
+    <div class="ctrls">
+      <div class="ctl">
+        <div class="row"><label for="rDelta">Initial angle difference</label><output id="oDelta" for="rDelta">1.0×10⁻⁴ rad</output></div>
+        <input type="range" id="rDelta" min="-6" max="-2" step="0.05" value="-4" aria-describedby="nDelta">
+        <span class="note" id="nDelta">a thousand times smaller only delays the bloom by seconds</span>
+      </div>
+      <div class="ctl">
+        <div class="row"><label for="rCount">Pendulums</label><output id="oCount" for="rCount">240</output></div>
+        <input type="range" id="rCount" min="24" max="360" step="6" value="240">
+        <span class="note">more of them, a denser bloom</span>
+      </div>
+      <div class="btns">
+        <button class="btn go" id="bRestart" type="button" aria-keyshortcuts="R"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.2 8A5.2 5.2 0 1 1 11.6 4.2"/><path d="M13.4 2.2v3.4H10"/></svg>Restart</button>
+        <button class="btn" id="bTrails" type="button" aria-pressed="true" aria-keyshortcuts="T"><i class="dot" aria-hidden="true"></i>Trails</button>
+        <button class="btn" id="bSlow" type="button" aria-pressed="false" aria-keyshortcuts="S"><i class="dot" aria-hidden="true"></i>Slow motion</button>
+        <button class="btn" id="bSkip" type="button" aria-keyshortcuts="F" aria-label="Skip ahead five seconds"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5 8 8l-5.5 4.5zM8.5 3.5 14 8l-5.5 4.5z"/></svg>+5 s</button>
+        <button class="btn" id="bSave" type="button" aria-label="Save the bloom as an image"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v7.6M4.8 7.4 8 10.6l3.2-3.2M2.8 13h10.4"/></svg>Save</button>
+      </div>
+    </div>
+    <div class="chartcol">
+    <div class="chartbox" id="chartbox">
+      <div class="ctitle">Mean gap between outer bobs and pendulum 0 · <b>log scale</b></div>
+      <div class="lyap" id="lyap">Lyapunov time ≈ <b>…</b></div>
+      <canvas id="chart" role="img" aria-label="Line chart on a logarithmic axis: the mean distance between each pendulum's outer bob and pendulum zero, growing exponentially from about one ten-thousandth until it saturates near one pendulum length." ></canvas>
+    </div>
+    <p class="foot"><span id="chartSum">Illustrative simulation: exact double-pendulum equations, RK4 at dt = 0.004 s, unit arm lengths and masses.</span><span><kbd>R</kbd> restart · <kbd>T</kbd> trails · <kbd>S</kbd> slow · <kbd>F</kbd> skip · <kbd>Space</kbd> pause</span></p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const doc=document;
+const $=id=>doc.getElementById(id);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const reduceQ=window.matchMedia?matchMedia('(prefers-reduced-motion: reduce)'):null;
+const reduce=!!(reduceQ&&reduceQ.matches);
+
+/* ------------------------------------------------------------------
+   dom
+   ------------------------------------------------------------------ */
+const stage=$('stage'),cTrail=$('trail'),cOver=$('over'),cChart=$('chart'),chartbox=$('chartbox');
+const tctx=cTrail.getContext('2d',{alpha:false,willReadFrequently:true});
+const octx=cOver.getContext('2d',{willReadFrequently:true});
+const kctx=cChart.getContext('2d',{willReadFrequently:true});
+const tNow=$('tNow'),rGrow=$('rGrow'),rEf=$('rEf'),live=$('live'),sub=$('sub'),rLapse=$('rLapse'),rLapseV=$('rLapseV');
+const storyTxt=$('storyTxt'),stepsEl=$('steps'),hintEl=$('hint'),tipEl=$('tip'),lyapEl=$('lyap');
+const numTxt=$('numTxt'),numerals=$('numerals');
+const rDelta=$('rDelta'),oDelta=$('oDelta'),rCount=$('rCount'),oCount=$('oCount');
+const bRestart=$('bRestart'),bTrails=$('bTrails'),bSlow=$('bSlow'),bSkip=$('bSkip'),bSave=$('bSave');
+
+/* tiny film grain so the black never feels digital */
+(function(){
+  try{
+    const c=doc.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d');
+    const im=x.createImageData(160,160),d=im.data;
+    for(let i=0;i<d.length;i+=4){const v=Math.random()<.5?255:0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=(Math.random()*9)|0}
+    x.putImageData(im,0,0);doc.documentElement.style.setProperty('--grain','url("'+c.toDataURL('image/png')+'")');
+  }catch(e){}
+})();
+
+/* ------------------------------------------------------------------
+   physics: exact double pendulum (unit masses, unit lengths), RK4, dt = 0.004 s
+   ------------------------------------------------------------------ */
+const G=9.81,DT=.004,MAXN=400,MAXSUB=28,MAXS=40000,SAMPLE=.04;
+let N=240,delta=1e-4,cfg={t1:2.6,t2:2.2};
+const th1=new Float64Array(MAXN),th2=new Float64Array(MAXN),w1=new Float64Array(MAXN),w2=new Float64Array(MAXN);
+let A1=0,A2=0;
+function accel(t1,t2,o1,o2){
+  const d=t1-t2,sd=Math.sin(d),cd=Math.cos(d),den=4-2*cd*cd;
+  A1=(-3*G*Math.sin(t1)-G*Math.sin(t1-2*t2)-2*sd*(o2*o2+o1*o1*cd))/den;
+  A2=(2*sd*(2*o1*o1+2*G*Math.cos(t1)+o2*o2*cd))/den;
+}
+function stepOne(i,h){
+  const t1=th1[i],t2=th2[i],o1=w1[i],o2=w2[i];
+  accel(t1,t2,o1,o2);const a1=A1,a2=A2;
+  const t1b=t1+.5*h*o1,t2b=t2+.5*h*o2,o1b=o1+.5*h*a1,o2b=o2+.5*h*a2;
+  accel(t1b,t2b,o1b,o2b);const b1=A1,b2=A2;
+  const t1c=t1+.5*h*o1b,t2c=t2+.5*h*o2b,o1c=o1+.5*h*b1,o2c=o2+.5*h*b2;
+  accel(t1c,t2c,o1c,o2c);const c1=A1,c2=A2;
+  const t1d=t1+h*o1c,t2d=t2+h*o2c,o1d=o1+h*c1,o2d=o2+h*c2;
+  accel(t1d,t2d,o1d,o2d);const d1=A1,d2=A2;
+  th1[i]=t1+h/6*(o1+2*o1b+2*o1c+o1d);
+  th2[i]=t2+h/6*(o2+2*o2b+2*o2c+o2d);
+  w1[i]=o1+h/6*(a1+2*b1+2*c1+d1);
+  w2[i]=o2+h/6*(a2+2*b2+2*c2+d2);
+}
+function stepAll(h){for(let i=0;i<N;i++)stepOne(i,h)}
+
+/* ------------------------------------------------------------------
+   stage geometry, colour ramp
+   ------------------------------------------------------------------ */
+let W=800,H=600,cx=400,cy=300,L=120,dpr=1,tdpr=1,OX=0,OY=0,SZ=600;
+const px=new Float32Array(MAXN),py=new Float32Array(MAXN);       /* last drawn outer bob */
+const sx=new Float32Array(MAXN*MAXSUB),sy=new Float32Array(MAXN*MAXSUB);
+const RAMP=[[106,27,154],[216,27,96],[255,143,0],[255,213,79]];
+function ramp(t,o){
+  t=clamp(t,0,1)*3;const i=Math.min(2,t|0),f=t-i,a=RAMP[i],b=RAMP[i+1];
+  o[0]=a[0]+(b[0]-a[0])*f;o[1]=a[1]+(b[1]-a[1])*f;o[2]=a[2]+(b[2]-a[2])*f;return o;
+}
+const MAXK=40;
+const bStart=new Int32Array(MAXK+1),bCore=new Array(MAXK),bGlow=new Array(MAXK),bHead=new Array(MAXK);
+let K=30,aCore=.42;
+function buildColours(){
+  /* pendulums are drawn in colour buckets: one path per bucket keeps the per-frame draw calls low */
+  const c=[0,0,0];aCore=clamp(.42*Math.sqrt(240/N),.16,.85);
+  K=clamp(Math.round(N/8),8,MAXK);
+  for(let k=0;k<=K;k++)bStart[k]=Math.round(k*N/K);
+  for(let k=0;k<K;k++){
+    const mid=(bStart[k]+bStart[k+1]-1)/2;
+    ramp(N>1?mid/(N-1):0,c);
+    const r=c[0]|0,g=c[1]|0,b=c[2]|0;
+    const lum=(.3*r+.59*g+.11*b)/255,lift=1+1.0*(1-lum)*(1-lum),al=Math.min(.9,aCore*lift);
+    bCore[k]='rgba('+r+','+g+','+b+','+al.toFixed(3)+')';
+    bGlow[k]='rgba('+r+','+g+','+b+','+(al*.16).toFixed(3)+')';
+    bHead[k]='rgb('+Math.min(255,r+70)+','+Math.min(255,g+60)+','+Math.min(255,b+50)+')';
+  }
+}
+function bobX(i){return cx+L*(Math.sin(th1[i])+Math.sin(th2[i]))}
+function bobY(i){return cy+L*(Math.cos(th1[i])+Math.cos(th2[i]))}
+
+function resize(){
+  const r=stage.getBoundingClientRect();
+  W=Math.max(240,r.width);H=Math.max(240,r.height);
+  dpr=Math.min(window.devicePixelRatio||1,2);tdpr=Math.min(dpr,1.5);
+  const narrow=W<620;
+  cx=W*(narrow?.5:W<1200?.63:.56);cy=H*(narrow?.57:.5);
+  L=Math.min(W*(narrow?.21:.2),H*(narrow?.21:.235));
+  /* the pendulums never leave a disc of radius 2L, so both canvases are just that square */
+  SZ=Math.ceil(4*L+56);OX=Math.round(cx-SZ/2);OY=Math.round(cy-SZ/2);
+  [cTrail,cOver].forEach(function(c){c.style.left=OX+'px';c.style.top=OY+'px';c.style.width=SZ+'px';c.style.height=SZ+'px'});
+  cTrail.width=Math.round(SZ*tdpr);cTrail.height=Math.round(SZ*tdpr);
+  cOver.width=Math.round(SZ*dpr);cOver.height=Math.round(SZ*dpr);
+  tctx.setTransform(tdpr,0,0,tdpr,-OX*tdpr,-OY*tdpr);octx.setTransform(dpr,0,0,dpr,-OX*dpr,-OY*dpr);
+  clearTrails();
+  for(let i=0;i<N;i++){px[i]=bobX(i);py[i]=bobY(i)}
+  sizeChart();
+  needsChart=true;
+}
+function clearTrails(){tctx.globalCompositeOperation='source-over';tctx.fillStyle='#000';tctx.fillRect(OX,OY,SZ,SZ)}
+
+/* ------------------------------------------------------------------
+   simulation state
+   ------------------------------------------------------------------ */
+let state='armed',armLeft=3,armTotal=3,simT=0,acc=0,paused=false,slow=reduce,trails=true,nsub=0;
+const st=new Float32Array(MAXS),sd=new Float32Array(MAXS);let ns=0,nextS=0;
+let lyap=null,flashT=-1,lastNum=-1;
+
+function buildFan(){
+  for(let i=0;i<N;i++){
+    const f=N>1?i/(N-1):0;
+    th1[i]=cfg.t1+delta*f;th2[i]=cfg.t2;w1[i]=0;w2[i]=0;
+    px[i]=bobX(i);py[i]=bobY(i);
+  }
+}
+function launch(seconds){
+  buildColours();buildFan();
+  simT=0;acc=0;ns=0;nextS=0;lyap=null;nsub=0;
+  state='armed';armLeft=armTotal=Math.max(.6,seconds);lastNum=-1;
+  clearTrails();sampleNow();
+  stageIndex=-1;setStory(0);
+  live.classList.remove('on');
+  needsChart=true;
+}
+function sampleNow(){
+  const x0=Math.sin(th1[0])+Math.sin(th2[0]),y0=Math.cos(th1[0])+Math.cos(th2[0]);
+  let s=0;
+  for(let i=1;i<N;i++){
+    const dx=Math.sin(th1[i])+Math.sin(th2[i])-x0,dy=Math.cos(th1[i])+Math.cos(th2[i])-y0;
+    s+=Math.sqrt(dx*dx+dy*dy);
+  }
+  if(ns<MAXS){st[ns]=simT;sd[ns]=Math.max(1e-9,s/Math.max(1,N-1));ns++}
+}
+function release(){
+  state='run';flashT=performance.now();live.classList.add('on');numTxt.classList.remove('tick');numTxt.textContent='';
+  hintEl.style.opacity='.55';
+}
+
+/* ------------------------------------------------------------------
+   Lyapunov estimate from the recorded gap: least-squares slope of ln(gap)
+   between the first clear growth and the start of saturation
+   ------------------------------------------------------------------ */
+function fitLyap(){
+  if(ns<30)return null;
+  const d0=sd[0],lo=Math.max(3*d0,1e-9),hi=.06;
+  let i0=-1,i1=-1;
+  for(let i=0;i<ns;i++){
+    if(i0<0&&sd[i]>lo)i0=i;
+    if(sd[i]>hi){i1=i;break}
+  }
+  if(i0<0)return null;
+  if(i1<0)i1=ns-1;
+  if(i1-i0<12)return null;
+  let sx1=0,sy1=0,sxx=0,sxy=0,n=0;
+  for(let i=i0;i<=i1;i++){const x=st[i],y=Math.log(sd[i]);sx1+=x;sy1+=y;sxx+=x*x;sxy+=x*y;n++}
+  const den=n*sxx-sx1*sx1;if(Math.abs(den)<1e-9)return null;
+  const slope=(n*sxy-sx1*sy1)/den,icpt=(sy1-slope*sx1)/n;
+  if(!(slope>.05))return {weak:true,lam:slope,tau:slope>0?1/slope:Infinity,i0:i0,i1:i1,slope:slope,icpt:icpt,prov:i1===ns-1};
+  return {weak:false,lam:slope,tau:1/slope,i0:i0,i1:i1,slope:slope,icpt:icpt,prov:i1===ns-1&&sd[i1]<hi};
+}
+
+/* ------------------------------------------------------------------
+   text helpers
+   ------------------------------------------------------------------ */
+const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'};
+const sup=n=>String(n).split('').map(c=>SUP[c]||c).join('');
+function sci(x,dg){
+  if(!(x>0))return '0';
+  dg=dg==null?1:dg;let e=Math.floor(Math.log10(x)),m=x/Math.pow(10,e);
+  m=+m.toFixed(dg);if(m>=10){m/=10;e++}
+  return m.toFixed(dg)+'×10'+sup(e);
+}
+function times(x){
+  if(x<1000)return '×'+(x<10?x.toFixed(1):Math.round(x));
+  if(x<1e6)return '×'+Math.round(x).toLocaleString('en-US');
+  return '×'+sci(x,1);
+}
+const deg=r=>Math.round(((r*180/Math.PI)%360+540)%360-180);
+
+/* ------------------------------------------------------------------
+   the story: captions that follow the measured gap, not the clock
+   ------------------------------------------------------------------ */
+let stageIndex=-1,intro=false,introUntil=0,storyTok=0;
+function setStory(k,txt){
+  if(k===stageIndex&&!txt)return;
+  const changed=k!==stageIndex;stageIndex=k;
+  const dots=stepsEl.children;for(let i=0;i<dots.length;i++)dots[i].classList.toggle('on',i===k);
+  const text=txt||STORY[k]();
+  if(!changed){storyTxt.textContent=text;return}
+  if(reduce){storyTxt.textContent=text;return}
+  const tok=++storyTok;
+  storyTxt.classList.add('out');
+  setTimeout(function(){if(tok!==storyTok)return;storyTxt.textContent=text;storyTxt.classList.remove('out')},320);
+}
+const STORY=[
+  ()=>N+' pendulums hang at almost the same angle. Nothing has moved yet.',
+  ()=>'Released. To the eye they are one pendulum: their angles differ by at most '+sci(delta,1)+' rad, far less than the width of a pen line.',
+  ()=>'Still a single thread. But each swing multiplies the gap'+(lyap&&!lyap.weak&&!lyap.prov?' by roughly '+Math.exp(lyap.lam).toFixed(1)+' every second.':'.'),
+  ()=>'The fan opens. The gap is already '+times(ns?sd[ns-1]/sd[0]:1)+' what it was at release, and the growth has not slowed.',
+  ()=>'Fully unfolded. Neighbours have become strangers; only statistics can describe where any one of them will be.'
+];
+function updateStory(){
+  if(intro)return;
+  if(state==='armed'){setStory(0);return}
+  const d=ns?sd[ns-1]:0,d0=sd[0]||1e-9;
+  let k=1;
+  if(d>=.35)k=4;else if(d>=.012)k=3;else if(d>=Math.max(12*d0,6e-4))k=2;
+  if(k>stageIndex||stageIndex<0)setStory(k);
+  else if(k===stageIndex&&(k===2||k===3))setStory(k,STORY[k]());
+}
+
+/* ------------------------------------------------------------------
+   drawing: trails (persistent, additive) + overlay (arms, heads, pivot)
+   ------------------------------------------------------------------ */
+function fadeTrails(dt){
+  if(!trails){clearTrails();return}
+  const a=1-Math.exp(-dt/1.5);
+  tctx.globalCompositeOperation='source-over';
+  tctx.fillStyle='rgba(0,0,0,'+a.toFixed(4)+')';tctx.fillRect(OX,OY,SZ,SZ);
+  /* a second, gentler pass keeps dark residue from lingering as haze */
+  tctx.globalCompositeOperation='color-burn';
+  tctx.fillStyle='rgb(251,251,251)';tctx.fillRect(OX,OY,SZ,SZ);
+}
+let glowPass=true;
+function strokeBuckets(styles,lw){
+  tctx.lineWidth=lw;
+  for(let k=0;k<K;k++){
+    tctx.strokeStyle=styles[k];tctx.beginPath();
+    for(let i=bStart[k];i<bStart[k+1];i++){
+      tctx.moveTo(px[i],py[i]);const o=i*MAXSUB;
+      for(let q=0;q<nsub;q++)tctx.lineTo(sx[o+q],sy[o+q]);
+    }
+    tctx.stroke();
+  }
+}
+function drawTrailSegments(){
+  tctx.globalCompositeOperation='lighter';
+  tctx.lineCap='round';tctx.lineJoin='round';
+  if(glowPass)strokeBuckets(bGlow,3.4);
+  strokeBuckets(bCore,trails?1.15:1.6);
+}
+
+const hover={x:0,y:0,on:false,touch:false,t:0};
+function ikFromPoint(x,y){
+  let dx=(x-cx)/L,dy=(y-cy)/L;let d=Math.hypot(dx,dy);
+  if(d<1e-3){dx=0;dy=1e-3;d=1e-3}
+  const a=Math.atan2(dx,dy),half=Math.acos(Math.min(d,1.9995)/2);
+  return {t1:a+half,t2:a-half};
+}
+function drawArm(t1,t2,alpha,rgb,lw){
+  const x1=cx+L*Math.sin(t1),y1=cy+L*Math.cos(t1),x2=x1+L*Math.sin(t2),y2=y1+L*Math.cos(t2);
+  octx.strokeStyle='rgba('+rgb+','+alpha+')';octx.lineWidth=lw;octx.beginPath();octx.moveTo(cx,cy);octx.lineTo(x1,y1);octx.lineTo(x2,y2);octx.stroke();
+  octx.fillStyle='rgba('+rgb+','+(alpha*1.2)+')';
+  octx.beginPath();octx.arc(x1,y1,2.6,0,6.283);octx.fill();
+  octx.beginPath();octx.arc(x2,y2,3.2,0,6.283);octx.fill();
+}
+function drawOver(now){
+  octx.clearRect(OX,OY,SZ,SZ);
+  /* pivot glow */
+  const pg=octx.createRadialGradient(cx,cy,0,cx,cy,34);
+  pg.addColorStop(0,'rgba(255,213,120,.34)');pg.addColorStop(1,'rgba(255,213,120,0)');
+  octx.fillStyle=pg;octx.beginPath();octx.arc(cx,cy,34,0,6.283);octx.fill();
+  /* hanger */
+  octx.strokeStyle='rgba(200,163,90,.55)';octx.lineWidth=1.4;
+  octx.beginPath();octx.moveTo(cx,cy-9);octx.lineTo(cx,cy-24);octx.moveTo(cx-9,cy-24);octx.lineTo(cx+9,cy-24);octx.stroke();
+  /* heads: one path per colour bucket */
+  octx.globalCompositeOperation='lighter';
+  for(let k=0;k<K;k++){
+    octx.fillStyle=bCore[k];octx.beginPath();
+    for(let i=bStart[k];i<bStart[k+1];i++){octx.moveTo(px[i]+3.6,py[i]);octx.arc(px[i],py[i],3.6,0,6.283)}
+    octx.fill();
+  }
+  for(let k=0;k<K;k++){
+    octx.fillStyle=bHead[k];octx.beginPath();
+    for(let i=bStart[k];i<bStart[k+1];i++){octx.moveTo(px[i]+1.3,py[i]);octx.arc(px[i],py[i],1.3,0,6.283)}
+    octx.fill();
+  }
+  octx.globalCompositeOperation='source-over';
+  /* arms of three pendulums, faint */
+  const idx=[0,N>>1,N-1];
+  for(let k=0;k<3;k++){
+    const i=idx[k];
+    const c=[0,0,0];ramp(N>1?i/(N-1):0,c);
+    const t1=th1[i],t2=th2[i];
+    drawArm(t1,t2,k===0?.5:.26,Math.min(255,c[0]+90)+','+Math.min(255,c[1]+90)+','+Math.min(255,c[2]+90),k===0?1.1:.9);
+  }
+  /* brass pivot */
+  const bg=octx.createRadialGradient(cx-1.6,cy-1.8,.5,cx,cy,7.5);
+  bg.addColorStop(0,'#fbeab8');bg.addColorStop(.5,'#c8a35a');bg.addColorStop(1,'#6d4f1d');
+  octx.fillStyle=bg;octx.beginPath();octx.arc(cx,cy,6.5,0,6.283);octx.fill();
+  octx.strokeStyle='rgba(40,25,5,.8)';octx.lineWidth=1;octx.stroke();
+  octx.fillStyle='#2a1c08';octx.beginPath();octx.arc(cx,cy,1.6,0,6.283);octx.fill();
+  /* arming ring */
+  if(state==='armed'){
+    const p=1-armLeft/armTotal;
+    octx.strokeStyle='rgba(255,213,79,.85)';octx.lineWidth=2;octx.lineCap='round';
+    octx.beginPath();octx.arc(cx,cy,15,-Math.PI/2,-Math.PI/2+6.283*p);octx.stroke();
+    octx.strokeStyle='rgba(255,213,79,.14)';octx.lineWidth=1;octx.beginPath();octx.arc(cx,cy,15,0,6.283);octx.stroke();
+  }
+  /* release flash */
+  if(flashT>0){
+    const f=(now-flashT)/1100;
+    if(f<1){
+      const r=8+f*90,a=(1-f)*(1-f);
+      octx.strokeStyle='rgba(255,213,79,'+(a*.8).toFixed(3)+')';octx.lineWidth=1.6;octx.beginPath();octx.arc(cx,cy,r,0,6.283);octx.stroke();
+      octx.strokeStyle='rgba(216,27,96,'+(a*.5).toFixed(3)+')';octx.lineWidth=1;octx.beginPath();octx.arc(cx,cy,r*.62,0,6.283);octx.stroke();
+    }else flashT=-1;
+  }
+  /* ghost pose under the pointer */
+  const idle=(now-hover.t)/1000,gk=hover.on&&!hover.touch?clamp(1-(idle-1.3)/1.1,0,1):0;
+  tipEl.classList.toggle('on',gk>.05);
+  if(gk>.02){
+    const c=ikFromPoint(hover.x,hover.y);
+    drawArm(c.t1,c.t2,.34*gk,'243,232,216',1);
+    octx.setLineDash([2,4]);octx.strokeStyle='rgba(243,232,216,'+(.14*gk).toFixed(3)+')';octx.lineWidth=1;
+    octx.beginPath();octx.arc(cx,cy,L*2,0,6.283);octx.stroke();octx.setLineDash([]);
+  }
+}
+
+/* ------------------------------------------------------------------
+   the divergence chart
+   ------------------------------------------------------------------ */
+let cw=600,ch=160,needsChart=true,chartHover=-1;
+const CM={l:54,r:14,t:26,b:22};
+function sizeChart(){
+  const r=chartbox.getBoundingClientRect();cw=Math.max(200,r.width);ch=Math.max(90,r.height);
+  const d=Math.min(window.devicePixelRatio||1,2);
+  cChart.width=Math.round(cw*d);cChart.height=Math.round(ch*d);kctx.setTransform(d,0,0,d,0,0);
+  needsChart=true;
+}
+function drawChart(){
+  const w=cw,h=ch,m=CM,pw=w-m.l-m.r,ph=h-m.t-m.b;
+  kctx.clearRect(0,0,w,h);
+  const tEnd=ns?st[ns-1]:0;
+  const xMax=tEnd<27?30:tEnd+3,xMin=tEnd<27?0:tEnd+3-30;
+  const yMin=-7,yMax=1;
+  const X=t=>m.l+(t-xMin)/(xMax-xMin)*pw;
+  const Y=v=>m.t+(1-(Math.log10(Math.max(v,1e-12))-yMin)/(yMax-yMin))*ph;
+  kctx.font='500 10px ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono",monospace';
+  kctx.textBaseline='middle';
+  /* grid + labels */
+  for(let e=yMin;e<=yMax;e++){
+    const y=Y(Math.pow(10,e));
+    kctx.strokeStyle=e%2===0?'rgba(255,232,205,.11)':'rgba(255,232,205,.05)';kctx.lineWidth=1;
+    kctx.beginPath();kctx.moveTo(m.l,Math.round(y)+.5);kctx.lineTo(w-m.r,Math.round(y)+.5);kctx.stroke();
+    if(e%2===0){kctx.fillStyle='#84746c';kctx.textAlign='right';kctx.fillText('10'+sup(e),m.l-8,y)}
+  }
+  kctx.textAlign='center';kctx.textBaseline='top';
+  const step=xMax-xMin>40?10:5;
+  for(let t=Math.ceil(xMin/step)*step;t<=xMax;t+=step){
+    const x=X(t);kctx.strokeStyle='rgba(255,232,205,.05)';kctx.beginPath();kctx.moveTo(Math.round(x)+.5,m.t);kctx.lineTo(Math.round(x)+.5,m.t+ph);kctx.stroke();
+    kctx.fillStyle='#84746c';kctx.fillText(t+' s',x,m.t+ph+6);
+  }
+  /* saturation level: unrelated pendulums sit about one and a half arm-lengths apart */
+  const ys=Y(1.7);
+  kctx.strokeStyle='rgba(255,213,79,.16)';kctx.lineWidth=1;kctx.beginPath();kctx.moveTo(m.l,Math.round(ys)+.5);kctx.lineTo(w-m.r,Math.round(ys)+.5);kctx.stroke();
+  kctx.fillStyle='rgba(255,213,79,.5)';kctx.textAlign='right';kctx.textBaseline='bottom';
+  kctx.fillText('unrelated',w-m.r-4,ys-3);
+  if(ns<2)return;
+  /* curve */
+  const grad=kctx.createLinearGradient(m.l,0,m.l+pw,0);
+  grad.addColorStop(0,'#6a1b9a');grad.addColorStop(.34,'#d81b60');grad.addColorStop(.68,'#ff8f00');grad.addColorStop(1,'#ffd54f');
+  let first=0;while(first<ns-1&&st[first]<xMin)first++;
+  const stride=Math.max(1,Math.floor((ns-first)/(pw*1.2)));
+  kctx.beginPath();
+  let lastX=0;
+  for(let i=first;i<ns;i+=stride){const x=X(st[i]),y=Y(sd[i]);if(i===first)kctx.moveTo(x,y);else kctx.lineTo(x,y);lastX=x}
+  const xe=X(st[ns-1]),ye=Y(sd[ns-1]);kctx.lineTo(xe,ye);
+  kctx.lineJoin='round';kctx.lineCap='round';
+  /* soft area */
+  kctx.save();
+  kctx.lineTo(xe,m.t+ph);kctx.lineTo(X(st[first]),m.t+ph);kctx.closePath();
+  const fill=kctx.createLinearGradient(0,m.t,0,m.t+ph);fill.addColorStop(0,'rgba(216,27,96,.18)');fill.addColorStop(1,'rgba(106,27,154,0)');
+  kctx.fillStyle=fill;kctx.fill();kctx.restore();
+  kctx.beginPath();
+  for(let i=first;i<ns;i+=stride){const x=X(st[i]),y=Y(sd[i]);if(i===first)kctx.moveTo(x,y);else kctx.lineTo(x,y)}
+  kctx.lineTo(xe,ye);
+  kctx.strokeStyle='rgba(255,143,0,.16)';kctx.lineWidth=5;kctx.stroke();
+  kctx.strokeStyle=grad;kctx.lineWidth=1.7;kctx.stroke();
+  /* Lyapunov fit and its e-fold bracket */
+  if(lyap&&lyap.i1>lyap.i0&&!lyap.weak){
+    const ta=st[lyap.i0],tb=st[lyap.i1];
+    if(tb>xMin&&ta<xMax){
+      kctx.strokeStyle='rgba(200,163,90,.6)';kctx.lineWidth=1;kctx.beginPath();
+      const ya=Math.exp(lyap.icpt+lyap.slope*ta),yb=Math.exp(lyap.icpt+lyap.slope*tb);
+      kctx.moveTo(X(ta),Y(ya));kctx.lineTo(X(tb),Y(yb));kctx.stroke();
+      /* triangle: one Lyapunov time across, one e-fold up */
+      const tm=ta+(tb-ta)*.42,ym=Math.exp(lyap.icpt+lyap.slope*tm);
+      const x0=X(tm),y0=Y(ym),x1=X(tm+lyap.tau),y1=Y(ym*Math.E);
+      kctx.strokeStyle='#c8a35a';kctx.lineWidth=1;kctx.beginPath();
+      kctx.moveTo(x0,y0);kctx.lineTo(x1,y0);kctx.lineTo(x1,y1);kctx.stroke();
+      kctx.fillStyle='#c8a35a';
+      kctx.beginPath();kctx.arc(x0,y0,2,0,6.283);kctx.arc(x1,y1,2,0,6.283);kctx.fill();
+      kctx.textAlign='left';kctx.textBaseline='top';kctx.fillStyle='rgba(224,196,130,.95)';
+      kctx.fillText('τ = '+lyap.tau.toFixed(2)+' s',x0+3,y0+5);
+      kctx.textBaseline='middle';kctx.fillStyle='rgba(200,163,90,.8)';kctx.fillText('×e',x1+6,(y0+y1)/2);
+    }
+  }
+  /* head */
+  const hg=kctx.createRadialGradient(xe,ye,0,xe,ye,12);hg.addColorStop(0,'rgba(255,213,79,.55)');hg.addColorStop(1,'rgba(255,213,79,0)');
+  kctx.fillStyle=hg;kctx.beginPath();kctx.arc(xe,ye,12,0,6.283);kctx.fill();
+  kctx.fillStyle='#fff3cf';kctx.beginPath();kctx.arc(xe,ye,2.6,0,6.283);kctx.fill();
+  /* hover read-out */
+  if(chartHover>=0&&chartHover<ns){
+    const i=chartHover,x=X(st[i]),y=Y(sd[i]);
+    kctx.strokeStyle='rgba(243,232,216,.3)';kctx.lineWidth=1;kctx.beginPath();kctx.moveTo(Math.round(x)+.5,m.t);kctx.lineTo(Math.round(x)+.5,m.t+ph);kctx.stroke();
+    kctx.fillStyle='#f3e8d8';kctx.beginPath();kctx.arc(x,y,3,0,6.283);kctx.fill();
+    const label='t = '+st[i].toFixed(2)+' s   gap = '+sci(sd[i],1)+' L';
+    kctx.font='600 10.5px ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono",monospace';
+    const tw=kctx.measureText(label).width+16;
+    let bx=x+10;if(bx+tw>w-m.r)bx=x-10-tw;
+    let by=y-30;if(by<m.t)by=y+12;
+    kctx.fillStyle='rgba(13,10,16,.92)';kctx.strokeStyle='rgba(255,232,205,.22)';
+    kctx.beginPath();kctx.roundRect?kctx.roundRect(bx,by,tw,20,5):kctx.rect(bx,by,tw,20);kctx.fill();kctx.stroke();
+    kctx.fillStyle='#f3e8d8';kctx.textAlign='left';kctx.textBaseline='middle';kctx.fillText(label,bx+8,by+10);
+  }
+}
+cChart.addEventListener('pointermove',function(e){
+  const r=cChart.getBoundingClientRect(),x=e.clientX-r.left;
+  const tEnd=ns?st[ns-1]:0,xMax=tEnd<27?30:tEnd+3,xMin=tEnd<27?0:tEnd+3-30;
+  const t=xMin+(x-CM.l)/(cw-CM.l-CM.r)*(xMax-xMin);
+  const i=Math.round(t/SAMPLE);
+  chartHover=i>=0&&i<ns&&x>CM.l&&x<cw-CM.r?i:-1;needsChart=true;
+});
+cChart.addEventListener('pointerleave',function(){chartHover=-1;needsChart=true});
+
+function updateLabels(){
+  const t=ns?st[ns-1]:0;
+  tNow.textContent=t.toFixed(2);
+  const d=ns?sd[ns-1]:0,d0=sd[0]||1;
+  const g=d/d0;
+  rGrow.textContent=times(g);
+  rEf.textContent=Math.log(Math.max(1,g)).toFixed(1);
+  const lapse=state==='run'&&boost>1.15&&!slow&&!paused;
+  rLapse.hidden=!lapse;if(lapse)rLapseV.textContent='×'+boost.toFixed(1);
+  lyap=state==='run'?fitLyap():null;
+  if(lyap){
+    if(lyap.weak)lyapEl.innerHTML='Lyapunov time ≳ <b>'+(isFinite(lyap.tau)?Math.min(99,lyap.tau).toFixed(1):'∞')+' s</b> · barely chaotic here';
+    else lyapEl.innerHTML='Lyapunov time ≈ <b>'+lyap.tau.toFixed(2)+' s</b>'+(lyap.prov?' · estimating':'');
+  }else lyapEl.innerHTML='Lyapunov time ≈ <b>'+(state==='armed'?'…':'measuring…')+'</b>';
+}
+
+/* ------------------------------------------------------------------
+   main loop
+   ------------------------------------------------------------------ */
+let last=0,raf=0,uiT=0,storyT=0,chartT=0,ema=16,boost=1;
+/* while the gap is still too small to see, run the exact same physics as a time-lapse, easing back to real time as it opens */
+function quietBoost(){
+  if(reduce||state!=='run'||!ns)return 1;
+  const v=Math.log10(Math.max(sd[ns-1],1e-9));
+  return v<-3.4?2.8:v<-2.4?2.8-1.8*(v+3.4):1;
+}
+function frame(now){
+  raf=requestAnimationFrame(frame);
+  if(doc.hidden){last=now;return}
+  const dtReal=Math.min(.25,Math.max(0,(now-last)/1000));last=now;
+  let dt=Math.min(.033,dtReal);
+  if(!dt)dt=.016;
+  const t0=performance.now();
+  if(intro&&now>introUntil)endIntro();
+  if(paused){drawOver(now);return}
+  nsub=0;
+  if(state==='armed'){
+    armLeft-=dtReal||.016;
+    const n=Math.max(0,Math.ceil(armLeft));
+    if(n<=3&&n!==lastNum&&armLeft>0){
+      lastNum=n;numTxt.textContent=n;numTxt.classList.remove('tick');void numTxt.offsetWidth;numTxt.classList.add('tick');
+    }
+    if(armLeft<=0){release()}
+  }else{
+    boost=quietBoost();
+    acc+=dt*(slow?.25:1)*(reduce?.7:1)*boost;
+    while(acc>=DT&&nsub<MAXSUB){
+      stepAll(DT);simT+=DT;acc-=DT;
+      for(let i=0;i<N;i++){
+        sx[i*MAXSUB+nsub]=cx+L*(Math.sin(th1[i])+Math.sin(th2[i]));
+        sy[i*MAXSUB+nsub]=cy+L*(Math.cos(th1[i])+Math.cos(th2[i]));
+      }
+      nsub++;
+      if(simT>=nextS){sampleNow();nextS+=SAMPLE;needsChart=true}
+    }
+    if(acc>DT*4)acc=0;
+  }
+  fadeTrails(dt);
+  if(nsub>0){
+    drawTrailSegments();
+    for(let i=0;i<N;i++){px[i]=sx[i*MAXSUB+nsub-1];py[i]=sy[i*MAXSUB+nsub-1]}
+  }else if(!trails){/* keep the heads only */}
+  drawOver(now);
+  /* light-weight ui updates */
+  uiT+=dt;if(uiT>.09){uiT=0;updateLabels();}
+  storyT+=dt;if(storyT>.35){storyT=0;updateStory()}
+  chartT+=dt;if(needsChart&&chartT>.08){chartT=0;needsChart=false;drawChart()}
+  /* adaptive quality: drop the glow pass if frames run long */
+  const ms=performance.now()-t0;ema+=(ms-ema)*.05;
+  if(glowPass&&ema>26&&N>120){glowPass=false}
+}
+
+/* ------------------------------------------------------------------
+   skip ahead: simulate silently, paint only the last stretch
+   ------------------------------------------------------------------ */
+function skip(seconds){
+  if(state!=='run')return;
+  const steps=Math.round(seconds/DT),every=4,keep=Math.min(150,Math.floor(steps/every)),paintFrom=steps-keep*every;
+  const buf=new Float32Array(Math.max(1,keep)*N*2);let f=0;
+  for(let s=0;s<steps;s++){
+    stepAll(DT);simT+=DT;
+    if(simT>=nextS){sampleNow();nextS+=SAMPLE}
+    if(s>=paintFrom&&(s-paintFrom)%every===every-1&&f<keep){
+      const o=f*N*2;for(let i=0;i<N;i++){buf[o+i*2]=bobX(i);buf[o+i*2+1]=bobY(i)}
+      f++;
+    }
+  }
+  /* repaint the last stretch as chunks whose brightness follows the same fade the live trails use */
+  clearTrails();
+  if(f>1){
+    tctx.globalCompositeOperation='lighter';tctx.lineCap='round';tctx.lineJoin='round';tctx.lineWidth=1.15;
+    const chunks=14,per=Math.max(1,Math.ceil((f-1)/chunks));
+    for(let c=0;c<chunks;c++){
+      const f0=c*per,f1=Math.min(f-1,f0+per);if(f0>=f-1)break;
+      const age=(f-1-(f0+f1)/2)*DT*every;
+      tctx.globalAlpha=trails?Math.exp(-age/1.5):(c===chunks-1?1:0);
+      for(let k=0;k<K;k++){
+        tctx.strokeStyle=bCore[k];tctx.beginPath();
+        for(let i=bStart[k];i<bStart[k+1];i++){
+          tctx.moveTo(buf[f0*N*2+i*2],buf[f0*N*2+i*2+1]);
+          for(let q=f0+1;q<=f1;q++)tctx.lineTo(buf[q*N*2+i*2],buf[q*N*2+i*2+1]);
+        }
+        tctx.stroke();
+      }
+    }
+    tctx.globalAlpha=1;
+  }
+  for(let i=0;i<N;i++){px[i]=bobX(i);py[i]=bobY(i)}
+  needsChart=true;updateLabels();updateStory();drawChart();
+}
+
+/* ------------------------------------------------------------------
+   controls
+   ------------------------------------------------------------------ */
+function deltaFromSlider(){return Math.pow(10,parseFloat(rDelta.value))}
+function refreshLabels(){
+  oDelta.textContent=sci(Math.pow(10,parseFloat(rDelta.value)),1)+' rad';
+  oCount.textContent=rCount.value;
+}
+function refreshSub(){sub.innerHTML='<b>'+N+'</b> double pendulums · released <b>'+sci(delta,1)+'</b> rad apart'}
+function restart(sec){
+  intro=false;stage.classList.remove('rewind');
+  N=parseInt(rCount.value,10);delta=deltaFromSlider();refreshSub();
+  launch(sec==null?3:sec);
+}
+rDelta.addEventListener('input',refreshLabels);
+rCount.addEventListener('input',refreshLabels);
+rDelta.addEventListener('change',function(){restart(2)});
+rCount.addEventListener('change',function(){restart(2)});
+bRestart.addEventListener('click',function(){restart(3)});
+let byPointer=false;
+window.addEventListener('pointerdown',function(){byPointer=true},true);
+window.addEventListener('keydown',function(){byPointer=false},true);
+[bRestart,bTrails,bSlow,bSkip,bSave].forEach(function(b){b.addEventListener('click',function(){if(byPointer)b.blur()})});
+function setTog(btn,on){btn.setAttribute('aria-pressed',String(!!on))}
+bTrails.addEventListener('click',function(){trails=!trails;setTog(bTrails,trails);if(!trails)clearTrails()});
+bSlow.addEventListener('click',function(){slow=!slow;setTog(bSlow,slow)});
+bSkip.addEventListener('click',function(){skip(5)});
+bSave.addEventListener('click',function(){
+  try{
+    const c=doc.createElement('canvas');c.width=Math.round(W*2);c.height=Math.round(H*2);
+    const x=c.getContext('2d');x.scale(2,2);
+    x.fillStyle='#0d0a10';x.fillRect(0,0,W,H);
+    x.globalCompositeOperation='screen';x.drawImage(cTrail,OX,OY,SZ,SZ);
+    x.globalCompositeOperation='source-over';x.drawImage(cOver,OX,OY,SZ,SZ);
+    x.fillStyle='rgba(243,232,216,.85)';x.font='italic 22px "Bodoni 72","Bodoni MT",Didot,"Times New Roman",serif';x.textBaseline='top';
+    x.fillText('Sensitive Dependence',22,20);
+    x.fillStyle='rgba(200,163,90,.9)';x.font='11px ui-monospace,Menlo,Consolas,monospace';
+    x.fillText(N+' PENDULUMS · '+sci(delta,1)+' RAD APART · T = '+(ns?st[ns-1]:0).toFixed(2)+' S',22,50);
+    c.toBlob(function(b){
+      if(!b)return;const a=doc.createElement('a');a.href=URL.createObjectURL(b);a.download='butterfly-effect.png';
+      doc.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500);
+    },'image/png');
+  }catch(e){}
+});
+function setPaused(p){paused=p;if(!p)last=performance.now()}
+window.addEventListener('keydown',function(e){
+  const t=e.target;if(t&&(t.tagName==='INPUT'&&t.type!=='range'))return;
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const k=e.key.toLowerCase();
+  if(k==='r'){restart(3)}
+  else if(k==='t'){bTrails.click()}
+  else if(k==='s'){bSlow.click()}
+  else if(k==='f'){skip(5)}
+  else if(e.code==='Space'&&(t===doc.body||t===stage)){e.preventDefault();setPaused(!paused)}
+});
+
+/* click / tap anywhere on the stage: new starting pose from the pointer (two-link inverse kinematics) */
+stage.addEventListener('pointermove',function(e){
+  if(e.pointerType==='touch'){hover.on=false;return}
+  const r=stage.getBoundingClientRect();hover.x=e.clientX-r.left;hover.y=e.clientY-r.top;hover.on=true;hover.touch=false;hover.t=performance.now();
+  const c=ikFromPoint(hover.x,hover.y);
+  tipEl.innerHTML='θ₁ <b>'+deg(c.t1)+'°</b>  θ₂ <b>'+deg(c.t2)+'°</b>';
+  tipEl.style.transform='translate('+Math.round(hover.x+16)+'px,'+Math.round(hover.y+16)+'px)';
+});
+stage.addEventListener('pointerleave',function(){hover.on=false});
+stage.addEventListener('click',function(e){
+  const r=stage.getBoundingClientRect();
+  cfg=ikFromPoint(e.clientX-r.left,e.clientY-r.top);
+  restart(1.1);
+  hintEl.style.opacity='.55';
+});
+
+/* ------------------------------------------------------------------
+   boot
+   ------------------------------------------------------------------ */
+setTog(bSlow,slow);
+refreshLabels();
+if(window.ResizeObserver){new ResizeObserver(function(){resize()}).observe(stage);new ResizeObserver(function(){sizeChart();needsChart=true}).observe(chartbox)}
+window.addEventListener('resize',function(){resize()});
+resize();
+N=parseInt(rCount.value,10);delta=deltaFromSlider();
+/* first paint: show where the experiment ends, then rewind and run it for real */
+function endIntro(){
+  intro=false;
+  if(reduce){restart(3);return}
+  stage.classList.add('rewind');
+  setTimeout(function(){restart(3.05);requestAnimationFrame(function(){stage.classList.remove('rewind')})},620);
+}
+intro=true;introUntil=performance.now()+3400;
+launch(.05);release();skip(12.5);hintEl.style.opacity='1';
+storyTok++;stageIndex=4;storyTxt.classList.remove('out');
+storyTxt.textContent='Two hundred and forty pendulums, released a hair\'s breadth apart, end up like this. Rewinding to the start.';
+for(let i=0;i<stepsEl.children.length;i++)stepsEl.children[i].classList.toggle('on',i===4);
+doc.addEventListener('visibilitychange',function(){last=performance.now()});
+last=performance.now();
+raf=requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

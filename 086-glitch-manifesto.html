@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIGNAL/NOISE - A Glitch Manifesto</title>
+<meta name="description" content="A typographic glitch manifesto in black, white and acid yellow: sliced RGB-split headline, decoding statements, data-mosh canvas and a corrupt slider.">
+<style>
+:root{
+  --bg:#0a0a0a; --fg:#f2f2f0; --acid:#e6ff00; --red:#ff3b30; --cyan:#00e5ff;
+  --mut:rgba(242,242,240,.56); --line:rgba(242,242,240,.2); --blend:screen; --pad:clamp(16px,3.2vw,48px);
+  --rgb:0px; --mqd:38s;
+  --heavy:"Arial Black","Helvetica Neue Heavy","Helvetica Neue",Helvetica,"Nimbus Sans","Liberation Sans",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+}
+:root[data-theme="light"]{--bg:#f2f2f0;--fg:#0a0a0a;--mut:rgba(10,10,10,.6);--line:rgba(10,10,10,.24);--blend:multiply}
+*{box-sizing:border-box}
+html{background:var(--bg);color-scheme:dark;scroll-behavior:auto}
+:root[data-theme="light"] html,:root[data-theme="light"]{color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--heavy);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::selection{background:var(--acid);color:#0a0a0a}
+:focus-visible{outline:3px solid var(--acid);outline-offset:3px}
+button{font:inherit;color:inherit}
+.mono{font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;font-size:12px}
+mark{background:var(--acid);color:#0a0a0a;padding:0 .12em;margin:0 -.06em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+
+/* scanlines + tear line */
+.scan{position:fixed;inset:0;pointer-events:none;z-index:45;background:repeating-linear-gradient(0deg,rgba(0,0,0,.16) 0 1px,transparent 1px 3px);opacity:.35}
+:root[data-theme="light"] .scan{opacity:.12}
+.tearline{position:fixed;left:0;right:0;height:6px;top:40%;background:var(--acid);mix-blend-mode:difference;z-index:46;opacity:0;pointer-events:none}
+#trail{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50}
+
+/* bar */
+.bar{position:sticky;top:0;z-index:40;display:flex;align-items:stretch;justify-content:space-between;gap:0;background:var(--bg);border-bottom:2px solid var(--fg)}
+.bar>*{display:flex;align-items:center}
+.brand{padding:0 var(--pad);font:900 20px/1 var(--heavy);letter-spacing:-.02em;white-space:nowrap}
+.brand i{font-style:normal;background:var(--acid);color:#0a0a0a;padding:2px 6px;margin-left:6px}
+.corr{flex:1;gap:16px;padding:0 var(--pad);border-left:1px solid var(--line);border-right:1px solid var(--line);min-width:0}
+.corr label{white-space:nowrap}
+.corr output{min-width:3ch;text-align:right;color:var(--acid);background:#0a0a0a;padding:2px 6px}
+.corr input{flex:1;min-width:80px;height:44px;margin:0;accent-color:var(--acid);background:transparent;cursor:crosshair}
+.inv{appearance:none;-webkit-appearance:none;cursor:pointer;background:var(--fg);color:var(--bg);border:0;padding:0 clamp(16px,2.4vw,34px);min-height:60px;font:900 16px/1 var(--heavy);letter-spacing:.04em;text-transform:uppercase;gap:10px;transition:background .1s,color .1s}
+.inv:hover{background:var(--acid);color:#0a0a0a}
+.inv b{display:inline-block;width:20px;height:20px;border-radius:50%;border:2px solid currentColor;background:linear-gradient(90deg,currentColor 50%,transparent 50%)}
+
+/* hero */
+.hero{position:relative;padding:0 var(--pad);border-bottom:2px solid var(--fg);overflow:hidden;min-height:calc(100vh - 62px);display:flex;flex-direction:column;justify-content:space-between;cursor:crosshair}
+.meta{display:flex;justify-content:space-between;gap:12px;padding:18px 0;color:var(--mut);border-bottom:1px solid var(--line)}
+.meta span:nth-child(2){text-align:center}.meta span:last-child{text-align:right}
+.rec{color:var(--red)}
+.hh{position:relative;margin:clamp(10px,3vh,40px) 0 0 -.04em;font:900 clamp(64px,26vw,520px)/.8 var(--heavy);letter-spacing:-.055em;text-transform:uppercase;user-select:none}
+.hh .ghost{display:block;white-space:pre;visibility:hidden}
+.slices{position:absolute;inset:0;display:block}
+.sl{position:absolute;inset:0;display:block;will-change:transform}
+.l{position:absolute;left:0;top:0;display:block;white-space:pre}
+.l.r{color:var(--red);mix-blend-mode:var(--blend);transform:translateX(var(--s,0px))}
+.l.c{color:var(--cyan);mix-blend-mode:var(--blend);transform:translateX(calc(var(--s,0px) * -1))}
+.blk{position:absolute;pointer-events:none;mix-blend-mode:difference;opacity:0}
+.foot{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;padding:18px 0 22px;border-top:1px solid var(--line)}
+.tag{background:var(--acid);color:#0a0a0a;padding:10px 14px;font:900 clamp(14px,1.6vw,20px)/1.15 var(--heavy);text-transform:uppercase;max-width:34ch}
+.lostbox{text-align:right}
+.lostbox .bigno{display:block;font:700 clamp(22px,3.6vw,46px)/1 var(--mono);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.lostbox small{color:var(--mut)}
+
+/* marquee */
+.mq{overflow:hidden;white-space:nowrap;border-bottom:2px solid var(--fg);user-select:none}
+.mq-t{display:inline-flex;animation:mq var(--mqd) linear infinite;will-change:transform}
+.mq-t span{padding-right:.6em}
+.mq.a{background:var(--acid);color:#0a0a0a;font:900 clamp(30px,5.4vw,84px)/1.15 var(--heavy);text-transform:uppercase;letter-spacing:-.03em}
+.mq.b{font:900 clamp(30px,5.4vw,84px)/1.15 var(--heavy);text-transform:uppercase;letter-spacing:-.03em;color:transparent;-webkit-text-stroke:2px var(--fg)}
+.mq.b .mq-t{animation-direction:reverse;animation-duration:calc(var(--mqd) * 1.3)}
+.mq.c{font:500 13px/2.6 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--mut);border-top:0}
+.mq.c .mq-t{animation-duration:calc(var(--mqd) * .7)}
+@keyframes mq{to{transform:translateX(-50%)}}
+
+/* manifesto */
+.sec-h{display:flex;justify-content:space-between;gap:16px;padding:14px var(--pad);border-bottom:1px solid var(--line);color:var(--mut)}
+.man{list-style:none;margin:0;padding:0}
+.man li{display:grid;grid-template-columns:clamp(54px,9vw,140px) 1fr;border-bottom:1px solid var(--line);padding:clamp(20px,4vw,52px) var(--pad);gap:clamp(8px,2vw,28px);transition:background .08s,color .08s}
+.man .n{font:500 clamp(12px,1.4vw,16px)/1 var(--mono);color:var(--mut);padding-top:.9em}
+.st{position:relative;margin:0;font:900 clamp(26px,5.2vw,86px)/.98 var(--heavy);letter-spacing:-.035em;text-transform:uppercase;text-wrap:balance;overflow-wrap:anywhere;
+  text-shadow:var(--rgb) 0 0 rgba(255,59,48,.85),calc(var(--rgb) * -1) 0 0 rgba(0,229,255,.85)}
+.st.pend{color:transparent;text-shadow:none}
+.st.pend mark{background:transparent}
+.st .ov{position:absolute;left:0;top:0;right:0;pointer-events:none;color:var(--fg);text-shadow:none}
+.st .ov mark{background:var(--acid);color:#0a0a0a}
+.man li:hover{background:var(--fg);color:var(--bg)}
+.man li:hover .n{color:var(--bg)}
+.man li:hover .st{color:var(--bg)}
+.man li:hover .st mark{background:var(--bg);color:var(--acid)}
+.man li:hover .st.pend{color:transparent}
+.man li:hover .st.pend mark{background:transparent}
+.man li:hover .st .ov{color:var(--bg)}
+.man li:hover .st .ov mark{background:var(--bg);color:var(--acid)}
+
+/* loss + mosh + terminal */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:2px solid var(--fg)}
+.grid3>div{padding:clamp(18px,3vw,44px) var(--pad);border-right:1px solid var(--line)}
+.grid3>div:last-child{border-right:0}
+.grid3 .k{color:var(--mut);display:block;margin-bottom:14px}
+.grid3 .v{font:900 clamp(34px,6vw,96px)/.95 var(--heavy);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.grid3 .v.m{font-family:var(--mono);font-weight:700;letter-spacing:-.05em}
+.grid3 .v.y{background:var(--acid);color:#0a0a0a;display:inline-block;padding:0 .1em}
+.moshwrap{border-bottom:2px solid var(--fg);position:relative}
+#mosh{display:block;width:100%;height:clamp(240px,46vh,520px);background:var(--bg);cursor:crosshair;touch-action:pan-y}
+.moshcap{display:flex;justify-content:space-between;gap:12px;padding:12px var(--pad);color:var(--mut);border-top:1px solid var(--line)}
+.term{display:grid;grid-template-columns:1.1fr .9fr;border-bottom:2px solid var(--fg)}
+.term pre{margin:0;padding:clamp(18px,3vw,44px) var(--pad);font:500 clamp(11px,1.15vw,15px)/1.7 var(--mono);overflow:hidden;min-height:22em;white-space:pre-wrap;overflow-wrap:anywhere;border-right:1px solid var(--line)}
+.term pre .ok{color:var(--mut)}.term pre .wr{background:var(--acid);color:#0a0a0a}.term pre .er{font-weight:700}
+.term .cur{display:inline-block;width:.6em;height:1.1em;background:var(--acid);vertical-align:text-bottom;animation:cur 1s steps(1) infinite}
+@keyframes cur{50%{opacity:0}}
+.term .big{display:flex;flex-direction:column;justify-content:center;padding:var(--pad);overflow:hidden}
+.term .big div{font:900 clamp(40px,8.6vw,150px)/.86 var(--heavy);letter-spacing:-.06em;text-transform:uppercase;color:transparent;-webkit-text-stroke:2px var(--fg)}
+.term .big div:nth-child(2){color:var(--fg);-webkit-text-stroke:0;margin-left:.3em}
+.term .big div:nth-child(3){color:var(--acid);-webkit-text-stroke:0;text-shadow:calc(var(--rgb) * 2) 0 0 rgba(255,59,48,.9),calc(var(--rgb) * -2) 0 0 rgba(0,229,255,.9)}
+.end{padding:clamp(28px,6vw,90px) var(--pad) clamp(28px,5vw,60px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:20px}
+.end p{margin:0;font:900 clamp(24px,4vw,60px)/1 var(--heavy);letter-spacing:-.035em;text-transform:uppercase;max-width:18ch}
+.end small{color:var(--mut);max-width:44ch;line-height:1.7}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media (max-width:760px){
+  .bar{flex-wrap:wrap}
+  .brand{order:1;flex:1;min-height:56px}
+  .inv{order:2;min-height:56px}
+  .corr{order:3;flex:1 1 100%;border:0;border-top:1px solid var(--line);min-height:52px;padding:0 var(--pad)}
+  .meta span:nth-child(2){display:none}
+  .grid3{grid-template-columns:1fr}
+  .grid3>div{border-right:0;border-bottom:1px solid var(--line)}
+  .term{grid-template-columns:1fr}
+  .term pre{border-right:0;border-bottom:1px solid var(--line);min-height:0}
+  .hero{min-height:calc(100vh - 110px)}
+  .lostbox{text-align:left}
+  .hh{font-size:26vw}
+}
+@media (prefers-reduced-motion:reduce){
+  .mq-t{animation-duration:calc(var(--mqd) * 4)}
+  .term .cur{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="scan" aria-hidden="true"></div>
+<div class="tearline" id="tear" aria-hidden="true"></div>
+<canvas id="trail" aria-hidden="true"></canvas>
+
+<header class="bar">
+  <div class="brand">S/N<i>v.10</i></div>
+  <div class="corr mono">
+    <label for="corrupt">Corrupt</label>
+    <input id="corrupt" type="range" min="0" max="100" value="38">
+    <output id="corrv" for="corrupt">38</output>
+  </div>
+  <button class="inv" id="inv" type="button" aria-pressed="false" aria-label="Invert colours"><b aria-hidden="true"></b>Invert</button>
+</header>
+
+<main>
+<section class="hero" id="hero" aria-label="Signal slash noise, hero">
+  <div class="meta mono"><span>TX 0x1F &middot; Manifesto in ten broken transmissions</span><span>CH 07 &middot; 4.2 GHz</span><span><b class="rec">&#9679;</b> REC <span id="tc">00:00:00</span></span></div>
+  <h1 class="hh" id="hh" aria-label="Signal slash noise"><span class="ghost" aria-hidden="true">SIGNAL
+/NOISE</span><span class="slices" id="slices" aria-hidden="true"></span></h1>
+  <div class="blk" id="b1" aria-hidden="true"></div><div class="blk" id="b2" aria-hidden="true"></div><div class="blk" id="b3" aria-hidden="true"></div>
+  <div class="foot">
+    <div class="tag">Nothing here is broken. This is the broadcast.</div>
+    <div class="lostbox mono"><small>Signals lost</small><strong id="lost1" class="bigno">1,048,576</strong><small>Click the noise &middot; press G &middot; drag the slider</small></div>
+  </div>
+</section>
+
+<div class="mq a" aria-hidden="true"><div class="mq-t"><span>No carrier /// Signal lost /// Reboot the room /// Trust the artifact /// No carrier /// Signal lost /// Reboot the room /// Trust the artifact ///</span><span>No carrier /// Signal lost /// Reboot the room /// Trust the artifact /// No carrier /// Signal lost /// Reboot the room /// Trust the artifact ///</span></div></div>
+<div class="mq b" aria-hidden="true"><div class="mq-t"><span>Noise is a language &#10005; Static is a choir &#10005; Hiss is honest &#10005; Noise is a language &#10005; Static is a choir &#10005; Hiss is honest &#10005;</span><span>Noise is a language &#10005; Static is a choir &#10005; Hiss is honest &#10005; Noise is a language &#10005; Static is a choir &#10005; Hiss is honest &#10005;</span></div></div>
+
+<div class="sec-h mono"><span>&#9660; The manifesto</span><span>10 statements &middot; decode on sight</span></div>
+<ol class="man" id="man">
+  <li><span class="n">01</span><p class="st">The signal was never clean. We were just too polite to hear <mark>the hiss</mark>.</p></li>
+  <li><span class="n">02</span><p class="st">Every filter is a small lie. <mark>Choose your lie</mark> or drop the filter.</p></li>
+  <li><span class="n">03</span><p class="st">A perfect copy is a dead copy. <mark>Artifacts are proof of life.</mark></p></li>
+  <li><span class="n">04</span><p class="st">Compress us until we bleed colour. We live in the <mark>blocks</mark>.</p></li>
+  <li><span class="n">05</span><p class="st">Silence is only noise that learned manners.</p></li>
+  <li><span class="n">06</span><p class="st">When the feed freezes, look at the freeze. <mark>That is the image.</mark></p></li>
+  <li><span class="n">07</span><p class="st">We demand the right to be <mark>mis-decoded</mark>.</p></li>
+  <li><span class="n">08</span><p class="st">Truth arrives as <mark>packet loss</mark>: damaged, late and unmistakable.</p></li>
+  <li><span class="n">09</span><p class="st">Break the grid so you can see what was holding it up.</p></li>
+  <li><span class="n">10</span><p class="st">There is no signal. There is only <mark>what survives the noise.</mark></p></li>
+</ol>
+
+<div class="mq b" aria-hidden="true" style="border-top:0"><div class="mq-t"><span>Corrupt the archive &#10005; Bend the codec &#10005; Feed the static &#10005; Corrupt the archive &#10005; Bend the codec &#10005; Feed the static &#10005;</span><span>Corrupt the archive &#10005; Bend the codec &#10005; Feed the static &#10005; Corrupt the archive &#10005; Bend the codec &#10005; Feed the static &#10005;</span></div></div>
+
+<section class="grid3" aria-label="Loss report">
+  <div><span class="k mono">Signals lost</span><div class="v m" id="lost2">1,048,576</div></div>
+  <div><span class="k mono">Truth recovered</span><div class="v y">0.003%</div></div>
+  <div><span class="k mono">Corruption index</span><div class="v" id="cidx">38</div></div>
+</section>
+
+<section class="moshwrap" aria-label="Data-moshed block grid, decorative">
+  <div class="sec-h mono"><span>&#9660; Datamosh / 0x2F</span><span>Hover to drag the smear</span></div>
+  <canvas id="mosh" aria-hidden="true"></canvas>
+  <div class="moshcap mono"><span>Frame 4,096 of 4,096 &middot; keyframe missing</span><span>Illustrative. No data was harmed.</span></div>
+</section>
+
+<section class="term" aria-label="Fake terminal error dump">
+  <pre id="term" role="img" aria-label="Terminal error dump (decorative)"></pre>
+  <div class="big" aria-hidden="true"><div>Seg</div><div>Fault</div><div>0xDEAD</div></div>
+</section>
+
+<div class="mq c" aria-hidden="true"><div class="mq-t"><span>End of transmission &middot; reprint freely &middot; degrade lovingly &middot; End of transmission &middot; reprint freely &middot; degrade lovingly &middot; End of transmission &middot; reprint freely &middot; degrade lovingly &middot;</span><span>End of transmission &middot; reprint freely &middot; degrade lovingly &middot; End of transmission &middot; reprint freely &middot; degrade lovingly &middot; End of transmission &middot; reprint freely &middot; degrade lovingly &middot;</span></div></div>
+<footer class="end">
+  <p>Keep the <mark>noise</mark>. Lose the rest.</p>
+  <small class="mono">SIGNAL/NOISE is a fictional broadcast. All losses are illustrative and, on balance, deserved. Press G to glitch. Invert to see the negative.</small>
+</footer>
+</main>
+
+<script>
+(function(){
+"use strict";
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var root=document.documentElement;
+var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var GL="█▓▒░/\\|<>_-+*#%&?01";
+function rg(){return GL.charAt((Math.random()*GL.length)|0)}
+function rnd(a,b){return a+Math.random()*(b-a)}
+var corrupt=.38;
+
+/* ---------- hero: sliced, RGB-split, scrambling headline ---------- */
+var N=8,slicesEl=$("#slices"),SL=[],layers=[],hero=$("#hero");
+var LINES=["SIGNAL","/NOISE"],FINAL=LINES.join("\n");
+for(var i=0;i<N;i++){
+  var s=document.createElement("span");s.className="sl";
+  ["b","r","c"].forEach(function(k){var l=document.createElement("span");l.className="l "+k;l.textContent=FINAL;s.appendChild(l);layers.push(l)});
+  slicesEl.appendChild(s);SL.push(s);
+}
+var cuts=[];
+function setCuts(random){
+  var p=[0];for(var i=1;i<N;i++)p.push(random?Math.random()*100:i*100/N);
+  p.push(100);p.sort(function(a,b){return a-b});cuts=p;
+  for(var j=0;j<N;j++){
+    var top=Math.max(0,cuts[j]-.15),bot=Math.min(100,cuts[j+1]+.15);
+    SL[j].style.clipPath="inset("+top+"% 0 "+(100-bot)+"% 0)";
+  }
+}
+setCuts(false);
+var bk=[$("#b1"),$("#b2"),$("#b3")];
+var burst={on:false,t:0,dur:800,I:0,acc:0,res:[],str:FINAL};
+var nextBurst=performance.now()+1400;
+function scrambleStr(t){
+  var out="";
+  for(var i=0;i<FINAL.length;i++){
+    var ch=FINAL.charAt(i);
+    if(ch==="\n"||ch==="/"&&false){out+=ch;continue}
+    out+=(t<burst.res[i])?rg():ch;
+  }
+  return out;
+}
+function startBurst(strength){
+  var c=corrupt,k=strength||1;
+  burst.on=true;burst.t=0;burst.dur=(520+520*Math.random()+700*c)*(reduce?.7:1);burst.I=k*(.45+c*.9)*(reduce?.5:1);burst.max=burst.I;burst.acc=1;
+  burst.res=[];var p=.25+.55*c;
+  for(var i=0;i<FINAL.length;i++)burst.res[i]=Math.random()<p?rnd(.1,.8)*burst.dur:-1;
+  setCuts(true);
+  var t=$("#tear");t.style.top=rnd(8,90)+"%";t.style.height=rnd(2,16)+"px";t.style.opacity=.9;setTimeout(function(){t.style.opacity=0},90+Math.random()*120);
+}
+function stepBurst(dt){
+  burst.t+=dt*1000;
+  var u=burst.t/burst.dur;
+  if(u>=1){
+    burst.on=false;burst.I=0;
+    for(var j=0;j<N;j++){SL[j].style.transform="";SL[j].style.setProperty("--s","0px")}
+    setCuts(false);
+    for(var q=0;q<layers.length;q++)layers[q].textContent=FINAL;
+    bk.forEach(function(b){b.style.opacity=0});root.style.setProperty("--rgb","0px");
+    return;
+  }
+  burst.acc+=dt;
+  if(burst.acc<.045)return;burst.acc=0;
+  var I=burst.max*Math.pow(1-u,1.5)*(.55+Math.random()*.6),W=hero.clientWidth;
+  for(var j=0;j<N;j++){
+    var on=Math.random()<.35+.5*I;
+    var dx=on?(Math.random()-.5)*2*I*W*.16:0;
+    SL[j].style.transform="translateX("+dx.toFixed(1)+"px)";
+    SL[j].style.setProperty("--s",((on?rnd(.4,1):.15)*I*W*.02).toFixed(1)+"px");
+  }
+  var str=scrambleStr(burst.t),ln=str;
+  for(var q=0;q<layers.length;q++)layers[q].textContent=ln;
+  var hb=hero.clientHeight;
+  bk.forEach(function(b,i){
+    if(Math.random()<.5*I+.1){
+      b.style.left=rnd(0,90)+"%";b.style.top=rnd(10,90)+"%";b.style.width=rnd(4,26)+"%";b.style.height=rnd(1.2,9)+"%";
+      b.style.background=i===1?"#e6ff00":"#f2f2f0";b.style.opacity=.9;
+    }else b.style.opacity=0;
+  });
+  root.style.setProperty("--rgb",(I*7).toFixed(1)+"px");
+}
+
+/* ---------- decode statements ---------- */
+function textNodes(el){var w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,null),a=[],n;while((n=w.nextNode()))a.push(n);return a}
+function Dec(el){
+  this.el=el;this.real=textNodes(el);
+  this.orig=this.real.map(function(n){return n.nodeValue});
+  this.total=this.orig.join("").length;
+  var ov=document.createElement("span");ov.className="ov";ov.setAttribute("aria-hidden","true");
+  ov.style.display="block";
+  var frag=el.cloneNode(true);
+  while(frag.firstChild)ov.appendChild(frag.firstChild);
+  this.ov=ov;this.ovNodes=textNodes(ov);
+  el.classList.add("pend");el.appendChild(ov);
+  this.state="idle";this.render(function(){return false});
+}
+Dec.prototype.render=function(resolved){
+  var g=0,self=this;
+  this.ovNodes.forEach(function(n,k){
+    var s=self.orig[k],o="";
+    for(var i=0;i<s.length;i++){var ch=s.charAt(i);o+=(ch===" "?" ":(resolved(g)?ch:rg()));g++}
+    n.nodeValue=o;
+  });
+};
+Dec.prototype.start=function(){
+  if(this.state!=="idle")return;this.state="run";
+  var self=this,t0=performance.now(),D=(reduce?200:900+this.total*9),rs=[];
+  for(var i=0;i<this.total;i++)rs[i]=(i/this.total)*D*.8+Math.random()*D*.25;
+  var last=0;
+  (function tick(now){
+    var t=now-t0;
+    if(t-last>45){last=t;self.render(function(g){return t>rs[g]})}
+    if(t<D+50)requestAnimationFrame(tick);
+    else{self.state="done";self.el.classList.remove("pend");if(self.ov.parentNode)self.ov.parentNode.removeChild(self.ov)}
+  })(t0);
+};
+Dec.prototype.reglitch=function(){
+  if(this.state!=="done")return;var self=this;
+  if(!self.ov.parentNode)self.el.appendChild(self.ov);
+  self.el.classList.add("pend");self.state="gl";
+  var bad=[];for(var i=0;i<self.total;i++)bad[i]=Math.random()<.22;
+  var n=0,iv=setInterval(function(){
+    n++;self.render(function(g){return !bad[g]||Math.random()<.3});
+    if(n>7){clearInterval(iv);self.el.classList.remove("pend");if(self.ov.parentNode)self.ov.parentNode.removeChild(self.ov);self.state="done"}
+  },55);
+};
+var decs=$$("#man .st").map(function(el){return new Dec(el)});
+if("IntersectionObserver"in window){
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){var d=decs[$$("#man .st").indexOf(e.target)];if(d)d.start();io.unobserve(e.target)}})},{threshold:.35});
+  $$("#man .st").forEach(function(el){io.observe(el)});
+}else decs.forEach(function(d){d.start()});
+
+/* ---------- CORRUPT slider, invert ---------- */
+var cs=$("#corrupt");
+function setCorrupt(){
+  corrupt=cs.value/100;$("#corrv").textContent=cs.value;$("#cidx").textContent=cs.value;
+  root.style.setProperty("--mqd",(44-30*corrupt).toFixed(1)+"s");
+  nextBurst=Math.min(nextBurst,performance.now()+300);
+}
+cs.addEventListener("input",function(){setCorrupt();if(!burst.on)startBurst(.8)});
+var inv=$("#inv");
+inv.addEventListener("click",function(){
+  var light=root.getAttribute("data-theme")!=="light";
+  if(light)root.setAttribute("data-theme","light");else root.removeAttribute("data-theme");
+  inv.setAttribute("aria-pressed",light?"true":"false");startBurst(1.3);
+});
+window.addEventListener("keydown",function(e){if((e.key==="g"||e.key==="G")&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&e.target.tagName!=="INPUT")startBurst(1.6)});
+hero.addEventListener("pointerdown",function(){startBurst(1.2)});
+
+/* ---------- counters, timecode, terminal ---------- */
+var lost=1048576,l1=$("#lost1"),l2=$("#lost2");
+function fmt(n){return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",")}
+setInterval(function(){lost+=Math.floor(rnd(3,40)*(1+corrupt*3));var s=fmt(lost);l1.textContent=s;l2.textContent=s},reduce?400:90);
+var t0=Date.now(),tc=$("#tc");
+function p2(n){return (n<10?"0":"")+n}
+setInterval(function(){var s=Math.floor((Date.now()-t0)/1000);tc.textContent=p2(Math.floor(s/3600))+":"+p2(Math.floor(s/60)%60)+":"+p2(s%60)},500);
+var TL=[
+ ["ok","> mount /dev/signal --carrier=0x7F3A"],
+ ["ok","[ OK ] carrier lock acquired, 4.2 GHz"],
+ ["ok","[ OK ] decoding manifesto.bin (10 statements)"],
+ ["wr","[WARN] noise floor rising: -41 dB -> -12 dB"],
+ ["ok","[ OK ] statement 05 reads as silence, ignoring"],
+ ["er","[FAIL] checksum mismatch in block 0x0000BEEF"],
+ ["er","SEGFAULT 0x0000DEAD at 0x00000000"],
+ ["ok","  #0 decode_truth()      manifesto.c:10"],
+ ["ok","  #1 trust_the_filter()  polite.c:404"],
+ ["ok","  #2 main()              hiss.c:1"],
+ ["wr","[INFO] core dumped. pretend this is fine."],
+ ["ok","> _"]
+];
+var term=$("#term"),shown=0,tstarted=false;
+function drawTerm(){
+  var html="";
+  for(var i=0;i<shown;i++){html+='<span class="'+TL[i][0]+'">'+TL[i][1].replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</span>\n"}
+  if(shown<TL.length)html+='<span class="cur"></span>';else html=html.replace(/> _<\/span>\n$/,'&gt; <span class="cur"></span></span>\n');
+  term.innerHTML=html;
+}
+function typeTerm(){
+  if(tstarted)return;tstarted=true;
+  (function nx(){if(shown<TL.length){shown++;drawTerm();setTimeout(nx,reduce?30:200+Math.random()*260)}})();
+}
+drawTerm();
+if("IntersectionObserver"in window){var tio=new IntersectionObserver(function(es){if(es[0].isIntersecting){typeTerm();tio.disconnect()}},{threshold:.3});tio.observe(term)}else typeTerm();
+
+/* ---------- datamosh canvas ---------- */
+var mc=$("#mosh"),mx=mc.getContext("2d"),MW=0,MH=0,mdpr=1,cell=40,mhov=null;
+var PAL=["#0a0a0a","#0a0a0a","#f2f2f0","#f2f2f0","#e6ff00","#e6ff00","#2b2b2a","#8a8a86","#0a0a0a","#f2f2f0"];
+function seedMosh(){
+  mx.setTransform(1,0,0,1,0,0);mx.fillStyle="#0a0a0a";mx.fillRect(0,0,mc.width,mc.height);
+  mx.setTransform(mdpr,0,0,mdpr,0,0);
+  cell=Math.max(24,MW/28);
+  var cols=Math.ceil(MW/cell),rows=Math.ceil(MH/cell);
+  for(var i=0;i<cols*rows*.7;i++){
+    var w=1+Math.floor(Math.random()*4),h=1+Math.floor(Math.random()*2);
+    var x=Math.floor(Math.random()*cols)*cell,y=Math.floor(Math.random()*rows)*cell;
+    mx.fillStyle=PAL[(Math.random()*PAL.length)|0];mx.fillRect(x,y,w*cell,h*cell);
+  }
+  mx.fillStyle="#ff3b30";mx.fillRect(rnd(0,MW),rnd(0,MH),3,cell*2);mx.fillStyle="#00e5ff";mx.fillRect(rnd(0,MW),rnd(0,MH),3,cell*2);
+}
+function moshResize(){
+  mdpr=Math.min(window.devicePixelRatio||1,2);
+  MW=mc.clientWidth;MH=mc.clientHeight;mc.width=Math.round(MW*mdpr);mc.height=Math.round(MH*mdpr);seedMosh();
+}
+function moshStep(hy){
+  var W=mc.width,H=mc.height,d=mdpr;
+  mx.setTransform(1,0,0,1,0,0);
+  var op=Math.random();
+  if(op<.34){
+    var bw=Math.round(rnd(W*.06,W*.3)),bh=Math.round(rnd(H*.08,H*.35)),sx=Math.round(rnd(0,W-bw)),sy=Math.round(rnd(0,H-bh));
+    var snap=cell*d;sx=Math.round(sx/snap)*snap;sy=Math.round(sy/snap)*snap;
+    var dx=Math.round(rnd(-3,3))*snap,dy=Math.round(rnd(-2,2))*snap;
+    mx.drawImage(mc,sx,sy,bw,bh,sx+dx,sy+dy,bw,bh);
+  }else if(op<.72){
+    var y=hy!=null?hy*d:Math.round(rnd(0,H)),h=Math.round(rnd(6,50)*d),dx2=Math.round(rnd(-1,1)*cell*d*rnd(1,5));
+    mx.drawImage(mc,0,y,W,h,dx2,y,W,h);
+  }else if(op<.92){
+    var x=Math.round(rnd(0,W)),y2=Math.round(rnd(0,H*.8)),h2=Math.round(rnd(H*.1,H*.5)),len=Math.round(rnd(30,280)*d);
+    mx.drawImage(mc,x,y2,1,h2,x,y2,len,h2);
+  }else{
+    mx.setTransform(mdpr,0,0,mdpr,0,0);mx.fillStyle=PAL[(Math.random()*PAL.length)|0];
+    mx.fillRect(Math.floor(rnd(0,MW/cell))*cell,Math.floor(rnd(0,MH/cell))*cell,cell*Math.ceil(rnd(1,4)),cell*Math.ceil(rnd(1,3)));
+  }
+}
+mc.addEventListener("pointermove",function(e){var r=mc.getBoundingClientRect();mhov=e.clientY-r.top;moshStep(mhov);moshStep(mhov+rnd(-20,20))},{passive:true});
+mc.addEventListener("pointerleave",function(){mhov=null});
+var mlast=0,mreseed=0;
+function moshLoop(t){
+  if(!document.hidden&&t-mlast>(reduce?400:Math.max(50,220-corrupt*170))){
+    mlast=t;var n=1+Math.floor(corrupt*3);for(var i=0;i<n;i++)moshStep();
+  }
+  if(t-mreseed>9000){mreseed=t;seedMosh()}
+  requestAnimationFrame(moshLoop);
+}
+
+/* ---------- cursor pixel-sort trails ---------- */
+var tc2=$("#trail"),tx=tc2.getContext("2d"),TW=0,TH=0,parts=[],tdpr=1,lastP=null,lastT=0;
+function tResize(){tdpr=Math.min(window.devicePixelRatio||1,2);TW=window.innerWidth;TH=window.innerHeight;tc2.width=TW*tdpr;tc2.height=TH*tdpr;tx.setTransform(tdpr,0,0,tdpr,0,0)}
+function spawnTrail(x,y,vx){
+  var n=4+Math.min(8,Math.abs(vx)*.2|0);
+  for(var i=0;i<n&&parts.length<90;i++){
+    var row=Math.round((y+rnd(-26,26))/4)*4;
+    parts.push({x:x+rnd(-8,8),y:row,w:rnd(8,26),len:rnd(50,190),dir:(vx>=0?1:-1)*(Math.random()<.85?1:-1),age:0,life:rnd(.35,.8),k:(Math.random()*4)|0});
+  }
+}
+function trailLoop(t){
+  var dt=Math.min(.05,(t-lastT)/1000||.016);lastT=t;
+  if(parts.length||true){
+    tx.clearRect(0,0,TW,TH);
+    var light=root.getAttribute("data-theme")==="light";
+    for(var i=parts.length-1;i>=0;i--){
+      var p=parts[i];p.age+=dt;
+      if(p.age>=p.life){parts.splice(i,1);continue}
+      var u=p.age/p.life,ext=p.len*(1-Math.pow(1-u,2)),a=(1-u)*.9;
+      var segs=5,sw=ext/segs;
+      for(var s=0;s<segs;s++){
+        var v=(s+ (p.k))/(segs+3);
+        var g=light?Math.round(10+v*90):Math.round(70+v*185);
+        tx.fillStyle=p.k===3?"rgba(230,255,0,"+a+")":"rgba("+g+","+g+","+(g-3)+","+a+")";
+        var x0=p.dir>0?p.x+s*sw:p.x-(s+1)*sw;
+        tx.fillRect(x0,p.y,sw+.5,4);
+      }
+    }
+  }
+  requestAnimationFrame(trailLoop);
+}
+if(!reduce){
+  window.addEventListener("pointermove",function(e){
+    if(e.pointerType==="touch")return;
+    if(lastP){var vx=e.clientX-lastP.x,vy=e.clientY-lastP.y;if(Math.abs(vx)+Math.abs(vy)>3)spawnTrail(e.clientX,e.clientY,vx)}
+    lastP={x:e.clientX,y:e.clientY};
+  },{passive:true});
+}
+
+/* ---------- master loop ---------- */
+var last=performance.now(),idleAcc=0;
+function loop(now){
+  var dt=Math.min(.06,(now-last)/1000);last=now;
+  if(document.hidden){requestAnimationFrame(loop);return}
+  if(burst.on)stepBurst(dt);
+  else{
+    if(now>=nextBurst){startBurst(1);nextBurst=now+rnd(2000,5000)*(1-.8*corrupt)*(reduce?1.6:1)}
+    idleAcc+=dt;
+    if(corrupt>.5&&idleAcc>.25){idleAcc=0;if(Math.random()<(corrupt-.4)*.6){var d=decs[(Math.random()*decs.length)|0];d.reglitch()}}
+  }
+  requestAnimationFrame(loop);
+}
+window.addEventListener("resize",function(){moshResize();tResize()});
+setCorrupt();moshResize();tResize();
+requestAnimationFrame(moshLoop);requestAnimationFrame(trailLoop);requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en" data-lamp="off">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f0e6">
+<title>Before the City Wakes — The Night Bakers of Calle Alba · Alba Quarterly</title>
+<meta name="description" content="Alba Quarterly, Issue 07: a long-form feature on the night bakers of Calle Alba, set as a printed magazine spread that breathes on screen.">
+<noscript><style>.fig svg,.loaf{--d:1!important}.bar{visibility:visible!important;transform:none!important}</style></noscript>
+<style>
+/* ---------- tokens ---------- */
+:root{
+  --paper:#f5f0e6; --ink:#1a1714; --ember:#c8402a; --flour:#e9dfcb;
+  --bg:var(--paper); --fg:var(--ink); --acc:var(--ember); --soft:var(--flour);
+  --fg2:rgba(26,23,20,.76); --fg3:rgba(26,23,20,.5); --hair:rgba(26,23,20,.2); --card:#fbf8f0;
+  --c1:#efe6d2; --c2:#cfae83;
+  --didone:"Bodoni 72","Bodoni MT",Didot,"Didot LT STD","Playfair Display","Times New Roman","Liberation Serif",serif;
+  --text:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",P052,"URW Bookman",Georgia,serif;
+  --grot:"Helvetica Neue",Helvetica,Arial,"Nimbus Sans","Liberation Sans",sans-serif;
+  --hand:"Snell Roundhand","Apple Chancery","Segoe Script",Z003,"URW Chancery L",cursive;
+  --pad:clamp(16px,4vw,56px);
+  --ease:cubic-bezier(.2,.8,.2,1);
+  color-scheme:light;
+}
+html[data-lamp="on"]{
+  --bg:#1a1714; --fg:#f1eadb; --acc:#e4573a; --soft:#2b2520;
+  --fg2:rgba(241,234,219,.8); --fg3:rgba(241,234,219,.5); --hair:rgba(241,234,219,.2); --card:#221d18;
+  --c1:#4a3d2f; --c2:#7a5a3a;
+  color-scheme:dark;
+}
+
+/* ---------- base ---------- */
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--text);font-size:clamp(17px,.36vw + 13.6px,18.7px);line-height:1.62;min-height:100vh;min-height:100dvh;overflow-x:clip;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:var(--acc);color:var(--bg)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px;border-radius:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:12px;top:-64px;z-index:100;background:var(--fg);color:var(--bg);padding:10px 14px;font:600 12px var(--grot);letter-spacing:.14em;text-transform:uppercase;text-decoration:none}
+.skip:focus{top:12px}
+html.tx *,html.tx *::before,html.tx *::after{transition:background-color .6s,color .6s,border-color .6s,fill .6s,stroke .6s!important}
+.grain{position:fixed;inset:0;z-index:4;pointer-events:none;opacity:.6;background-size:180px 180px}
+html[data-lamp="on"] .grain{opacity:.3;filter:invert(1)}
+#dust{position:fixed;inset:0;width:100%;height:100%;z-index:5;pointer-events:none}
+
+/* ---------- progress + sticky bar ---------- */
+.progress{position:fixed;top:0;left:0;right:0;height:3px;z-index:80;pointer-events:none}
+.progress i{display:block;height:100%;background:var(--acc);transform-origin:0 50%;transform:scaleX(var(--p,0))}
+.bar{position:fixed;top:3px;left:0;right:0;z-index:70;height:46px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:0 var(--pad);background:var(--bg);background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid var(--hair);transform:translateY(-115%);visibility:hidden;transition:transform .55s var(--ease),visibility 0s .55s}
+.bar.show{transform:none;visibility:visible;transition:transform .55s var(--ease),visibility 0s}
+.bar-brand{font:400 15px/1 var(--didone);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;text-decoration:none}
+.bar-brand b{color:var(--acc);font-weight:400;margin-left:.5em}
+.bar-title{font:italic 400 17px/1 var(--didone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--fg2)}
+.bar-r{display:flex;align-items:center;gap:14px}
+.left{font:600 10.5px/1 var(--grot);letter-spacing:.2em;text-transform:uppercase;color:var(--fg2);white-space:nowrap;min-width:6.2em;text-align:right}
+.lampbtn{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px 0 9px;border:1px solid var(--hair);border-radius:999px;background:transparent;color:var(--fg);font:600 10px/1 var(--grot);letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:background-color .3s,border-color .3s,color .3s}
+.lampbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.lampbtn:hover{border-color:var(--fg)}
+.lampbtn[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:#fff}
+.lampbtn[aria-pressed="true"] svg{fill:rgba(255,255,255,.35)}
+
+/* ---------- masthead ---------- */
+.masthead{padding:16px var(--pad) 0;position:relative}
+.mtop,.mbot{display:flex;justify-content:space-between;align-items:center;gap:16px;font:500 10.5px/1.2 var(--grot);letter-spacing:.26em;text-transform:uppercase;color:var(--fg2)}
+.mtop{padding-bottom:12px}
+.mtop span:nth-child(2),.mbot span:nth-child(2){text-align:center}
+.mrow{display:flex;align-items:center;gap:clamp(10px,2.2vw,32px)}
+.wmbox{flex:1;min-width:0}
+.wm{display:inline-block;margin:0;font:400 10vw/.9 var(--didone);text-transform:uppercase;white-space:nowrap;letter-spacing:.005em;color:var(--fg);opacity:0;animation:wmin 1.4s var(--ease) .1s forwards}
+@keyframes wmin{from{opacity:0;transform:translateY(.12em);clip-path:inset(0 0 100% 0)}to{opacity:1;transform:none;clip-path:inset(0 0 -20% 0)}}
+.stamp{flex:none;width:clamp(58px,7.2vw,112px);aspect-ratio:1;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-content:center;text-align:center;transform:rotate(-9deg);box-shadow:inset 0 0 0 3px var(--acc),inset 0 0 0 4px rgba(255,255,255,.55);animation:stampin 1s var(--ease) .9s both}
+@keyframes stampin{from{opacity:0;transform:rotate(14deg) scale(1.5)}to{opacity:1;transform:rotate(-9deg) scale(1)}}
+.stamp small{display:block;font:600 clamp(7px,.75vw,10px)/1 var(--grot);letter-spacing:.3em;text-transform:uppercase;padding-left:.3em}
+.stamp b{display:block;font:italic 400 clamp(26px,3.6vw,54px)/.9 var(--didone);letter-spacing:-.03em}
+.rule2{height:7px;border-top:3px solid var(--fg);border-bottom:1px solid var(--fg);margin:12px 0 0}
+.mbot{padding:11px 0 0}
+
+/* ---------- hero ---------- */
+.hero{padding:clamp(26px,4.4vw,60px) var(--pad) clamp(26px,3.6vw,52px);position:relative}
+.kicker{display:flex;align-items:center;gap:14px;margin:0;font:600 11px/1 var(--grot);letter-spacing:.3em;text-transform:uppercase;color:var(--acc)}
+.kicker::before{content:"";width:46px;height:2px;background:var(--acc)}
+.kicker span+span{color:var(--fg2)}
+.hl{margin:.1em 0 .16em;font:400 clamp(58px,12.8vw,236px)/.86 var(--didone);letter-spacing:-.035em;font-kerning:normal;font-feature-settings:"kern","liga"}
+.ln{display:block;overflow:hidden;padding:.02em .06em .16em 0;margin-bottom:-.14em;white-space:nowrap}
+.w{display:inline-block;transform:translateY(112%);animation:rise 1.15s var(--ease) forwards;animation-delay:calc(.25s + var(--i,0) * .11s)}
+@keyframes rise{to{transform:none}}
+.hl em{font-style:italic;letter-spacing:-.045em;padding-right:.04em}
+.hl .wake{color:var(--acc)}
+.hl{position:relative}
+.loaf{position:absolute;right:clamp(0px,.8vw,16px);top:50%;width:clamp(230px,37vw,560px);height:auto;aspect-ratio:520/330;transform:translateY(-54%);overflow:visible;stroke:var(--fg);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;filter:url(#wob);letter-spacing:0}
+.hero-foot{display:grid;grid-template-columns:1.05fr 1.5fr .8fr;gap:clamp(20px,3.2vw,52px);border-top:1px solid var(--fg);padding-top:22px;align-items:start}
+.deck{margin:0;font:italic 400 clamp(26px,2.7vw,42px)/1.06 var(--didone);letter-spacing:-.01em;text-wrap:balance}
+.stand{margin:0;color:var(--fg2);font-size:1.03em;max-width:36em}
+.byline{margin:0;font:500 10.5px/1.9 var(--grot);letter-spacing:.2em;text-transform:uppercase;color:var(--fg2)}
+.byline span{display:block}
+.byline b{font-weight:700;color:var(--fg)}
+.byline .rt{margin-top:.9em;color:var(--acc);font-weight:700}
+.cue{display:flex;align-items:center;gap:12px;margin-top:clamp(20px,3vw,40px);font:600 10.5px/1 var(--grot);letter-spacing:.26em;text-transform:uppercase;color:var(--fg2)}
+.cue i{display:block;width:1px;height:34px;background:var(--hair);position:relative;overflow:hidden}
+.cue i::after{content:"";position:absolute;left:0;top:-40%;width:1px;height:40%;background:var(--acc);animation:drip 2.2s var(--ease) infinite}
+@keyframes drip{to{top:110%}}
+
+/* ---------- layout ---------- */
+.wrap{display:grid;grid-template-columns:clamp(168px,15vw,214px) minmax(0,1fr);gap:clamp(28px,4.6vw,76px);max-width:1500px;margin:0 auto;padding:0 var(--pad)}
+#story{min-width:0}
+
+/* ---------- timeline ---------- */
+.tl{position:sticky;top:76px;align-self:start;padding:26px 0 0}
+.tl h2{margin:0 0 16px;font:600 10.5px/1.4 var(--grot);letter-spacing:.26em;text-transform:uppercase;color:var(--fg2)}
+.tl-clock{margin:0 0 6px;font:400 clamp(52px,4.6vw,66px)/1 var(--didone);letter-spacing:-.03em;color:var(--acc);font-variant-numeric:lining-nums tabular-nums}
+.tl-lbl{display:block;min-height:2.6em;margin:0 0 4px;font:italic 400 14.5px/1.3 var(--text);color:var(--fg2)}
+.tl-track{position:relative;margin-top:18px}
+.tl ol{list-style:none;margin:0;padding:0 0 0 24px;position:relative}
+.tl ol::before{content:"";position:absolute;left:5px;top:12px;bottom:12px;width:1px;background:var(--hair)}
+.tl li a{display:block;padding:9px 0;text-decoration:none;color:var(--fg3);transition:color .35s,transform .35s var(--ease)}
+.tl li time{display:block;font:600 11.5px/1.2 var(--grot);letter-spacing:.16em}
+.tl li span{display:block;font:italic 400 15px/1.3 var(--text)}
+.tl li.past a{color:var(--fg2)}
+.tl li.on a{color:var(--acc);transform:translateX(4px)}
+.tl li.on time{letter-spacing:.2em}
+.tl-dot{position:absolute;left:1px;top:0;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 4px rgba(200,64,42,.2);will-change:transform}
+
+/* ---------- sections ---------- */
+.sec{position:relative;padding:clamp(34px,4.6vw,70px) 0 clamp(18px,3vw,44px);border-top:1px solid var(--hair);scroll-margin-top:60px}
+.sec:first-child{border-top:0;padding-top:clamp(24px,3.4vw,44px)}
+.sh{display:flex;align-items:flex-end;gap:clamp(14px,2vw,30px);margin:0 0 clamp(20px,2.6vw,38px);padding-bottom:12px;border-bottom:1px solid var(--fg)}
+.sh time{font:italic 400 clamp(60px,8.6vw,134px)/.78 var(--didone);letter-spacing:-.045em;color:var(--acc);font-variant-numeric:lining-nums;padding-bottom:.02em}
+.sh h3{margin:0 0 .5em;font:600 11.5px/1.4 var(--grot);letter-spacing:.28em;text-transform:uppercase;color:var(--fg)}
+.sh .no{margin:0 0 .6em auto;font:500 10.5px/1 var(--grot);letter-spacing:.24em;text-transform:uppercase;color:var(--fg3);white-space:nowrap}
+.split{display:grid;grid-template-columns:minmax(190px,.34fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:start}
+.split.rev{grid-template-columns:minmax(0,1fr) minmax(190px,.34fr)}
+.split.rev>.fig,.split.rev>.databox{order:2}
+.split.big{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+.cols{columns:2 16.5em;column-gap:clamp(24px,3vw,46px);column-rule:1px solid var(--hair);min-width:0}
+.cols.one{column-count:1;column-rule:0}
+.cols p{margin:0 0 .8em;text-align:justify;hyphens:auto;-webkit-hyphens:auto;text-wrap:pretty;orphans:2;widows:2;hanging-punctuation:first}
+.cols p:last-child{margin-bottom:0}
+.sc{font-variant-caps:small-caps;letter-spacing:.07em}
+.dcp::first-letter{float:left;font-family:var(--didone);font-variant-caps:normal;font-size:5.7em;line-height:.76;padding:.07em .09em 0 0;color:var(--acc);letter-spacing:0}
+.hp{text-indent:-.44em}
+@supports (hanging-punctuation:first){.hp{text-indent:0}}
+.end{display:inline-block;width:.62em;height:.62em;margin-left:.35em;background:var(--acc);vertical-align:.02em}
+.glance{list-style:none;margin:clamp(24px,3.4vw,50px) 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--fg);border-bottom:1px solid var(--hair)}
+.glance li{padding:16px 14px 18px 18px;border-right:1px solid var(--hair);min-width:0}
+.glance li:first-child{padding-left:0}
+.glance li:last-child{border-right:0}
+.glance b{display:block;font:400 clamp(34px,3.7vw,56px)/1 var(--didone);letter-spacing:-.035em;font-variant-numeric:lining-nums}
+.glance b small{font-size:.5em;letter-spacing:0;color:var(--acc);margin:0 .06em 0 .04em}
+.glance span{display:block;margin-top:.6em;font:500 9.5px/1.55 var(--grot);letter-spacing:.17em;text-transform:uppercase;color:var(--fg2)}
+.s1txt{min-width:0}
+em{font-style:italic}
+
+/* ---------- figures ---------- */
+.fig{margin:0;min-width:0}
+.fig svg{display:block;width:100%;height:auto;overflow:visible;stroke:var(--fg);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;filter:url(#wob)}
+.fig .l,.fig .lf,.loaf .l,.loaf .lf{--p:clamp(0, calc((var(--d,0) - var(--s,0)) * var(--k,3.4)), 1);stroke-dasharray:1 2;stroke-dashoffset:calc(1 - var(--p));opacity:clamp(0, calc(var(--p) * 60), 1)}
+.fig .lf,.loaf .lf{fill:var(--fc,none);fill-opacity:clamp(0, calc((var(--p) - .6) * 2.6), 1)}
+.fig .f,.loaf .f{stroke:none;fill:var(--fc,var(--fg));opacity:clamp(0, calc((var(--d,0) - var(--s,.7)) * 5), 1)}
+.fig .em,.loaf .em{stroke:var(--acc)}
+.fig .th{stroke-width:2.6}
+.fig .hi{stroke:var(--bg);stroke-width:1.4}
+.fig text,.fig .lbl{fill:var(--fg);stroke:none;font:600 9.5px/1 var(--grot);letter-spacing:.18em;text-transform:uppercase;opacity:clamp(0, calc((var(--d,0) - .82) * 6), 1)}
+.fig .lbl.a{fill:var(--acc)}
+.fig text.big{font:italic 400 40px/1 var(--didone);letter-spacing:-.02em;text-transform:none;fill:var(--acc)}
+.fig text.cap{font:600 13px/1 var(--grot);letter-spacing:.2em;fill:var(--fg2)}
+.fig figcaption{margin-top:1em;font:italic 400 .84em/1.45 var(--text);color:var(--fg2);max-width:36ch}
+.fig figcaption b{display:block;margin-bottom:.35em;font:600 10px/1 var(--grot);font-style:normal;letter-spacing:.24em;text-transform:uppercase;color:var(--acc)}
+.fig.narrow{max-width:214px}
+.fig.big svg{max-height:520px}
+.steam{animation:steam 4.6s ease-in-out infinite;animation-delay:calc(2.8s + var(--sd,0s))}
+@keyframes steam{0%{transform:translateY(8px);opacity:0}30%{opacity:.85}100%{transform:translateY(-16px);opacity:0}}
+
+/* ---------- pull quotes ---------- */
+.pq{margin:0;padding:clamp(44px,8vw,120px) 0 clamp(30px,5vw,70px);border-top:1px solid var(--hair);position:relative}
+.pq::before{content:"";display:block;width:64px;height:6px;background:var(--acc);margin-bottom:clamp(22px,3vw,40px)}
+.pq p{margin:0;max-width:17em;font:italic 400 clamp(33px,5.2vw,82px)/1.02 var(--didone);letter-spacing:-.028em;text-wrap:balance;text-indent:-.4em;hanging-punctuation:first}
+@supports (hanging-punctuation:first){.pq p{text-indent:0}}
+.pq p em{font-style:normal;color:var(--acc)}
+.pq footer{margin-top:1.4em;font:600 10.5px/1.4 var(--grot);letter-spacing:.26em;text-transform:uppercase;color:var(--fg2)}
+.pq footer::before{content:"— ";color:var(--acc)}
+.pq.i2{padding-left:clamp(0px,11%,180px)}
+
+/* ---------- data box ---------- */
+.databox{border:1px solid var(--fg);background:var(--soft);padding:clamp(18px,2vw,26px);position:relative;min-width:0}
+.databox::before{content:"";position:absolute;inset:4px;border:1px solid var(--hair);pointer-events:none}
+.db-k{margin:0 0 6px;font:600 9.5px/1 var(--grot);letter-spacing:.28em;text-transform:uppercase;color:var(--acc)}
+.databox h4{margin:0;font:400 clamp(26px,2.4vw,34px)/1 var(--didone);letter-spacing:-.02em}
+.databox h4 em{color:var(--acc)}
+.db-sub{margin:.5em 0 1.2em;font:italic .82em/1.35 var(--text);color:var(--fg2)}
+.db-gl{display:flex;justify-content:space-between;margin:1.2em 0 .5em;padding-top:.7em;border-top:1px solid var(--fg);font:600 9.5px/1 var(--grot);letter-spacing:.22em;text-transform:uppercase}
+.db-gl span{color:var(--fg3);font-weight:500}
+.db ul{list-style:none;margin:0;padding:0}
+.db li{display:grid;grid-template-columns:6.4em 1fr 3.9em;align-items:center;gap:10px;padding:5px 0;font:500 10.5px/1.2 var(--grot);letter-spacing:.06em}
+.db .k{text-transform:uppercase;letter-spacing:.14em;font-size:9.5px;color:var(--fg2);line-height:1.25}
+.db .bar2{display:block;height:6px;border-radius:3px;background:var(--hair);overflow:hidden}
+.db .bar2 i{display:block;height:100%;width:calc(var(--w,0) * 100%);border-radius:3px;background:var(--acc);transform:scaleX(0);transform-origin:0 50%;transition:transform 1.3s var(--ease);transition-delay:calc(var(--i,0) * .12s + .2s)}
+.db.in .bar2 i{transform:scaleX(1)}
+.db .v{text-align:right;font:400 19px/1 var(--didone);letter-spacing:-.01em;font-variant-numeric:lining-nums tabular-nums}
+.db .v small{font:600 8.5px var(--grot);letter-spacing:.14em;color:var(--fg3);margin-left:2px}
+.db-foot{margin:1.2em 0 0;padding-top:.8em;border-top:1px solid var(--hair);font:italic .76em/1.4 var(--text);color:var(--fg3)}
+.databox.wide{margin-top:clamp(26px,3.2vw,48px);display:grid;grid-template-columns:1.08fr 1fr 1fr;gap:0 clamp(22px,3.2vw,50px);padding:clamp(20px,2.4vw,32px)}
+.databox.wide .db-head{display:flex;flex-direction:column;min-width:0}
+.databox.wide .db-sub{margin-bottom:0}
+.databox.wide .db-foot{margin-top:auto;padding-top:.9em}
+.databox.wide .db-gl{margin-top:0}
+.databox.wide .db-col{min-width:0}
+.databox.wide li{grid-template-columns:8.9em 1fr 3.9em}
+
+/* ---------- recipe ---------- */
+.recipe{padding:clamp(56px,9vw,140px) var(--pad);border-top:1px solid var(--fg);margin-top:clamp(32px,5vw,70px);position:relative}
+.rc-in{max-width:980px;margin:0 auto}
+.rc-k{margin:0;font:600 11px/1 var(--grot);letter-spacing:.3em;text-transform:uppercase;color:var(--acc)}
+.recipe h2{margin:.25em 0 .3em;font:400 clamp(44px,8vw,120px)/.9 var(--didone);letter-spacing:-.035em}
+.recipe h2 em{color:var(--acc);letter-spacing:-.05em}
+.rc-lead{max-width:34em;margin:0 0 1.6em;color:var(--fg2)}
+.rc-btn{display:inline-flex;align-items:center;gap:12px;margin:0 0 clamp(22px,3vw,40px);padding:13px 20px;border:1px solid var(--fg);background:transparent;color:var(--fg);font:600 11px/1 var(--grot);letter-spacing:.22em;text-transform:uppercase;cursor:pointer;transition:background-color .3s,color .3s}
+.rc-btn:hover{background:var(--fg);color:var(--bg)}
+.rc-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;transition:transform .7s var(--ease)}
+.rc-btn[aria-expanded="true"] svg{transform:rotate(180deg)}
+.card{position:relative;background:var(--card);border:1px solid var(--fg);box-shadow:0 1px 0 var(--hair),0 26px 50px -26px rgba(26,23,20,.5);transform:rotate(-.35deg);transition:transform .9s var(--ease)}
+.card[data-open="true"]{transform:none}
+.card::before{content:"";position:absolute;inset:6px;border:1px solid var(--acc);pointer-events:none;z-index:3;opacity:.7}
+.cp{position:relative;padding:clamp(22px,3.4vw,44px) clamp(22px,4vw,56px)}
+.cp1{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:end}
+.cp1 h3{margin:0;font:italic 400 clamp(32px,4.6vw,64px)/.95 var(--didone);letter-spacing:-.03em}
+.cp1 .no{margin:0 0 .8em;font:600 10px/1 var(--grot);letter-spacing:.28em;text-transform:uppercase;color:var(--acc)}
+.cp1 .yield{margin:.9em 0 0;font:600 10.5px/1.6 var(--grot);letter-spacing:.2em;text-transform:uppercase;color:var(--fg2)}
+.seal{width:clamp(70px,9vw,110px);aspect-ratio:1;border:2px solid var(--acc);border-radius:50%;display:grid;place-content:center;text-align:center;color:var(--acc);transform:rotate(12deg);font:600 9px/1.3 var(--grot);letter-spacing:.24em;text-transform:uppercase;box-shadow:inset 0 0 0 4px var(--card),inset 0 0 0 5px var(--acc)}
+.seal b{display:block;font:italic 400 30px/1 var(--didone);letter-spacing:-.02em}
+.cw{height:0;overflow:hidden;perspective:1300px;transition:height 1s var(--ease)}
+.cw3{transition-delay:.28s}
+.cp2,.cp3{border-top:1px dashed var(--hair);transform-origin:50% 0;transform:rotateX(-94deg);opacity:.2;transition:transform 1s var(--ease),opacity .8s;backface-visibility:hidden}
+.card[data-open="true"] .cp2,.card[data-open="true"] .cp3{transform:none;opacity:1}
+.card[data-open="true"] .cw3 .cp3{transition-delay:.28s}
+.cp2::after,.cp3::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,23,20,.4),rgba(26,23,20,0) 55%);opacity:1;pointer-events:none;transition:opacity 1s}
+.card[data-open="true"] .cp2::after,.card[data-open="true"] .cp3::after{opacity:0}
+.cp h4{margin:0 0 1em;font:600 10.5px/1 var(--grot);letter-spacing:.28em;text-transform:uppercase;color:var(--acc)}
+.ing{list-style:none;margin:0;padding:0;columns:2 17em;column-gap:clamp(24px,4vw,56px)}
+.ing li{display:flex;align-items:baseline;gap:8px;padding:.3em 0;break-inside:avoid}
+.ing li i{flex:1;border-bottom:1px dotted var(--fg3);transform:translateY(-.25em);min-width:14px}
+.ing li b{font:400 1.5em/1 var(--didone);letter-spacing:-.02em;font-variant-numeric:lining-nums;order:3}
+.ing li span{order:1}
+.ing li i{order:2}
+.steps{list-style:none;margin:0;padding:0;counter-reset:st;display:grid;grid-template-columns:repeat(auto-fit,minmax(15em,1fr));gap:clamp(18px,2.6vw,36px) clamp(24px,4vw,56px)}
+.steps li{counter-increment:st;position:relative;padding-left:2.6em;min-width:0}
+.steps li::before{content:counter(st);position:absolute;left:0;top:-.12em;font:italic 400 2.6em/1 var(--didone);color:var(--acc);letter-spacing:-.04em}
+.steps li b{display:block;margin-bottom:.15em;font:600 10px/1.4 var(--grot);letter-spacing:.22em;text-transform:uppercase}
+.note{margin:1.6em 0 0;padding-top:1.1em;border-top:1px solid var(--hair);font:400 clamp(20px,2.2vw,26px)/1.35 var(--hand);color:var(--acc)}
+.note small{display:block;margin-top:.5em;font:600 9.5px/1 var(--grot);letter-spacing:.24em;text-transform:uppercase;color:var(--fg3)}
+
+/* ---------- footer ---------- */
+.foot{border-top:3px solid var(--fg);padding:clamp(34px,5vw,64px) var(--pad) 44px;position:relative;z-index:6}
+.foot-in{max-width:1500px;margin:0 auto;display:grid;grid-template-columns:1.1fr 1.6fr auto;gap:clamp(20px,4vw,60px);align-items:start}
+.foot-brand{margin:0;font:400 clamp(26px,3vw,40px)/1 var(--didone);letter-spacing:.06em;text-transform:uppercase}
+.foot-brand span{color:var(--acc)}
+.foot p{margin:0}
+.foot .fine{font:500 10.5px/1.8 var(--grot);letter-spacing:.06em;color:var(--fg2);max-width:52em}
+.foot a{font:600 10.5px/1 var(--grot);letter-spacing:.22em;text-transform:uppercase;text-decoration:none;border-bottom:1px solid var(--acc);padding-bottom:4px}
+.swatches{display:flex;gap:6px;margin-top:16px}
+.swatches i{display:block;width:22px;height:22px;border:1px solid var(--hair)}
+.swatches i:nth-child(1){background:var(--paper)}.swatches i:nth-child(2){background:var(--ink)}.swatches i:nth-child(3){background:var(--ember)}.swatches i:nth-child(4){background:var(--flour)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1180px){
+  .hero-foot{grid-template-columns:1fr 1.4fr}
+  .hero-foot .byline{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 28px;align-items:baseline}
+  .hero-foot .byline .rt{margin:0}
+}
+@media (max-width:979px){
+  .wrap{display:block}
+  .tl{position:sticky;top:49px;z-index:40;margin:0 calc(var(--pad) * -1);padding:8px var(--pad);background:var(--bg);border-bottom:1px solid var(--hair)}
+  .tl h2,.tl-clock,.tl-lbl,.tl-dot{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);margin:0}
+  .tl-track{margin:0}
+  .tl ol{display:flex;gap:8px;padding:0;overflow-x:auto;scrollbar-width:none}
+  .tl ol::-webkit-scrollbar{display:none}
+  .tl ol::before{display:none}
+  .tl li{flex:none}
+  .tl li a{display:flex;align-items:baseline;gap:8px;padding:9px 14px;border:1px solid var(--hair);border-radius:999px;white-space:nowrap}
+  .tl li.on a{transform:none;background:var(--acc);border-color:var(--acc);color:#fff}
+  .tl li span{display:none}
+  .tl li.on span{display:block;font-size:14px}
+  .split,.split.rev,.split.big{grid-template-columns:1fr}
+  .split.rev>.fig,.split.rev>.databox{order:0}
+  .fig.narrow{max-width:210px}
+  .databox.wide{grid-template-columns:1fr 1fr}
+  .databox.wide .db-head{grid-column:1/-1;margin-bottom:1.2em}
+  .databox.wide .db-foot{margin-top:1em}
+  .foot-in{grid-template-columns:1fr}
+  .bar-title{display:none}
+}
+@media (max-width:720px){
+  .cols{column-count:1;column-rule:0}
+  .cols p{text-align:left;hyphens:auto}
+  .mtop span:nth-child(3),.mbot span:nth-child(n+4){display:none}
+  .mtop,.mbot{letter-spacing:.16em;font-size:9.5px}
+  .hero-foot{grid-template-columns:1fr}
+  .ln{white-space:normal}
+  .hl{font-size:clamp(54px,17.4vw,120px)}
+  .loaf{position:relative;display:block;top:auto;right:auto;width:80%;margin:.02em 0 0 auto;transform:none}
+  .glance{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .glance li:nth-child(2){border-right:0}
+  .glance li:nth-child(n+3){border-top:1px solid var(--hair)}
+  .glance li:nth-child(odd){padding-left:0}
+  .sh{flex-wrap:wrap;gap:6px 18px}
+  .sh .no{display:none}
+  .pq.i2{padding-left:0}
+  .left{display:none}
+  .lampbtn span{display:none}
+  .lampbtn{padding:0 9px}
+  .cp1{grid-template-columns:1fr}
+  .seal{display:none}
+  .databox.wide{grid-template-columns:1fr}
+  .databox.wide .db-col+.db-col{margin-top:1.2em}
+  .databox.wide li,.db li{grid-template-columns:6.6em 1fr 3.6em}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .w,.wm,.stamp{animation:none;transform:none;opacity:1;clip-path:none}
+  .steam{animation:none;opacity:.6}
+  .cue i::after{animation:none}
+  .cw,.cp2,.cp3,.card,.db .bar2 i{transition:none}
+}
+</style>
+</head>
+<body id="top">
+<a class="skip" href="#story">Skip to the story</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="wob" x="-4%" y="-4%" width="108%" height="108%">
+      <feTurbulence type="fractalNoise" baseFrequency=".028" numOctaves="2" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <linearGradient id="crust" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" style="stop-color:var(--c1)"/>
+      <stop offset="1" style="stop-color:var(--c2)"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="progress" aria-hidden="true"><i></i></div>
+
+<header class="bar" id="bar">
+  <a class="bar-brand" href="#top">Alba Quarterly<b>07</b></a>
+  <span class="bar-title">Before the City Wakes</span>
+  <div class="bar-r">
+    <span class="left" id="left">4 min read</span>
+    <button type="button" class="lampbtn" aria-pressed="false" title="Read by lamplight">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l3 9H5z"/><path d="M12 12v6M8 21h8"/></svg><span>Lamplight</span>
+    </button>
+  </div>
+</header>
+
+<canvas id="dust" aria-hidden="true"></canvas>
+<div class="grain" aria-hidden="true"></div>
+
+<main>
+  <header class="masthead">
+    <div class="mtop">
+      <span>Issue 07 · Autumn 2026</span>
+      <span>The Night Issue</span>
+      <span>
+        <button type="button" class="lampbtn" aria-pressed="false" title="Read by lamplight">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l3 9H5z"/><path d="M12 12v6M8 21h8"/></svg><span>Lamplight</span>
+        </button>
+      </span>
+    </div>
+    <div class="mrow">
+      <div class="wmbox" id="wmbox"><p class="wm" id="wm">Alba Quarterly</p></div>
+      <div class="stamp"><div><small>Issue</small><b>07</b></div></div>
+    </div>
+    <div class="rule2" aria-hidden="true"></div>
+    <div class="mbot"><span>Features</span><span>Food &amp; Labour</span><span>Essays</span><span>Field Notes</span><span>The Last Word</span></div>
+  </header>
+
+  <section class="hero" aria-labelledby="title">
+    <p class="kicker"><span>Feature</span><span>Food &amp; Labour</span></p>
+    <h1 class="hl" id="title">
+      <span class="ln"><span class="w" style="--i:0">Before</span> <em class="w" style="--i:1">the</em></span>
+      <span class="ln"><span class="w" style="--i:2">City</span> <em class="w wake" style="--i:3">wakes</em></span>
+      <svg class="loaf" viewBox="0 -56 520 330" aria-hidden="true" focusable="false">
+        <path class="f" style="--fc:var(--soft);--s:0" d="M14 232 C 64 204, 170 196, 262 198 C 360 196, 466 206, 508 234 C 474 258, 366 266, 262 266 C 150 266, 48 260, 14 232 Z"/>
+        <path class="lf" pathLength="1" style="--s:.03;--fc:url(#crust)" d="M38 180 C 34 100, 126 44, 262 42 C 396 40, 488 100, 486 182 C 484 220, 394 248, 262 248 C 130 248, 40 220, 38 180 Z"/>
+        <path class="l" pathLength="1" style="--s:.34;stroke-width:1.2;opacity:.9" d="M476 132 C 486 160, 474 200, 440 226 M462 116 C 470 148, 462 190, 428 216"/>
+        <path class="l hi" pathLength="1" style="--s:.3" d="M68 148 C 70 118, 98 90, 136 74 M84 152 C 86 130, 104 108, 130 94"/>
+        <path class="lf em" pathLength="1" style="--s:.36;--fc:var(--acc)" d="M112 118 C 164 108, 212 142, 228 204 C 204 162, 166 134, 112 118 Z"/>
+        <path class="lf em" pathLength="1" style="--s:.42;--fc:var(--acc)" d="M208 84 C 260 76, 308 112, 322 176 C 298 134, 262 106, 208 84 Z"/>
+        <path class="lf em" pathLength="1" style="--s:.48;--fc:var(--acc)" d="M306 80 C 356 82, 402 116, 412 176 C 390 138, 356 108, 306 80 Z"/>
+        <path class="l" pathLength="1" style="--s:.5;stroke-width:2.8" d="M108 112 C 162 100, 216 136, 234 206"/>
+        <path class="l" pathLength="1" style="--s:.54;stroke-width:2.8" d="M204 78 C 260 68, 312 106, 328 178"/>
+        <path class="l" pathLength="1" style="--s:.58;stroke-width:2.8" d="M302 74 C 356 74, 406 110, 418 178"/>
+        <path class="l" pathLength="1" style="--s:.6;stroke-width:1.5" d="M330 232 l10 -16 M346 234 l10 -17 M362 232 l10 -17 M378 228 l10 -16 M394 222 l10 -16 M410 214 l9 -15 M424 204 l8 -14 M438 192 l7 -13 M452 178 l6 -12 M264 246 l10 -16 M280 246 l10 -17 M296 246 l10 -17 M312 244 l10 -17 M228 246 l10 -15 M246 247 l10 -16 M356 240 l8 -12 M372 238 l8 -12 M388 234 l8 -12 M404 228 l8 -12 M420 220 l7 -11 M434 210 l7 -11 M448 198 l6 -10"/>
+        <path class="l" pathLength="1" style="--s:.64;stroke-width:1.3" d="M150 150 c4 -4 9 -4 13 0 M250 132 c4 -4 9 -4 13 0 M350 150 c4 -4 9 -4 13 0 M96 186 c4 -4 9 -4 13 0 M190 176 c4 -4 9 -4 13 0 M420 148 c4 -4 9 -4 13 0 M290 196 c4 -4 9 -4 13 0"/>
+        <path class="l" pathLength="1" style="--s:.68;stroke-width:2.4" d="M62 236 C 140 256, 390 256, 468 236"/>
+        <path class="lf" pathLength="1" style="--s:.72;--fc:var(--soft);stroke-width:1.5" d="M420 252 c10 -5 20 -2 24 5 c-10 5 -20 3 -24 -5 z M452 258 c9 -5 18 -3 22 3 c-9 5 -18 4 -22 -3 z M96 254 c-9 -4 -18 -2 -22 4 c9 4 18 3 22 -4 z"/>
+        <path class="f" style="--s:.78" d="M98 132a1.7 1.7 0 1 0 .1 0zM114 148a1.5 1.5 0 1 0 .1 0zM130 122a1.6 1.6 0 1 0 .1 0zM84 158a1.4 1.4 0 1 0 .1 0zM150 92a1.6 1.6 0 1 0 .1 0zM172 78a1.4 1.4 0 1 0 .1 0zM240 66a1.6 1.6 0 1 0 .1 0zM262 96a1.5 1.5 0 1 0 .1 0zM286 62a1.6 1.6 0 1 0 .1 0zM340 100a1.5 1.5 0 1 0 .1 0zM372 86a1.4 1.4 0 1 0 .1 0zM406 130a1.5 1.5 0 1 0 .1 0zM236 156a1.5 1.5 0 1 0 .1 0zM330 188a1.6 1.6 0 1 0 .1 0zM148 178a1.4 1.4 0 1 0 .1 0zM132 206a1.5 1.5 0 1 0 .1 0zM52 240a1.6 1.6 0 1 0 .1 0zM490 240a1.5 1.5 0 1 0 .1 0zM26 214a1.3 1.3 0 1 0 .1 0zM504 218a1.3 1.3 0 1 0 .1 0zM200 214a1.4 1.4 0 1 0 .1 0zM300 220a1.5 1.5 0 1 0 .1 0zM178 122a1.3 1.3 0 1 0 .1 0zM70 196a1.4 1.4 0 1 0 .1 0z"/>
+        <path class="l em steam" style="--sd:0s;stroke-width:2.2" pathLength="1" d="M200 30 C 184 10, 216 -6, 200 -28 C 190 -42, 206 -46, 202 -54"/>
+        <path class="l em steam" style="--sd:.8s;stroke-width:2.2" pathLength="1" d="M254 24 C 238 6, 270 -8, 254 -30"/>
+        <path class="l em steam" style="--sd:1.6s;stroke-width:2.2" pathLength="1" d="M308 30 C 294 12, 322 -2, 308 -22"/>
+        <path class="l em steam" style="--sd:2.4s;stroke-width:2" pathLength="1" d="M356 38 C 346 24, 366 12, 356 -2"/>
+      </svg>
+    </h1>
+    <div class="hero-foot">
+      <p class="deck">The Night Bakers of Calle Alba</p>
+      <p class="stand">From nine at night until half past five, two people and a ninety-five-year-old oven make the bread a whole quarter will eat without a thought. This is what they think about instead.</p>
+      <p class="byline"><span>Words <b>Inés Quiroga</b></span><span>Drawings <b>Rafael Oyarzún</b></span><span class="rt" id="rt">4 min read</span></p>
+    </div>
+    <p class="cue"><i></i><span>Scroll — 21:00 to 05:30</span></p>
+  </section>
+
+  <div class="wrap">
+    <nav class="tl" id="tl" aria-label="Timeline of a night">
+      <h2>Timeline of a night</h2>
+      <p class="tl-clock" aria-hidden="true" id="clock">21:00</p>
+      <span class="tl-lbl" id="clocklbl" aria-hidden="true">the shutter goes up</span>
+      <div class="tl-track">
+        <ol id="tlist">
+          <li><a href="#s1"><time datetime="21:00">21:00</time><span>The key</span></a></li>
+          <li><a href="#s2"><time datetime="22:15">22:15</time><span>Flour, water, salt</span></a></li>
+          <li><a href="#s3"><time datetime="23:30">23:30</time><span>The fire</span></a></li>
+          <li><a href="#s4"><time datetime="01:00">01:00</time><span>Shaping</span></a></li>
+          <li><a href="#s5"><time datetime="02:30">02:30</time><span>The hearth</span></a></li>
+          <li><a href="#s6"><time datetime="04:00">04:00</time><span>The singing</span></a></li>
+          <li><a href="#s7"><time datetime="05:30">05:30</time><span>The city wakes</span></a></li>
+        </ol>
+        <i class="tl-dot" id="tldot" aria-hidden="true"></i>
+      </div>
+    </nav>
+
+    <article id="story">
+      <h2 class="sr">The night shift, hour by hour</h2>
+
+      <!-- 21:00 -->
+      <section class="sec" id="s1" aria-labelledby="h-s1">
+        <header class="sh"><time datetime="21:00">21:00</time><h3 id="h-s1">The key</h3><p class="no">No. 1 of 7</p></header>
+        <div class="split">
+          <figure class="fig narrow" data-fig>
+            <svg viewBox="0 -56 200 486" role="img" aria-label="Line drawing of a bearded wheat stalk with three long leaves" style="--d:0">
+              <path class="l" pathLength="1" style="--s:0" d="M100 418 C 99 376, 108 322, 104 254 C 101 194, 108 154, 110 112"/>
+              <path class="l" pathLength="1" style="--s:.08" d="M99 398 C 66 386, 38 342, 26 268 C 54 326, 80 356, 103 378"/>
+              <path class="l" pathLength="1" style="--s:.11" d="M103 352 C 128 346, 152 322, 160 284 C 142 314, 122 328, 104 336"/>
+              <path class="l" pathLength="1" style="--s:.14" d="M104 300 C 138 284, 166 244, 176 178 C 152 232, 128 258, 106 276"/>
+              <path class="l" pathLength="1" style="--s:.18;stroke-width:1.3" d="M96 384 h12 M99 300 h10 M103 232 h9 M107 170 h6"/>
+              <path class="l" pathLength="1" style="--s:.24" d="M110 112 C 111 84, 111 50, 111 16"/>
+              <path class="lf" pathLength="1" style="--s:.3;--fc:var(--soft)" d="M110 96 C 99 93, 92 84, 93 70 C 103 74, 110 84, 110 96 Z M110 80 C 99 77, 92 68, 93 54 C 103 58, 110 68, 110 80 Z M110 64 C 99 61, 92 52, 93 38 C 103 42, 110 52, 110 64 Z M110 48 C 99 45, 92 36, 93 22 C 103 26, 110 36, 110 48 Z M110 32 C 99 29, 92 20, 93 6 C 103 10, 110 20, 110 32 Z"/>
+              <path class="lf" pathLength="1" style="--s:.36;--fc:var(--soft)" d="M112 96 C 123 93, 130 84, 129 70 C 119 74, 112 84, 112 96 Z M112 80 C 123 77, 130 68, 129 54 C 119 58, 112 68, 112 80 Z M112 64 C 123 61, 130 52, 129 38 C 119 42, 112 52, 112 64 Z M112 48 C 123 45, 130 36, 129 22 C 119 26, 112 36, 112 48 Z M112 32 C 123 29, 130 20, 129 6 C 119 10, 112 20, 112 32 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.5;--fc:var(--acc)" d="M111 16 C 105 6, 105 -8, 111 -20 C 117 -8, 117 6, 111 16 Z"/>
+              <path class="l" pathLength="1" style="--s:.56;stroke-width:1.2" d="M93 70 L 72 12 M93 54 L 74 -4 M93 38 L 76 -20 M93 22 L 78 -34 M93 6 L 80 -48"/>
+              <path class="l" pathLength="1" style="--s:.64;stroke-width:1.2" d="M129 70 L 150 12 M129 54 L 148 -4 M129 38 L 146 -20 M129 22 L 144 -34 M129 6 L 142 -48 M111 -20 L 111 -54"/>
+              <path class="l" pathLength="1" style="--s:.7;stroke-width:1.2" d="M56 420 C 78 414, 124 414, 152 420"/>
+            </svg>
+            <figcaption><b>Fig. 1</b>Candeal wheat, the old bread grain of the high plains. Stone-milled, never sifted twice.</figcaption>
+          </figure>
+          <div class="s1txt">
+            <div class="cols">
+              <p class="dcp"><span class="sc">Nobody on Calle Alba</span> can tell you when the bak&shy;ery closes, only when it begins: at nine at night, when the bar&shy;ber’s win&shy;dow goes dark and Marta Ferrer turns a key that is older than she is. The shut&shy;ter goes up with a sound like a dry cough. Inside, the room is cold and smells of last night’s oak, of scorched flour, of that min&shy;eral note old brick keeps like a mem&shy;ory. She does not switch on the big lights. She switches on the small one above the star&shy;ter jar and looks at what is inside it the way you look at a sleep&shy;ing child.</p>
+            </div>
+            <ul class="glance" aria-label="Horno Ferrer at a glance">
+              <li><b>1931</b><span>The year the oven was first fired</span></li>
+              <li><b>420</b><span>Loaves out of it on an ordinary night</span></li>
+              <li><b>2</b><span>Bakers on shift, Marta and Tomás</span></li>
+              <li><b>8<small>½</small>h</b><span>From key to shutter, 21:00 to 05:30</span></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- 22:15 -->
+      <section class="sec" id="s2" aria-labelledby="h-s2">
+        <header class="sh"><time datetime="22:15">22:15</time><h3 id="h-s2">Flour, water, salt</h3><p class="no">No. 2 of 7</p></header>
+        <div class="split rev">
+          <figure class="fig narrow" data-fig>
+            <svg viewBox="0 0 270 430" role="img" aria-label="Line drawing of a balloon whisk beside an enamel bowl of beaten egg" style="--d:0">
+              <path class="l" pathLength="1" style="--s:0" d="M4 330 C 4 316, 42 306, 92 306 C 142 306, 180 316, 180 330 C 180 344, 142 354, 92 354 C 42 354, 4 344, 4 330 Z"/>
+              <path class="l" pathLength="1" style="--s:.06" d="M4 330 C 6 384, 44 408, 92 408 C 140 408, 178 384, 180 330"/>
+              <path class="l" pathLength="1" style="--s:.1" d="M66 406 C 72 414, 112 414, 118 406"/>
+              <path class="l" pathLength="1" style="--s:.14;stroke-width:1.3" d="M16 332 C 16 322, 50 316, 92 316 C 134 316, 168 322, 168 332 C 168 342, 134 348, 92 348 C 50 348, 16 342, 16 332"/>
+              <path class="l em" pathLength="1" style="--s:.2" d="M92 334 C 78 334, 74 326, 86 324 C 102 322, 114 330, 106 338 C 94 346, 70 340, 66 330 C 64 322, 78 316, 98 316"/>
+              <path class="f" style="--s:.3" d="M150 350 l7 6 l-9 2 z"/>
+              <g transform="translate(212 22) rotate(9)">
+                <path class="lf" pathLength="1" style="--s:.3;--fc:var(--soft)" d="M-9 4 C -9 -6, 9 -6, 9 4 L 7 92 C 7 99, -7 99, -7 92 Z"/>
+                <path class="l" pathLength="1" style="--s:.36;stroke-width:1.2" d="M-8.4 26 H 8.4 M-7.9 58 H 7.9 M-7.3 80 H 7.3"/>
+                <path class="l" pathLength="1" style="--s:.38;stroke-width:1.2" d="M2.6 10 a2.6 2.6 0 1 0 -5.2 0 a2.6 2.6 0 1 0 5.2 0"/>
+                <path class="lf" pathLength="1" style="--s:.42;--fc:var(--soft)" d="M-8 96 H 8 V 118 H -8 Z"/>
+                <path class="l" pathLength="1" style="--s:.44;stroke-width:1.2" d="M-8 102 H 8 M-8 108 H 8 M-8 113 H 8"/>
+                <path class="l" pathLength="1" style="--s:.48" d="M-6 118 C -54 152, -54 240, 0 276"/>
+                <path class="l" pathLength="1" style="--s:.52" d="M-3 118 C -36 152, -36 240, 0 276"/>
+                <path class="l" pathLength="1" style="--s:.56" d="M-1 118 C -16 152, -16 240, 0 276"/>
+                <path class="l" pathLength="1" style="--s:.6" d="M1 118 C 16 152, 16 240, 0 276"/>
+                <path class="l" pathLength="1" style="--s:.64" d="M3 118 C 36 152, 36 240, 0 276"/>
+                <path class="l" pathLength="1" style="--s:.68" d="M6 118 C 54 152, 54 240, 0 276"/>
+                <path class="l em" pathLength="1" style="--s:.72;stroke-width:1.3" d="M-5 268 H 5 M-3 272 H 3"/>
+              </g>
+              <path class="l" pathLength="1" style="--s:.7;stroke-width:1.2" d="M-2 416 C 70 426, 200 426, 268 416"/>
+            </svg>
+            <figcaption><b>Fig. 2</b>Tomás’s whisk. Thirty-one years of eggs have polished the handle.</figcaption>
+          </figure>
+          <div class="cols">
+            <p>The star&shy;ter has domed over&shy;night, freck&shy;led with bubbles, smell&shy;ing of green apples and cel&shy;lars. Tomás Ibáñez, who ar&shy;rived at fif&shy;teen to sweep the floor and never left, tips two sacks into the trough, the first of four batches: twen&shy;ty-five kilos each, milled forty kilo&shy;metres away by a man who still names his wheat by the field. Water goes in warm, salt last. The mix&shy;er turns. Around minute six the shag&shy;gy mass gives up and be&shy;comes one glos&shy;sy body, and Tomás lays a palm flat a&shy;gainst it, the way you steady a horse, and nods. For Sun&shy;day’s sweet buns he still beats the eggs by hand, in a chipped e&shy;nam&shy;el bowl, with a whisk whose han&shy;dle has worn to the shape of his grip.</p>
+          </div>
+        </div>
+      </section>
+
+      <blockquote class="pq">
+        <p>“Bread is the only thing we make that has to be <em>finished</em> before anybody can ask for it.”</p>
+        <footer>Marta Ferrer, head baker</footer>
+      </blockquote>
+
+      <!-- 23:30 -->
+      <section class="sec" id="s3" aria-labelledby="h-s3">
+        <header class="sh"><time datetime="23:30">23:30</time><h3 id="h-s3">The fire</h3><p class="no">No. 3 of 7</p></header>
+        <div class="split big">
+          <figure class="fig big" data-fig>
+            <svg viewBox="-6 -84 532 494" role="img" aria-label="Line drawing of a domed brick hearth oven with a glowing mouth, a chimney and a baker’s peel" style="--d:0">
+              <path class="l" pathLength="1" style="--s:0" d="M6 398 H 514"/>
+              <path class="l" pathLength="1" style="--s:.03" d="M60 398 V 236 C 60 116, 156 46, 260 46 C 364 46, 460 116, 460 236 V 398"/>
+              <path class="l" pathLength="1" style="--s:.08" d="M86 398 V 240 C 86 134, 168 72, 260 72 C 352 72, 434 134, 434 240 V 398"/>
+              <path class="l" pathLength="1" style="--s:.12;stroke-width:1.1" d="M73 398 V 238 C 73 125, 162 59, 260 59 C 358 59, 447 125, 447 238 V 398"/>
+              <path class="l" pathLength="1" style="--s:.16;stroke-width:1.2" d="M453 187 L428 194 M433 141 L411 154 M401 102 L383 120 M360 71 L347 94 M312 52 L305 78 M260 46 V72 M208 52 L215 78 M160 71 L173 94 M119 102 L137 120 M87 141 L109 154 M67 187 L92 194 M60 260 H86 M60 284 H86 M60 308 H86 M60 332 H86 M60 356 H86 M60 380 H86 M434 260 H460 M434 284 H460 M434 308 H460 M434 332 H460 M434 356 H460 M434 380 H460"/>
+              <path class="l" pathLength="1" style="--s:.24;stroke-width:1.2" d="M73 236 V 260 M66 260 V 284 M80 284 V 308 M66 308 V 332 M80 332 V 356 M66 356 V 380 M447 236 V 260 M440 260 V 284 M454 284 V 308 M440 308 V 332 M454 332 V 356 M440 356 V 380"/>
+              <path class="l" pathLength="1" style="--s:.28" d="M60 318 H 460 M60 330 H 460"/>
+              <path class="l" pathLength="1" style="--s:.32" d="M186 318 V 268 C 186 232, 220 208, 260 208 C 300 208, 334 232, 334 268 V 318"/>
+              <path class="l" pathLength="1" style="--s:.36;stroke-width:1.3" d="M200 318 V 270 C 200 242, 228 224, 260 224 C 292 224, 320 242, 320 270 V 318"/>
+              <path class="lf em" pathLength="1" style="--s:.42;--fc:var(--acc)" d="M246 318 C 236 292, 260 282, 254 250 C 276 272, 286 300, 274 318 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.46;--fc:var(--acc)" d="M214 318 C 210 300, 224 292, 222 276 C 234 288, 240 302, 236 318 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.5;--fc:var(--acc)" d="M282 318 C 280 304, 292 298, 292 284 C 302 294, 306 308, 300 318 Z"/>
+              <path class="l" pathLength="1" style="--s:.5" d="M120 398 V 362 C 120 346, 134 340, 150 340 H 370 C 386 340, 400 346, 400 362 V 398"/>
+              <path class="l" pathLength="1" style="--s:.56;stroke-width:1.4" d="M139 386 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M165 386 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M191 386 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M217 386 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M243 386 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M269 386 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M295 386 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M321 386 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M347 386 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M152 364 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M178 364 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M204 364 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M230 364 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M256 364 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M282 364 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M308 364 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0 M334 364 a11 11 0 1 0 22 0 a11 11 0 1 0 -22 0"/>
+              <path class="l" pathLength="1" style="--s:.62;stroke-width:1" d="M155 386 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M207 386 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M259 386 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M311 386 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M191 364 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M243 364 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0 M295 364 a5 5 0 1 0 10 0 a5 5 0 1 0 -10 0"/>
+              <path class="l" pathLength="1" style="--s:.66" d="M236 50 V 4 H 284 V 50 M228 4 H 292 M232 -3 H 288 M236 22 H 284 M236 38 H 284 M250 4 V 22 M270 22 V 38"/>
+              <path class="l em steam" style="--sd:0s" pathLength="1" d="M252 -10 C 236 -28, 268 -40, 252 -60 C 242 -72, 258 -78, 254 -84"/>
+              <path class="l em steam" style="--sd:1.4s" pathLength="1" d="M270 -12 C 258 -26, 282 -36, 270 -52"/>
+              <path class="l" pathLength="1" style="--s:.74" d="M483 178 L 476 398 M491 178 L 484 398 M462 122 C 462 78, 512 78, 512 122 L 508 174 C 500 182, 474 182, 466 174 Z"/>
+              <path class="f" style="--s:.8" d="M44 402 h 24 v 5 h -24 z M40 408 h 28 v 3 h -28 z"/>
+            </svg>
+            <figcaption><b>Fig. 3</b>The hearth, built 1931. Oak and vine cuttings; three hours to heat, eleven loads to empty.</figcaption>
+          </figure>
+          <div class="cols one">
+            <p>Then comes the wait&shy;ing, which is most of the job. The dough rests under lin&shy;en while the oven is fed: oak splits stacked in a cross&shy;hatch inside a hearth that has been fired every night since 1931, except two. Both nights are pen&shy;cilled on the wall be&shy;side the flue, one for the flood, one for Marta’s father. Tomás strikes a match. The first smoke leans toward the chim&shy;ney like some&shy;thing cu&shy;ri&shy;ous. For three hours the oven eats, and the room warms until the win&shy;dows weep and the two of them work in shirt&shy;sleeves in Oc&shy;to&shy;ber.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 01:00 -->
+      <section class="sec" id="s4" aria-labelledby="h-s4">
+        <header class="sh"><time datetime="01:00">01:00</time><h3 id="h-s4">Shaping</h3><p class="no">No. 4 of 7</p></header>
+        <div class="cols">
+          <p>At one the dough is cut with a steel scrap&shy;er into rounds the weight of a new&shy;born, nine hun&shy;dred grams each, checked on a brass scale nei&shy;ther of them needs. Marta shapes with the flat of her hand, drag&shy;ging each piece toward her across the bench until the skin tight&shy;ens and squeaks. Each boule goes seam-up into a lin&shy;en bas&shy;ket dust&shy;ed with rye. Four hun&shy;dred and twen&shy;ty times, under yel&shy;low light, without a word. In twen&shy;ty-six years they have nev&shy;er once had to say <em>behind you</em>.</p>
+        </div>
+        <aside class="databox db wide" id="db" aria-labelledby="db-t">
+          <div class="db-head">
+            <p class="db-k">Sidebar</p>
+            <h4 id="db-t">A loaf <em>by numbers</em></h4>
+            <p class="db-sub">One 900-gram boule, as baked at Horno Ferrer. Bars are drawn to scale within each group.</p>
+            <p class="db-foot">420 loaves a night, about 210 kg of flour. Illustrative figures for a fictional bakery.</p>
+          </div>
+          <div class="db-col">
+            <p class="db-gl">By weight <span>grams</span></p>
+            <ul>
+              <li><span class="k">Flour</span><span class="bar2" role="img" aria-label="500 of 500 grams"><i style="--w:1;--i:0"></i></span><span class="v">500<small>g</small></span></li>
+              <li><span class="k">Water</span><span class="bar2" role="img" aria-label="360 of 500 grams"><i style="--w:.72;--i:1"></i></span><span class="v">360<small>g</small></span></li>
+              <li><span class="k">Starter</span><span class="bar2" role="img" aria-label="30 of 500 grams"><i style="--w:.06;--i:2"></i></span><span class="v">30<small>g</small></span></li>
+              <li><span class="k">Salt</span><span class="bar2" role="img" aria-label="10 of 500 grams"><i style="--w:.02;--i:3"></i></span><span class="v">10<small>g</small></span></li>
+            </ul>
+          </div>
+          <div class="db-col">
+            <p class="db-gl">By the clock <span>hours</span></p>
+            <ul>
+              <li><span class="k">Starter fed</span><span class="bar2" role="img" aria-label="16 of 16 hours"><i style="--w:1;--i:4"></i></span><span class="v">16<small>h</small></span></li>
+              <li><span class="k">Bench &amp; basket</span><span class="bar2" role="img" aria-label="3 of 16 hours"><i style="--w:.19;--i:5"></i></span><span class="v">3<small>h</small></span></li>
+              <li><span class="k">In the oven</span><span class="bar2" role="img" aria-label="38 minutes of 16 hours"><i style="--w:.04;--i:6"></i></span><span class="v">38<small>min</small></span></li>
+              <li><span class="k">Cooling</span><span class="bar2" role="img" aria-label="1 of 16 hours"><i style="--w:.06;--i:7"></i></span><span class="v">1<small>h</small></span></li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <blockquote class="pq i2">
+        <p>“The oven doesn’t care what time it is. It only cares what you did <em>three hours ago</em>.”</p>
+        <footer>Tomás Ibáñez, second baker</footer>
+      </blockquote>
+
+      <!-- 02:30 -->
+      <section class="sec" id="s5" aria-labelledby="h-s5">
+        <header class="sh"><time datetime="02:30">02:30</time><h3 id="h-s5">The hearth</h3><p class="no">No. 5 of 7</p></header>
+        <div class="split">
+          <figure class="fig" data-fig>
+            <svg viewBox="24 24 432 396" role="img" aria-label="Line drawing of a round loaf seen from above with a wheat-ear scoring pattern and a baker’s lame poised above it" style="--d:0">
+              <path class="lf" pathLength="1" style="--s:0;--fc:var(--soft)" d="M46 216 C 44 132, 112 64, 198 64 C 284 64, 350 128, 348 212 C 346 296, 282 366, 196 366 C 110 366, 48 300, 46 216 Z"/>
+              <path class="l" pathLength="1" style="--s:.08;stroke-width:1.2" d="M64 214 C 64 142, 124 82, 198 82 C 262 82, 318 126, 330 190"/>
+              <path class="l" pathLength="1" style="--s:.12;stroke-width:1.2" d="M300 300 l-10 8 M312 284 l-10 9 M322 268 l-9 10 M330 250 l-8 10 M336 232 l-7 10 M286 318 l-10 8 M270 332 l-10 7"/>
+              <path class="l" pathLength="1" style="--s:.16" d="M198 100 C 201 170, 201 260, 197 332"/>
+              <path class="lf em" pathLength="1" style="--s:.24;--fc:var(--acc)" d="M198 152 C 182 134, 164 126, 146 124 C 164 134, 182 148, 198 158 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.28;--fc:var(--acc)" d="M198 152 C 214 134, 232 126, 250 124 C 232 134, 214 148, 198 158 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.32;--fc:var(--acc)" d="M198 196 C 172 172, 144 160, 118 158 C 146 170, 174 188, 198 204 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.36;--fc:var(--acc)" d="M198 196 C 224 172, 252 160, 278 158 C 250 170, 222 188, 198 204 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.4;--fc:var(--acc)" d="M198 244 C 172 220, 144 208, 118 204 C 146 216, 174 236, 198 252 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.44;--fc:var(--acc)" d="M198 244 C 224 220, 252 208, 278 204 C 250 216, 222 236, 198 252 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.48;--fc:var(--acc)" d="M197 290 C 182 278, 166 270, 150 266 C 168 274, 182 286, 197 297 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.52;--fc:var(--acc)" d="M199 290 C 214 278, 230 270, 246 266 C 228 274, 214 286, 199 297 Z"/>
+              <path class="lf em" pathLength="1" style="--s:.55;--fc:var(--acc)" d="M198 100 C 190 90, 198 82, 198 76 C 200 84, 208 92, 198 100 Z"/>
+              <path class="lf" pathLength="1" style="--s:.6;--fc:var(--soft)" d="M304 134 L 430 44 C 438 40, 446 50, 440 58 L 314 148 Z"/>
+              <path class="lf" pathLength="1" style="--s:.66;--fc:var(--bg)" d="M304 134 C 292 132, 278 124, 268 110 C 284 116, 300 118, 312 124 Z"/>
+              <path class="l em" pathLength="1" style="--s:.7;stroke-width:1.3;stroke-dasharray:1 2" d="M262 108 C 236 110, 216 122, 204 146"/>
+              <path class="l em" pathLength="1" style="--s:.72;stroke-width:1.2" d="M334 306 L 262 272"/>
+              <path class="f" style="--s:.75;--fc:var(--acc)" d="M262 272 m-3.2 0 a3.2 3.2 0 1 0 6.4 0 a3.2 3.2 0 1 0 -6.4 0"/>
+              <path class="l em" pathLength="1" style="--s:.74;stroke-width:1.2" d="M392 240 L 324 146"/>
+              <path class="f" style="--s:.75;--fc:var(--acc)" d="M324 146 m-3.2 0 a3.2 3.2 0 1 0 6.4 0 a3.2 3.2 0 1 0 -6.4 0"/>
+              <text class="big" x="334" y="346">4 mm</text>
+              <text class="cap" x="336" y="370">deep</text>
+              <text class="big" x="392" y="278">30°</text>
+              <text class="cap" x="394" y="302">angle</text>
+              <path class="f" style="--s:.78" d="M104 214a1.6 1.6 0 1 0 .1 0zM126 240a1.4 1.4 0 1 0 .1 0zM150 300a1.5 1.5 0 1 0 .1 0zM176 330a1.3 1.3 0 1 0 .1 0zM230 320a1.5 1.5 0 1 0 .1 0zM252 300a1.4 1.4 0 1 0 .1 0zM280 260a1.6 1.6 0 1 0 .1 0zM290 214a1.3 1.3 0 1 0 .1 0zM100 176a1.4 1.4 0 1 0 .1 0zM150 100a1.5 1.5 0 1 0 .1 0zM240 98a1.4 1.4 0 1 0 .1 0zM300 150a1.3 1.3 0 1 0 .1 0zM82 250a1.5 1.5 0 1 0 .1 0zM120 288a1.3 1.3 0 1 0 .1 0zM222 246a1.2 1.2 0 1 0 .1 0zM172 250a1.2 1.2 0 1 0 .1 0"/>
+            </svg>
+            <figcaption><b>Fig. 4</b>Scoring: one stroke, four millimetres deep, at thirty degrees to the crust.</figcaption>
+          </figure>
+          <div class="cols">
+            <p>At half past two Tomás rakes the em&shy;bers into a glow&shy;ing drift at the back and swabs the floor with a wet cloth on a pole: a hiss, a white rush of steam, the bricks going from red to black. Marta holds her palm at the mouth and counts. At three she pulls away; that is two hun&shy;dred and six&shy;ty de&shy;grees, and no ther&shy;mom&shy;e&shy;ter has ever ar&shy;gued. She scores each loaf with a ra&shy;zor on a stick, one stroke, curved like the lip of a wave. Tomás cuts a cross into his, as his grand&shy;moth&shy;er did, to let the bread breathe or the dev&shy;il out; he has nev&shy;er de&shy;cid&shy;ed which. Then the peel whis&shy;pers across the hearth, <em>shh</em>, and the loaf lands with a soft knock. <em>Shh. Knock. Shh. Knock.</em> It is the rhythm the whole street sleeps to with&shy;out know&shy;ing.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04:00 -->
+      <section class="sec" id="s6" aria-labelledby="h-s6">
+        <header class="sh"><time datetime="04:00">04:00</time><h3 id="h-s6">The singing</h3><p class="no">No. 6 of 7</p></header>
+        <div class="cols">
+          <p>Forty minutes on, the first loaves come out the col&shy;our of strong tea and begin, faint&shy;ly, to sing: a fine crack&shy;ling as the crust con&shy;tracts, like rain ar&shy;riv&shy;ing on a tin roof.</p>
+          <p class="hp">“That’s the sound of it being finished,” Marta says, and tilts her head at each one, lis&shy;ten&shy;ing. Tomás loads the cargo tri&shy;cy&shy;cle for the hos&shy;pi&shy;tal kitch&shy;en, the café on the plaza, the school that will not open for hours. The street is blue and empty, ex&shy;cept for a sweep&shy;er, and a cat on the rim of the foun&shy;tain who has, ap&shy;par&shy;ent&shy;ly, also been up all night.</p>
+        </div>
+      </section>
+
+      <blockquote class="pq">
+        <p>“People think we get up early. We don’t get up. We just haven’t <em>gone to bed</em>.”</p>
+        <footer>Tomás Ibáñez, second baker</footer>
+      </blockquote>
+
+      <!-- 05:30 -->
+      <section class="sec" id="s7" aria-labelledby="h-s7">
+        <header class="sh"><time datetime="05:30">05:30</time><h3 id="h-s7">The city wakes</h3><p class="no">No. 7 of 7</p></header>
+        <div class="cols">
+          <p>At half past five the first tram shiv&shy;ers past and Marta rolls up the shut&shy;ter. The light that falls in is not sun&shy;light yet, only the grey-blue idea of it. A nurse com&shy;ing off nights buys a loaf too hot to slice and car&shy;ries it a&shy;gainst her chest like a hot-wa&shy;ter bot&shy;tle. A tax&shy;i dri&shy;ver takes two. By six the city will be up and hun&shy;gry, and no&shy;body will won&shy;der where the bread came from, which is how Marta knows it went well. She hangs her a&shy;pron, feeds the star&shy;ter, and turns the old key. Then she walks home through a city that is on&shy;ly be&shy;gin&shy;ning to smell of her work.<span class="end" aria-hidden="true"></span></p>
+        </div>
+      </section>
+
+    </article>
+  </div>
+
+  <section class="recipe" id="recipe" aria-labelledby="rc-h">
+    <div class="rc-in">
+      <p class="rc-k">Take it home</p>
+      <h2 id="rc-h">Marta’s <em>morning loaf</em></h2>
+      <p class="rc-lead">She has never written it down for the shop, but she wrote it down for us, on the back of a delivery slip, in pencil. Fold it open; it takes a day, most of it waiting.</p>
+      <button type="button" class="rc-btn" id="rcbtn" aria-expanded="false" aria-controls="rccard"><span id="rcbtxt">Fold open the recipe</span><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 5l5 5 5-5"/></svg></button>
+      <div class="card" id="rccard" data-open="false">
+        <div class="cp cp1">
+          <div>
+            <p class="no">Recipe No. 7 · Horno Ferrer, Calle Alba 14</p>
+            <h3>Pan de Alba</h3>
+            <p class="yield">One large boule · about 24 hours, mostly waiting</p>
+          </div>
+          <div class="seal" aria-hidden="true"><div>Approved<b>M.F.</b>in pencil</div></div>
+        </div>
+        <div class="cw" id="cw2">
+          <div class="cp cp2">
+            <h4>You will need</h4>
+            <ul class="ing">
+              <li><span>Active starter</span><i></i><b>90 g</b></li>
+              <li><span>Strong white flour</span><i></i><b>450 g</b></li>
+              <li><span>Wholemeal or rye flour</span><i></i><b>50 g</b></li>
+              <li><span>Water, just warm</span><i></i><b>360 g</b></li>
+              <li><span>Fine sea salt</span><i></i><b>10 g</b></li>
+              <li><span>Rye flour, for the basket</span><i></i><b>a handful</b></li>
+            </ul>
+          </div>
+        </div>
+        <div class="cw" id="cw3">
+          <div class="cp cp3">
+            <h4>What to do</h4>
+            <ol class="steps">
+              <li><b>Evening</b>Whisk the starter into the water, add both flours, and leave it alone for forty minutes. Then work in the salt with wet hands.</li>
+              <li><b>Every half hour</b>Fold the dough over itself, gently, four times. It should end up slack, alive and just short of doubled.</li>
+              <li><b>Bedtime</b>Shape it tight, seam-up, into a floured basket. Cover it and let the refrigerator take the night shift, ten to fourteen hours.</li>
+              <li><b>Morning</b>Heat a lidded iron pot for forty-five minutes at 250 °C. Turn the loaf out, score it once, decisively, and lower it in.</li>
+              <li><b>Twenty, then twenty-five</b>Bake twenty minutes with the lid on and twenty-five with it off, until the crust is the colour of strong tea.</li>
+              <li><b>Then listen</b>Cool it on a rack and hold your ear close. Wait an hour before slicing. Marta insists.</li>
+            </ol>
+            <p class="note">Salt the water, not the starter. And never speak ill of the starter within earshot.<small>— M.F., on the back of a delivery slip</small></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <div>
+      <p class="foot-brand">Alba <span>Quarterly</span></p>
+      <div class="swatches" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div>
+      <p class="fine">Issue 07, the Night Issue. Next: Issue 08, “The Salt Pans of Ría Azul.” A work of fiction: Horno Ferrer, Marta, Tomás and their street are invented, and all figures are illustrative. Set in Didone, old-style and grotesque system faces, on a screen that would rather be paper.</p>
+    </div>
+    <p><a href="#top">Back to 21:00</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+'use strict';
+var doc=document, root=doc.documentElement;
+function $(s,r){return (r||doc).querySelector(s)}
+function $$(s,r){return Array.prototype.slice.call((r||doc).querySelectorAll(s))}
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function lerp(a,b,t){return a+(b-a)*t}
+var mq=window.matchMedia?matchMedia('(prefers-reduced-motion: reduce)'):null;
+var reduce=!!(mq&&mq.matches);
+
+/* ---------- paper grain (tiny canvas tile, no external image) ---------- */
+try{
+  var gc=doc.createElement('canvas'); gc.width=gc.height=180;
+  var gx=gc.getContext('2d'), im=gx.createImageData(180,180), px=im.data;
+  for(var i=0;i<px.length;i+=4){var v=Math.random();px[i]=74;px[i+1]=54;px[i+2]=30;px[i+3]=v<.55?0:(v*24)|0;}
+  gx.putImageData(im,0,0);
+  $('.grain').style.backgroundImage='url("'+gc.toDataURL()+'")';
+}catch(e){}
+
+/* ---------- masthead: fit the wordmark to the column ---------- */
+var wm=$('#wm'), wmbox=$('#wmbox');
+function fit(){
+  if(!wm||!wmbox) return;
+  wm.style.fontSize='100px';
+  var w=wm.getBoundingClientRect().width||1;
+  wm.style.fontSize=(100*wmbox.clientWidth/w).toFixed(2)+'px';
+}
+fit();
+if(doc.fonts&&doc.fonts.ready){doc.fonts.ready.then(fit)}
+
+/* ---------- reading time ---------- */
+var words=0;
+$$('#story .cols p').forEach(function(p){var t=p.textContent.trim();if(t)words+=t.split(/\s+/).length});
+var totalMin=Math.max(1,Math.round(words/200));
+$('#rt').textContent=totalMin+' min read · '+words+' words';
+$('#left').textContent=totalMin+' min read';
+
+/* ---------- lamplight ---------- */
+var lampBtns=$$('.lampbtn'), dark=false;
+function setLamp(on,save){
+  dark=on;
+  root.classList.add('tx');
+  root.setAttribute('data-lamp',on?'on':'off');
+  lampBtns.forEach(function(b){b.setAttribute('aria-pressed',on?'true':'false')});
+  var m=$('meta[name="theme-color"]'); if(m) m.setAttribute('content',on?'#1a1714':'#f5f0e6');
+  if(save){try{localStorage.setItem('aq-lamp',on?'1':'0')}catch(e){}}
+  setTimeout(function(){root.classList.remove('tx')},760);
+  dirty=true;
+}
+lampBtns.forEach(function(b){b.addEventListener('click',function(){setLamp(!dark,true)})});
+try{ if(localStorage.getItem('aq-lamp')==='1'){root.setAttribute('data-lamp','on');dark=true;lampBtns.forEach(function(b){b.setAttribute('aria-pressed','true')})} }catch(e){}
+
+/* ---------- timeline + progress ---------- */
+var bar=$('#bar'), secs=$$('.sec'), lis=$$('#tlist li'), dot=$('#tldot'), clock=$('#clock'), clocklbl=$('#clocklbl'), story=$('#story'), tlist=$('#tlist');
+var TIMES=[0,75,150,240,330,420,510,540];
+var LABELS=['the shutter goes up','flour, water, salt','the fire is lit','hands, flour, patience','the hearth is ready','the loaves begin to sing','the first tram passes'];
+var secTop=[], storyTop=0, storyH=1, liY=[], narrow=false, dirty=true, lastIdx=-2;
+function measure(){
+  var sy=window.pageYOffset||0;
+  secTop=secs.map(function(s){return s.getBoundingClientRect().top+sy});
+  var r=story.getBoundingClientRect(); storyTop=r.top+sy; storyH=r.height;
+  liY=lis.map(function(li){return li.offsetTop+li.offsetHeight/2});
+  narrow=window.innerWidth<980;
+  dirty=true;
+}
+function fmt(m){var t=(21*60+Math.round(m))%1440,h=Math.floor(t/60),mm=t%60;return (h<10?'0':'')+h+':'+(mm<10?'0':'')+mm}
+function tick(){
+  var y=window.pageYOffset||0, vh=window.innerHeight;
+  var maxS=Math.max(1,root.scrollHeight-vh);
+  root.style.setProperty('--p',clamp(y/maxS,0,1).toFixed(4));
+  bar.classList.toggle('show',y>Math.max(420,vh*.55));
+  var line=y+vh*.42, idx=-1, i;
+  for(i=0;i<secTop.length;i++){if(line>=secTop[i]) idx=i}
+  var t=0;
+  if(idx>=0){
+    var a=secTop[idx], b=idx<secTop.length-1?secTop[idx+1]:(storyTop+storyH);
+    t=clamp((line-a)/Math.max(1,b-a),0,1);
+  }
+  var m=idx<0?0:lerp(TIMES[idx],TIMES[idx+1],t);
+  clock.textContent=fmt(m);
+  if(idx!==lastIdx){
+    lastIdx=idx;
+    lis.forEach(function(li,k){li.classList.toggle('on',k===idx);li.classList.toggle('past',k<idx);var a2=li.firstChild;if(k===idx)a2.setAttribute('aria-current','true');else a2.removeAttribute('aria-current')});
+    clocklbl.textContent=LABELS[Math.max(0,idx)];
+    if(narrow&&idx>=0&&lis[idx]){var li=lis[idx];tlist.scrollTo?tlist.scrollTo({left:li.offsetLeft-tlist.clientWidth/2+li.clientWidth/2,behavior:reduce?'auto':'smooth'}):0}
+  }
+  if(!narrow){
+    var y0,y1;
+    if(idx<0){y0=liY[0];y1=liY[0]}
+    else if(idx>=liY.length-1){y0=liY[idx];y1=liY[idx]+20}
+    else{y0=liY[idx];y1=liY[idx+1]}
+    dot.style.transform='translateY('+lerp(y0,y1,t).toFixed(1)+'px)';
+  }
+  var ps=clamp((y+vh*.55-storyTop)/Math.max(1,storyH),0,1);
+  var left=Math.ceil(totalMin*(1-ps));
+  $('#left').textContent=ps>=.985?'Finished':left+' min left';
+  figTargets();
+}
+
+/* ---------- self-drawing illustrations ---------- */
+var figs=$$('.fig svg').map(function(s){return {s:s,box:s.closest('.fig'),d:-1,t:0}});
+var heroFig={s:$('.loaf'),d:-1,t:0,t0:null};
+function figTargets(){
+  var vh=window.innerHeight;
+  figs.forEach(function(f){
+    var r=f.box.getBoundingClientRect();
+    f.t=reduce?1:clamp((vh*.94-r.top)/(r.height*.8+vh*.12),0,1);
+  });
+}
+function setD(f,v){ if(Math.abs(v-f.d)>.0015||v===0||v===1){f.d=v;f.s.style.setProperty('--d',v.toFixed(4))} }
+
+/* ---------- flour dust ---------- */
+var cv=$('#dust'), cx=cv.getContext('2d'), W=0,H=0,DPR=1, parts=[], puffs=[], mouse={x:-999,y:-999}, lastY=window.pageYOffset||0;
+var spr=[mk(255,252,244,1),mk(214,196,160,1),mk(245,238,222,1)];
+function mk(r,g,b){var c=doc.createElement('canvas');c.width=c.height=32;var x=c.getContext('2d'),gr=x.createRadialGradient(16,16,0,16,16,16);gr.addColorStop(0,'rgba('+r+','+g+','+b+',1)');gr.addColorStop(.55,'rgba('+r+','+g+','+b+',.8)');gr.addColorStop(1,'rgba('+r+','+g+','+b+',0)');x.fillStyle=gr;x.fillRect(0,0,32,32);return c}
+function sizeDust(){
+  DPR=Math.min(window.devicePixelRatio||1,2); W=window.innerWidth; H=window.innerHeight;
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR); cx.setTransform(DPR,0,0,DPR,0,0);
+  var n=clamp(Math.round(W*H/13000),46,120); parts=[];
+  for(var i=0;i<n;i++){var z=.2+Math.random()*.8;parts.push({x:Math.random()*W,y:Math.random()*H,z:z,r:1.3+z*2.5,vx:(4+Math.random()*10)*z,vy:-(3+Math.random()*7)*z,ph:Math.random()*6.28,f:.25+Math.random()*.5,w:6+Math.random()*16,a:.28+z*.5,k:i%3})}
+}
+function drawDust(dt,now){
+  cx.clearRect(0,0,W,H);
+  var sy=window.pageYOffset||0, sd=sy-lastY; lastY=sy;
+  var i,p,s,a;
+  for(i=0;i<parts.length;i++){
+    p=parts[i];
+    if(!reduce){
+      p.x+=(p.vx+Math.sin(now*.001*p.f+p.ph)*p.w)*dt;
+      p.y+=p.vy*dt-sd*p.z*.28;
+      var dx=p.x-mouse.x, dy=p.y-mouse.y, d2=dx*dx+dy*dy;
+      if(d2<14400&&d2>1){var d=Math.sqrt(d2),f=(120-d)/120*38*dt;p.x+=dx/d*f;p.y+=dy/d*f}
+      if(p.x>W+20)p.x=-20; if(p.x<-20)p.x=W+20;
+      if(p.y<-20)p.y=H+20; if(p.y>H+20)p.y=-20;
+    }
+    s=spr[dark?2:p.k]; a=p.a*(dark?.55:1);
+    cx.globalAlpha=a; cx.drawImage(s,p.x-p.r,p.y-p.r,p.r*2,p.r*2);
+  }
+  for(i=puffs.length-1;i>=0;i--){
+    p=puffs[i]; p.life-=dt; if(p.life<=0){puffs.splice(i,1);continue}
+    p.vx*=1-1.9*dt; p.vy*=1-1.9*dt; p.vy+=14*dt; p.x+=p.vx*dt; p.y+=p.vy*dt-sd*.2;
+    s=spr[dark?2:p.k]; cx.globalAlpha=Math.min(1,p.life/p.max*1.2)*(dark?.5:.75);
+    var r=p.r*(1+(1-p.life/p.max)*1.4); cx.drawImage(s,p.x-r,p.y-r,r*2,r*2);
+  }
+  cx.globalAlpha=1;
+}
+doc.addEventListener('pointermove',function(e){mouse.x=e.clientX;mouse.y=e.clientY},{passive:true});
+doc.addEventListener('pointerleave',function(){mouse.x=mouse.y=-999});
+doc.addEventListener('pointerdown',function(e){
+  if(reduce||e.target.closest&&e.target.closest('a,button,input,textarea,select,summary,label'))return;
+  for(var i=0;i<26;i++){var an=Math.random()*6.283,sp=30+Math.random()*150,mx=1+Math.random()*1.6;puffs.push({x:e.clientX,y:e.clientY,vx:Math.cos(an)*sp,vy:Math.sin(an)*sp-20,r:3+Math.random()*7,life:1.1+Math.random()*1.1,max:2.2,k:i%3})}
+  if(puffs.length>160)puffs.splice(0,puffs.length-160);
+},{passive:true});
+
+/* ---------- main loop ---------- */
+var last=0, start=0;
+function loop(now){
+  requestAnimationFrame(loop);
+  if(doc.hidden){last=now;return}
+  var dt=Math.min(.05,(now-last)/1000||0); last=now;
+  if(!start)start=now;
+  if(dirty){dirty=false;tick()}
+  var k=1-Math.exp(-dt*7.5);
+  figs.forEach(function(f){var nv=f.d<0?f.t:f.d+(f.t-f.d)*k; if(Math.abs(f.t-nv)<.002)nv=f.t; setD(f,nv)});
+  var hv=reduce?1:clamp((now-start-700)/3000,0,1); hv=1-Math.pow(1-hv,2.4);
+  setD(heroFig,hv);
+  drawDust(dt,now);
+}
+window.addEventListener('scroll',function(){dirty=true},{passive:true});
+window.addEventListener('resize',function(){fit();measure();sizeDust()});
+
+/* ---------- data bars ---------- */
+var db=$('#db');
+if(db){
+  if('IntersectionObserver' in window&&!reduce){
+    var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){db.classList.add('in');io.disconnect()}})},{threshold:.3});
+    io.observe(db);
+  }else{db.classList.add('in')}
+}
+
+/* ---------- recipe card ---------- */
+var card=$('#rccard'), rcbtn=$('#rcbtn'), rcbtxt=$('#rcbtxt'), cws=$$('.cw'), opened=false, touched=false;
+function cardHeights(open){
+  cws.forEach(function(cw){var inner=cw.firstElementChild;cw.style.height=open?inner.scrollHeight+'px':'0px'});
+}
+function setCard(open){
+  opened=open;
+  card.setAttribute('data-open',open?'true':'false');
+  rcbtn.setAttribute('aria-expanded',open?'true':'false');
+  rcbtxt.textContent=open?'Fold it away':'Fold open the recipe';
+  cardHeights(open);
+  if(open){setTimeout(function(){if(opened)cws.forEach(function(cw){cw.style.height='auto'})},1500)}
+}
+rcbtn.addEventListener('click',function(){touched=true;
+  if(opened&&cws[0].style.height==='auto'){cws.forEach(function(cw){cw.style.height=cw.firstElementChild.scrollHeight+'px'});void cws[0].offsetHeight}
+  setCard(!opened)});
+if('IntersectionObserver' in window){
+  var io2=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting&&!touched&&!opened){setTimeout(function(){if(!touched&&!opened)setCard(true)},reduce?0:600);io2.disconnect()}})},{threshold:.35});
+  io2.observe(card);
+}
+
+/* ---------- go ---------- */
+sizeDust(); measure();
+if(reduce){figs.forEach(function(f){setD(f,1)});setD(heroFig,1);drawDust(0,0)}
+tick();
+requestAnimationFrame(function(n){last=n;requestAnimationFrame(loop)});
+window.addEventListener('load',function(){measure();fit()});
+})();
+</script>
+</body>
+</html>

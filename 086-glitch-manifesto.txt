@@ -1,0 +1,25 @@
+==================== PROMPT ====================
+Create a typographic "glitch manifesto" page, "SIGNAL / NOISE", in stark black, white and acid yellow (#e6ff00). Hero: enormous text "SIGNAL/NOISE" split into horizontal slices (clip-path/inset bands) that shift left/right randomly with RGB channel offsets (red/cyan duplicates via mix-blend-mode: screen) in bursts driven by a JS scheduler (a burst every 2–5 s with decaying intensity), plus scanline tearing, block displacement and random character corruption (text scrambles to █▓▒░/\|<> then resolves). Below: a manifesto of 10 numbered statements in a bold grotesque, each line decoding as it scrolls into view; inline highlights in acid yellow with black text; marquee strips of repeating phrases running in opposite directions; a "CORRUPT" slider (0–100) that raises glitch frequency and intensity globally; a big invert toggle (white on black ↔ black on white); the cursor spawns tiny pixel-sort trails (a canvas overlay where pixels smear horizontally near the pointer). Add a "data-moshed" grid of coloured blocks that shuffle and smear (canvas), a fake terminal error dump ("SEGFAULT 0x0000DEAD") and a ticking "signals lost" counter. Type: heavy grotesque for statements, mono for meta, big sizes with clamp(). Palette: #0a0a0a, #f2f2f0, #e6ff00, with tiny #ff3b30 and #00e5ff only inside RGB-split effects. Disciplined: strong grid, sharp edges, high contrast.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+SIGNAL/NOISE Glitch Manifesto
+
+==================== DESCRIPTION ====================
+A stark black, white and acid-yellow typographic page. A two-line, near full-width heavy grotesque headline SIGNAL / /NOISE is built from eight clip-path bands, each carrying a white layer plus red and cyan copies; a scheduler fires bursts that shove bands sideways, split the channels, scramble glyphs, throw difference-blend blocks and a tear line, then decay. Below sit two opposing marquee strips, ten numbered statements that decode from block glyphs as they enter the viewport (with acid-yellow highlights), a loss report with a ticking counter, a canvas data-mosh grid that copies, smears and stretches blocks, and a typing terminal that ends in SEGFAULT 0x0000DEAD. A sticky bar holds the CORRUPT slider and a large INVERT toggle; the cursor leaves horizontal pixel-smear trails.
+
+==================== TECHNIQUES ====================
+- Eight absolutely stacked slices clipped with clip-path inset(), re-randomised at every burst
+- Red/cyan duplicate layers with mix-blend-mode screen (multiply in the inverted theme), shifted per slice
+- JS burst scheduler with decaying intensity, stepped at about 22 fps for a jittery feel; scramble-then-resolve character corruption
+- Difference-blended block displacement and a fixed tear line that flashes on bursts
+- Statement decoding via an overlay clone whose text nodes are scrambled and resolved left to right, driven by IntersectionObserver
+- --rgb CSS variable driving red/cyan text-shadow splits on statements and the terminal headline
+- CSS marquees in opposite directions (filled acid strip, outlined strip, mono strip) whose speed follows the CORRUPT value
+- Canvas data-mosh: block copy via drawImage on itself, row smear, single-pixel column stretch, periodic reseed
+- Cursor overlay canvas spawning quantised horizontal streaks with brightness-sorted segments
+- Theme swap through CSS custom properties, typed terminal, tabular-number counters, scanline overlay
+
+==================== INTERACTION ====================
+Move the cursor to leave pixel-sort trails. Drag the CORRUPT slider (0 to 100) to raise burst frequency, intensity, mosh speed, marquee speed and the counter rate; at high values random statements re-glitch. Click INVERT to swap to black on white with a burst. Click or tap the headline, or press G, to fire a burst manually. Statements decode when they enter the viewport and invert on hover; hover the mosh canvas to drag the smear. Reduced motion: fewer, weaker bursts, instant decoding, slowed marquees, no cursor trails or cursor blink.

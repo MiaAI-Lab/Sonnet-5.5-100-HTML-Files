@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0806">
+<title>Candle Hour — a focus timer</title>
+<style>
+:root{
+  color-scheme:dark;
+  --room:#0b0806; --ivory:#f3e9d2; --flame:#ffb347; --flame2:#ffd98a; --core:#7fb5ff; --brass:#b88a44; --brass2:#d8b066;
+  --dim:rgba(243,233,210,.62); --hair:rgba(184,138,68,.5);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"URW Bookman","C059","Nimbus Roman",serif;
+  --sans:"Gill Sans","Gill Sans MT",Optima,Calibri,"Segoe UI",Ubuntu,Cantarell,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --gut:clamp(14px,3vw,40px);
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--room);color:var(--ivory)}
+body{height:100vh;height:100dvh;overflow:hidden;font-family:var(--serif);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.grain,.vig{position:fixed;inset:0;pointer-events:none}
+.vig{background:radial-gradient(120% 95% at 50% 62%,transparent 46%,rgba(4,2,1,.72) 100%)}
+.grain{opacity:.5;mix-blend-mode:overlay}
+
+.ui{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;pointer-events:none}
+.head{margin-top:clamp(18px,5.5vh,64px);text-align:center;padding:0 var(--gut);transition:opacity 1.6s var(--ease)}
+.kicker{font:500 clamp(10px,.9vw,12px) var(--sans);letter-spacing:.42em;text-transform:uppercase;color:var(--brass);padding-left:.42em;opacity:.85}
+.time{margin-top:clamp(2px,1vh,10px);font-weight:400;font-size:clamp(48px,min(8.6vw,13.5vh),124px);line-height:1;letter-spacing:.03em;font-variant-numeric:oldstyle-nums tabular-nums;color:var(--ivory);text-shadow:0 0 44px rgba(255,170,80,.38),0 2px 0 rgba(0,0,0,.25);transition:opacity 1.8s var(--ease)}
+.finished .head{opacity:0}
+.dim .time{opacity:.3}
+.dim .kicker{opacity:.4}
+.msg{margin-top:clamp(6px,1.6vh,16px);min-height:1.5em;font-style:italic;font-size:clamp(15px,1.8vw,22px);letter-spacing:.01em;color:var(--dim);transition:opacity .7s var(--ease);text-shadow:0 1px 18px rgba(0,0,0,.9)}
+.msg.out{opacity:0}
+
+.done{position:absolute;left:0;right:0;top:clamp(70px,16vh,170px);display:flex;flex-direction:column;align-items:center;text-align:center;opacity:0;visibility:hidden;transition:opacity 2.2s var(--ease),visibility 0s 2.2s;padding:0 var(--gut)}
+.done.show{opacity:1;visibility:visible;transition:opacity 2.2s var(--ease),visibility 0s}
+.done .big{font-size:clamp(34px,6vw,76px);font-weight:400;font-style:italic;letter-spacing:.01em;line-height:1.08;text-shadow:0 0 40px rgba(255,190,110,.35)}
+.breath{width:clamp(54px,7vw,84px);aspect-ratio:1;margin:clamp(16px,3vh,30px) 0;border-radius:50%;border:1px solid var(--hair);box-shadow:0 0 30px rgba(255,190,110,.18) inset,0 0 30px rgba(255,190,110,.12);animation:breathe 10s var(--ease) infinite}
+@keyframes breathe{0%,100%{transform:scale(.55);opacity:.45}40%{transform:scale(1.1);opacity:1}}
+
+.dock{position:absolute;left:0;right:0;bottom:0;padding:0 var(--gut) clamp(14px,3.2vh,34px);display:flex;flex-direction:column;align-items:center;gap:12px;pointer-events:none;transition:opacity 1.4s var(--ease)}
+.dock>*{pointer-events:auto}
+.dim .dock{opacity:.5}
+.dim .dock:hover,.dim .dock:focus-within{opacity:1}
+.row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.chips{gap:6px}
+.glass{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 20px;border-radius:999px;border:1px solid var(--hair);color:#ecd6a6;font:500 12px var(--sans);letter-spacing:.2em;text-transform:uppercase;cursor:pointer;background:linear-gradient(180deg,rgba(255,236,200,.13),rgba(255,236,200,.03));box-shadow:inset 0 1px 0 rgba(255,244,220,.22),0 8px 26px rgba(0,0,0,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:border-color .3s var(--ease),color .3s var(--ease),background .3s var(--ease),transform .2s var(--ease),box-shadow .3s var(--ease),opacity .3s}
+.glass:hover{border-color:var(--brass2);color:#fff1cf;box-shadow:inset 0 1px 0 rgba(255,244,220,.3),0 0 26px rgba(255,170,80,.22),0 8px 26px rgba(0,0,0,.45)}
+.glass:active{transform:scale(.96)}
+.glass:focus-visible,.custom input:focus-visible{outline:2px solid var(--flame2);outline-offset:3px}
+.glass[disabled]{opacity:.38;cursor:default;pointer-events:none}
+.chip{min-width:56px;padding:0 14px;letter-spacing:.14em}
+.chip[aria-pressed="true"]{background:linear-gradient(180deg,#d9b56b,#9b7232);color:#2a1a08;border-color:#e9c77e;box-shadow:inset 0 1px 0 rgba(255,244,220,.55),0 0 24px rgba(255,170,80,.28)}
+.glass svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+#b-light.pulse{border-color:var(--flame2);color:#fff1cf;animation:beckon 2.4s ease-in-out infinite}
+@keyframes beckon{0%,100%{box-shadow:inset 0 1px 0 rgba(255,244,220,.22),0 0 0 rgba(255,170,80,0),0 8px 26px rgba(0,0,0,.45)}50%{box-shadow:inset 0 1px 0 rgba(255,244,220,.3),0 0 30px rgba(255,170,80,.4),0 8px 26px rgba(0,0,0,.45)}}
+.custom{display:flex;align-items:center;gap:8px;font:500 11px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.custom[hidden]{display:none}
+.custom{position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);padding:8px 10px;border-radius:999px;background:rgba(11,8,6,.72);border:1px solid var(--hair);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#b-sound[aria-pressed="false"] .on,#b-sound[aria-pressed="true"] .off{display:none}
+.custom input{width:84px;height:42px;border-radius:999px;border:1px solid var(--hair);background:rgba(255,236,200,.06);color:var(--ivory);font:400 18px var(--serif);text-align:center;letter-spacing:.04em}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media (max-width:640px){
+  .glass{min-height:44px;padding:0 15px;letter-spacing:.14em}
+  .u{display:none}
+  .chips{flex-wrap:nowrap;gap:5px}
+  .chip{min-width:0;flex:0 0 auto;padding:0 13px;letter-spacing:.08em}
+  .actions{flex-wrap:nowrap;gap:6px;width:100%;max-width:420px}
+  .actions .glass{flex:1 1 0;min-width:0;padding:0 6px;letter-spacing:.09em;font-size:11px}
+  .dock{gap:8px}
+}
+@media (max-height:620px){.kicker{display:none}.msg{display:none}}
+@media (prefers-reduced-motion:reduce){.breath{animation:none;opacity:.8}#b-light.pulse{animation:none}.time,.head,.dock,.msg,.done{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+<div class="grain" id="grain" aria-hidden="true"></div>
+<div class="vig" aria-hidden="true"></div>
+
+<main class="ui" id="ui">
+  <header class="head" id="head">
+    <p class="kicker">Candle Hour</p>
+    <h1 class="time" id="time">25:00</h1>
+    <p class="msg" id="msg">Let the noise burn down.</p>
+  </header>
+
+  <section class="done" id="done" aria-label="Session complete">
+    <p class="big">Well done.</p>
+    <p class="big">Breathe.</p>
+    <div class="breath" aria-hidden="true"></div>
+    <button class="glass" id="again" type="button">Light another</button>
+  </section>
+
+  <nav class="dock" aria-label="Candle controls">
+    <div class="row chips" id="chips" role="group" aria-label="Candle length in minutes">
+      <button class="glass chip" type="button" data-min="5" aria-pressed="false" aria-label="5 minutes">5<span class="u"> min</span></button>
+      <button class="glass chip" type="button" data-min="15" aria-pressed="false" aria-label="15 minutes">15<span class="u"> min</span></button>
+      <button class="glass chip" type="button" data-min="25" aria-pressed="true" aria-label="25 minutes">25<span class="u"> min</span></button>
+      <button class="glass chip" type="button" data-min="50" aria-pressed="false" aria-label="50 minutes">50<span class="u"> min</span></button>
+      <button class="glass chip" type="button" id="b-custom" aria-pressed="false" aria-expanded="false" aria-controls="custom">Custom</button>
+    </div>
+    <form class="custom" id="custom" hidden>
+      <label for="in-min">Minutes</label>
+      <input id="in-min" type="number" inputmode="numeric" min="1" max="180" value="30">
+      <button class="glass" type="submit">Set</button>
+    </form>
+    <div class="row actions">
+      <button class="glass" id="b-light" type="button"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8c2.4 2.6 3.6 4.4 3.6 6.4a3.6 3.6 0 0 1-7.2 0c0-1.2.5-2.2 1.4-3.2.2 1 .7 1.6 1.4 1.9C7 5.4 7.4 3.9 8 1.8z"/></svg>Light</button>
+      <button class="glass" id="b-pause" type="button">Pause</button>
+      <button class="glass" id="b-reset" type="button">Reset</button>
+      <button class="glass" id="b-sound" type="button" aria-pressed="true" aria-label="Bell and sounds: on"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z"/><path class="on" d="M11.5 5.5a3.6 3.6 0 0 1 0 5M13.2 3.8a6 6 0 0 1 0 8.4"/><path class="off" d="M11.5 6l3.5 4M15 6l-3.5 4"/></svg><span class="lbl">Sound</span></button>
+    </div>
+  </nav>
+</main>
+<p class="sr" id="live" aria-live="polite"></p>
+
+<script>
+(function () {
+'use strict';
+/* ============ helpers, copy, state ============ */
+const $ = (s) => document.querySelector(s);
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const MESSAGES = [
+  'Let the noise burn down.',
+  'One thing. Then the next.',
+  'The wax does not hurry.',
+  'Small light, steady hands.',
+  'Let the tabs wait.',
+  'Breathe in for four, out for six.',
+  'Whatever is urgent will keep for a candle’s length.',
+  'Watch the flame lean when you sigh.',
+  'Attention is a kind of warmth.',
+  'You are allowed to do only this.',
+  'The room is quiet. So can you be.',
+  'Every minute, a little less wax and a little more done.'
+];
+const S = { state: 'unlit', duration: 25 * 60, remaining: 25 * 60, endAt: 0, flame: 0, igniteAge: 9, snuffAge: 99, doneAge: -1, sound: true, chimed: false };
+const ui = {
+  root: $('#ui'), time: $('#time'), msg: $('#msg'), done: $('#done'), live: $('#live'), light: $('#b-light'), pause: $('#b-pause'), reset: $('#b-reset'),
+  sound: $('#b-sound'), again: $('#again'), custom: $('#custom'), bCustom: $('#b-custom'), inMin: $('#in-min'), grain: $('#grain'),
+  chips: Array.from(document.querySelectorAll('.chip[data-min]'))
+};
+const ptr = { x: -999, y: -999, down: false, near: 0, blow: 0, seen: 0 };
+let lastActivity = 0, msgT = 0, msgNow = '', shownTime = '', shownSec = -1, blowFx = 0;
+
+/* ============ audio: one soft bell, a puff and a scritch; created only after a user gesture ============ */
+let AC = null, master = null;
+function ensureAudio() {
+  try {
+    if (AC) { if (AC.state === 'suspended') AC.resume(); return AC; }
+    const C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
+    AC = new C(); master = AC.createGain(); master.gain.value = 0.22; master.connect(AC.destination);
+  } catch (e) { AC = null; }
+  return AC;
+}
+function noiseBurst(dur, f0, f1, q, gain, type) {
+  if (!AC || !S.sound) return;
+  const t = AC.currentTime, n = Math.floor(AC.sampleRate * dur), b = AC.createBuffer(1, n, AC.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 2);
+  const src = AC.createBufferSource(), fl = AC.createBiquadFilter(), g = AC.createGain();
+  src.buffer = b; fl.type = type; fl.Q.value = q; fl.frequency.setValueAtTime(f0, t); fl.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.value = gain; src.connect(fl); fl.connect(g); g.connect(master); src.start(t);
+}
+function sfxIgnite() { noiseBurst(0.22, 3200, 1400, 1.2, 0.5, 'bandpass'); setTimeout(() => noiseBurst(0.7, 500, 160, 0.7, 0.28, 'lowpass'), 90); }
+function sfxPuff() { noiseBurst(0.55, 900, 220, 0.6, 0.55, 'lowpass'); }
+function sfxBell() {
+  if (!AC || !S.sound) return;
+  const t = AC.currentTime, base = 392;
+  [[1, 0.5, 4.4], [2.0, 0.26, 3.4], [2.76, 0.2, 2.8], [4.07, 0.11, 2], [5.4, 0.07, 1.5], [8.93, 0.035, 1]].forEach((p) => {
+    const o = AC.createOscillator(), a = AC.createGain();
+    o.type = 'sine'; o.frequency.value = base * p[0];
+    a.gain.setValueAtTime(0, t); a.gain.linearRampToValueAtTime(p[1], t + 0.01); a.gain.exponentialRampToValueAtTime(0.0001, t + p[2]);
+    o.connect(a); a.connect(master); o.start(t); o.stop(t + p[2] + 0.05);
+  });
+}
+
+/* ============ the session: light, snuff, reset, finish ============ */
+function fmtTime(sec) {
+  const s = Math.max(0, Math.ceil(sec - 0.0001)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+  return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(r).padStart(2, '0');
+}
+function setMsg(text) {
+  if (text === msgNow) return; msgNow = text;
+  ui.msg.classList.add('out'); clearTimeout(msgT);
+  msgT = setTimeout(() => { ui.msg.textContent = text; ui.msg.classList.remove('out'); }, REDUCED ? 0 : 600);
+}
+function syncUI() {
+  const st = S.state;
+  ui.light.disabled = st === 'burning' || st === 'done'; ui.light.classList.toggle('pulse', st === 'unlit' || st === 'paused');
+  ui.light.lastChild.textContent = st === 'paused' ? 'Relight' : 'Light';
+  ui.pause.disabled = st !== 'burning'; ui.reset.disabled = st === 'unlit' && S.remaining >= S.duration - 0.5;
+  ui.done.classList.toggle('show', st === 'done' && S.doneAge > 2.2); ui.root.classList.toggle('finished', st === 'done' && S.doneAge > 1.6);
+  const mins = Math.round(S.duration / 60);
+  ui.chips.forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.min === mins && !customOn)));
+  ui.bCustom.setAttribute('aria-pressed', String(customOn));
+}
+let customOn = false;
+function light(byUser) {
+  if (S.state === 'burning' || S.state === 'done') return;
+  if (byUser) ensureAudio();
+  S.state = 'burning'; S.endAt = performance.now() + S.remaining * 1000; S.igniteAge = 0; S.snuffAge = 99;
+  if (byUser) sfxIgnite();
+  scheduleDrip(2.2);
+  msgNow = ''; setMsg(MESSAGES[Math.floor((S.duration - S.remaining) / 60) % MESSAGES.length]);
+  ui.live.textContent = 'Candle lit. ' + fmtTime(S.remaining) + ' remaining.'; syncUI();
+}
+function snuff(kind) {
+  if (S.state !== 'burning') return;
+  S.remaining = Math.max(0, (S.endAt - performance.now()) / 1000); S.state = 'paused'; S.snuffAge = 0;
+  emitSmoke(26, 1); trail = 2.8; sfxPuff();
+  setMsg(kind === 'blown' ? 'You blew it out. Relight when you are ready.' : 'The flame rests. Relight when you are ready.');
+  ui.live.textContent = 'Candle snuffed. Paused at ' + fmtTime(S.remaining) + '.'; syncUI();
+}
+function reset() {
+  S.state = 'unlit'; S.remaining = S.duration; S.doneAge = -1; S.snuffAge = 99; S.chimed = false; S.flame = Math.min(S.flame, 0.0);
+  drips.length = 0; smokeN = 0; pendingDrip = 1e9; shownSec = -1;
+  setMsg('A quiet room, waiting for a light.'); ui.live.textContent = 'Candle reset to ' + fmtTime(S.duration) + '.'; syncUI();
+}
+function finish() {
+  S.state = 'done'; S.remaining = 0; S.doneAge = 0; S.chimed = false; pendingDrip = 1e9;
+  setMsg('Well done. Breathe.'); ui.live.textContent = 'Time is up. Well done. Breathe.'; syncUI();
+}
+function setDurationSec(sec, autoLight) {
+  S.duration = clamp(Math.round(sec), 5, 180 * 60); reset();
+  if (autoLight) { ensureAudio(); setTimeout(() => light(true), 750); }
+}
+const setDuration = (min, autoLight) => setDurationSec(clamp(Math.round(min), 1, 180) * 60, autoLight);
+function applyHash() { const m = /^#(\d{1,4})s$/.exec(location.hash); if (m) { customOn = false; setDurationSec(+m[1], true); } }   // easter egg: #12s lights a twelve-second candle
+function tickSession() {
+  if (S.state === 'burning') { S.remaining = (S.endAt - performance.now()) / 1000; if (S.remaining <= 0) finish(); }
+  const t = fmtTime(S.remaining);
+  if (t !== shownTime) { shownTime = t; ui.time.textContent = t; document.title = (S.state === 'done' ? 'Well done' : t) + ' · Candle Hour'; }
+  if (S.state === 'burning') {
+    const el = S.duration - S.remaining, idx = Math.floor(el / 60);
+    if (S.remaining <= 60 && S.duration >= 120) setMsg('The last minute. Stay with it.');
+    else setMsg(MESSAGES[idx % MESSAGES.length]);
+  }
+  if (S.state === 'done' && S.doneAge > 2.2 && !ui.done.classList.contains('show')) syncUI();
+}
+ui.light.addEventListener('click', () => light(true));
+ui.pause.addEventListener('click', () => { ensureAudio(); snuff('pause'); });
+ui.reset.addEventListener('click', () => { ensureAudio(); customOn = false; reset(); });
+ui.again.addEventListener('click', () => { ensureAudio(); S.remaining = S.duration; reset(); setTimeout(() => light(true), 500); });
+ui.chips.forEach((b) => b.addEventListener('click', () => { customOn = false; ui.custom.hidden = true; ui.bCustom.setAttribute('aria-expanded', 'false'); setDuration(+b.dataset.min, true); }));
+ui.bCustom.addEventListener('click', () => {
+  const open = ui.custom.hidden; ui.custom.hidden = !open; ui.bCustom.setAttribute('aria-expanded', String(open));
+  if (open) { customOn = true; syncUI(); ui.inMin.focus(); } else { customOn = false; syncUI(); }
+});
+ui.custom.addEventListener('submit', (e) => { e.preventDefault(); const v = parseFloat(ui.inMin.value); if (v >= 1) { customOn = true; setDuration(v, true); syncUI(); } });
+ui.sound.addEventListener('click', () => {
+  S.sound = !S.sound; ui.sound.setAttribute('aria-pressed', String(S.sound)); ui.sound.setAttribute('aria-label', 'Bell and sounds: ' + (S.sound ? 'on' : 'off'));
+  if (S.sound) ensureAudio();
+});
+window.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const tag = e.target && e.target.tagName; if (tag === 'INPUT') return;
+  wake();
+  if (e.key === ' ' && tag !== 'BUTTON') { e.preventDefault(); if (S.state === 'burning') { ensureAudio(); snuff('pause'); } else if (S.state !== 'done') light(true); }
+  else if (e.key === 'r' || e.key === 'R') { ensureAudio(); customOn = false; reset(); }
+  else if (e.key >= '1' && e.key <= '4') { const b = ui.chips[+e.key - 1]; if (b) b.click(); }
+});
+document.querySelector('.dock').addEventListener('click', (e) => { const b = e.target.closest && e.target.closest('button'); if (b && e.detail) b.blur(); });   // mouse users: hand Space back to the candle
+function wake() { lastActivity = performance.now(); ui.root.classList.remove('dim'); }
+/* ============ noise, colour helpers, sprites ============ */
+function hs(i) { i = Math.imul(i ^ 61, 0x27d4eb2d); i ^= i >>> 15; i = Math.imul(i, 0x85ebca6b); i ^= i >>> 13; return (i >>> 0) / 4294967296; }
+function n1(x) { const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f); return hs(i) * (1 - u) + hs(i + 1) * u; }
+const mixc = (a, b, t) => 'rgb(' + Math.round(lerp(a[0], b[0], t)) + ',' + Math.round(lerp(a[1], b[1], t)) + ',' + Math.round(lerp(a[2], b[2], t)) + ')';
+const cv = $('#scene'), ctx = cv.getContext('2d');
+const bgC = document.createElement('canvas'), bgX = bgC.getContext('2d');
+const lightC = document.createElement('canvas'), lightX = lightC.getContext('2d');
+const candC = document.createElement('canvas'), candX = candC.getContext('2d');
+function sprite(size, stops) {
+  const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d'), r = size / 2, gr = g.createRadialGradient(r, r, 0, r, r, r);
+  stops.forEach((s) => gr.addColorStop(s[0], s[1])); g.fillStyle = gr; g.fillRect(0, 0, size, size); return c;
+}
+const glowSpr = sprite(256, [[0, 'rgba(255,214,150,.95)'], [0.12, 'rgba(255,178,84,.55)'], [0.35, 'rgba(255,140,60,.2)'], [0.7, 'rgba(230,100,40,.05)'], [1, 'rgba(200,80,30,0)']]);
+const smokeSpr = sprite(64, [[0, 'rgba(226,218,208,.55)'], [0.45, 'rgba(206,198,190,.22)'], [1, 'rgba(190,184,178,0)']]);
+(function () {   // static film grain, blended by the compositor
+  const c = document.createElement('canvas'); c.width = c.height = 140; const g = c.getContext('2d'), im = g.createImageData(140, 140);
+  for (let i = 0; i < 140 * 140; i++) { const v = 110 + Math.random() * 60; im.data[i * 4] = v; im.data[i * 4 + 1] = v; im.data[i * 4 + 2] = v; im.data[i * 4 + 3] = 70; }
+  g.putImageData(im, 0, 0);
+  try { ui.grain.style.backgroundImage = 'url(' + c.toDataURL('image/png') + ')'; ui.grain.style.backgroundSize = '140px 140px'; } catch (e) { /* optional */ }
+})();
+
+/* ============ geometry and the static room ============ */
+const G = { cw: 100, cx: 0, baseY: 0, tableY: 0, hMax: 0, hMin: 0, ry: 10, topY: 0, h: 0 };
+let W = 0, H = 0, DPR = 1, narrow = false, hShown = 1;
+function layout() {
+  DPR = Math.min(2, window.devicePixelRatio || 1); W = window.innerWidth; H = window.innerHeight; narrow = W < 700;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  G.cw = clamp(Math.min(W, H) * 0.115, 58, 120); G.cx = W / 2;
+  G.tableY = Math.round(H * 0.7); G.baseY = G.tableY + Math.round(H * (narrow ? 0.05 : 0.046));
+  G.hMax = Math.min(H * (narrow ? 0.34 : 0.37), G.cw * 5.3); G.hMin = G.hMax * 0.12; G.ry = G.cw * 0.115;
+  candC.width = Math.ceil(G.cw); candC.height = Math.ceil(G.hMax + 4);
+  lightC.width = Math.ceil(W / 4); lightC.height = Math.ceil(H / 4);
+  buildRoom();
+}
+function buildRoom() {
+  bgC.width = Math.round(W * DPR); bgC.height = Math.round(H * DPR);
+  const g = bgX; g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  let gr = g.createLinearGradient(0, 0, 0, G.tableY); gr.addColorStop(0, '#080504'); gr.addColorStop(1, '#17100b');
+  g.fillStyle = gr; g.fillRect(0, 0, W, G.tableY + 2);
+  gr = g.createRadialGradient(W * 0.06, -H * 0.08, 0, W * 0.06, -H * 0.08, H * 1.05);
+  gr.addColorStop(0, 'rgba(84,112,160,.22)'); gr.addColorStop(0.5, 'rgba(60,84,128,.07)'); gr.addColorStop(1, 'rgba(40,60,100,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, G.tableY);
+  let s = 77; const rn = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < 46; i++) {            // plaster mottling
+    const x = rn() * W, y = rn() * G.tableY, r = 60 + rn() * 220, warm = rn() < 0.5;
+    gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, warm ? 'rgba(120,84,50,.05)' : 'rgba(70,84,110,.045)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  const rail = G.tableY - H * 0.16;          // a picture rail catches the light
+  gr = g.createLinearGradient(0, rail - 3, 0, rail + 16); gr.addColorStop(0, 'rgba(255,214,160,.10)'); gr.addColorStop(0.15, 'rgba(255,214,160,.16)'); gr.addColorStop(0.3, 'rgba(0,0,0,.4)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, rail - 3, W, 19);
+  gr = g.createLinearGradient(0, G.tableY, 0, H); gr.addColorStop(0, '#2b1c11'); gr.addColorStop(0.18, '#1c120b'); gr.addColorStop(1, '#070403');
+  g.fillStyle = gr; g.fillRect(0, G.tableY, W, H - G.tableY);
+  for (let i = 0; i < 240; i++) {            // wood grain
+    const y = G.tableY + rn() * (H - G.tableY), x = rn() * W, l = 80 + rn() * 420;
+    g.strokeStyle = rn() < 0.5 ? 'rgba(255,200,140,.035)' : 'rgba(0,0,0,.16)'; g.lineWidth = 0.6 + rn() * 1.2;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + l, y + (rn() - 0.5) * 3); g.stroke();
+  }
+  g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(0, G.tableY - 2, W, 2); g.fillStyle = 'rgba(255,210,150,.12)'; g.fillRect(0, G.tableY, W, 1.5);
+}
+
+/* ============ flame, drips, smoke ============ */
+const fm = { tip: 0, tipV: 0, seed: Math.random() * 50, gust: 0, gustAt: 6, lean: 0, sink: 0, scale: 0, L: 0, x: 0, y: 0, h: 0, w: 0, ember: 0 };
+const drips = []; let pendingDrip = 1e9;
+function scheduleDrip(after) { pendingDrip = after; }
+function spawnDrip() {
+  const hr = G.h / G.hMax, room = hr - 0.1; if (room < 0.08) return;
+  drips.push({ u: (Math.random() * 2 - 1) * 0.8, hr, age: 0, tgt: Math.min(room, 0.1 + Math.random() * 0.3) * G.hMax, w: 3 + Math.random() * 3.6, tau: 1.5 + Math.random() * 2 });
+  pendingDrip = 7 + Math.random() * 11;
+}
+const SM = 520, sx = new Float32Array(SM), sy = new Float32Array(SM), svx = new Float32Array(SM), svy = new Float32Array(SM), sage = new Float32Array(SM), slife = new Float32Array(SM), ssz = new Float32Array(SM), ssd = new Float32Array(SM);
+let smokeN = 0, trail = 0;
+function wickPos() { return { x: G.cx, y: G.topY - G.cw * 0.12 }; }
+function emitSmoke(n, k) {
+  const w = wickPos();
+  for (let i = 0; i < n && smokeN < SM; i++) {
+    const j = smokeN++; sx[j] = w.x + (Math.random() - 0.5) * 2; sy[j] = w.y - Math.random() * 4; svx[j] = (Math.random() - 0.5) * 6; svy[j] = -(52 + Math.random() * 44) * k;
+    sage[j] = -Math.random() * (n > 30 ? 0.9 : 0.05); slife[j] = 3.8 + Math.random() * 3.4; ssz[j] = 2.4 + Math.random() * 3.2; ssd[j] = Math.random() * TAU;
+  }
+}
+function stepSmoke(dt, t) {
+  if (trail > 0) { trail -= dt; const c = dt * 64 + Math.random(); for (let q = 1; q < c; q++) emitSmoke(1, 0.85); }
+  for (let i = smokeN - 1; i >= 0; i--) {
+    sage[i] += dt; if (sage[i] < 0) continue;
+    if (sage[i] > slife[i]) { const l = --smokeN; sx[i] = sx[l]; sy[i] = sy[l]; svx[i] = svx[l]; svy[i] = svy[l]; sage[i] = sage[l]; slife[i] = slife[l]; ssz[i] = ssz[l]; ssd[i] = ssd[l]; continue; }
+    const a = sage[i], curl = Math.sin(sy[i] * 0.021 + t * 1.15) * (6 + a * 20) + Math.sin(sy[i] * 0.058 - t * 1.9 + 1.3) * (3 + a * 7) + Math.sin(ssd[i]) * 3;
+    svx[i] += (curl - svx[i]) * Math.min(1, dt * 2.2); sx[i] += svx[i] * dt; sy[i] += svy[i] * dt; svy[i] *= 1 - 0.16 * dt;
+  }
+}
+function mix3(a, b, t) { return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]; }
+
+/* ============ per-frame simulation of the flame ============ */
+function stepFlame(dt, t) {
+  const burning = S.state === 'burning', done = S.state === 'done';
+  let target = burning ? 1 : 0, rate = burning ? 1.5 : 11;
+  if (done) { S.flame = S.doneAge < 1.95 ? 1 : 0; }
+  else S.flame += (target - S.flame) * (1 - Math.exp(-dt * rate));
+  if (!burning && !done && S.flame < 0.002) S.flame = 0;
+  const amp = REDUCED ? 0.4 : 1;
+  const f1 = n1(t * 1.9 + fm.seed) * 0.5 + n1(t * 4.7 + fm.seed * 2) * 0.3 + n1(t * 9.6 + fm.seed * 3) * 0.2;
+  fm.gustAt -= dt; if (fm.gustAt < 0 && burning) { fm.gust = 1; fm.gustAt = 5 + Math.random() * 9; }
+  fm.gust *= Math.exp(-dt * 2.4);
+  const fx0 = G.cx, fy0 = G.topY - G.cw * 0.1, dxp = fx0 - ptr.x, dyp = (fy0 - G.cw * 0.4) - ptr.y, dist = Math.hypot(dxp, dyp);
+  ptr.near = burning ? clamp(1 - dist / 320, 0, 1) : 0;
+  const leanP = Math.sign(dxp || 1) * Math.pow(ptr.near, 1.4) * 0.85;
+  const sway = (n1(t * 0.55 + fm.seed * 4) - 0.5) * 0.36 + (n1(t * 2.3 + fm.seed * 5) - 0.5) * 0.14;
+  const leanT = (leanP + sway * amp + fm.gust * 0.5 * (n1(t * 0.3 + fm.seed) > 0.5 ? 1 : -1)) * amp;
+  fm.tipV += ((leanT - fm.tip) * 46 - fm.tipV * 7.5) * dt; fm.tip += fm.tipV * dt;
+  let scale = 1, sink = 0, glowB = 1, flick = 1 + ptr.near * 0.9 + fm.gust * 0.7;
+  if (done) {
+    const a = S.doneAge; flick = 2.2;
+    if (a < 1.6) { scale = 1 - 0.76 * sstep(0, 1.6, a); sink = sstep(0.5, 1.6, a); glowB = 1 - 0.45 * sstep(0, 1.6, a); }
+    else if (a < 1.95) { const u = sstep(1.6, 1.75, a) * (1 - sstep(1.75, 1.95, a)); scale = 0.24 + 1.06 * u; glowB = 0.55 + 1.5 * u; sink = 1 - 0.7 * u; }
+    else scale = 0;
+    if (a >= 1.6 && !S.chimed) { S.chimed = true; sfxBell(); trail = 4.6; emitSmoke(30, 1); }
+  }
+  const ign = burning ? sstep(0, 1, S.igniteAge / 1.5) : 1;
+  const fk = 0.9 + (f1 - 0.5) * 0.36 * flick * amp;
+  fm.scale = scale * S.flame; fm.h = G.cw * 1.0 * fk * fm.scale * (0.35 + 0.65 * ign); fm.w = G.cw * 0.29 * (1.08 - (fk - 0.9) * 0.9) * (0.5 + 0.5 * ign) * Math.pow(Math.max(fm.scale, 0.001), 0.6);
+  fm.sink = sink; fm.blue = 1 + (1 - ign) * 1.4;
+  fm.L = S.flame * glowB * (0.9 + (f1 - 0.5) * 0.34 * flick * amp + (n1(t * 24 + fm.seed) - 0.5) * 0.07) * (done ? clamp(scale * 1.1 + 0.2, 0, 1.6) : 1);
+  fm.x = fx0; fm.y = fy0 + sink * G.cw * 0.16;
+  const emberT = burning ? 0 : done ? (S.doneAge > 1.95 ? Math.exp(-(S.doneAge - 1.95) / 2.4) : 0) : Math.exp(-S.snuffAge / 2.2);
+  fm.ember += (emberT - fm.ember) * (1 - Math.exp(-dt * 8));
+  fm.L += fm.ember * 0.05;
+}
+/* ============ drawing: light first, then the objects it falls on ============ */
+function updateGeom(dt) {
+  const tgt = lerp(G.hMin, G.hMax, S.state === 'done' ? 0 : clamp(S.remaining / S.duration, 0, 1));
+  G.h = G.h ? G.h + (tgt - G.h) * (1 - Math.exp(-dt * (S.state === 'burning' ? 14 : 3.4))) : tgt;
+  G.topY = G.baseY - G.h;
+}
+function drawLight(L) {
+  const g = lightX, lw = lightC.width, lh = lightC.height, k = lw / W, gx = fm.x * k, gy = (fm.y - G.cw * 0.3) * k;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, lw, lh); g.globalCompositeOperation = 'lighter';
+  let r = H * k * 1.1, gr = g.createRadialGradient(gx, gy, 0, gx, gy, r);
+  gr.addColorStop(0, 'rgba(255,178,86,' + (0.5 * L).toFixed(3) + ')'); gr.addColorStop(0.08, 'rgba(255,164,76,' + (0.36 * L).toFixed(3) + ')'); gr.addColorStop(0.2, 'rgba(255,142,62,' + (0.21 * L).toFixed(3) + ')'); gr.addColorStop(0.38, 'rgba(230,112,44,' + (0.105 * L).toFixed(3) + ')'); gr.addColorStop(0.64, 'rgba(190,84,28,' + (0.038 * L).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(120,50,15,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, lw, lh);
+  r = G.cw * k * 2.4; gr = g.createRadialGradient(gx, gy, 0, gx, gy, r); gr.addColorStop(0, 'rgba(255,214,150,' + (0.55 * L).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,170,80,0)');
+  g.fillStyle = gr; g.fillRect(gx - r, gy - r, r * 2, r * 2);
+  g.save(); g.translate(G.cx * k, (G.baseY + G.cw * 0.2) * k); g.scale(1, 0.24); r = W * k * 0.46;
+  gr = g.createRadialGradient(0, 0, 0, 0, 0, r); gr.addColorStop(0, 'rgba(255,172,84,' + (0.62 * L).toFixed(3) + ')'); gr.addColorStop(0.4, 'rgba(255,140,60,' + (0.2 * L).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(255,120,50,0)');
+  g.fillStyle = gr; g.fillRect(-r, -r, r * 2, r * 2); g.restore();
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; ctx.drawImage(lightC, 0, 0, W, H); ctx.restore();
+}
+function brass(x0, x1) {
+  const g = ctx.createLinearGradient(x0, 0, x1, 0);
+  g.addColorStop(0, '#2c1d0c'); g.addColorStop(0.16, '#6d4e25'); g.addColorStop(0.4, '#dfba70'); g.addColorStop(0.58, '#b88a44'); g.addColorStop(0.82, '#684a22'); g.addColorStop(1, '#231607'); return g;
+}
+function piece(path, fill, L) {           // brass shape: base metal, moonlit dimming, then the flame's warm light on top
+  const lit = clamp(0.14 + L * 0.9, 0, 1);
+  ctx.fillStyle = fill; ctx.fill(path);
+  ctx.fillStyle = 'rgba(7,5,3,' + ((1 - lit) * 0.88).toFixed(3) + ')'; ctx.fill(path);
+  if (L > 0.02) {
+    const r = G.cw * 3.4, g = ctx.createRadialGradient(fm.x, fm.y, 0, fm.x, fm.y, r);
+    g.addColorStop(0, 'rgba(255,190,110,' + (0.5 * L).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,150,70,0)');
+    ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = g; ctx.fill(path); ctx.globalCompositeOperation = 'source-over';
+  }
+}
+function drawTableSheen(L) {
+  const y0 = G.baseY + G.cw * 0.42, ry = H * 0.13, rx = G.cw * 0.42;
+  ctx.save(); ctx.translate(G.cx, y0 + ry * 0.55); ctx.scale(1, ry / rx); const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+  g.addColorStop(0, 'rgba(255,190,110,' + (0.16 * L).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,190,110,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, rx, 0, TAU); ctx.fill(); ctx.restore();
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = clamp(0.2 * L, 0, 1); ctx.drawImage(glowSpr, G.cx - G.cw * 0.8, y0 + G.cw * 0.15, G.cw * 1.6, G.cw * 1.1); ctx.restore();
+}
+function drawProps(L) {                   // a matchbox and one burnt match, lit by whatever light there is
+  if (W < 560) return;
+  const bw = G.cw * 1.45, bh = G.cw * 0.42, x = Math.min(G.cx - G.cw * 3.5 - bw / 2, G.cx - 250 - bw), y = G.baseY + G.cw * (H < 760 ? 0.3 : 0.48), lit = clamp(0.1 + L * 0.95, 0, 1);
+  const shade = (a, b) => mixc(a, b, lit);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-0.06);
+  ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.beginPath(); ctx.ellipse(bw / 2, bh + 4, bw * 0.55, bh * 0.28, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = shade([26, 14, 10], [150, 46, 30]); ctx.fillRect(0, bh * 0.28, bw, bh * 0.72);
+  ctx.fillStyle = shade([38, 30, 22], [222, 190, 128]); ctx.fillRect(0, 0, bw, bh * 0.3);
+  ctx.fillStyle = shade([40, 26, 12], [218, 176, 92]); ctx.fillRect(bw * 0.06, bh * 0.44, bw * 0.88, bh * 0.16);
+  ctx.fillStyle = shade([22, 14, 8], [70, 24, 12]); ctx.font = '600 ' + Math.max(6, bh * 0.16) + 'px ' + 'Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('CANDLE HOUR MATCHES', bw / 2, bh * 0.52);
+  ctx.restore();
+  ctx.strokeStyle = shade([20, 14, 10], [120, 88, 52]); ctx.lineWidth = Math.max(2, G.cw * 0.03); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x + bw + G.cw * 0.25, y + bh * 0.9); ctx.lineTo(x + bw + G.cw * 0.95, y + bh * 0.52); ctx.stroke();
+  ctx.strokeStyle = shade([8, 6, 5], [30, 22, 18]); ctx.lineWidth = Math.max(2.6, G.cw * 0.036); ctx.beginPath(); ctx.moveTo(x + bw + G.cw * 0.86, y + bh * 0.57); ctx.lineTo(x + bw + G.cw * 0.98, y + bh * 0.5); ctx.stroke();
+}
+function drawHolderBack(L) {
+  const cw = G.cw, cx = G.cx, cy = G.baseY + cw * 0.1, rx = cw * 1.42, ry = cw * 0.3, th = cw * 0.1, lit = clamp(0.14 + L * 0.9, 0, 1);
+  const sh = ctx.createRadialGradient(cx, cy + th + 6, 0, cx, cy + th + 6, rx * 1.15);
+  sh.addColorStop(0, 'rgba(0,0,0,.78)'); sh.addColorStop(0.7, 'rgba(0,0,0,.35)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.save(); ctx.translate(0, cy + th + 6); ctx.scale(1, 0.32); ctx.translate(0, -(cy + th + 6)); ctx.fillStyle = sh; ctx.beginPath(); ctx.arc(cx, cy + th + 6, rx * 1.15, 0, TAU); ctx.fill(); ctx.restore();
+  { const hx = cx + rx * 0.96, hy = cy + th * 0.4;                       // little ring handle, tucked behind the dish so it stays attached
+    ctx.save(); ctx.lineWidth = cw * 0.075; ctx.lineCap = 'round'; ctx.strokeStyle = mixc([44, 30, 14], [206, 160, 84], lit);
+    ctx.beginPath(); ctx.ellipse(hx + cw * 0.16, hy, cw * 0.27, cw * 0.19, 0, 0, TAU); ctx.stroke();
+    ctx.lineWidth = cw * 0.02; ctx.strokeStyle = mixc([60, 42, 20], [255, 226, 150], lit); ctx.beginPath(); ctx.ellipse(hx + cw * 0.16, hy - cw * 0.012, cw * 0.27, cw * 0.19, 0, Math.PI * 1.12, Math.PI * 1.7); ctx.stroke(); ctx.restore(); }
+  let p = new Path2D(); p.ellipse(cx, cy + th, rx, ry, 0, 0, TAU); p.rect(cx - rx, cy, rx * 2, th); piece(p, brass(cx - rx, cx + rx), L);
+  p = new Path2D(); p.ellipse(cx, cy, rx, ry, 0, 0, TAU);
+  let g = ctx.createRadialGradient(cx - rx * 0.25, cy - ry * 0.4, 0, cx, cy, rx); g.addColorStop(0, '#f0d08a'); g.addColorStop(0.45, '#b88a44'); g.addColorStop(1, '#5c3f1c'); piece(p, g, L);
+  p = new Path2D(); p.ellipse(cx, cy + ry * 0.05, rx * 0.74, ry * 0.68, 0, 0, TAU);
+  g = ctx.createRadialGradient(cx, cy - ry * 0.3, 0, cx, cy, rx * 0.74); g.addColorStop(0, '#6b4a20'); g.addColorStop(1, '#2e1e0d'); piece(p, g, L);
+  p = new Path2D(); p.ellipse(cx, G.baseY - cw * 0.2, cw * 0.6, cw * 0.14, 0, 0, TAU); piece(p, brass(cx - cw * 0.6, cx + cw * 0.6), L);
+}
+function drawCandleBody(L) {
+  const cw = G.cw, x0 = G.cx - cw / 2, top = G.topY, bot = G.baseY - cw * 0.16, h = Math.max(2, bot - top), lit = clamp(L * 1.05, 0, 1);
+  let g = ctx.createLinearGradient(x0, 0, x0 + cw, 0);
+  g.addColorStop(0, '#100c09'); g.addColorStop(0.14, '#312a22'); g.addColorStop(0.42, '#544b3e'); g.addColorStop(0.6, '#463e33'); g.addColorStop(0.86, '#1f1a14'); g.addColorStop(1, '#0d0a07');
+  ctx.fillStyle = g; ctx.fillRect(x0, top, cw, h);
+  if (lit > 0.01) {
+    const c = candX; c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = 'source-over'; c.clearRect(0, 0, candC.width, candC.height);
+    let q = c.createLinearGradient(0, 0, cw, 0);
+    q.addColorStop(0, '#6f5a40'); q.addColorStop(0.1, '#c2ab84'); q.addColorStop(0.3, '#f5e9cf'); q.addColorStop(0.5, '#fff6e2'); q.addColorStop(0.72, '#e0cea6'); q.addColorStop(0.9, '#9f8763'); q.addColorStop(1, '#54432d');
+    c.fillStyle = q; c.fillRect(0, 0, cw, h);
+    c.globalCompositeOperation = 'multiply'; c.fillStyle = 'rgb(255,192,126)'; c.fillRect(0, 0, cw, h);
+    c.globalCompositeOperation = 'destination-in'; q = c.createLinearGradient(0, 0, 0, h);
+    [[0, 1], [0.4, 0.88], [1, 0.62], [2, 0.34], [3.4, 0.17], [5.6, 0.08]].forEach((s) => q.addColorStop(clamp(s[0] * cw / h, 0, 1), 'rgba(0,0,0,' + s[1] + ')'));
+    c.fillStyle = q; c.fillRect(0, 0, cw, h);
+    ctx.save(); ctx.globalAlpha = lit; ctx.drawImage(candC, 0, 0, cw, h, x0, top, cw, h); ctx.restore();
+    ctx.save(); ctx.beginPath(); ctx.rect(x0, top, cw, h); ctx.clip(); ctx.globalCompositeOperation = 'lighter';       // wax glows from within, close to the pool
+    g = ctx.createRadialGradient(G.cx, top + cw * 0.22, 0, G.cx, top + cw * 0.22, cw * 1.1); g.addColorStop(0, 'rgba(255,178,92,' + (0.46 * L).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,150,70,0)');
+    ctx.fillStyle = g; ctx.fillRect(x0, top, cw, cw * 1.6); ctx.restore();
+  }
+  ctx.save(); ctx.beginPath(); ctx.rect(x0, top, cw, h); ctx.clip();
+  for (let i = 0; i < 9; i++) { const sxp = x0 + cw * (0.1 + 0.8 * hs(i * 7 + 3)); ctx.fillStyle = i % 2 ? 'rgba(80,56,28,.07)' : 'rgba(255,240,210,.05)'; ctx.fillRect(sxp, top, 1 + hs(i) * 1.6, h); }
+  g = ctx.createLinearGradient(0, bot - cw * 0.5, 0, bot); g.addColorStop(0, 'rgba(5,3,2,0)'); g.addColorStop(1, 'rgba(5,3,2,.42)'); ctx.fillStyle = g; ctx.fillRect(x0, bot - cw * 0.5, cw, cw * 0.5);
+  ctx.globalCompositeOperation = 'lighter'; g = ctx.createLinearGradient(0, bot - cw * 1.4, 0, bot); g.addColorStop(0, 'rgba(255,160,80,0)'); g.addColorStop(1, 'rgba(255,160,80,' + (0.16 * L).toFixed(3) + ')'); ctx.fillStyle = g; ctx.fillRect(x0, bot - cw * 1.4, cw, cw * 1.4); ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
+}
+function drawDrips(L, t) {
+  if (!drips.length) return;
+  const cw = G.cw, x0 = G.cx - cw / 2, lit = clamp(L * 1.05, 0, 1);
+  ctx.save(); ctx.beginPath(); ctx.rect(x0 - 3, G.topY + G.ry * 0.5, cw + 6, G.baseY - G.topY); ctx.clip();
+  for (let i = 0; i < drips.length; i++) {
+    const d = drips[i], y0 = G.baseY - d.hr * G.hMax + G.ry * 0.7, len = d.tgt * (1 - Math.exp(-d.age / d.tau)), y1 = y0 + len, x = G.cx + d.u * (cw / 2 - d.w);
+    if (y1 < G.topY) continue;
+    const w = d.w, sw = w * 0.66, br = w * (0.74 + (d.age < d.tau * 4 ? 0.1 * Math.sin(t * 4 + d.u * 9) : 0.04));
+    ctx.beginPath(); ctx.moveTo(x - sw * 1.5, y0 - 1); ctx.quadraticCurveTo(x - sw / 2, y0 + 1, x - sw / 2, y0 + 9); ctx.lineTo(x - sw / 2, y1 - br); ctx.lineTo(x + sw / 2, y1 - br); ctx.lineTo(x + sw / 2, y0 + 9);
+    ctx.quadraticCurveTo(x + sw / 2, y0 + 1, x + sw * 1.5, y0 - 1); ctx.closePath(); ctx.arc(x, y1 - br, br, 0, TAU);
+    const g = ctx.createLinearGradient(x - br, 0, x + br, 0);
+    g.addColorStop(0, mixc([44, 38, 30], [255, 246, 226], lit)); g.addColorStop(0.45, mixc([56, 48, 36], [250, 236, 206], lit)); g.addColorStop(1, mixc([26, 22, 16], [188, 168, 130], lit));
+    ctx.fillStyle = g; ctx.fill('nonzero'); ctx.strokeStyle = 'rgba(80,52,22,' + (0.16 + 0.16 * lit).toFixed(2) + ')'; ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,252,240,' + (0.5 * lit).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(x - br * 0.3, y1 - br * 1.1, br * 0.26, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawTopFace(L, t) {
+  const cw = G.cw, cx = G.cx, top = G.topY, ry = G.ry, lit = clamp(L * 0.95, 0, 1), wall = cw * (0.045 + 0.045 * (G.h / G.hMax));
+  let g = ctx.createRadialGradient(cx, top, 0, cx, top, cw / 2);
+  g.addColorStop(0, mixc([70, 62, 50], [255, 246, 226], lit)); g.addColorStop(1, mixc([40, 34, 27], [226, 210, 172], lit));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, top, cw / 2, ry, 0, 0, TAU); ctx.fill();
+  const px = cw / 2 - wall, py = ry - wall * 0.36;
+  g = ctx.createRadialGradient(cx, top - ry * 0.2, 0, cx, top, px);
+  g.addColorStop(0, mixc([64, 44, 24], [255, 228, 160], lit)); g.addColorStop(0.75, mixc([50, 36, 20], [236, 192, 116], lit)); g.addColorStop(1, mixc([36, 26, 14], [196, 146, 78], lit));
+  ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(cx, top + ry * 0.05, px, py, 0, 0, TAU); ctx.fill();
+  ctx.strokeStyle = 'rgba(96,62,26,' + (0.25 + 0.25 * lit).toFixed(2) + ')'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.save(); ctx.beginPath(); ctx.ellipse(cx, top + ry * 0.05, px, py, 0, 0, TAU); ctx.clip();
+  ctx.fillStyle = 'rgba(255,248,230,' + (0.55 * lit).toFixed(3) + ')'; ctx.beginPath(); ctx.ellipse(cx - px * 0.36, top - py * 0.28, px * 0.2, py * 0.13, -0.2, 0, TAU); ctx.fill();     // glossy sheen
+  ctx.fillStyle = 'rgba(255,236,190,' + (0.6 * lit * S.flame).toFixed(3) + ')'; ctx.beginPath(); ctx.ellipse(cx, top + py * 0.38, px * 0.09, py * 0.4, 0, 0, TAU); ctx.fill();  // flame mirrored in the pool
+  ctx.restore();
+}
+function drawHolderFront(L) {
+  const cw = G.cw, cx = G.cx, lit = clamp(0.14 + L * 0.9, 0, 1);
+  const p = new Path2D(); p.rect(cx - cw * 0.6, G.baseY - cw * 0.2, cw * 1.2, cw * 0.2); p.ellipse(cx, G.baseY, cw * 0.6, cw * 0.14, 0, 0, Math.PI); piece(p, brass(cx - cw * 0.6, cx + cw * 0.6), L);
+  ctx.strokeStyle = mixc([70, 50, 24], [255, 226, 150], lit); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.ellipse(cx, G.baseY - cw * 0.2, cw * 0.6, cw * 0.14, 0, 0.05, Math.PI - 0.05); ctx.stroke();
+}
+function flamePath(p, h, w, tx) {
+  p.moveTo(tx, -h); p.bezierCurveTo(tx * 0.35 + w * 0.14, -h * 0.74, w * 0.62, -h * 0.44, w * 0.5, -h * 0.16);
+  p.bezierCurveTo(w * 0.46, h * 0.02, w * 0.2, h * 0.07, 0, h * 0.07); p.bezierCurveTo(-w * 0.2, h * 0.07, -w * 0.46, h * 0.02, -w * 0.5, -h * 0.16);
+  p.bezierCurveTo(-w * 0.62, -h * 0.44, tx * 0.35 - w * 0.14, -h * 0.74, tx, -h); p.closePath();
+}
+function drawWickAndFlame(t) {
+  const cw = G.cw, wx = G.cx, wy = G.topY, tipx = wx + fm.tip * cw * 0.05, tipy = wy - cw * 0.12 + fm.sink * cw * 0.05;
+  ctx.strokeStyle = '#0c0705'; ctx.lineWidth = Math.max(2, cw * 0.03); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(wx, wy + 1); ctx.quadraticCurveTo(wx + 0.5, wy - cw * 0.07, tipx, tipy); ctx.stroke();
+  if (fm.ember > 0.02) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; const r = cw * 0.16, g = ctx.createRadialGradient(tipx, tipy, 0, tipx, tipy, r);
+    g.addColorStop(0, 'rgba(255,150,60,' + (0.95 * fm.ember).toFixed(3) + ')'); g.addColorStop(0.4, 'rgba(255,90,20,' + (0.4 * fm.ember).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,80,20,0)');
+    ctx.fillStyle = g; ctx.fillRect(tipx - r, tipy - r, r * 2, r * 2); ctx.restore();
+  }
+  if (fm.h < 1.2 || S.flame < 0.01) return;
+  const h = fm.h, w = fm.w, L = clamp(fm.L, 0, 1.6), tx = fm.tip * h * 0.45;
+  ctx.save(); ctx.translate(fm.x + fm.tip * cw * 0.05, fm.y - cw * 0.02);
+  ctx.globalCompositeOperation = 'lighter';
+  let R = cw * 3.1 * (0.72 + 0.28 * L); ctx.globalAlpha = clamp(0.62 * L, 0, 1); ctx.drawImage(glowSpr, -R, -h * 0.5 - R, R * 2, R * 2);
+  R = cw * 1.25; ctx.globalAlpha = clamp(0.34 * L, 0, 1); ctx.drawImage(glowSpr, -R, -h * 0.5 - R, R * 2, R * 2);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  let p = new Path2D(); flamePath(p, h, w, tx);
+  let g = ctx.createLinearGradient(0, h * 0.07, 0, -h);
+  g.addColorStop(0, 'rgba(255,120,30,.55)'); g.addColorStop(0.18, 'rgba(255,150,50,.92)'); g.addColorStop(0.5, 'rgba(255,179,71,.96)'); g.addColorStop(0.8, 'rgba(255,190,92,.72)'); g.addColorStop(1, 'rgba(255,130,50,0)');
+  ctx.save(); ctx.shadowColor = 'rgba(255,150,50,.85)'; ctx.shadowBlur = h * 0.3; ctx.fillStyle = g; ctx.fill(p); ctx.restore();
+  ctx.fillStyle = g; ctx.fill(p);
+  ctx.globalCompositeOperation = 'lighter';
+  { const bw0 = w * 0.44, bh0 = h * 0.2; const bg = ctx.createRadialGradient(0, -h * 0.03, 0, 0, -h * 0.03, bh0 * 1.25);
+    bg.addColorStop(0, 'rgba(130,180,255,' + clamp(0.9 * fm.blue * 0.7, 0, 1).toFixed(2) + ')'); bg.addColorStop(0.5, 'rgba(84,128,255,.55)'); bg.addColorStop(1, 'rgba(70,110,255,0)');
+    ctx.save(); ctx.scale(bw0 / bh0, 1); ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(0, -h * 0.03, bh0 * 1.25, 0, TAU); ctx.fill(); ctx.restore(); }
+  ctx.globalCompositeOperation = 'source-over';
+  p = new Path2D(); ctx.save(); ctx.translate(tx * 0.1, h * 0.02); flamePath(p, h * 0.76, w * 0.56, tx * 0.62);
+  g = ctx.createLinearGradient(0, h * 0.05, 0, -h * 0.76); g.addColorStop(0, 'rgba(255,250,226,1)'); g.addColorStop(0.45, 'rgba(255,217,138,.97)'); g.addColorStop(1, 'rgba(255,200,110,0)');
+  ctx.fillStyle = g; ctx.fill(p); ctx.restore();
+  ctx.fillStyle = 'rgba(80,30,6,.2)'; ctx.beginPath(); ctx.ellipse(tx * 0.02, -h * 0.16, w * 0.04, h * 0.14, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+function drawSmoke() {
+  if (!smokeN) return;
+  ctx.save();
+  for (let i = 0; i < smokeN; i++) {
+    const a = sage[i]; if (a < 0) continue;
+    const k = a / slife[i], al = 0.3 * Math.pow(1 - k, 1.7) * sstep(0, 0.1, k), r = ssz[i] * (1 + a * 1.25);
+    ctx.globalAlpha = al; ctx.drawImage(smokeSpr, sx[i] - r, sy[i] - r, r * 2, r * 2);
+  }
+  ctx.restore();
+}
+function drawBreath() {
+  if (blowFx < 0.02) return;
+  ctx.save(); ctx.strokeStyle = 'rgba(243,233,210,' + (0.32 * blowFx).toFixed(3) + ')'; ctx.lineWidth = 1.2;
+  for (let i = 0; i < 3; i++) { const r = 16 + i * 14 + blowFx * 26; ctx.globalAlpha = 1 - i * 0.28; ctx.beginPath(); ctx.arc(ptr.x, ptr.y, r, 0, TAU); ctx.stroke(); }
+  ctx.restore();
+}
+const MOTES = 28, mox = new Float32Array(MOTES), moy = new Float32Array(MOTES), mop = new Float32Array(MOTES);
+for (let i = 0; i < MOTES; i++) { mox[i] = Math.random(); moy[i] = Math.random(); mop[i] = Math.random() * TAU; }
+function drawMotes(L, t) {                // dust caught in the light
+  if (L < 0.06) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < MOTES; i++) {
+    const px = G.cx + (mox[i] - 0.5) * W * 0.6 + Math.sin(t * 0.11 + mop[i]) * 34, py = fm.y - G.cw * 0.5 + (moy[i] - 0.5) * H * 0.62 + Math.cos(t * 0.09 + mop[i] * 2) * 26;
+    const d = Math.hypot(px - fm.x, py - fm.y) / (H * 0.4), a = Math.pow(clamp(1 - d, 0, 1), 2) * L * (0.45 + 0.55 * Math.sin(t * 0.7 + mop[i] * 3)) * 0.85;
+    if (a < 0.02) continue;
+    ctx.fillStyle = 'rgba(255,226,176,' + a.toFixed(3) + ')'; ctx.beginPath(); ctx.arc(px, py, 0.8 + (mop[i] % 1) * 0.9, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+}
+function draw(t) {
+  const L = clamp(fm.L, 0, 1.3);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(bgC, 0, 0, W, H);
+  drawLight(L); drawTableSheen(L); drawProps(L);
+  drawHolderBack(L); drawCandleBody(L); drawDrips(L, t); drawTopFace(L, t); drawHolderFront(L);
+  drawWickAndFlame(t); drawMotes(L, t); drawSmoke(); drawBreath();
+}
+/* ============ pointer: the flame leans away; press and hold close by to blow it out ============ */
+window.addEventListener('pointermove', (e) => { ptr.x = e.clientX; ptr.y = e.clientY; ptr.seen = performance.now(); wake(); }, { passive: true });
+window.addEventListener('pointerdown', (e) => { ptr.x = e.clientX; ptr.y = e.clientY; ptr.down = true; ptr.seen = performance.now(); wake(); ensureAudio(); }, { passive: true });
+window.addEventListener('pointerup', () => { ptr.down = false; });
+window.addEventListener('pointercancel', () => { ptr.down = false; });
+window.addEventListener('pointerleave', () => { ptr.x = -999; ptr.y = -999; });
+
+/* ============ frame loop ============ */
+let last = 0, simT = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden) { last = 0; return; }
+  const dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016); last = now; simT += dt;
+  tickSession();
+  if (S.state === 'burning') { S.igniteAge += dt; pendingDrip -= dt; if (pendingDrip <= 0) spawnDrip(); }
+  if (S.snuffAge < 90) S.snuffAge += dt;
+  if (S.doneAge >= 0) S.doneAge += dt;
+  for (let i = 0; i < drips.length; i++) drips[i].age += dt;
+  updateGeom(dt); stepFlame(dt, simT); stepSmoke(dt, simT);
+  const fy = fm.y - G.cw * 0.3, near = Math.hypot(ptr.x - fm.x, ptr.y - fy);
+  if (ptr.down && S.state === 'burning' && near < G.cw * 1.5) S.blow = (S.blow || 0) + dt; else S.blow = Math.max(0, (S.blow || 0) - dt * 2);
+  blowFx = clamp(S.blow / 1.3, 0, 1);
+  if (S.blow > 1.3) { S.blow = 0; snuff('blown'); }
+  if (S.state === 'burning' && now - lastActivity > 5500) ui.root.classList.add('dim');
+  else if (S.state !== 'burning') ui.root.classList.remove('dim');
+  draw(simT);
+}
+
+/* ============ boot ============ */
+layout(); reset(); shownTime = ''; tickSession(); G.h = 0; updateGeom(1);
+window.addEventListener('resize', () => { layout(); updateGeom(1); });
+document.addEventListener('visibilitychange', () => { last = 0; });
+lastActivity = performance.now();
+setInterval(tickSession, 500); window.addEventListener('hashchange', applyHash); applyHash();
+setTimeout(() => { if (S.state === 'unlit') light(false); }, 380);     // the room starts dark; the candle lights itself once
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

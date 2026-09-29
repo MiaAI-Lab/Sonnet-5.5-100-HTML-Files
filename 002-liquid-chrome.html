@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="description" content="MERCURY: a WebGL pool of liquid chrome. Press a finger into the metal, drop a droplet, hold to make the whole surface swell.">
+<title>MERCURY — a pool of liquid chrome</title>
+<style>
+:root{
+  color-scheme:dark;
+  --gun:#0a0b0d;
+  --silver:#d9dde3;
+  --ice:#eaf4ff;
+  --champ:#e8d9b5;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --pad:clamp(14px,2.2vw,30px);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--gun);overflow:hidden}
+body{color:var(--champ);font-family:var(--mono);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---------- the pool ---------- */
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none;opacity:0;transition:opacity 1.6s ease}
+.ready #gl{opacity:1}
+.veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(120% 90% at 50% 46%,transparent 55%,rgba(6,7,9,.55) 100%)}
+
+/* graceful fallback: an animated conic-gradient chrome */
+.fallback{position:fixed;inset:-30%;z-index:0;display:none;overflow:hidden;background:var(--gun)}
+.fallback i{position:absolute;inset:0;display:block}
+.fallback i:nth-child(1){
+  background:conic-gradient(from 20deg at 42% 58%,#0a0b0d,#d9dde3 8%,#20242b 15%,#eaf4ff 24%,#0e1014 34%,#aab3bf 46%,#0a0b0d 57%,#eaf4ff 68%,#191c21 80%,#d9dde3 90%,#0a0b0d);
+  filter:blur(22px) contrast(1.15);animation:spin 46s linear infinite}
+.fallback i:nth-child(2){
+  background:conic-gradient(from 200deg at 60% 40%,transparent,rgba(234,244,255,.85) 10%,transparent 22%,rgba(125,249,255,.28) 34%,transparent 46%,rgba(255,122,217,.22) 60%,transparent 72%,rgba(255,226,122,.25) 84%,transparent);
+  mix-blend-mode:overlay;filter:blur(30px);animation:spin 70s linear infinite reverse}
+.fallback i:nth-child(3){
+  background:radial-gradient(40% 24% at 30% 30%,rgba(255,255,255,.55),transparent 70%),radial-gradient(34% 22% at 72% 68%,rgba(234,244,255,.45),transparent 70%);
+  filter:blur(24px);animation:sway 18s ease-in-out infinite alternate}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes sway{from{transform:translate3d(-4%,-2%,0) scale(1)}to{transform:translate3d(5%,4%,0) scale(1.15)}}
+.no-gl .fallback{display:block}
+.no-gl #gl{display:none}
+
+/* ---------- hairline plate frame ---------- */
+.frame{position:fixed;inset:var(--pad);z-index:2;pointer-events:none;border:1px solid rgba(232,217,181,.20);
+  opacity:0;animation:fadeIn 2s var(--ease) 2.4s forwards}
+.frame::before,.frame::after{content:"";position:absolute;width:14px;height:14px;border:1px solid rgba(232,217,181,.75)}
+.frame::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+.frame::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+.frame i{position:absolute;width:14px;height:14px;border:1px solid rgba(232,217,181,.75)}
+.frame i:nth-child(1){right:-1px;top:-1px;border-left:0;border-bottom:0}
+.frame i:nth-child(2){left:-1px;bottom:-1px;border-right:0;border-top:0}
+@keyframes fadeIn{to{opacity:1}}
+
+/* ---------- the word ---------- */
+.word{position:fixed;left:50%;top:47%;z-index:4;width:min(90vw,1560px);margin:0;transform:translate(-50%,-50%);
+  pointer-events:none;mix-blend-mode:difference;color:var(--champ)}
+.word svg{display:block;width:100%;height:auto;overflow:visible}
+.word path{fill:none;stroke:currentColor;stroke-width:5;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:3;
+  stroke-dasharray:1;stroke-dashoffset:1;animation:draw 2s var(--ease) forwards;animation-delay:calc(.9s + var(--i) * .2s)}
+@keyframes draw{to{stroke-dashoffset:0}}
+.word .glint{stroke:none;fill:currentColor;opacity:0;animation:fadeIn 1.6s ease 3.2s forwards}
+
+/* ---------- HUD ---------- */
+.hud{position:fixed;z-index:5;display:flex;flex-direction:column;gap:9px;pointer-events:none;
+  opacity:0;animation:hudIn 1.4s var(--ease) forwards}
+.hud--tl{left:calc(var(--pad) + 16px);top:calc(var(--pad) + 16px);align-items:flex-start;animation-delay:2.6s}
+.hud--tr{right:calc(var(--pad) + 16px);top:calc(var(--pad) + 16px);align-items:flex-end;text-align:right;animation-delay:2.8s}
+.hud--bl{left:calc(var(--pad) + 16px);bottom:calc(var(--pad) + 16px);align-items:flex-start;animation-delay:3s}
+.hud--br{right:calc(var(--pad) + 16px);bottom:calc(var(--pad) + 16px);align-items:flex-end;text-align:right;animation-delay:3.2s}
+@keyframes hudIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.tag{display:inline-block;padding:7px 12px 6px;font-size:11px;line-height:1.3;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;
+  color:var(--champ);background:rgba(10,11,13,.58);border:1px solid rgba(232,217,181,.24);border-radius:2px;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.sub{display:inline-block;padding:3px 7px;font-size:10px;line-height:1.4;letter-spacing:.14em;text-transform:uppercase;color:rgba(232,217,181,.78);
+  background:rgba(10,11,13,.40);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-radius:2px}
+.tag b{font-weight:400;color:var(--ice)}
+
+/* ---------- cursor ring ---------- */
+#ring{position:fixed;left:0;top:0;z-index:6;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;pointer-events:none;
+  border:1px solid var(--champ);mix-blend-mode:difference;opacity:0;transition:opacity .4s ease,width .35s var(--ease),height .35s var(--ease),margin .35s var(--ease),border-width .35s var(--ease)}
+#ring::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px;border-radius:50%;background:var(--champ)}
+#ring::before{content:"finger";position:absolute;left:50%;top:100%;margin-top:9px;transform:translateX(-50%);font:9px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--champ);white-space:nowrap;opacity:.85}
+#ring.down::before{content:"press"}
+#ring.hold::before{content:"swell"}
+#ring.on{opacity:.9}
+#ring.down{width:26px;height:26px;margin:-13px 0 0 -13px}
+#ring.hold{width:96px;height:96px;margin:-48px 0 0 -48px;border-width:2px}
+.has-ring,.has-ring *{cursor:none!important}
+
+@media (hover:none){.kb{display:none}}
+@media (max-width:640px){
+  .tag{font-size:9px;letter-spacing:.11em;padding:6px 8px 5px;white-space:normal}
+  .sub{font-size:8.5px;letter-spacing:.1em}
+  .hud--tl,.hud--bl{left:calc(var(--pad) + 8px);max-width:calc(50vw - 30px)}
+  .hud--tr,.hud--br{right:calc(var(--pad) + 8px);max-width:calc(50vw - 30px)}
+  .hud--tl,.hud--tr{top:calc(var(--pad) + 8px)}
+  .hud--bl,.hud--br{bottom:calc(var(--pad) + 8px)}
+  .hud--tl .sub,.hud--tr .sub{display:none}
+}
+@media (max-aspect-ratio:4/5){
+  .word{top:50%;width:min(72vh,calc(100vh - 230px),980px);transform:translate(-50%,-50%) rotate(-90deg)}
+}
+@media (prefers-reduced-motion:reduce){
+  .word path{animation-duration:.01s;animation-delay:0s}
+  .word .glint{animation-duration:.01s;animation-delay:0s}
+  .frame,.hud{animation-duration:.01s;animation-delay:0s}
+  .fallback i{animation-duration:200s}
+}
+</style>
+</head>
+<body>
+
+<div class="fallback" aria-hidden="true"><i></i><i></i><i></i></div>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="veil" aria-hidden="true"></div>
+<div class="frame" aria-hidden="true"><i></i><i></i></div>
+
+<h1 class="word">
+  <span class="sr-only">Mercury</span>
+  <svg viewBox="-8 -8 876 116" aria-hidden="true" focusable="false">
+    <g transform="translate(0 0)"><path pathLength="1" style="--i:0" d="M2 100V2L48 68L94 2V100"/></g>
+    <g transform="translate(144 0)"><path pathLength="1" style="--i:1" d="M60 2H2V98H60M2 50H52"/></g>
+    <g transform="translate(254 0)"><path pathLength="1" style="--i:2" d="M2 100V2H38A25 25 0 0 1 38 52H2M34 52L66 100"/></g>
+    <g transform="translate(372 0)"><path pathLength="1" style="--i:3" d="M88 20.7A48 48 0 1 0 88 79.3"/></g>
+    <g transform="translate(508 0)"><path pathLength="1" style="--i:4" d="M2 2V56A41 41 0 0 0 84 56V2"/></g>
+    <g transform="translate(642 0)"><path pathLength="1" style="--i:5" d="M2 100V2H38A25 25 0 0 1 38 52H2M34 52L66 100"/></g>
+    <g transform="translate(760 0)"><path pathLength="1" style="--i:6" d="M2 2L46 54L90 2M46 54V98"/></g>
+  </svg>
+</h1>
+
+<div class="hud hud--tl"><span class="tag">Hg · 80 · 200.59 u</span><span class="sub">Hydrargyrum · Group 12</span></div>
+<div class="hud hud--tr"><span class="tag">Liquid at room temperature</span><span class="sub">Melts at −38.83 °C</span></div>
+<div class="hud hud--bl"><span class="tag">Drag to press a finger in</span><span class="sub">Click or tap to drop · Hold to swell<span class="kb"> · Space works too</span></span></div>
+<div class="hud hud--br"><span class="tag" id="readout" aria-hidden="true">Impacts <b>00</b> · Swell <b>000</b>%</span><span class="sub" id="fact" aria-hidden="true">Surface tension 486 mN/m</span></div>
+
+<div id="ring" aria-hidden="true"></div>
+
+<script>
+(() => {
+'use strict';
+const doc = document, root = doc.documentElement;
+const $ = s => doc.querySelector(s);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const damp = (c, t, r, dt) => c + (t - c) * (1 - Math.exp(-r * dt));
+
+const mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+let reduce = mqReduce.matches;
+if (mqReduce.addEventListener) mqReduce.addEventListener('change', e => { reduce = e.matches; });
+const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+/* camera (shared by the shader and the pointer mapping) */
+const PITCH = 0.9, SP = Math.sin(PITCH), CP = Math.cos(PITCH), K = 1.2;
+
+const S = { W: 1, H: 1, dpr: 1, t: 0, swell: 0, swellT: 0, intro: 0, quality: 1 };
+const P = { x: 0, y: 0, has: false, down: false, hold: false, downX: 0, downY: 0, downAt: 0, lastMove: -100, ex: 0, ey: 0, vx: 0, vy: 0, touch: false, pt: 0 };
+const F = { x: 0, y: 0, p: 0, tp: 0, init: false };            // the (real or invisible) finger
+
+/* ------------------------------------------------------------------ shaders */
+const VS = 'attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.0,1.0);}';
+const FS = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform vec2 uRes;
+uniform float uTime, uSwell, uIntro;
+uniform vec4 uFinger;      // x, z, pressure, size scale
+uniform vec4 uImp[8];      // x, z, start time, strength (negative = droplet)
+
+float hash(vec2 p){ vec3 q = fract(vec3(p.xyx) * 0.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
+
+// value noise with analytic derivatives: (value, d/dx, d/dy)
+vec3 noised(vec2 x){
+  vec2 i = floor(x); vec2 f = fract(x);
+  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  vec2 du = 30.0 * f * f * (f * (f - 2.0) + 1.0);
+  float a = hash(i), b = hash(i + vec2(1.0, 0.0)), c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
+  float k1 = b - a, k2 = c - a, k4 = a - b - c + d;
+  return vec3(a + k1 * u.x + k2 * u.y + k4 * u.x * u.y, du * vec2(k1 + k4 * u.y, k2 + k4 * u.x));
+}
+const mat2 ROT = mat2(1.6, -1.2, 1.2, 1.6);       // 2 x rotation (cos .8, sin .6)
+vec3 fbmd(vec2 x){
+  float a = 0.0; float b = 0.5; vec2 d = vec2(0.0);
+  mat2 m = mat2(1.0, 0.0, 0.0, 1.0);
+  for (int i = 0; i < 3; i++){
+    vec3 n = noised(m * x);
+    a += b * n.x; d += b * (n.yz * m);
+    m = ROT * m; b *= 0.42;
+  }
+  return vec3(a, d);
+}
+
+// the liquid: domain-warped fbm heave + drifting swell + finger + impacts; returns (height, dh/dx, dh/dz)
+vec3 surf(vec2 P, float t){
+  float sw = 1.0 + 1.6 * uSwell;
+  vec2 W = P * 0.58;
+  vec2 q = vec2(fbmd(W + vec2(0.0, t * 0.040)).x, fbmd(W + vec2(5.2, 1.3) - vec2(t * 0.035, 0.0)).x) - 0.40;
+  vec3 f = fbmd((W + 1.5 * q) * 1.1 + vec2(t * 0.018, -t * 0.012));
+  float h = 0.42 * f.x;
+  vec2 g = 0.42 * 0.638 * f.yz;
+  float a1 = P.x * 0.80 + t * 0.30; float a2 = P.y * 0.66 - t * 0.22;
+  h += 0.15 * sin(a1) * sin(a2);
+  g += 0.15 * vec2(0.80 * cos(a1) * sin(a2), 0.66 * sin(a1) * cos(a2));
+  h *= sw; g *= sw;
+
+  // the finger: a heavy gaussian dent with a raised meniscus around it
+  vec2 df = P - uFinger.xy;
+  float fs = uFinger.w;
+  float sg = 0.055 * fs * fs;
+  float rf2 = dot(df, df);
+  float Gf = exp(-rf2 / sg);
+  float dep = -0.17 * uFinger.z * fs;
+  h += dep * Gf; g += dep * Gf * (-2.0 * df / sg);
+  float rf = sqrt(rf2) + 1e-4;
+  float ur = (rf - 0.27 * fs) / (0.10 * fs);
+  float Gr = exp(-ur * ur);
+  float rim = 0.05 * uFinger.z * fs;
+  h += rim * Gr; g += rim * Gr * (-2.0 * ur / (0.10 * fs)) * (df / rf);
+
+  // impacts: expanding ring packets + a dent that rebounds
+  for (int i = 0; i < 8; i++){
+    vec4 im = uImp[i];
+    float S = abs(im.w);
+    if (S < 0.001) continue;
+    float age = t - im.z;
+    if (age < 0.0 || age > 8.0) continue;
+    float drop = step(im.w, 0.0);
+    float sc = clamp(sqrt(1.0 + dot(im.xy, im.xy)) / 1.9, 0.5, 2.6);
+    vec2 d = P - im.xy;
+    float r = length(d) + 1e-4;
+    vec2 dir = d / r;
+    float R = age * mix(0.58, 0.84, drop) * sc;
+    float w = (mix(0.18, 0.11, drop) + age * 0.045) * sc;
+    float k = mix(24.0, 34.0, drop) / sc;
+    float dl = r - R;
+    float u = dl / w;
+    float en = exp(-u * u);
+    float amp = S * mix(0.022, 0.017, drop) * sc * exp(-age * 0.42) / sqrt(1.0 + r * 5.0 / sc);
+    float ph = k * dl;
+    h += amp * en * cos(ph);
+    g += amp * en * (-2.0 * u / w * cos(ph) - k * sin(ph)) * dir;
+    float sig = mix(0.032, 0.013, drop) * sc * sc;
+    float G = exp(-r * r / sig);
+    float cA = S * sc * (-0.105 * exp(-age * 2.1) + mix(0.012, 0.055, drop) * sin(age * 8.5) * exp(-age * 1.35));
+    h += cA * G; g += cA * G * (-2.0 * d / sig);
+  }
+  return vec3(h, g);
+}
+
+float box(float x, float lo, float hi, float s){ return smoothstep(lo - s, lo + s, x) * (1.0 - smoothstep(hi - s, hi + s, x)); }
+
+// a procedural photo studio: soft-box strips, a cold blue rim light, a horizon gradient
+vec3 env(vec3 r, float t){
+  float e = asin(clamp(r.y, -1.0, 1.0));
+  float a = atan(r.x, -r.z) + 0.09 * sin(t * 0.11);
+  // dome: gunmetal blue-grey that swells and fades, so even the "dark" reflections carry gradation
+  vec3 c = mix(vec3(0.030, 0.034, 0.042), vec3(0.135, 0.150, 0.180), smoothstep(-0.2, 1.1, e));
+  c *= 0.75 + 0.55 * (0.5 + 0.5 * cos(a * 1.7 + e * 2.1 + 0.6));
+  c = mix(c, vec3(0.012, 0.013, 0.017), smoothstep(0.0, -0.5, e));
+  c += vec3(0.50, 0.62, 0.86) * 0.62 * exp(-pow((e - 0.22) / 0.16, 2.0)) * (0.65 + 0.35 * cos(a * 1.3));   // cold horizon
+  c += vec3(1.00, 0.95, 0.84) * 2.5 * box(e, 0.47, 0.60, 0.045) * box(a, -1.15, 1.05, 0.16);               // long warm strip
+  c += vec3(1.00, 0.93, 0.80) * 1.9 * box(e, 1.00, 1.26, 0.16) * box(a, -0.75, 0.65, 0.24);                // overhead soft-box
+  c += vec3(1.00, 0.96, 0.88) * 3.0 * box(a, 0.40, 0.455, 0.024) * box(e, 0.22, 1.30, 0.09);               // tube light
+  c += vec3(0.58, 0.77, 1.00) * 3.6 * box(a, -0.645, -0.60, 0.020) * box(e, 0.12, 1.34, 0.09);             // cold blue rim
+  c += vec3(1.00, 0.88, 0.70) * 1.8 * box(a, 1.02, 1.13, 0.05) * box(e, 0.05, 1.10, 0.12);                 // warm side card
+  c += vec3(0.70, 0.82, 1.00) * 0.9 * box(a, -1.35, -1.15, 0.08) * box(e, 0.05, 0.90, 0.14);               // far left kicker
+  return c;
+}
+
+vec3 oil(float x){
+  x = fract(x) * 3.0;
+  vec3 A = vec3(0.490, 0.976, 1.000); vec3 B = vec3(1.000, 0.478, 0.851); vec3 C = vec3(1.000, 0.886, 0.478);
+  if (x < 1.0) return mix(A, B, smoothstep(0.0, 1.0, x));
+  if (x < 2.0) return mix(B, C, smoothstep(0.0, 1.0, x - 1.0));
+  return mix(C, A, smoothstep(0.0, 1.0, x - 2.0));
+}
+
+void main(){
+  vec2 p = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
+  const float SPI = ${SP.toFixed(5)}; const float CPI = ${CP.toFixed(5)}; const float KK = 1.2;
+  vec3 rd = vec3(p.x * KK, -SPI + p.y * KK * CPI, -CPI - p.y * KK * SPI);
+  float tt = -1.0 / rd.y;
+  vec2 P = vec2(rd.x, rd.z) * tt;
+  rd = normalize(rd);
+  float t = uTime;
+
+  vec3 sf = surf(P, t);
+  float farK = smoothstep(2.2, 5.0, tt);
+  float NS = 1.15 * (1.0 - 0.45 * farK);
+  vec3 N = normalize(vec3(-sf.y * NS, 1.0, -sf.z * NS));
+
+  vec3 R = reflect(rd, N);
+  float edge = dot(p, p);
+  float ca = 0.0015 + 0.0085 * edge;
+  vec3 out3 = normalize(vec3(p.x, 0.0, -p.y) + 1e-4);
+  vec3 col = vec3(env(normalize(R + out3 * ca), t).r, env(R, t).g, env(normalize(R - out3 * ca), t).b);
+
+  float cosT = clamp(dot(N, -rd), 0.0, 1.0);
+  float fres = pow(1.0 - cosT, 5.0);
+  col *= 0.72 + 0.28 * fres;
+  col += vec3(0.55, 0.65, 0.85) * fres * 0.35;
+
+  // a whisper of oil-slick, only where the metal turns away
+  float film = smoothstep(0.55, 0.06, cosT);
+  vec3 tint = oil(cosT * 2.2 + sf.x * 2.4 + t * 0.03);
+  col = mix(col, col * (0.45 + 0.9 * tint) + tint * 0.06, film * 0.30);
+
+  col = 1.0 - exp(-col * 1.0);
+  col = col * col * (3.0 - 2.0 * col) * 0.55 + col * 0.45;
+  vec3 gun = vec3(0.039, 0.043, 0.051);
+  vec3 sil = vec3(0.851, 0.867, 0.890);
+  vec3 ice = vec3(0.918, 0.957, 1.000);
+  col = mix(mix(gun, sil, clamp(col / 0.62, 0.0, 1.0)), ice, clamp((col - 0.62) / 0.38, 0.0, 1.0));
+
+  col *= 1.0 - 0.30 * edge;
+  col *= smoothstep(0.0, 1.0, uIntro);
+  col += (hash(gl_FragCoord.xy + fract(t) * 71.3) - 0.5) / 255.0;
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+/* ------------------------------------------------------------------ WebGL */
+const canvas = $('#gl');
+let gl = null, glOK = false, U = null;
+function compile(type, src) {
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn('Mercury shader:', gl.getShaderInfoLog(s)); return null; }
+  return s;
+}
+function initGL() {
+  try {
+    gl = canvas.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' }) || canvas.getContext('experimental-webgl');
+    if (!gl) throw new Error('WebGL unavailable');
+    const vs = compile(gl.VERTEX_SHADER, VS), fs = compile(gl.FRAGMENT_SHADER, FS);
+    if (!vs || !fs) throw new Error('shader compile failed');
+    const pr = gl.createProgram(); gl.attachShader(pr, vs); gl.attachShader(pr, fs); gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+    gl.useProgram(pr);
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(pr, 'aPos'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    U = {}; ['uRes', 'uTime', 'uSwell', 'uIntro', 'uFinger', 'uImp'].forEach(n => { U[n] = gl.getUniformLocation(pr, n); });
+    if (!U.uImp) U.uImp = gl.getUniformLocation(pr, 'uImp[0]');
+    glOK = true; root.classList.remove('no-gl');
+  } catch (err) {
+    console.warn('Mercury: WebGL unavailable, showing the CSS chrome fallback.', err && err.message ? err.message : err);
+    glOK = false; root.classList.add('no-gl');
+  }
+}
+canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); glOK = false; root.classList.add('no-gl'); });
+canvas.addEventListener('webglcontextrestored', () => { initGL(); resize(); });
+initGL();
+
+function resize() {
+  S.W = Math.max(1, window.innerWidth); S.H = Math.max(1, window.innerHeight);
+  S.dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const res = (S.dpr > 1.25 ? 0.75 : 1) * S.dpr * S.quality;
+  canvas.width = Math.max(2, Math.round(S.W * res)); canvas.height = Math.max(2, Math.round(S.H * res));
+  if (glOK) gl.viewport(0, 0, canvas.width, canvas.height);
+}
+let rzT = 0;
+window.addEventListener('resize', () => { clearTimeout(rzT); rzT = setTimeout(resize, 80); });
+
+/* ------------------------------------------------------------------ pointer -> plane */
+function toPlane(px, py) {
+  const x = (px - S.W * 0.5) / S.H, y = (S.H * 0.5 - py) / S.H;
+  const dx = x * K, dy = -SP + y * K * CP, dz = -CP - y * K * SP;
+  const t = -1 / dy;
+  return { x: dx * t, z: dz * t, sc: clamp(t * Math.hypot(dx, dy, dz) / 1.9, 0.5, 2.6) };
+}
+const IMP = new Float32Array(32); let impNext = 0;
+const impStrength = new Float32Array(8), impStart = new Float32Array(8);
+function addImpact(px, py, strength, droplet) {
+  const q = toPlane(px, py), i = impNext; impNext = (impNext + 1) & 7;
+  IMP[i * 4] = q.x; IMP[i * 4 + 1] = q.z; IMP[i * 4 + 2] = S.t; IMP[i * 4 + 3] = droplet ? -strength : strength;
+  impStrength[i] = strength; impStart[i] = S.t;
+}
+
+/* ------------------------------------------------------------------ input */
+const ring = $('#ring');
+if (canHover) root.classList.add('has-ring');
+let holdTimer = 0;
+function pointerPos(e) { P.x = e.clientX; P.y = e.clientY; }
+function onMove(e) {
+  const now = performance.now() / 1000;
+  const dt = Math.max(0.004, now - P.pt); P.pt = now;
+  P.touch = e.pointerType === 'touch';
+  P.vx = (e.clientX - P.x) / dt; P.vy = (e.clientY - P.y) / dt;
+  pointerPos(e);
+  if (!P.has) { F.x = P.x; F.y = P.y; F.init = true; P.ex = P.x; P.ey = P.y; }
+  P.has = true; P.lastMove = S.t;
+  if (P.down && !P.hold && Math.hypot(P.x - P.downX, P.y - P.downY) > 22) clearTimeout(holdTimer);
+  // trail of expanding rings behind a moving finger
+  if (canHover || P.down) {
+    const d = Math.hypot(P.x - P.ex, P.y - P.ey);
+    if (d > Math.max(84, S.H * 0.1) && !P.hold) {
+      const sp = Math.hypot(P.vx, P.vy);
+      addImpact(P.x, P.y, clamp(0.22 + sp * 0.00035, 0.22, 0.7), false);
+      P.ex = P.x; P.ey = P.y;
+    }
+  }
+  if (canHover) { ring.style.transform = 'translate3d(' + P.x + 'px,' + P.y + 'px,0)'; ring.classList.add('on'); }
+}
+function onDown(e) {
+  if (e.button !== undefined && e.button > 0) return;
+  onMove(e);
+  P.down = true; P.hold = false; P.downX = P.x; P.downY = P.y; P.downAt = performance.now();
+  P.touch = e.pointerType === 'touch';
+  if (P.touch) { F.x = P.x; F.y = P.y; F.init = true; }
+  ring.classList.add('down');
+  clearTimeout(holdTimer);
+  holdTimer = setTimeout(() => { if (P.down) { P.hold = true; S.swellT = 1; ring.classList.remove('down'); ring.classList.add('hold'); } }, 260);
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* capture is optional */ }
+}
+function onUp(e, cancelled) {
+  if (!P.down) return;
+  clearTimeout(holdTimer);
+  const wasHold = P.hold;
+  P.down = false; P.hold = false; S.swellT = 0;
+  ring.classList.remove('down'); ring.classList.remove('hold');
+  if (wasHold) addImpact(P.x, P.y, 1.0, false);                     // the swell lets go
+  else if (!cancelled && Math.hypot(P.x - P.downX, P.y - P.downY) < 22) addImpact(P.x, P.y, 1.0, true);   // a click drops a droplet
+  if (P.touch) P.has = false;
+}
+window.addEventListener('pointermove', onMove, { passive: true });
+canvas.addEventListener('pointerdown', onDown);
+window.addEventListener('pointerup', e => onUp(e, false));
+window.addEventListener('pointercancel', e => onUp(e, true));
+doc.addEventListener('pointerleave', () => { P.has = false; ring.classList.remove('on'); });
+window.addEventListener('blur', () => { P.has = false; P.down = false; S.swellT = 0; ring.classList.remove('on'); });
+
+let spaceAt = 0, spaceHold = 0;
+window.addEventListener('keydown', e => {
+  if (e.code !== 'Space' || e.repeat) return;
+  e.preventDefault();
+  spaceAt = performance.now();
+  clearTimeout(spaceHold);
+  spaceHold = setTimeout(() => { S.swellT = 1; spaceAt = -1; }, 260);
+});
+window.addEventListener('keyup', e => {
+  if (e.code !== 'Space') return;
+  clearTimeout(spaceHold);
+  const cx = S.W * (0.34 + Math.random() * 0.32), cy = S.H * (0.4 + Math.random() * 0.34);
+  if (spaceAt === -1) { S.swellT = 0; addImpact(S.W * 0.5, S.H * 0.55, 1.0, false); }
+  else addImpact(cx, cy, 1.0, true);
+});
+doc.addEventListener('visibilitychange', () => { if (doc.hidden) running = false; else start(); });
+
+/* ------------------------------------------------------------------ HUD readout */
+const readout = $('#readout'), factEl = $('#fact'); let hudT = 0, mood = 0;
+const FACTS = ['Surface tension 486 mN/m', 'Real mercury is toxic. This one is only maths.', 'Density 13.53 g/cm³ · it does not want to stay flat'];
+function updateHud(dt) {
+  hudT += dt; if (hudT < 0.12) return; hudT = 0;
+  let n = 0;
+  for (let i = 0; i < 8; i++) if (impStrength[i] > 0 && S.t - impStart[i] < 7) n++;
+  const sw = Math.round(clamp(S.swell, 0, 1) * 100);
+  readout.innerHTML = 'Impacts <b>' + String(n).padStart(2, '0') + '</b> · Swell <b>' + String(sw).padStart(3, '0') + '</b>%';
+  const m = S.swell > 0.5 ? 2 : (n >= 7 ? 1 : 0);
+  if (m !== mood) { mood = m; factEl.textContent = FACTS[m]; }
+}
+
+/* ------------------------------------------------------------------ main loop */
+let running = false, last = 0, frames = 0, ema = 0.016, slow = 0, idleNext = 3.2, introDone = false, dropped = false;
+function frame(now) {
+  if (!running) return;
+  requestAnimationFrame(frame);
+  const raw = Math.max(0.0005, (now - last) / 1000); last = now;
+  const dt = Math.min(raw, 0.1);              // the metal is analytic in time, so it follows the wall clock even on slow machines
+  frames++;
+  if (frames > 30) {
+    ema = ema * 0.94 + raw * 0.06;
+    if (ema > 0.032 && S.quality > 0.55) { if (++slow > 50) { S.quality = Math.max(0.55, S.quality * 0.86); slow = 0; ema = 0.02; resize(); } } else slow = 0;
+  }
+  S.t += dt * (reduce ? 0.4 : 1);
+  S.intro = Math.min(1, S.intro + dt / 1.6);
+
+  // the intro droplet: the first thing the metal ever feels
+  if (!dropped && S.t > 0.45) { dropped = true; addImpact(S.W * 0.5, S.H * 0.6, 0.95, true); }
+  if (!introDone && S.t > 1.9) { introDone = true; addImpact(S.W * 0.36, S.H * 0.42, 0.55, true); }
+
+  // finger: the real pointer if it has been active, otherwise an invisible one drifting by itself
+  const idle = !P.has || (S.t - P.lastMove > 2.6 && !P.down);
+  let tx, ty;
+  if (idle) {
+    const s = S.t * (reduce ? 0.6 : 1);
+    tx = S.W * (0.5 + 0.30 * Math.sin(s * 0.27 + 0.4) + 0.08 * Math.sin(s * 0.71));
+    ty = S.H * (0.54 + 0.22 * Math.sin(s * 0.36 + 1.7) + 0.05 * Math.sin(s * 0.83));
+    F.tp = S.t > 2.2 ? 0.5 : 0;
+    idleNext -= dt;
+    if (idleNext < 0 && S.t > 2.4) { addImpact(F.x, F.y, 0.42, false); idleNext = (reduce ? 4.5 : 2.5) + Math.random() * 1.6; }
+  } else {
+    tx = P.x; ty = P.y;
+    F.tp = P.touch ? (P.down ? 1 : 0) : (P.down ? 1 : 0.6);
+  }
+  if (!F.init) { F.x = tx; F.y = ty; F.init = true; }
+  F.x = damp(F.x, tx, idle ? 3 : 9, dt); F.y = damp(F.y, ty, idle ? 3 : 9, dt);
+  F.p = damp(F.p, F.tp, 4, dt);
+
+  S.swell = damp(S.swell, S.swellT, S.swellT > S.swell ? 2.2 : 3.2, dt);
+
+  if (glOK) {
+    const q = toPlane(F.x, F.y);
+    gl.uniform2f(U.uRes, canvas.width, canvas.height);
+    gl.uniform1f(U.uTime, S.t);
+    gl.uniform1f(U.uSwell, S.swell);
+    gl.uniform1f(U.uIntro, S.intro);
+    gl.uniform4f(U.uFinger, q.x, q.z, F.p, q.sc);
+    gl.uniform4fv(U.uImp, IMP);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  updateHud(dt);
+}
+function start() { if (running) return; running = true; last = performance.now(); requestAnimationFrame(frame); }
+
+resize();
+start();
+requestAnimationFrame(() => root.classList.add('ready'));
+})();
+</script>
+</body>
+</html>

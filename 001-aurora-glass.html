@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#040914">
+<meta name="description" content="Tromsø, 69.6°N — a glassmorphism aurora forecast floating over a living northern-lights sky.">
+<title>Tromsø, 69.6°N — Aurora Glass</title>
+<style>
+/* ============ tokens ============ */
+:root{
+  color-scheme:dark;
+  --night-0:#040914;
+  --night-1:#0b1633;
+  --aur-g:#5dffb4;
+  --aur-t:#22d3c5;
+  --aur-v:#8b5cf6;
+  --aur-r:#ff6fb5;
+  --ice:#eaf7f4;
+  --mist:rgba(216,240,240,.70);
+  --label:rgba(196,234,236,.72);
+  --hair:rgba(255,255,255,.14);
+  --a-rgb:93 255 180;      /* live aurora tint A (script-driven) */
+  --b-rgb:139 92 246;      /* live aurora tint B (script-driven) */
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --sans:"Avenir Next",Avenir,"Century Gothic","URW Gothic","Trebuchet MS",system-ui,sans-serif;
+  --gutter:clamp(18px,3.2vw,48px);
+}
+*{box-sizing:border-box}
+html{background:var(--night-0);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{
+  margin:0;min-height:100vh;min-height:100dvh;background:var(--night-0);color:var(--ice);
+  font-family:var(--sans);font-weight:300;font-size:15px;line-height:1.45;
+  font-variant-numeric:tabular-nums lining-nums;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid rgb(var(--a-rgb));outline-offset:3px;border-radius:8px}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ============ background stack ============ */
+.sky,.stars,.ridge,.vignette,.sky-fallback{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.sky{z-index:0;opacity:0;transition:opacity 2.6s ease .05s}
+.stars{z-index:1;opacity:0;transition:opacity 3s ease .5s}
+.ridge{z-index:2;opacity:0;transition:opacity 2.4s ease .2s}
+.ready .sky,.ready .stars,.ready .ridge{opacity:1}
+.vignette{z-index:3;background:
+  radial-gradient(130% 95% at 50% 38%,transparent 52%,rgba(2,5,12,.55) 100%),
+  linear-gradient(180deg,rgba(4,9,20,.35),transparent 22%)}
+.sky-fallback{z-index:0;display:none;overflow:hidden;background:linear-gradient(180deg,#040914 0%,#0b1633 68%,#071224 68%,#040a18 100%)}
+.sky-fallback i{position:absolute;border-radius:50%;filter:blur(60px);opacity:.55;animation:drift 22s ease-in-out infinite alternate}
+.sky-fallback i:nth-child(1){left:8%;top:22%;width:46vmax;height:22vmax;background:rgba(93,255,180,.55)}
+.sky-fallback i:nth-child(2){left:38%;top:12%;width:40vmax;height:20vmax;background:rgba(139,92,246,.5);animation-duration:29s;animation-delay:-8s}
+.sky-fallback i:nth-child(3){left:56%;top:30%;width:36vmax;height:16vmax;background:rgba(34,211,197,.4);animation-duration:35s;animation-delay:-15s}
+.no-gl .sky-fallback{display:block}
+.no-gl .sky{display:none}
+@keyframes drift{from{transform:translate3d(-6vw,0,0) scale(1)}to{transform:translate3d(8vw,4vh,0) scale(1.15)}}
+
+/* ============ page frame ============ */
+.page{
+  position:relative;z-index:5;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+  padding:max(14px,env(safe-area-inset-top)) var(--gutter) max(16px,env(safe-area-inset-bottom));
+  overflow-x:clip;
+}
+.micro{font-size:10.5px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--label);line-height:1.3}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:6px 0 4px;
+  opacity:0;animation:fade 1.2s var(--ease) .2s forwards}
+.brand{display:flex;align-items:center;gap:11px}
+.brand svg{width:30px;height:20px;display:block;overflow:visible}
+.live{display:flex;align-items:center;gap:9px;padding:7px 15px 7px 13px;border-radius:999px;
+  background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.13);
+  -webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%)}
+.live .clock{font-size:12.5px;font-weight:400;letter-spacing:.08em;color:var(--ice)}
+.dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--aur-g);box-shadow:0 0 10px 1px rgba(93,255,180,.85)}
+.dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--aur-g);opacity:0;animation:ping 2.2s cubic-bezier(.2,.6,.3,1) infinite}
+@keyframes ping{0%{transform:scale(.5);opacity:.9}80%,100%{transform:scale(2.3);opacity:0}}
+@keyframes fade{to{opacity:1}}
+
+/* ============ stage layout ============ */
+.stage{flex:1;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-content:start;padding:clamp(6px,1.6vh,20px) 0 22px}
+.hero{text-align:center;padding:clamp(18px,5vh,54px) 0 clamp(150px,30vh,300px);
+  opacity:0;animation:heroIn 1.8s var(--ease) .35s forwards}
+@keyframes heroIn{from{opacity:0;transform:translateY(18px);filter:blur(8px)}to{opacity:1;transform:none;filter:none}}
+.eyebrow{display:inline-flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 12px;margin:0}
+.eyebrow .sep{width:1px;height:11px;background:rgba(255,255,255,.28)}
+.hero h1{margin:.22em 0 .3em;font-weight:200;font-size:clamp(2.35rem,10.2vw,4.6rem);line-height:.96;letter-spacing:-.012em;
+  color:var(--ice);text-shadow:0 2px 44px rgba(4,9,20,.5)}
+.hero h1 .l1,.hero h1 .l2{white-space:nowrap}
+.hero h1 .l2{background:linear-gradient(100deg,#f4fffb 0%,rgb(var(--a-rgb)) 52%,#c9e7ff 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 2px 22px rgba(4,9,20,.45))}
+.hero{position:relative;isolation:isolate}
+.hero::before{content:"";position:absolute;z-index:-1;inset:-6% 0 8% 0;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(4,9,22,.55),rgba(4,9,22,.28) 55%,transparent)}
+.hero__lede{max-width:34ch;margin:0 auto;font-size:clamp(14.5px,1.25vw,17px);line-height:1.55;color:rgba(226,245,244,.86);
+  text-shadow:0 0 22px rgba(4,9,20,.95),0 1px 3px rgba(4,9,20,.7)}
+
+/* ============ glass card ============ */
+.card{
+  position:relative;isolation:isolate;align-self:start;
+  border-radius:26px;padding:20px 22px 22px;color:var(--ice);
+  background:
+    radial-gradient(120% 80% at 0% 0%,rgb(var(--a-rgb) / .16),transparent 58%),
+    radial-gradient(100% 70% at 100% 100%,rgb(var(--b-rgb) / .14),transparent 62%),
+    linear-gradient(160deg,rgba(255,255,255,.13),rgba(255,255,255,.035) 46%,rgba(255,255,255,.065)),
+    rgba(5,12,30,.42);
+  text-shadow:0 1px 10px rgba(3,8,20,.4);
+  -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.20),
+    inset 0 -1px 0 rgba(255,255,255,.04),
+    inset 0 0 46px rgb(var(--a-rgb) / .075),
+    0 28px 60px -26px rgba(0,0,0,.7),
+    0 0 70px -16px rgb(var(--a-rgb) / .16);
+  transform:perspective(1100px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transform-origin:50% 50%;will-change:transform;
+  animation:rise 1.25s var(--ease) backwards;animation-delay:calc(.55s + var(--i,0) * .15s);
+}
+@keyframes rise{from{opacity:0;translate:0 84px;scale:.965}to{opacity:1;translate:0 0;scale:1}}
+.card::before{ /* gradient hairline border + cursor-following highlight */
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:
+    radial-gradient(260px circle at var(--mx,50%) var(--my,0%),rgba(255,255,255,calc(.95 * var(--sheen,0))),transparent 64%),
+    linear-gradient(140deg,rgba(255,255,255,.58),rgba(255,255,255,.10) 24%,rgba(255,255,255,.035) 58%,rgb(var(--b-rgb) / .42));
+  -webkit-mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);mask-image:linear-gradient(#000,#000),linear-gradient(#000,#000);
+  -webkit-mask-clip:content-box,border-box;mask-clip:content-box,border-box;-webkit-mask-composite:xor;mask-composite:exclude;
+}
+.card::after{ /* specular sheen following the pointer */
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(360px circle at var(--mx,50%) var(--my,30%),rgba(255,255,255,calc(.22 * var(--sheen,0))),rgba(255,255,255,calc(.04 * var(--sheen,0))) 46%,transparent 70%);
+}
+.frost{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background-image:var(--grain,none);background-size:128px 128px;opacity:.10;mix-blend-mode:overlay}
+.card>*:not(.frost){position:relative}
+.card__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}
+.card__title{display:flex;align-items:center;gap:9px;margin:0;font-weight:500}
+.card__title svg{width:16px;height:16px;flex:none;stroke:rgb(var(--a-rgb));fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;opacity:.95}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;white-space:nowrap;
+  border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);
+  font-size:11px;font-weight:500;letter-spacing:.06em;color:var(--ice);font-variant-numeric:tabular-nums}
+.chip--ghost{color:var(--mist);font-weight:400;letter-spacing:.1em;text-transform:uppercase;font-size:10px}
+.hairline{height:1px;margin:14px 0 12px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);border:0}
+
+/* forecast */
+.gauge{position:relative;margin:0 auto;max-width:292px}
+.gauge svg{display:block;width:100%;height:auto;overflow:visible}
+.gauge__track{fill:none;stroke:rgba(255,255,255,.10);stroke-width:9;stroke-linecap:round}
+.gauge__value{fill:none;stroke-width:9;stroke-linecap:round;filter:drop-shadow(0 0 7px rgb(var(--a-rgb) / .6))}
+.gauge__tick{stroke:rgba(255,255,255,.26);stroke-width:1;stroke-linecap:round}
+.gauge__tick.major{stroke:rgba(255,255,255,.5)}
+.gauge__lbl{fill:rgba(190,230,232,.6);font-size:8.5px;font-weight:500;letter-spacing:.12em;text-anchor:middle}
+.gauge__num{fill:var(--ice);font-size:46px;font-weight:200;text-anchor:middle;letter-spacing:-.01em}
+.gauge__cap{fill:rgba(190,230,232,.66);font-size:8.6px;font-weight:500;letter-spacing:.2em;text-anchor:middle;text-transform:uppercase}
+.gauge__status{fill:var(--ice);font-size:10.5px;font-weight:400;letter-spacing:.06em;text-anchor:middle}
+#kpThumb{filter:drop-shadow(0 0 6px rgba(255,255,255,.8))}
+.spark__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 6px}
+.spark__peak{font-size:12px;color:var(--mist);white-space:nowrap}
+.spark__peak b{font-weight:400;font-size:15px;color:var(--ice);margin-right:8px}
+.spark svg{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y;cursor:crosshair}
+.spark__grid{stroke:rgba(255,255,255,.08);stroke-width:1}
+.spark__lbl{fill:rgba(190,230,232,.55);font-size:8.5px;font-weight:500;letter-spacing:.14em;text-anchor:middle}
+.spark__line{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 5px rgb(var(--a-rgb) / .55))}
+.spark__now{stroke:rgba(255,255,255,.4);stroke-width:1;stroke-dasharray:2 3}
+.spark__tip text{fill:var(--ice);font-size:10px;font-weight:500;letter-spacing:.05em;text-anchor:middle}
+.spark__tip rect{fill:rgba(6,14,34,.72);stroke:rgba(255,255,255,.28);stroke-width:.8}
+
+/* tonight */
+.tonight__main{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.temp{display:flex;flex-direction:column;gap:4px}
+.temp__row{display:flex;align-items:flex-start;line-height:.9}
+.temp__num{font-size:clamp(58px,5.2vw,74px);font-weight:200;letter-spacing:-.03em}
+.temp__unit{margin:.14em 0 0 .08em;font-size:22px;font-weight:300;color:var(--mist)}
+.moon{margin:0;display:flex;align-items:center;gap:12px;text-align:right;flex-direction:row-reverse}
+.moon svg{width:74px;height:74px;flex:none;display:block;overflow:visible}
+.moon figcaption{display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.moon b{font-weight:400;font-size:14px;line-height:1.2}
+.moon span:last-child{font-size:12px;color:var(--mist)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:2px}
+.stat{padding:11px 13px 12px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);display:flex;flex-direction:column;gap:4px}
+.stat b{font-weight:300;font-size:22px;line-height:1.05;letter-spacing:-.01em}
+.stat small{font-size:11.5px;color:var(--mist)}
+.bar{display:block;height:4px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:3px}
+.bar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--aur-t),var(--aur-g));box-shadow:0 0 10px rgba(93,255,180,.6)}
+
+/* spots */
+.spots{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.spot{width:100%;display:grid;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:12px;text-align:left;
+  padding:10px 12px 10px 10px;border-radius:16px;border:1px solid transparent;background:transparent;cursor:pointer;
+  transition:background .35s var(--ease),border-color .35s var(--ease),transform .35s var(--ease)}
+.spot:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
+.spot[aria-pressed="true"]{background:linear-gradient(100deg,rgb(var(--a-rgb) / .17),rgba(255,255,255,.04));border-color:rgb(var(--a-rgb) / .38)}
+.spot__idx{font-size:10.5px;font-weight:500;letter-spacing:.12em;color:var(--label)}
+.spot[aria-pressed="true"] .spot__idx{color:rgb(var(--a-rgb))}
+.spot__body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.spot__name{font-size:15px;font-weight:400;line-height:1.2;overflow-wrap:anywhere}
+.spot__note{font-size:9.5px;letter-spacing:.14em}
+.spot .chip{transition:box-shadow .35s var(--ease),border-color .35s var(--ease),background .35s var(--ease)}
+.spot:hover .chip,.spot[aria-pressed="true"] .chip{border-color:rgb(var(--a-rgb) / .7);background:rgb(var(--a-rgb) / .16);box-shadow:0 0 16px -2px rgb(var(--a-rgb) / .55)}
+.spots__foot{margin:12px 2px 0;display:flex;align-items:center;gap:9px;min-height:16px}
+.spots__foot::before{content:"";width:5px;height:5px;border-radius:50%;background:rgb(var(--a-rgb));box-shadow:0 0 8px rgb(var(--a-rgb));flex:none}
+
+/* intensify */
+.card--intensify h2.card__big{margin:2px 0 4px;font-size:24px;font-weight:300;letter-spacing:-.005em;line-height:1.15}
+.card--intensify p.desc{margin:0 0 16px;font-size:13px;color:var(--mist);max-width:34ch}
+.slider{position:relative;padding:8px 0 0}
+input[type=range]{-webkit-appearance:none;appearance:none;display:block;width:100%;height:30px;margin:0;background:transparent;cursor:pointer;--fill:55%;touch-action:pan-y}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:6px;
+  background:linear-gradient(90deg,transparent var(--fill),rgba(8,16,36,.72) var(--fill)),linear-gradient(90deg,var(--aur-g),var(--aur-t) 38%,var(--aur-v) 72%,var(--aur-r)),rgba(255,255,255,.14);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.08)}
+input[type=range]::-moz-range-track{height:6px;border-radius:6px;
+  background:linear-gradient(90deg,transparent var(--fill),rgba(8,16,36,.72) var(--fill)),linear-gradient(90deg,var(--aur-g),var(--aur-t) 38%,var(--aur-v) 72%,var(--aur-r)),rgba(255,255,255,.14);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.08)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:28px;height:28px;margin-top:-11px;border-radius:50%;border:0;
+  background:radial-gradient(circle at 34% 28%,#fff,rgba(255,255,255,.82) 42%,rgba(210,255,240,.55) 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.75),0 6px 16px rgba(0,0,0,.5),0 0 26px rgb(var(--a-rgb) / .8);transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;border:0;
+  background:radial-gradient(circle at 34% 28%,#fff,rgba(255,255,255,.82) 42%,rgba(210,255,240,.55) 100%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.75),0 6px 16px rgba(0,0,0,.5),0 0 26px rgb(var(--a-rgb) / .8)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12)}
+input[type=range]:focus{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 1px #fff,0 0 0 6px rgb(var(--a-rgb) / .45),0 0 26px rgb(var(--a-rgb) / .8)}
+input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 1px #fff,0 0 0 6px rgb(var(--a-rgb) / .45),0 0 26px rgb(var(--a-rgb) / .8)}
+.slider__ticks{display:flex;justify-content:space-between;margin:2px 13px 0}
+.slider__ticks span{width:1px;height:6px;background:rgba(255,255,255,.28)}
+.slider__ticks span:nth-child(5n+1){height:9px;background:rgba(255,255,255,.5)}
+.readout{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-top:14px}
+.readout__num{display:flex;align-items:baseline;gap:5px;line-height:1}
+.readout__num b{font-size:46px;font-weight:200;letter-spacing:-.03em}
+.readout__num span{font-size:14px;color:var(--mist)}
+.ribbons{display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+.ribbons__bars{display:flex;align-items:flex-end;gap:5px;height:26px}
+.ribbons__bars i{display:block;width:5px;border-radius:3px;background:rgba(255,255,255,.16);transition:background .5s var(--ease),box-shadow .5s var(--ease),opacity .5s var(--ease)}
+.ribbons__bars i:nth-child(1){height:11px}.ribbons__bars i:nth-child(2){height:17px}.ribbons__bars i:nth-child(3){height:13px}
+.ribbons__bars i:nth-child(4){height:22px}.ribbons__bars i:nth-child(5){height:15px}.ribbons__bars i:nth-child(6){height:26px}.ribbons__bars i:nth-child(7){height:18px}
+.ribbons__bars i.on:nth-child(1),.ribbons__bars i.on:nth-child(3){background:var(--aur-g);box-shadow:0 0 10px rgba(93,255,180,.7)}
+.ribbons__bars i.on:nth-child(2),.ribbons__bars i.on:nth-child(5){background:var(--aur-t);box-shadow:0 0 10px rgba(34,211,197,.7)}
+.ribbons__bars i.on:nth-child(4),.ribbons__bars i.on:nth-child(7){background:var(--aur-v);box-shadow:0 0 10px rgba(139,92,246,.75)}
+.ribbons__bars i.on:nth-child(6){background:var(--aur-r);box-shadow:0 0 10px rgba(255,111,181,.75)}
+
+/* footer + toast */
+.foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding-top:4px;
+  opacity:0;animation:fade 1.4s var(--ease) 1.6s forwards}
+.foot .micro{font-size:9.5px}
+.hints{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--mist)}
+kbd{font:inherit;font-size:10.5px;font-weight:500;letter-spacing:.1em;padding:2px 7px;border-radius:6px;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.07);color:var(--ice)}
+.btn{display:inline-flex;align-items:center;gap:9px;padding:8px 14px 8px 12px;border-radius:999px;cursor:pointer;font-size:12px;font-weight:400;letter-spacing:.04em;
+  border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  transition:background .3s var(--ease),border-color .3s var(--ease),transform .3s var(--ease)}
+.btn:hover{background:rgba(255,255,255,.12);border-color:rgb(var(--a-rgb) / .6)}
+.btn:active{transform:scale(.96)}
+.btn svg{width:14px;height:14px;fill:rgb(var(--a-rgb));display:block}
+.toast{position:fixed;left:50%;bottom:max(26px,env(safe-area-inset-bottom));z-index:20;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  padding:10px 18px;border-radius:999px;font-size:13px;letter-spacing:.04em;white-space:nowrap;
+  background:rgba(8,18,40,.55);border:1px solid rgba(255,255,255,.22);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);
+  box-shadow:0 12px 40px -10px rgba(0,0,0,.6),0 0 30px -6px rgb(var(--a-rgb) / .4);
+  transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ============ breakpoints ============ */
+@media (min-width:720px){
+  .stage{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+  .hero{grid-column:1/-1}
+}
+@media (min-width:1180px){
+  .stage{
+    grid-template-columns:minmax(320px,388px) minmax(0,1fr) minmax(320px,388px);
+    grid-template-areas:"forecast hero spots" "tonight hero intensify";
+    align-content:center;column-gap:clamp(20px,3vw,48px);row-gap:18px;
+  }
+  .hero{grid-area:hero;align-self:start;padding:clamp(6px,2vh,24px) 0 0}
+  .hero h1{font-size:clamp(3.2rem,6.6vw,6.4rem);line-height:.92}
+  .hero h1 .l1,.hero h1 .l2{display:block}
+  .card--forecast{grid-area:forecast}
+  .card--tonight{grid-area:tonight}
+  .card--spots{grid-area:spots}
+  .card--intensify{grid-area:intensify}
+}
+@media (max-width:400px){
+  .card{padding:18px 18px 20px;border-radius:22px}
+  .temp__num{font-size:56px}
+  .moon svg{width:62px;height:62px}
+  .readout__num b{font-size:40px}
+}
+@media (max-height:760px) and (min-width:1180px){
+  .card{padding:16px 20px 18px}
+  .gauge{max-width:250px}
+}
+@media (prefers-reduced-motion:reduce){
+  .card,.hero,.top,.foot{animation-duration:.01s;animation-delay:0s}
+  .card{animation-name:fade}
+  .hero{animation-name:fade}
+  .dot::after{animation:none}
+  .sky-fallback i{animation:none}
+  .spot,.btn,.toast{transition-duration:.01s}
+}
+</style>
+</head>
+<body>
+
+<div class="sky-fallback" aria-hidden="true"><i></i><i></i><i></i></div>
+<canvas class="sky" id="sky" aria-hidden="true"></canvas>
+<canvas class="stars" id="stars" aria-hidden="true"></canvas>
+<canvas class="ridge" id="ridge" aria-hidden="true"></canvas>
+<div class="vignette" aria-hidden="true"></div>
+
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 30 20" aria-hidden="true">
+        <defs><linearGradient id="brandG" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#5dffb4"/><stop offset=".6" stop-color="#22d3c5"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+        <path d="M4 19C7 12 3 8 7 1" fill="none" stroke="url(#brandG)" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M11 19C14 13 10 7 14 1" fill="none" stroke="url(#brandG)" stroke-width="1.6" stroke-linecap="round" opacity=".85"/>
+        <path d="M18 19C21 12 17 9 21 3" fill="none" stroke="url(#brandG)" stroke-width="1.6" stroke-linecap="round" opacity=".65"/>
+        <path d="M25 19C27 14 24 11 27 6" fill="none" stroke="url(#brandG)" stroke-width="1.6" stroke-linecap="round" opacity=".45"/>
+      </svg>
+      <span class="micro">Aurora Almanac</span>
+    </div>
+    <div class="live">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="micro">Live</span>
+      <time class="clock" id="clock">21:47:12</time>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="hero" aria-labelledby="title">
+      <p class="micro eyebrow"><span>Northern Norway</span><span class="sep" aria-hidden="true"></span><span>69.6496° N · 18.9560° E</span></p>
+      <h1 id="title"><span class="l1">Tromsø,</span> <span class="l2">69.6°N</span></h1>
+      <p class="hero__lede">Solar wind meets the upper air a hundred kilometres above the fjord. Tonight it brought company.</p>
+    </section>
+
+    <article class="card card--forecast" style="--i:0" aria-labelledby="h-forecast">
+      <span class="frost" aria-hidden="true"></span>
+      <header class="card__head">
+        <h2 class="micro card__title" id="h-forecast">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 12.5a6.2 6.2 0 1 1 11 0"/><path d="M8 9.2l2.6-3.4"/></svg>
+          Aurora forecast
+        </h2>
+        <span class="chip chip--ghost">Next 12 h</span>
+      </header>
+
+      <div class="gauge">
+        <svg viewBox="0 0 240 160" role="img" id="gauge" aria-label="Kp index 5.4 of 9, G1 minor storm">
+          <defs>
+            <linearGradient id="kpGrad" gradientUnits="userSpaceOnUse" x1="36" y1="0" x2="204" y2="0">
+              <stop offset="0" stop-color="#5dffb4"/><stop offset=".4" stop-color="#22d3c5"/><stop offset=".74" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ff6fb5"/>
+            </linearGradient>
+          </defs>
+          <path class="gauge__track" d="M43.79 148A88 88 0 1 1 196.21 148" pathLength="100"/>
+          <g id="kpTicks"></g>
+          <path class="gauge__value" id="kpArc" d="M43.79 148A88 88 0 1 1 196.21 148" pathLength="100" stroke="url(#kpGrad)" stroke-dasharray="60 100"/>
+          <circle id="kpThumb" r="6" cx="120" cy="16" fill="#fff"/>
+          <text class="gauge__num" id="kpNum" x="120" y="100">5.4</text>
+          <text class="gauge__cap" x="120" y="119">Kp index</text>
+          <text class="gauge__status" id="kpStatus" x="120" y="150">G1 · Minor storm</text>
+        </svg>
+      </div>
+
+      <hr class="hairline">
+
+      <div class="spark">
+        <div class="spark__head">
+          <span class="micro">Visibility</span>
+          <span class="spark__peak"><b id="peakVal">72%</b> <span class="micro" id="peakAt">peak 00:00</span></span>
+        </div>
+        <svg id="spark" viewBox="0 0 300 100" role="img" aria-label="Visibility over the next twelve hours, peaking around midnight" tabindex="0">
+          <defs>
+            <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5dffb4" stop-opacity=".42"/><stop offset="1" stop-color="#22d3c5" stop-opacity="0"/></linearGradient>
+            <linearGradient id="sparkStroke" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="300" y2="0"><stop offset="0" stop-color="#22d3c5"/><stop offset=".45" stop-color="#5dffb4"/><stop offset=".8" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ff6fb5"/></linearGradient>
+          </defs>
+          <g id="sparkGrid"></g>
+          <path id="sparkArea" fill="url(#sparkFill)" d=""/>
+          <path id="sparkLine" class="spark__line" stroke="url(#sparkStroke)" d=""/>
+          <line id="sparkNow" class="spark__now" x1="0" y1="8" x2="0" y2="80"/>
+          <circle id="sparkNowDot" r="3.2" fill="#fff" cx="0" cy="0"/>
+          <g class="spark__tip" id="sparkTip" opacity="0"><line id="tipLine" x1="0" x2="0" y1="6" y2="82" stroke="rgba(255,255,255,.35)" stroke-width="1"/><circle id="tipDot" r="4" fill="#fff"/><rect id="tipRect" x="0" y="0" width="64" height="18" rx="9"/><text id="tipText" x="0" y="0">00:00 · 0%</text></g>
+        </svg>
+      </div>
+    </article>
+
+    <article class="card card--intensify" style="--i:1" aria-labelledby="h-intensify">
+      <span class="frost" aria-hidden="true"></span>
+      <p class="micro" style="margin:0 0 6px">Sky control · Solar wind</p>
+      <h2 class="card__big" id="h-intensify">Tap to intensify</h2>
+      <p class="desc">Drag the slider, or press the arrow keys, to stir the sky. More curtains, more light.</p>
+      <div class="slider">
+        <label class="sr-only" for="intensity">Aurora intensity</label>
+        <input type="range" id="intensity" min="0" max="100" step="1" value="55" aria-valuetext="55 percent, 5 ribbons">
+        <div class="slider__ticks" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <div class="readout">
+        <div class="readout__num"><b id="intNum">55</b><span>% intensity</span></div>
+        <div class="ribbons">
+          <div class="ribbons__bars" id="ribBars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <span class="micro" id="ribText">5 ribbons</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="card card--tonight" style="--i:2" aria-labelledby="h-tonight">
+      <span class="frost" aria-hidden="true"></span>
+      <header class="card__head">
+        <h2 class="micro card__title" id="h-tonight">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12.6 10.2A5.6 5.6 0 0 1 5.8 3.4a5.6 5.6 0 1 0 6.8 6.8z"/></svg>
+          Tonight
+        </h2>
+        <span class="chip chip--ghost">Clear intervals</span>
+      </header>
+      <div class="tonight__main">
+        <div class="temp">
+          <div class="temp__row"><span class="temp__num">−7</span><span class="temp__unit">°C</span></div>
+          <span class="micro">Feels like −13°</span>
+        </div>
+        <figure class="moon">
+          <svg viewBox="-40 -40 80 80" role="img" aria-label="Waxing crescent moon, 23 percent lit">
+            <defs>
+              <radialGradient id="moonGlow"><stop offset="0" stop-color="#fff4d6" stop-opacity=".34"/><stop offset=".5" stop-color="#fff4d6" stop-opacity=".08"/><stop offset="1" stop-color="#fff4d6" stop-opacity="0"/></radialGradient>
+              <linearGradient id="moonLit" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#e6dcc0"/></linearGradient>
+              <clipPath id="moonClip"><path id="moonClipPath" d=""/></clipPath>
+            </defs>
+            <circle r="38" fill="url(#moonGlow)"/>
+            <circle r="23" fill="#0e1b3a" stroke="rgba(255,255,255,.16)" stroke-width=".8"/>
+            <path id="moonLitPath" d="" fill="url(#moonLit)"/>
+            <g clip-path="url(#moonClip)" fill="#b8ad8e" opacity=".45"><ellipse cx="8" cy="-6" rx="6" ry="4.5"/><ellipse cx="12" cy="6" rx="4" ry="3"/><circle cx="4" cy="12" r="2.6"/></g>
+          </svg>
+          <figcaption>
+            <span class="micro">Moon</span>
+            <b>Waxing crescent</b>
+            <span>23% lit · sets 21:12</span>
+          </figcaption>
+        </figure>
+      </div>
+      <hr class="hairline">
+      <div class="stats">
+        <div class="stat"><span class="micro">Cloud cover</span><b>18%</b><span class="bar" role="img" aria-label="18 percent cloud cover"><i style="width:18%"></i></span></div>
+        <div class="stat"><span class="micro">Wind</span><b>4 m/s</b><small>North-east · calm</small></div>
+      </div>
+    </article>
+
+    <article class="card card--spots" style="--i:3" aria-labelledby="h-spots">
+      <span class="frost" aria-hidden="true"></span>
+      <header class="card__head">
+        <h2 class="micro card__title" id="h-spots">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14.5s4.6-4.2 4.6-7.7A4.6 4.6 0 0 0 3.4 6.8C3.4 10.3 8 14.5 8 14.5z"/><circle cx="8" cy="6.8" r="1.6"/></svg>
+          Best viewing spots
+        </h2>
+        <span class="chip chip--ghost">By distance</span>
+      </header>
+      <ul class="spots" id="spots">
+        <li><button class="spot" type="button" aria-pressed="true" data-eta="9 min drive"><span class="spot__idx">01</span><span class="spot__body"><span class="spot__name">Prestvannet</span><span class="micro spot__note">Frozen lake · city glow</span></span><span class="chip">4 km</span></button></li>
+        <li><button class="spot" type="button" aria-pressed="false" data-eta="31 min drive"><span class="spot__idx">02</span><span class="spot__body"><span class="spot__name">Sandvika, Kvaløya</span><span class="micro spot__note">Open shore · faces north</span></span><span class="chip">22 km</span></button></li>
+        <li><button class="spot" type="button" aria-pressed="false" data-eta="36 min drive"><span class="spot__idx">03</span><span class="spot__body"><span class="spot__name">Ersfjordbotn</span><span class="micro spot__note">Fjord head · out of the wind</span></span><span class="chip">27 km</span></button></li>
+        <li><button class="spot" type="button" aria-pressed="false" data-eta="1 h 05 drive"><span class="spot__idx">04</span><span class="spot__body"><span class="spot__name">Sommarøy</span><span class="micro spot__note">White sand · enormous horizon</span></span><span class="chip">58 km</span></button></li>
+        <li><button class="spot" type="button" aria-pressed="false" data-eta="2 h 05 drive"><span class="spot__idx">05</span><span class="spot__body"><span class="spot__name">Skibotn valley</span><span class="micro spot__note">Driest sky in the county</span></span><span class="chip">147 km</span></button></li>
+      </ul>
+      <p class="micro spots__foot" id="spotMsg" aria-live="polite">Heading to Prestvannet · 9 min drive</p>
+    </article>
+  </div>
+
+  <footer class="foot">
+    <p class="micro" style="margin:0">Illustrative data · Not for navigation · Please look up</p>
+    <div class="hints">
+      <span class="hint">Move to bend the light</span>
+      <button class="btn" id="starBtn" type="button" aria-keyshortcuts="S">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0l1.5 5.2L15 6.6 9.6 8.2 8 16 6.4 8.2 1 6.6l5.5-1.4z"/></svg>
+        Shooting star <kbd>S</kbd>
+      </button>
+    </div>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+const doc = document, root = doc.documentElement;
+const $ = (s, r = doc) => r.querySelector(s);
+const $$ = (s, r = doc) => Array.from(r.querySelectorAll(s));
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const damp = (cur, tgt, rate, dt) => cur + (tgt - cur) * (1 - Math.exp(-rate * dt));
+function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+
+const mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+let reduce = mqReduce.matches;
+if (mqReduce.addEventListener) mqReduce.addEventListener('change', e => { reduce = e.matches; });
+const coarse = window.matchMedia('(pointer: coarse)').matches;
+
+/* ------------------------------------------------------------------ state */
+const S = {
+  intensity: 0.55, iCur: 0.55, cCur: 5, kpCur: 5.4,
+  W: 0, H: 0, hz: 0.29,
+  px: 0, py: 0, hasPtr: false,
+  sx: 0.5, sy: 0.55, pushx: 0, pushy: 0, energy: 0,
+  pulse: 0, flash: 0, t: 0
+};
+const WT = { g: 1, t: 1, v: 1, r: 0 };   // live colour weights (shared by shader + card tints)
+
+/* ------------------------------------------------------------------ grain for frosted glass */
+(function makeGrain() {
+  try {
+    const c = doc.createElement('canvas'); c.width = c.height = 128;
+    const x = c.getContext('2d'); const id = x.createImageData(128, 128); const r = rng(7);
+    for (let i = 0; i < id.data.length; i += 4) { const v = 128 + (r() - 0.5) * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 150; }
+    x.putImageData(id, 0, 0);
+    root.style.setProperty('--grain', 'url(' + c.toDataURL('image/png') + ')');
+  } catch (e) { /* grain is optional */ }
+})();
+
+/* ------------------------------------------------------------------ WebGL aurora */
+const glC = $('#sky');
+let gl = null, glOK = false, U = null, Q = 0.7;
+
+const VS = 'attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.0,1.0);}';
+const FS = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform vec2 uRes;
+uniform float uTime, uInt, uCount, uHz, uFlash;
+uniform vec4 uW, uPtr;
+uniform vec2 uPush;
+
+const vec3 GREEN  = vec3(0.365, 1.000, 0.706);
+const vec3 TEAL   = vec3(0.133, 0.827, 0.773);
+const vec3 VIOLET = vec3(0.545, 0.361, 0.965);
+const vec3 ROSE   = vec3(1.000, 0.435, 0.710);
+
+float h11(float p){ p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
+float h21(vec2 p){ vec3 q = fract(vec3(p.xyx) * 0.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
+float n1(float x){ float i = floor(x); float f = fract(x); f = f * f * (3.0 - 2.0 * f); return mix(h11(i), h11(i + 1.0), f); }
+float n2(vec2 p){
+  vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y);
+}
+
+vec3 sky(vec2 uv){
+  float y = clamp((uv.y - uHz) / (1.0 - uHz), 0.0, 1.0);
+  vec3 zen = vec3(0.016, 0.035, 0.078);
+  vec3 mid = vec3(0.040, 0.078, 0.185);
+  vec3 hor = vec3(0.034, 0.100, 0.165);
+  vec3 c = mix(mid, zen, smoothstep(0.10, 1.0, y));
+  c = mix(hor, c, smoothstep(0.0, 0.34, y));
+  return c;
+}
+
+// layered curtains; soft = 1.0 for the blurred lake reflection
+vec3 aurora(vec2 uv, float t, float soft, float rayF){
+  float aspect = uRes.x / uRes.y;
+  vec2 dp = vec2((uv.x - uPtr.x) * aspect, uv.y - uPtr.y);
+  float gp = exp(-dot(dp, dp) / 0.05);
+  float en = uPtr.z;
+  float x0 = uv.x * 2.4;
+  float storm = smoothstep(0.55, 1.05, uInt);
+  vec3 acc = vec3(0.0);
+  for (int i = 0; i < 7; i++){
+    float fi = float(i);
+    float cw = clamp(uCount - fi, 0.0, 1.0);
+    if (cw <= 0.0) break;
+    vec3 lo; vec3 hi; float wt; float boost = 1.0;
+    if (i == 0)      { lo = GREEN;  hi = TEAL;   wt = uW.x; }
+    else if (i == 1) { lo = mix(TEAL, ROSE, uW.w * 0.85); hi = VIOLET; wt = uW.y; boost = 1.1; }
+    else if (i == 2) { lo = GREEN;  hi = VIOLET; wt = uW.x * 0.85; }
+    else if (i == 3) { lo = mix(VIOLET, ROSE, uW.w * 0.7); hi = TEAL; wt = uW.z; boost = 1.5; }
+    else if (i == 4) { lo = ROSE;   hi = VIOLET; wt = uW.w; boost = 1.35; }
+    else if (i == 5) { lo = TEAL;   hi = GREEN;  wt = uW.y * 0.85; }
+    else             { lo = VIOLET; hi = TEAL;   wt = uW.z * 0.85; boost = 1.5; }
+
+    float sp = 0.7 + 0.18 * fi;
+    float x = x0 - uPush.x * 2.4 * gp * 1.3 + fi * 0.37;
+    // the fold: a broad, sinuous lower edge
+    float wv = 0.50 * sin(x * (0.95 + 0.11 * fi) + t * 0.060 * sp + fi * 2.399)
+             + 0.30 * sin(x * (2.05 - 0.08 * fi) - t * 0.090 * sp + fi * 4.117)
+             + 0.14 * sin(x * (4.30 + 0.18 * fi) + t * 0.170 * sp + fi * 1.913);
+    wv += 0.8 * (n1(x * 1.15 + fi * 13.7 + t * 0.035 * sp) - 0.5);
+    float base = uHz + 0.105 + 0.056 * fi;
+    float edge = base + wv * (0.075 + 0.006 * fi);
+    edge += (uPtr.y - edge) * gp * 0.30 * en - uPush.y * gp * 0.9;
+    float h = uv.y - edge;
+
+    // each curtain only occupies part of the sky, and breathes along its length
+    float cover = smoothstep(0.22 - 0.12 * storm, 0.54 - 0.16 * storm, n1(x * 0.62 + fi * 7.3 + t * 0.018 * sp));
+    float bright = 0.45 + 0.90 * n1(x * 1.9 + fi * 3.1 - t * 0.05 * sp);
+    float breathe = 0.88 + 0.12 * sin(t * 0.55 + fi * 1.9 + x * 1.3);
+
+    // rays: parallel to the field lines, leaning gently toward the zenith
+    float hp = max(h, 0.0);
+    float xr = x + (x - 1.2) * hp * 0.35 + wv * 0.9;
+    float r1 = n1(xr * rayF + fi * 31.7 + t * 0.10);
+    float r2 = n1(xr * rayF * 0.34 - fi * 17.3 - t * 0.06);
+    float ray = mix(r1, r2, 0.4);
+    ray = mix(ray, 0.5, soft * 0.85);
+    float len = (0.045 + 0.20 * ray * ray + 0.03 * cover) * (1.0 + 0.75 * storm);
+    float lowEdge = smoothstep(-0.008 - soft * 0.02, 0.004 + soft * 0.02, h);
+    float prof = 0.95 * exp(-hp / 0.022) + 0.55 * exp(-hp / len) * (0.35 + 1.05 * ray);
+    float below = 0.10 * exp(min(h, 0.0) / 0.07) * (1.0 - lowEdge);
+    float inten = (lowEdge * prof + below) * cover * bright * breathe;
+
+    float hv = clamp(h / 0.34, 0.0, 1.0);
+    vec3 col = mix(lo, hi, smoothstep(0.0, 1.0, hv));
+    col = mix(col, vec3(0.88, 1.0, 0.95), 0.22 * exp(-hp * 46.0) * lowEdge);
+    acc += col * inten * wt * cw * boost * (1.0 - 0.06 * fi);
+  }
+  acc *= 1.0 + 1.7 * en * gp;
+  acc *= 1.0 + uFlash * 0.35;
+  return acc;
+}
+
+vec3 lake(vec2 uv, float t, float rayF, float gain){
+  float depth = clamp((uHz - uv.y) / uHz, 0.0, 1.0);
+  float rip = sin(uv.y * 240.0 + t * 0.7 + n1(uv.x * 9.0) * 6.0) * 0.0016 * (0.4 + depth);
+  vec2 m = vec2(uv.x + rip + (n1(uv.y * 70.0 + t * 0.15) - 0.5) * 0.006 * depth, uHz + (uHz - uv.y) * 1.35);
+  vec3 refl = aurora(m, t, 1.0, rayF * 0.6) * gain;
+  float fade = exp(-depth * 2.3) * 0.85 + 0.10;
+  float streak = n2(vec2(uv.x * 4.0, uv.y * 170.0 + t * 0.02));
+  float glint = smoothstep(0.80, 0.97, n2(vec2(uv.x * 2.6 + t * 0.006, uv.y * 300.0)));
+  vec3 ice = mix(vec3(0.030, 0.070, 0.115), vec3(0.010, 0.024, 0.050), smoothstep(0.0, 0.9, depth));
+  ice += sky(m) * 0.35 * exp(-depth * 3.0);
+  ice += vec3(0.008, 0.018, 0.026) * streak;
+  refl *= vec3(0.80, 0.94, 1.0) * (0.70 + 0.40 * streak + 2.4 * glint) * fade;
+  return 1.0 - (1.0 - ice) * exp(-refl * 1.15);
+}
+
+void main(){
+  vec2 uv = gl_FragCoord.xy / uRes;
+  float t = uTime;
+  float rayF = uRes.x / 12.6;
+  float gain = 0.34 + 1.50 * pow(uInt, 1.2);
+  vec3 col;
+  if (uv.y >= uHz){
+    vec3 s = sky(uv);
+    vec3 a = aurora(uv, t, 0.0, rayF) * gain;
+    // faint airglow lifting the sky beneath the curtains
+    float glow = smoothstep(uHz, uHz + 0.5, uv.y) * smoothstep(1.0, 0.45, uv.y);
+    s += vec3(0.010, 0.040, 0.042) * glow * (0.3 + 0.7 * uInt) * (0.6 + 0.4 * uW.x);
+    col = 1.0 - (1.0 - s) * exp(-a * 1.15);
+  } else {
+    col = lake(uv, t, rayF, gain);
+  }
+  float aspect = uRes.x / uRes.y;
+  vec2 vq = (uv - 0.5) * vec2(aspect * 0.55, 1.0);
+  col *= 1.0 - 0.32 * dot(vq, vq);
+  col += (h21(gl_FragCoord.xy + fract(t) * 91.7) - 0.5) / 255.0;
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+function compile(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn('Aurora shader:', gl.getShaderInfoLog(s)); return null; }
+  return s;
+}
+function initGL() {
+  try {
+    gl = glC.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' }) || glC.getContext('experimental-webgl');
+    if (!gl) throw new Error('WebGL unavailable');
+    const vs = compile(gl.VERTEX_SHADER, VS), fs = compile(gl.FRAGMENT_SHADER, FS);
+    if (!vs || !fs) throw new Error('shader compile failed');
+    const p = gl.createProgram();
+    gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    gl.useProgram(p);
+    const b = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, b);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(p, 'aPos'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    U = {};
+    ['uRes', 'uTime', 'uInt', 'uCount', 'uHz', 'uFlash', 'uW', 'uPtr', 'uPush'].forEach(n => { U[n] = gl.getUniformLocation(p, n); });
+    glOK = true; root.classList.remove('no-gl');
+  } catch (err) {
+    console.warn('Aurora: WebGL unavailable, using the gradient fallback.', err && err.message ? err.message : err);
+    glOK = false; root.classList.add('no-gl');
+  }
+}
+glC.addEventListener('webglcontextlost', e => { e.preventDefault(); glOK = false; root.classList.add('no-gl'); });
+glC.addEventListener('webglcontextrestored', () => { initGL(); sizeGL(); });
+initGL();
+
+function sizeGL() {
+  glC.width = Math.max(2, Math.round(S.W * Q));
+  glC.height = Math.max(2, Math.round(S.H * Q));
+  if (glOK) gl.viewport(0, 0, glC.width, glC.height);
+}
+function drawGL(t) {
+  gl.uniform2f(U.uRes, glC.width, glC.height);
+  gl.uniform1f(U.uTime, t);
+  gl.uniform1f(U.uInt, clamp(S.iCur + S.pulse * 0.24, 0, 1.2));
+  gl.uniform1f(U.uCount, S.cCur);
+  gl.uniform1f(U.uHz, S.hz);
+  gl.uniform1f(U.uFlash, S.flash);
+  gl.uniform4f(U.uW, WT.g, WT.t, WT.v, WT.r);
+  gl.uniform4f(U.uPtr, S.sx, S.sy, S.energy, 0);
+  gl.uniform2f(U.uPush, S.pushx, S.pushy);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+/* ------------------------------------------------------------------ stars + shooting stars */
+const starC = $('#stars'), sctx = starC.getContext('2d');
+const ridgeC = $('#ridge'), rctx = ridgeC.getContext('2d');
+let stars = [];
+const glowSprite = (() => {
+  const c = doc.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.12, 'rgba(235,250,255,.75)'); g.addColorStop(0.4, 'rgba(180,225,255,.16)'); g.addColorStop(1, 'rgba(180,225,255,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 64, 64); return c;
+})();
+function buildStars() {
+  const r = rng(69), out = [];
+  const n = Math.round(clamp(S.W * S.H / 3300, 110, 430));
+  const skyH = S.H * (1 - S.hz);
+  for (let i = 0; i < n; i++) {
+    const y = Math.pow(r(), 1.2) * skyH * 0.97, big = r() < 0.035;
+    out.push({ x: r() * S.W, y, s: big ? 1.1 + r() * 0.7 : 0.6 + r() * 0.85, a: big ? 0.9 : 0.34 + r() * 0.6, ph: r() * 6.28, sp: 0.5 + r() * 1.7, hue: r() < 0.18 ? 1 : (r() < 0.14 ? 2 : 0), big });
+  }
+  // a faint Milky Way drifting diagonally across the sky
+  const m = Math.round(n * 0.55);
+  for (let i = 0; i < m; i++) {
+    const u = r(), off = (r() + r() + r() - 1.5) * 0.11;
+    const x = u * S.W, y = skyH * (0.86 - u * 0.62 + off);
+    if (y > 0 && y < skyH * 0.98) out.push({ x, y, s: 0.35 + r() * 0.5, a: 0.14 + r() * 0.34, ph: r() * 6.28, sp: 0.4 + r() * 1.2, hue: 1, big: false });
+  }
+  stars = out;
+}
+const HUES = ['255,255,255', '178,214,255', '255,226,190'];
+const shooters = [];
+function launchStar(silent) {
+  if (shooters.length > 3) return;
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  const W = S.W, H = S.H;
+  const ang = (16 + Math.random() * 16) * Math.PI / 180;
+  const spd = Math.max(520, W * (0.62 + Math.random() * 0.3));
+  shooters.push({
+    x: dir > 0 ? W * (0.03 + Math.random() * 0.3) : W * (0.97 - Math.random() * 0.3),
+    y: H * (0.05 + Math.random() * 0.24),
+    vx: Math.cos(ang) * spd * dir, vy: Math.sin(ang) * spd,
+    age: 0, life: 1.0 + Math.random() * 0.35, len: Math.min(300, W * 0.22)
+  });
+  S.flash = 1;
+  if (!silent) toast('A shooting star. Make a wish.');
+}
+function drawSky(dt, t) {
+  const ctx = sctx, W = S.W, H = S.H, hy = H * (1 - S.hz);
+  ctx.clearRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
+  for (let i = 0; i < stars.length; i++) {
+    const s = stars[i];
+    const tw = reduce ? 0.85 : 0.62 + 0.38 * Math.sin(t * s.sp + s.ph);
+    const ext = 0.35 + 0.65 * Math.pow(1 - s.y / hy, 0.6);
+    const a = s.a * tw * ext;
+    if (s.big) {
+      const r = 4.5 + s.s * 2.6;
+      ctx.globalAlpha = a * 0.55; ctx.drawImage(glowSprite, s.x - r, s.y - r, r * 2, r * 2);
+      ctx.globalAlpha = a; ctx.fillStyle = '#fff'; ctx.fillRect(s.x - 0.6, s.y - 0.6, 1.2, 1.2);
+      ctx.globalAlpha = a * 0.5; ctx.fillRect(s.x - r * 1.5, s.y - 0.25, r * 3, 0.5); ctx.fillRect(s.x - 0.25, s.y - r * 1.5, 0.5, r * 3);
+    } else {
+      ctx.globalAlpha = a; ctx.fillStyle = 'rgb(' + HUES[s.hue] + ')'; ctx.fillRect(s.x, s.y, s.s, s.s);
+    }
+  }
+  ctx.globalAlpha = 1;
+  // shooting stars
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = shooters.length - 1; i >= 0; i--) {
+    const s = shooters[i];
+    s.age += dt; s.x += s.vx * dt; s.y += s.vy * dt;
+    const k = s.age / s.life;
+    if (k >= 1) { shooters.splice(i, 1); continue; }
+    const env = sstep(0, 0.08, k) * (1 - sstep(0.55, 1, k));
+    const sp = Math.hypot(s.vx, s.vy), ux = s.vx / sp, uy = s.vy / sp, L = s.len * (0.5 + 0.5 * sstep(0, 0.25, k));
+    const tx = s.x - ux * L, ty = s.y - uy * L;
+    const g = ctx.createLinearGradient(tx, ty, s.x, s.y);
+    g.addColorStop(0, 'rgba(160,255,215,0)'); g.addColorStop(0.7, 'rgba(190,255,235,' + (0.35 * env) + ')'); g.addColorStop(1, 'rgba(255,255,255,' + env + ')');
+    ctx.strokeStyle = g; ctx.lineWidth = 1.7; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(s.x, s.y); ctx.stroke();
+    ctx.globalAlpha = env; ctx.drawImage(glowSprite, s.x - 13, s.y - 13, 26, 26); ctx.globalAlpha = 1;
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+/* ------------------------------------------------------------------ ridge, lake shore, town lights */
+// midpoint displacement gives believable, jagged alpine skylines; env() shapes the massif
+function mountain(seed, W, levels, rough, sharp, env) {
+  const r = rng(seed), n = (1 << levels) + 1, a = new Float32Array(n);
+  a[0] = r() * 0.5; a[n - 1] = r() * 0.5;
+  let step = n - 1, amp = 1;
+  while (step > 1) {
+    const half = step >> 1;
+    for (let i = half; i < n; i += step) a[i] = (a[i - half] + a[i + half]) * 0.5 + (r() - 0.5) * amp;
+    amp *= rough; step = half;
+  }
+  let mn = 1e9, mx = -1e9;
+  for (let i = 0; i < n; i++) { if (a[i] < mn) mn = a[i]; if (a[i] > mx) mx = a[i]; }
+  const pts = [], sp = 2;
+  for (let x = -sp; x <= W + sp; x += sp) {
+    const u = clamp(x / W, 0, 1), f = u * (n - 1), i = Math.min(n - 2, Math.floor(f));
+    const v = (lerp(a[i], a[i + 1], f - i) - mn) / (mx - mn);
+    pts.push([x, Math.pow(clamp(v, 0, 1), sharp) * env(u)]);
+  }
+  return pts;
+}
+function tracePath(ctx, pts, hzY, amp, shape) {
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], hzY + 2);
+  for (let i = 0; i < pts.length; i++) { const p = pts[i]; ctx.lineTo(p[0], hzY - p[1] * amp * (shape ? shape(p[0]) : 1)); }
+  ctx.lineTo(pts[pts.length - 1][0], hzY + 2);
+  ctx.closePath();
+}
+function rimLine(ctx, pts, hzY, amp, shape) {
+  ctx.beginPath();
+  for (let i = 0; i < pts.length; i++) { const p = pts[i], y = hzY - p[1] * amp * (shape ? shape(p[0]) : 1); if (i) ctx.lineTo(p[0], y); else ctx.moveTo(p[0], y); }
+}
+function drawRidge() {
+  const c = ridgeC, ctx = rctx, dprL = c.width / S.W;
+  const W = S.W, H = S.H, hzY = H * (1 - S.hz), lakeH = H - hzY, narrow = W < 720;
+  ctx.setTransform(dprL, 0, 0, dprL, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  if (!glOK) {
+    const g = ctx.createLinearGradient(0, hzY, 0, H);
+    g.addColorStop(0, '#0a2233'); g.addColorStop(1, '#040a16');
+    ctx.fillStyle = g; ctx.fillRect(0, hzY, W, lakeH);
+  }
+  const gauss = (u, c, w) => Math.exp(-Math.pow((u - c) / w, 2));
+  const far = mountain(5, W, 9, 0.56, 1.7, u => 0.34 + 0.66 * Math.max(gauss(u, 0.30, 0.20), gauss(u, 0.82, 0.16)));
+  const mid = mountain(19, W, 9, 0.54, 1.9, u => 0.30 + 0.70 * (gauss(u, 0.55, 0.24) + 0.5 * gauss(u, 0.10, 0.12)));
+  const near = mountain(41, W, 8, 0.50, 1.2, () => 1);
+  const farAmp = H * (narrow ? 0.15 : 0.21), midAmp = H * (narrow ? 0.10 : 0.15), nearAmp = H * (narrow ? 0.05 : 0.07);
+  const nearShape = x => 0.22 + 0.78 * Math.pow(Math.abs(2 * x / W - 1), 1.3);
+
+  // reflections: mirrored silhouettes, blurred and faded with depth
+  const off = doc.createElement('canvas'); off.width = c.width; off.height = c.height;
+  const o = off.getContext('2d'); o.setTransform(dprL, 0, 0, dprL, 0, 0);
+  o.save(); o.translate(0, 2 * hzY); o.scale(1, -1);
+  tracePath(o, far, hzY, farAmp, null); o.fillStyle = 'rgba(30,54,94,.55)'; o.fill();
+  tracePath(o, mid, hzY, midAmp, null); o.fillStyle = 'rgba(9,20,42,.92)'; o.fill();
+  tracePath(o, near, hzY, nearAmp, nearShape); o.fillStyle = 'rgba(3,7,17,.96)'; o.fill();
+  o.restore();
+  o.globalCompositeOperation = 'destination-out';
+  const fg = o.createLinearGradient(0, hzY, 0, hzY + lakeH * 0.8);
+  fg.addColorStop(0, 'rgba(0,0,0,.30)'); fg.addColorStop(0.5, 'rgba(0,0,0,.78)'); fg.addColorStop(1, 'rgba(0,0,0,1)');
+  o.fillStyle = fg; o.fillRect(0, hzY, W, lakeH);
+  ctx.save();
+  try { ctx.filter = 'blur(' + Math.max(1.5, W / 700) + 'px)'; } catch (e) { /* no filter support */ }
+  ctx.globalAlpha = 0.95; ctx.drawImage(off, 0, 0, W, H);
+  ctx.restore();
+
+  // far range: hazy blue with snow caps
+  tracePath(ctx, far, hzY, farAmp, null);
+  let g = ctx.createLinearGradient(0, hzY - farAmp, 0, hzY);
+  g.addColorStop(0, 'rgba(62,98,148,.60)'); g.addColorStop(0.55, 'rgba(30,58,104,.78)'); g.addColorStop(1, 'rgba(26,52,92,.90)');
+  ctx.fillStyle = g; ctx.fill();
+  g = ctx.createLinearGradient(0, hzY - farAmp, 0, hzY - farAmp * 0.5);
+  g.addColorStop(0, 'rgba(220,244,252,.34)'); g.addColorStop(0.55, 'rgba(170,220,240,.10)'); g.addColorStop(1, 'rgba(170,220,240,0)');
+  tracePath(ctx, far, hzY, farAmp, null); ctx.fillStyle = g; ctx.fill();
+
+  // middle ridge: near-black with a whisper of snow and green rim light
+  tracePath(ctx, mid, hzY, midAmp, null);
+  g = ctx.createLinearGradient(0, hzY - midAmp, 0, hzY);
+  g.addColorStop(0, 'rgba(16,34,62,.98)'); g.addColorStop(0.55, 'rgba(8,18,38,.99)'); g.addColorStop(1, 'rgba(5,11,26,1)');
+  ctx.fillStyle = g; ctx.fill();
+  g = ctx.createLinearGradient(0, hzY - midAmp, 0, hzY - midAmp * 0.45);
+  g.addColorStop(0, 'rgba(190,232,244,.22)'); g.addColorStop(1, 'rgba(190,232,244,0)');
+  tracePath(ctx, mid, hzY, midAmp, null); ctx.fillStyle = g; ctx.fill();
+  g = ctx.createLinearGradient(0, hzY - midAmp, 0, hzY - midAmp * 0.5);
+  g.addColorStop(0, 'rgba(160,255,225,.55)'); g.addColorStop(1, 'rgba(160,255,225,0)');
+  rimLine(ctx, mid, hzY, midAmp, null); ctx.strokeStyle = g; ctx.lineWidth = 1; ctx.stroke();
+
+  // the town on the far shore, and its reflection
+  const r = rng(404);
+  const clusters = [[0.13, 0.05], [0.30, 0.035], [0.69, 0.045], [0.88, 0.04]];
+  for (const cl of clusters) {
+    const cx = cl[0] * W, spread = cl[1] * W, n = Math.round(6 + spread / 6);
+    for (let i = 0; i < n; i++) {
+      const x = cx + (r() + r() - 1) * spread, y = hzY - 1.5 - r() * 5, s = 0.8 + r() * 0.9;
+      ctx.fillStyle = 'rgba(255,214,150,' + (0.55 + r() * 0.4) + ')'; ctx.fillRect(x, y, s, s);
+      const len = 8 + r() * 26, gg = ctx.createLinearGradient(0, hzY + 2, 0, hzY + 2 + len);
+      gg.addColorStop(0, 'rgba(255,200,130,.30)'); gg.addColorStop(1, 'rgba(255,200,130,0)');
+      ctx.fillStyle = gg; ctx.fillRect(x, hzY + 2, 0.9, len);
+    }
+  }
+
+  // a lone cabin on the ice: one window lit, a stargazer and tripod beside it
+  {
+    const s = clamp(W / 1440, 0.72, 1.35);
+    ctx.save(); ctx.translate(W * 0.5, hzY + 15 * s); ctx.scale(s, s);
+    const rg = ctx.createLinearGradient(0, 3, 0, 36);
+    rg.addColorStop(0, 'rgba(255,190,110,.5)'); rg.addColorStop(1, 'rgba(255,190,110,0)');
+    ctx.fillStyle = rg; ctx.fillRect(2.4, 2, 2.2, 34);
+    const halo = ctx.createRadialGradient(3.5, -5, 0, 3.5, -5, 18);
+    halo.addColorStop(0, 'rgba(255,196,120,.34)'); halo.addColorStop(1, 'rgba(255,196,120,0)');
+    ctx.fillStyle = halo; ctx.fillRect(-16, -24, 40, 40);
+    ctx.fillStyle = '#04070f'; ctx.fillRect(-7, -9, 20, 9);
+    ctx.beginPath(); ctx.moveTo(-9, -9); ctx.lineTo(3, -16); ctx.lineTo(15, -9); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ffd08a'; ctx.fillRect(2, -6.5, 3, 3);
+    ctx.fillStyle = '#04070f'; ctx.fillRect(28, -8.6, 2.2, 6.4); ctx.beginPath(); ctx.arc(29.1, -10, 1.3, 0, 6.3); ctx.fill();
+    ctx.strokeStyle = '#04070f'; ctx.lineWidth = 0.8; ctx.beginPath();
+    ctx.moveTo(34, -9); ctx.lineTo(32.4, -0.2); ctx.moveTo(34, -9); ctx.lineTo(35.6, -0.2); ctx.moveTo(34, -9); ctx.lineTo(34, -0.2); ctx.stroke();
+    ctx.fillRect(32.8, -12.2, 2.6, 3.4);
+    ctx.restore();
+  }
+
+  // foreground hills framing the scene
+  tracePath(ctx, near, hzY, nearAmp, nearShape);
+  g = ctx.createLinearGradient(0, hzY - nearAmp, 0, hzY);
+  g.addColorStop(0, 'rgba(6,13,30,.99)'); g.addColorStop(1, 'rgba(3,7,17,1)');
+  ctx.fillStyle = g; ctx.fill();
+  g = ctx.createLinearGradient(0, hzY - nearAmp, 0, hzY - nearAmp * 0.55);
+  g.addColorStop(0, 'rgba(180,225,240,.20)'); g.addColorStop(1, 'rgba(180,225,240,0)');
+  tracePath(ctx, near, hzY, nearAmp, nearShape); ctx.fillStyle = g; ctx.fill();
+
+  // shoreline glint
+  g = ctx.createLinearGradient(0, 0, W, 0);
+  g.addColorStop(0, 'rgba(150,220,235,0)'); g.addColorStop(0.5, 'rgba(150,220,235,.24)'); g.addColorStop(1, 'rgba(150,220,235,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, hzY, W, 1);
+}
+
+/* ------------------------------------------------------------------ resize */
+function resize(force) {
+  const W = Math.max(1, window.innerWidth), H = Math.max(1, window.innerHeight);
+  if (!force && S.W === W && Math.abs(H - S.H) < (coarse ? 150 : 1)) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  S.W = W; S.H = H; S.hz = W < 720 ? 0.30 : 0.29;
+  for (const c of [starC, ridgeC]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+  sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  buildStars(); drawRidge(); sizeGL(); measureCards();
+}
+
+/* ------------------------------------------------------------------ pointer */
+function onPointer(e) { S.px = e.clientX; S.py = e.clientY; S.hasPtr = true; }
+window.addEventListener('pointermove', onPointer, { passive: true });
+window.addEventListener('pointerdown', e => {
+  onPointer(e);
+  if (!e.target.closest('.card, button, a, input, .live')) S.pulse = 1;
+}, { passive: true });
+doc.addEventListener('pointerleave', () => { S.hasPtr = false; });
+window.addEventListener('blur', () => { S.hasPtr = false; });
+
+function updatePointer(dt) {
+  const tx = S.hasPtr ? S.px / S.W : 0.5, ty = S.hasPtr ? 1 - S.py / S.H : 0.55;
+  const nx = damp(S.sx, tx, 9, dt), ny = damp(S.sy, ty, 9, dt);
+  const vx = (nx - S.sx) / dt, vy = (ny - S.sy) / dt;
+  S.sx = nx; S.sy = ny;
+  const sp = Math.hypot(vx * (S.W / S.H), vy);
+  S.pushx = damp(S.pushx, clamp(vx * 0.075, -0.14, 0.14), 5, dt);
+  S.pushy = damp(S.pushy, clamp(vy * 0.06, -0.09, 0.09), 5, dt);
+  S.energy = Math.max(S.energy * Math.exp(-dt * 1.4), clamp(sp * 0.9, 0, 1));
+  S.pulse = Math.max(0, S.pulse - dt * 0.7);
+  S.flash = Math.max(0, S.flash - dt * 1.1);
+}
+
+/* ------------------------------------------------------------------ tilting glass cards */
+const cards = $$('.card').map(el => ({ el, rx: 0, ry: 0, mx: 50, my: 30, sh: 0, cx: 0, cy: 0, w: 1, h: 1, l: 0, t: 0 }));
+function measureCards() {
+  const sy = window.scrollY || 0;
+  for (const c of cards) {
+    const r = c.el.getBoundingClientRect();
+    c.w = r.width; c.h = r.height; c.l = r.left; c.t = r.top + sy;
+    c.cx = r.left + r.width / 2; c.cy = r.top + sy + r.height / 2;
+  }
+}
+function updateCards(dt, t) {
+  const sy = window.scrollY || 0;
+  let px = S.px, py = S.py, live = S.hasPtr, idleK = 1;
+  if (!live) { // idle: a slow wandering light so the glass never goes dead
+    px = S.W * (0.5 + 0.38 * Math.sin(t * 0.13)); py = S.H * (0.42 + 0.22 * Math.cos(t * 0.17 + 1)); idleK = 0.5;
+  }
+  const k = 1 - Math.exp(-7 * dt);
+  for (const c of cards) {
+    const cy = c.cy - sy, top = c.t - sy;
+    let tRy = 0, tRx = 0;
+    if (!reduce) {
+      tRy = clamp((px - c.cx) / (Math.max(c.w, 320) * 1.15), -1, 1) * 6 * idleK;
+      tRx = -clamp((py - cy) / (Math.max(c.h, 320) * 1.15), -1, 1) * 6 * idleK;
+    }
+    const tmx = clamp((px - c.l) / c.w * 100, -25, 125), tmy = clamp((py - top) / c.h * 100, -25, 125);
+    const dx = Math.max(c.l - px, 0, px - (c.l + c.w)), dy = Math.max(top - py, 0, py - (top + c.h));
+    const tsh = (live ? clamp(1 - Math.hypot(dx, dy) / 340, 0, 1) : 0.32 * clamp(1 - Math.hypot(dx, dy) / 400, 0, 1)) * 0.95 + 0.05;
+    c.ry = damp(c.ry, tRy, 7, dt); c.rx = damp(c.rx, tRx, 7, dt);
+    c.mx = damp(c.mx, tmx, 9, dt); c.my = damp(c.my, tmy, 9, dt); c.sh = damp(c.sh, tsh, 6, dt);
+    const st = c.el.style;
+    st.setProperty('--rx', c.rx.toFixed(3) + 'deg'); st.setProperty('--ry', c.ry.toFixed(3) + 'deg');
+    st.setProperty('--mx', c.mx.toFixed(1) + '%'); st.setProperty('--my', c.my.toFixed(1) + '%');
+    st.setProperty('--sheen', c.sh.toFixed(3));
+  }
+}
+if ('ResizeObserver' in window) { const ro = new ResizeObserver(() => measureCards()); cards.forEach(c => ro.observe(c.el)); }
+window.addEventListener('scroll', () => {}, { passive: true });
+
+/* ------------------------------------------------------------------ live colours (shader weights + CSS tints) */
+const CG = [93, 255, 180], CT = [34, 211, 197], CV = [139, 92, 246], CR = [255, 111, 181];
+const mix3 = (a, b, k) => [lerp(a[0], b[0], k), lerp(a[1], b[1], k), lerp(a[2], b[2], k)];
+let tintClock = 0;
+function updateColours(t, dt) {
+  WT.g = 0.78 + 0.22 * Math.sin(t * 0.11);
+  WT.t = 0.74 + 0.26 * Math.sin(t * 0.083 + 1.3);
+  WT.v = 0.66 + 0.34 * Math.sin(t * 0.067 + 2.1);
+  WT.r = Math.max(sstep(0.78, 0.99, Math.sin(t * 0.14 - 0.9)), sstep(0.8, 1.0, S.iCur) * 0.6);   // rare rose (about every 45 s), or a strong storm
+  tintClock += dt;
+  if (tintClock < 0.12) return; tintClock = 0;
+  const a = mix3(CG, CT, 0.5 + 0.5 * Math.sin(t * 0.09));
+  const b = mix3(mix3(CV, CT, 0.25 * (0.5 + 0.5 * Math.sin(t * 0.05))), CR, WT.r * 0.85);
+  root.style.setProperty('--a-rgb', Math.round(a[0]) + ' ' + Math.round(a[1]) + ' ' + Math.round(a[2]));
+  root.style.setProperty('--b-rgb', Math.round(b[0]) + ' ' + Math.round(b[1]) + ' ' + Math.round(b[2]));
+}
+
+/* ------------------------------------------------------------------ Kp gauge */
+const SVGNS = 'http://www.w3.org/2000/svg';
+const GC = { x: 120, y: 104, R: 88 };
+const kpArc = $('#kpArc'), kpThumb = $('#kpThumb'), kpNum = $('#kpNum'), kpStatus = $('#kpStatus'), gaugeSvg = $('#gauge');
+function kpPt(k, r) { const a = (-120 + (k / 9) * 240) * Math.PI / 180; return [GC.x + r * Math.sin(a), GC.y - r * Math.cos(a)]; }
+(function buildTicks() {
+  const g = $('#kpTicks');
+  for (let k = 0; k <= 9; k++) {
+    const major = k % 3 === 0, a = kpPt(k, GC.R - 14), b = kpPt(k, GC.R - (major ? 22 : 19));
+    const l = doc.createElementNS(SVGNS, 'line');
+    l.setAttribute('x1', a[0].toFixed(2)); l.setAttribute('y1', a[1].toFixed(2)); l.setAttribute('x2', b[0].toFixed(2)); l.setAttribute('y2', b[1].toFixed(2));
+    l.setAttribute('class', 'gauge__tick' + (major ? ' major' : '')); g.appendChild(l);
+    if (major) {
+      const p = kpPt(k, GC.R - 33), t = doc.createElementNS(SVGNS, 'text');
+      t.setAttribute('class', 'gauge__lbl'); t.setAttribute('x', p[0].toFixed(2)); t.setAttribute('y', (p[1] + 3).toFixed(2)); t.textContent = String(k); g.appendChild(t);
+    }
+  }
+})();
+const STOPS = [[0, CG], [0.4, CT], [0.74, CV], [1, CR]];
+function gradAt(u) {
+  for (let i = 0; i < STOPS.length - 1; i++) {
+    const a = STOPS[i], b = STOPS[i + 1];
+    if (u <= b[0]) return mix3(a[1], b[1], clamp((u - a[0]) / (b[0] - a[0]), 0, 1));
+  }
+  return CR;
+}
+function kpStatusText(k) {
+  const r = Math.round(k);
+  if (k < 3) return 'Quiet';
+  if (k < 4) return 'Unsettled';
+  if (k < 5) return 'Active';
+  return ['', '', '', '', '', 'G1 · Minor storm', 'G2 · Moderate storm', 'G3 · Strong storm', 'G4 · Severe storm', 'G5 · Extreme storm'][Math.min(9, r)];
+}
+function renderKp(k) {
+  kpArc.setAttribute('stroke-dasharray', (k / 9 * 100).toFixed(2) + ' 100');
+  const p = kpPt(k, GC.R), c = gradAt(k / 9);
+  kpThumb.setAttribute('cx', p[0].toFixed(2)); kpThumb.setAttribute('cy', p[1].toFixed(2));
+  kpThumb.style.filter = 'drop-shadow(0 0 6px rgba(' + c.map(Math.round).join(',') + ',.95))';
+  kpNum.textContent = k.toFixed(1);
+}
+
+/* ------------------------------------------------------------------ 12-hour visibility sparkline */
+const spark = $('#spark'), sparkArea = $('#sparkArea'), sparkLine = $('#sparkLine');
+const SW = 300, SL = 84, ST = 10;              // svg width, baseline y, top y
+const BASEV = [7, 13, 25, 40, 57, 70, 77, 73, 62, 47, 32, 19, 10];   // 18:00 → 06:00
+const HRS = BASEV.length - 1;
+let vals = BASEV.slice();
+const hourLabel = i => String((18 + i) % 24).padStart(2, '0') + ':00';
+(function buildSparkGrid() {
+  const g = $('#sparkGrid');
+  [0.25, 0.5, 0.75, 1].forEach(f => {
+    const l = doc.createElementNS(SVGNS, 'line'), y = SL - (SL - ST) * f;
+    l.setAttribute('x1', 0); l.setAttribute('x2', SW); l.setAttribute('y1', y.toFixed(1)); l.setAttribute('y2', y.toFixed(1)); l.setAttribute('class', 'spark__grid'); g.appendChild(l);
+  });
+  [0, 3, 6, 9, 12].forEach(i => {
+    const t = doc.createElementNS(SVGNS, 'text'); t.setAttribute('class', 'spark__lbl');
+    t.setAttribute('x', (i / HRS * SW).toFixed(1)); t.setAttribute('y', 97);
+    if (i === 0) t.setAttribute('text-anchor', 'start'); if (i === HRS) t.setAttribute('text-anchor', 'end');
+    t.textContent = String((18 + i) % 24).padStart(2, '0'); g.appendChild(t);
+  });
+})();
+function catmull(p) {
+  let d = 'M' + p[0][0].toFixed(1) + ' ' + p[0][1].toFixed(1);
+  for (let i = 0; i < p.length - 1; i++) {
+    const p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
+    const c1y = clamp(p1[1] + (p2[1] - p0[1]) / 6, ST - 4, SL), c2y = clamp(p2[1] - (p3[1] - p1[1]) / 6, ST - 4, SL);
+    d += 'C' + (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1) + ' ' + c1y.toFixed(1) + ' ' + (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1) + ' ' + c2y.toFixed(1) + ' ' + p2[0].toFixed(1) + ' ' + p2[1].toFixed(1);
+  }
+  return d;
+}
+const NOWIDX = 3.79;      // 21:47 in the fictional evening
+function yFor(v) { return SL - (SL - ST) * v / 100; }
+function updateSpark() {
+  const f = 0.30 + 1.15 * S.intensity;
+  vals = BASEV.map((v, i) => clamp(v * f + Math.sin(i * 1.7) * 2 * S.intensity, 2, 99));
+  const pts = vals.map((v, i) => [i / HRS * SW, yFor(v)]);
+  const d = catmull(pts);
+  sparkLine.setAttribute('d', d);
+  sparkArea.setAttribute('d', d + 'L' + SW + ' ' + SL + 'L0 ' + SL + 'Z');
+  let mi = 0; vals.forEach((v, i) => { if (v > vals[mi]) mi = i; });
+  $('#peakVal').textContent = Math.round(vals[mi]) + '%';
+  $('#peakAt').textContent = 'peak ' + hourLabel(mi);
+  const i0 = Math.floor(NOWIDX), fr = NOWIDX - i0, nv = lerp(vals[i0], vals[i0 + 1], fr), nx = NOWIDX / HRS * SW, ny = yFor(nv);
+  const line = $('#sparkNow'), dot = $('#sparkNowDot');
+  line.setAttribute('x1', nx.toFixed(1)); line.setAttribute('x2', nx.toFixed(1)); line.setAttribute('y1', ny.toFixed(1)); line.setAttribute('y2', SL);
+  dot.setAttribute('cx', nx.toFixed(1)); dot.setAttribute('cy', ny.toFixed(1));
+  spark.setAttribute('aria-label', 'Visibility over the next twelve hours, peaking at ' + Math.round(vals[mi]) + ' percent around ' + hourLabel(mi));
+}
+const tip = $('#sparkTip'), tipLine = $('#tipLine'), tipDot = $('#tipDot'), tipRect = $('#tipRect'), tipText = $('#tipText');
+function showTip(idx) {
+  idx = clamp(idx, 0, HRS);
+  const v = vals[idx], x = idx / HRS * SW, y = yFor(v), label = hourLabel(idx) + ' · ' + Math.round(v) + '%';
+  const w = 12 + label.length * 5.6, rx = clamp(x - w / 2, 0, SW - w), ry = clamp(y - 30, -2, 60);
+  tipLine.setAttribute('x1', x); tipLine.setAttribute('x2', x); tipLine.setAttribute('y1', y); tipLine.setAttribute('y2', SL);
+  tipDot.setAttribute('cx', x); tipDot.setAttribute('cy', y);
+  tipRect.setAttribute('x', rx); tipRect.setAttribute('y', ry); tipRect.setAttribute('width', w);
+  tipText.setAttribute('x', rx + w / 2); tipText.setAttribute('y', ry + 12.4); tipText.textContent = label;
+  tip.setAttribute('opacity', '1');
+}
+let tipIdx = 6;
+spark.addEventListener('pointermove', e => { const r = spark.getBoundingClientRect(); tipIdx = Math.round((e.clientX - r.left) / r.width * HRS); showTip(tipIdx); });
+spark.addEventListener('pointerdown', e => { const r = spark.getBoundingClientRect(); tipIdx = Math.round((e.clientX - r.left) / r.width * HRS); showTip(tipIdx); });
+spark.addEventListener('pointerleave', () => tip.setAttribute('opacity', '0'));
+spark.addEventListener('blur', () => tip.setAttribute('opacity', '0'));
+spark.addEventListener('focus', () => showTip(tipIdx));
+spark.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); tipIdx = clamp(tipIdx + (e.key === 'ArrowRight' ? 1 : -1), 0, HRS); showTip(tipIdx); }
+});
+
+/* ------------------------------------------------------------------ moon phase */
+(function moon() {
+  const r = 23, phase = 0.159;                   // 0 new · 0.25 first quarter · 0.5 full
+  const c = Math.cos(phase * 2 * Math.PI), rx = Math.abs(c) * r;
+  const waxing = phase < 0.5, crescent = c > 0;
+  // lit limb on the right when waxing (northern hemisphere), terminator as an ellipse arc
+  const outerSweep = waxing ? 1 : 0;
+  const termSweep = (waxing === crescent) ? 0 : 1;
+  const d = 'M0 ' + (-r) + 'A' + r + ' ' + r + ' 0 0 ' + outerSweep + ' 0 ' + r + 'A' + rx.toFixed(2) + ' ' + r + ' 0 0 ' + termSweep + ' 0 ' + (-r) + 'Z';
+  $('#moonLitPath').setAttribute('d', d); $('#moonClipPath').setAttribute('d', d);
+})();
+
+/* ------------------------------------------------------------------ intensity slider */
+const slider = $('#intensity'), intNum = $('#intNum'), ribText = $('#ribText'), bars = $$('#ribBars i');
+function ribbonCount(v) { return 2.6 + 4.4 * v; }
+function onIntensity() {
+  const v = +slider.value / 100;
+  S.intensity = v;
+  const rc = Math.round(ribbonCount(v));
+  slider.style.setProperty('--fill', (v * 100).toFixed(1) + '%');
+  intNum.textContent = slider.value;
+  ribText.textContent = rc + (rc === 1 ? ' ribbon' : ' ribbons');
+  bars.forEach((b, i) => b.classList.toggle('on', i < rc));
+  slider.setAttribute('aria-valuetext', slider.value + ' percent, ' + rc + ' ribbons');
+  updateSpark();
+}
+slider.addEventListener('input', onIntensity);
+onIntensity();
+
+/* ------------------------------------------------------------------ spots */
+const spotMsg = $('#spotMsg');
+$$('.spot').forEach(b => b.addEventListener('click', () => {
+  $$('.spot').forEach(o => o.setAttribute('aria-pressed', o === b ? 'true' : 'false'));
+  spotMsg.textContent = 'Heading to ' + $('.spot__name', b).textContent + ' · ' + b.dataset.eta;
+}));
+
+/* ------------------------------------------------------------------ clock + toast + shooting-star triggers */
+const clockEl = $('#clock'), clock0 = 21 * 3600 + 47 * 60 + 12, born = performance.now();
+function tickClock() {
+  const s = (clock0 + Math.floor((performance.now() - born) / 1000)) % 86400;
+  clockEl.textContent = String(Math.floor(s / 3600)).padStart(2, '0') + ':' + String(Math.floor(s % 3600 / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+}
+setInterval(tickClock, 1000);
+const toastEl = $('#toast'); let toastTimer = 0;
+function toast(msg) {
+  toastEl.textContent = msg; toastEl.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => toastEl.classList.remove('on'), 2600);
+}
+window.addEventListener('keydown', e => {
+  if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey && !e.altKey) launchStar(false);
+});
+$('#starBtn').addEventListener('click', () => launchStar(false));
+let nextAuto = 18 + Math.random() * 20;
+
+/* ------------------------------------------------------------------ main loop */
+let running = false, last = 0, frames = 0, ema = 0.016, slowFrames = 0;
+function frame(now) {
+  if (!running) return;
+  requestAnimationFrame(frame);
+  const raw = Math.max(0.0005, (now - last) / 1000); last = now;
+  const dt = Math.min(raw, 1 / 12);           // aurora clock: everything is analytic in time, so a larger step is safe
+  const udt = Math.min(raw, 0.25);            // interface smoothing follows the wall clock, even on slow machines
+  frames++;
+  // adaptive render scale
+  if (frames > 24) {
+    ema = ema * 0.94 + raw * 0.06;
+    if (ema > 0.030 && Q > 0.46) { if (++slowFrames > 45) { Q = Math.max(0.46, Q * 0.86); slowFrames = 0; sizeGL(); ema = 0.02; } } else slowFrames = 0;
+  }
+  S.t += dt * (reduce ? 0.28 : 1);
+  const t = S.t;
+  updatePointer(Math.max(udt, 0.001));
+  S.iCur = damp(S.iCur, S.intensity, 3.2, udt);
+  S.cCur = damp(S.cCur, ribbonCount(S.intensity), 2.6, udt);
+  updateColours(t, udt);
+  // Kp readout follows intensity
+  const kpT = 1 + S.intensity * 8;
+  if (Math.abs(kpT - S.kpCur) > 0.004) {
+    S.kpCur = damp(S.kpCur, kpT, 7, udt); renderKp(S.kpCur);
+    const st = kpStatusText(S.kpCur); if (kpStatus.textContent !== st) { kpStatus.textContent = st; gaugeSvg.setAttribute('aria-label', 'Kp index ' + kpT.toFixed(1) + ' of 9, ' + st); }
+  }
+  if (glOK) drawGL(t);
+  drawSky(udt, t);
+  updateCards(udt, t);
+  if (!reduce) { nextAuto -= udt; if (nextAuto < 0) { launchStar(true); nextAuto = 35 + Math.random() * 45; } }
+}
+function start() { if (running) return; running = true; last = performance.now(); requestAnimationFrame(frame); }
+doc.addEventListener('visibilitychange', () => { if (doc.hidden) running = false; else start(); });
+
+let rzTimer = 0;
+window.addEventListener('resize', () => { clearTimeout(rzTimer); rzTimer = setTimeout(() => resize(false), 90); });
+resize(true);
+renderKp(S.kpCur);
+S.t = 0;
+requestAnimationFrame(() => root.classList.add('ready'));
+setTimeout(measureCards, 2600);
+start();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nebula Voyager — A Raymarched Nebula</title>
+<meta name="description" content="Fly through a volumetric raymarched nebula: fbm clouds in magenta, cyan and amber over deep indigo, a parallax starfield with diffraction spikes, an embedded star cluster and three colour presets.">
+<meta name="theme-color" content="#0a0620">
+<style>
+:root{
+  --indigo:#0a0620; --mag:#ff3d81; --cyan:#23d0ff; --amber:#ffb347;
+  --ink:rgba(226,236,255,.86); --dim:rgba(190,206,240,.56); --line:rgba(226,236,255,.34);
+  --g0:#ff3d81; --g1:#23d0ff; --g2:#ffb347;
+  --sans:"Avenir Next","Century Gothic","URW Gothic","Gill Sans","Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--indigo);color:var(--ink);overflow:hidden;overscroll-behavior:none}
+body{position:fixed;inset:0;font-family:var(--mono);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  background:
+    radial-gradient(60% 55% at 30% 42%,rgba(255,61,129,.20),transparent 70%),
+    radial-gradient(50% 60% at 72% 58%,rgba(35,208,255,.15),transparent 70%),
+    radial-gradient(40% 40% at 55% 30%,rgba(255,179,71,.10),transparent 70%),
+    var(--indigo)}
+#gl,#fx{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#gl.drag,#fx.drag{cursor:grabbing}
+#fx[hidden],#gl[hidden]{display:none}
+.nogl{background:var(--indigo)}
+.nogl::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.34;transition:opacity 1s;
+  background:radial-gradient(60% 55% at 30% 42%,var(--g0),transparent 70%),radial-gradient(50% 60% at 72% 58%,var(--g1),transparent 70%),radial-gradient(40% 40% at 55% 30%,var(--g2),transparent 70%)}
+.veil{position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 100% at 50% 50%,transparent 52%,rgba(4,2,16,.62) 100%)}
+.grain{position:fixed;left:-50%;top:-50%;width:200%;height:200%;pointer-events:none;opacity:.075;mix-blend-mode:overlay;animation:grain 1.1s steps(6) infinite;background-size:160px 160px}
+@keyframes grain{0%{transform:translate(0,0)}17%{transform:translate(-3%,2%)}33%{transform:translate(2%,-3%)}50%{transform:translate(-2%,-1%)}67%{transform:translate(3%,3%)}83%{transform:translate(-1%,2%)}100%{transform:translate(0,0)}}
+
+/* ============ HUD ============ */
+.hud{position:fixed;pointer-events:none;z-index:3}
+.hud *{pointer-events:none}
+.hud .ui,.hud .ui *{pointer-events:auto}
+.tl{left:clamp(16px,3vw,44px);top:clamp(14px,3vw,38px);max-width:min(60vw,560px);opacity:0;transform:translateY(-6px);transition:opacity 1.2s var(--ease) 3.3s,transform 1.2s var(--ease) 3.3s}
+.ready .tl{opacity:1;transform:none}
+.tl h1{margin:0;font:300 clamp(14px,1.75vw,24px)/1.1 var(--sans);letter-spacing:.5em;text-transform:uppercase;color:#f1f5ff;text-shadow:0 0 22px rgba(35,208,255,.35)}
+.tl .rule{height:1px;width:clamp(120px,16vw,240px);margin:12px 0 10px;background:linear-gradient(90deg,var(--cyan),transparent)}
+.cap{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);line-height:1.8}
+.cap b{font-weight:600;color:var(--ink)}
+.tr{right:clamp(16px,3vw,44px);top:clamp(16px,3vw,40px);text-align:right;opacity:0;transition:opacity 1.2s var(--ease) 3.5s}
+.ready .tr{opacity:1}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cyan);margin-right:9px;box-shadow:0 0 10px var(--cyan);vertical-align:1px;animation:pulse 2.2s ease-in-out infinite}
+.manual .dot{background:var(--amber);box-shadow:0 0 10px var(--amber);animation:none}
+@keyframes pulse{50%{opacity:.35}}
+.bl{left:clamp(16px,3vw,44px);bottom:clamp(74px,9vw,96px);opacity:0;transition:opacity 1.2s var(--ease) 3.7s}
+.ready .bl{opacity:1}
+.br{right:clamp(16px,3vw,44px);bottom:clamp(74px,9vw,96px);text-align:right;opacity:0;transition:opacity 1.2s var(--ease) 3.7s}
+.ready .br{opacity:1}
+.big{font:300 clamp(20px,2.6vw,34px)/1.1 var(--sans);letter-spacing:.14em;color:#f1f5ff;font-variant-numeric:tabular-nums;margin:4px 0 4px}
+.big small{font-size:.42em;letter-spacing:.3em;color:var(--dim);margin-left:.5em}
+.bc{left:50%;bottom:clamp(14px,2.6vw,30px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:12px;opacity:0;transition:opacity 1.2s var(--ease) 3.9s;width:calc(100% - 28px);max-width:640px}
+.ready .bc{opacity:1}
+.hint{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);text-align:center;transition:opacity 1.4s;line-height:1.7}
+.hint.gone{opacity:0}
+.bar{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap;justify-content:center}
+.seg{display:flex;padding:4px;border-radius:999px;background:rgba(10,6,32,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px var(--line)}
+.seg button,.thr{font:inherit;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);background:transparent;border:0;border-radius:999px;padding:10px 15px 10px 12px;display:flex;align-items:center;gap:9px;cursor:pointer;transition:color .3s,background-color .3s}
+.seg button:hover,.thr:hover{color:#fff}
+.seg button[aria-checked="true"]{color:#fff;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
+.sw{width:14px;height:14px;border-radius:50%;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.35)}
+.thr{border-radius:999px;background:rgba(10,6,32,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 0 0 1px var(--line);padding:10px 16px}
+.thr svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.thr.on{color:#fff;background:rgba(255,179,71,.22);box-shadow:inset 0 0 0 1px rgba(255,179,71,.7)}
+button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+#gl:focus-visible{outline:none}
+
+/* reticle */
+#reticle{position:fixed;left:50%;top:50%;width:200px;height:200px;margin:-100px 0 0 -100px;pointer-events:none;z-index:2;opacity:0;transition:opacity 1.2s var(--ease) 3.6s;fill:none;stroke:rgba(255,255,255,.62);stroke-width:1;stroke-linecap:round}
+.ready #reticle{opacity:1}
+#reticle .r-out{transform-origin:100px 100px}
+#reticle .r-in{transform-origin:100px 100px}
+
+/* intro title card */
+.intro{position:fixed;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;padding:0 20px}
+.intro h2{margin:0;font:200 clamp(21px,5.4vw,74px)/1.15 var(--sans);letter-spacing:.56em;text-indent:.56em;text-transform:uppercase;color:#f4f7ff;text-shadow:0 0 40px rgba(255,61,129,.35),0 0 90px rgba(35,208,255,.25);opacity:0;transform:scale(.98);animation:card 3.6s var(--ease) .5s forwards}
+.intro p{margin:22px 0 0;opacity:0;animation:card2 3.4s var(--ease) 1s forwards}
+@keyframes card{0%{opacity:0;transform:scale(.98);letter-spacing:.42em}30%{opacity:1}72%{opacity:1;transform:scale(1);letter-spacing:.56em}100%{opacity:0;transform:scale(1.03) translateY(-10px);letter-spacing:.62em}}
+@keyframes card2{0%{opacity:0}35%{opacity:1}75%{opacity:1}100%{opacity:0}}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:1100px){.bl,.br{bottom:clamp(112px,16vw,140px)}}
+@media (max-width:640px){
+  .tl h1{letter-spacing:.34em}
+  .bl,.br{bottom:clamp(110px,26vw,140px)}
+  .cap{font-size:9.5px;letter-spacing:.14em}
+  .seg button{padding:9px 11px 9px 9px;font-size:9.5px;letter-spacing:.1em;gap:7px}
+  .hint{font-size:9px}
+  .tr .cap.fps{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .grain{animation:none}
+  .dot{animation:none}
+  .intro h2,.intro p{animation-duration:.01ms;animation-delay:0s;opacity:0}
+  .tl,.tr,.bl,.br,.bc,#reticle{transition-duration:.01ms;transition-delay:0s}
+}
+</style>
+</head>
+<body>
+<canvas id="gl" tabindex="0" aria-label="Interactive volumetric nebula. Drag to steer, scroll or pinch or hold Space to fly forward."></canvas>
+<canvas id="fx" hidden aria-hidden="true"></canvas>
+<div class="veil"></div>
+<div class="grain" id="grain" aria-hidden="true"></div>
+
+<svg id="reticle" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+  <g class="r-in" id="rIn"><circle cx="100" cy="100" r="17" stroke-dasharray="21 6.7 21 6.7 21 6.7 21 6.7" transform="rotate(-8 100 100)"/><circle cx="100" cy="100" r="1.4" fill="rgba(255,255,255,.85)" stroke="none"/></g>
+  <g class="r-out" id="rOut"><circle cx="100" cy="100" r="46" stroke-opacity=".5" stroke-dasharray="1.5 6"/><path d="M100 36v10M100 154v10M36 100h10M154 100h10"/><path d="M62 62l5 5M138 62l-5 5M62 138l5-5M138 138l-5-5" stroke-opacity=".5"/></g>
+  <path d="M8 100h34M158 100h34" stroke-opacity=".28"/>
+</svg>
+
+<div class="intro" aria-hidden="true"><h2>Nebula Voyager</h2><p class="cap">Optical array warming · Sector Halcyon Veil</p></div>
+
+<header class="hud tl">
+  <h1>Nebula Voyager</h1>
+  <div class="rule"></div>
+  <div class="cap"><b>Sector</b> Halcyon Veil · Survey NV-0535<br><span id="palName">Emission field</span> · fictional data</div>
+</header>
+<div class="hud tr"><div class="cap" id="mode"><span class="dot"></span><span id="modeTxt">Autopilot</span></div><div class="cap fps" id="renderInfo">Render 0.30×</div></div>
+<div class="hud bl"><div class="cap">Right ascension<br><span class="big" id="ra" style="font-size:clamp(16px,1.8vw,24px)">05h 35m 17s</span></div><div class="cap" style="margin-top:8px">Declination<br><span class="big" id="dec" style="font-size:clamp(16px,1.8vw,24px)">−05° 23′ 28″</span></div><div class="cap" style="margin-top:10px"><b>Nearest cluster</b> <span id="near">—</span></div></div>
+<div class="hud br"><div class="cap">Distance travelled</div><div class="big"><span id="dist">0000.00</span><small>ly</small></div><div class="cap">Velocity <b id="vel">0.42</b> ly/s</div></div>
+<div class="hud bc"><div class="hint" id="hint">Drag to steer · Scroll, pinch or hold Space to fly · 1 2 3 change palette</div>
+  <div class="bar ui">
+    <div class="seg" role="radiogroup" aria-label="Nebula palette" id="pal">
+      <button type="button" role="radio" aria-checked="true" data-p="0"><i class="sw" style="background:linear-gradient(135deg,#ff3d81,#ffb347)"></i>Emission</button>
+      <button type="button" role="radio" aria-checked="false" data-p="1"><i class="sw" style="background:linear-gradient(135deg,#23d0ff,#7fa8ff)"></i>Reflection</button>
+      <button type="button" role="radio" aria-checked="false" data-p="2"><i class="sw" style="background:linear-gradient(135deg,#1a0a2a,#ff3d81 60%,#ffb347)"></i>Dark Lane</button>
+    </div>
+    <button type="button" class="thr" id="thr" aria-label="Hold to thrust forward"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M2 8l4-4 4 4"/><path d="M2 11l4-4 4 4" opacity=".55"/></svg>Thrust</button>
+  </div>
+</div>
+<p class="vh" id="live" aria-live="polite"></p>
+
+<script>
+(function () {
+'use strict';
+
+var $ = function (s) { return document.querySelector(s); };
+var clamp = function (v, a, b) { return v < a ? a : v > b ? b : v; };
+var lerp = function (a, b, t) { return a + (b - a) * t; };
+var sstep = function (a, b, x) { var t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+var mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+var REDUCE = mq.matches;
+var DBG = window.__NV || {};
+var glc = $('#gl'), fxc = $('#fx'), ctx2 = null, gl = null;
+
+/* ============================================================
+   colour presets (linear-ish artistic values)
+   ============================================================ */
+var PRESETS = [
+  { name: 'Emission field', c0: [0.14, 0.82, 1.0], c1: [1.0, 0.24, 0.51], c2: [1.0, 0.70, 0.28], b0: [0.46, 0.06, 0.30], b1: [0.08, 0.30, 0.60],
+    p: [1.15, 1.1, 1.5, 0.9], q: [0.30, 1.25], css: ['#ff3d81', '#23d0ff', '#ffb347'] },
+  { name: 'Reflection cloud', c0: [0.05, 0.28, 0.80], c1: [0.14, 0.82, 1.0], c2: [0.95, 0.92, 0.86], b0: [0.05, 0.16, 0.44], b1: [0.10, 0.42, 0.66],
+    p: [0.95, 0.7, 0.9, 2.1], q: [0.22, 1.3], css: ['#23d0ff', '#4a86ff', '#e9f4ff'] },
+  { name: 'Dark lane', c0: [1.0, 0.70, 0.28], c1: [1.0, 0.24, 0.51], c2: [0.03, 0.01, 0.06], b0: [0.95, 0.24, 0.36], b1: [1.0, 0.62, 0.26],
+    p: [1.7, 2.6, 0.8, 0.85], q: [0.9, 1.3], css: ['#ffb347', '#ff3d81', '#2a0f3a'] }
+];
+var cur = JSON.parse(JSON.stringify(PRESETS[0])), palIdx = 0;
+function lerpArr(a, b, k) { for (var i = 0; i < a.length; i++) a[i] += (b[i] - a[i]) * k; }
+function stepPalette(dt) {
+  var k = 1 - Math.exp(-dt * 2.4), P = PRESETS[palIdx];
+  lerpArr(cur.c0, P.c0, k); lerpArr(cur.c1, P.c1, k); lerpArr(cur.c2, P.c2, k); lerpArr(cur.b0, P.b0, k); lerpArr(cur.b1, P.b1, k);
+  lerpArr(cur.p, P.p, k); lerpArr(cur.q, P.q, k);
+}
+
+/* ============================================================
+   camera + flight model
+   ============================================================ */
+var cam = { x: 0, y: 0, z: 0, yaw: 0.55, pitch: 0.05, yawV: 0, pitchV: 0, roll: 0 };
+var YAW0 = 0.55;
+var vel = 0.5, boost = 0, distU = 0, LY = 0.86, idle = 0, autoBlend = 0, thrust = false, spaceDown = false;
+var hover = { x: 0, y: 0, sx: 0, sy: 0 };
+var fwd = [0, 0, 1], right = [1, 0, 0], up = [0, 1, 0];
+function basis() {
+  var yaw = cam.yaw + hover.sx * 0.11, pit = clamp(cam.pitch - hover.sy * 0.07, -1.4, 1.4);
+  var cyv = Math.cos(yaw), syv = Math.sin(yaw), cpv = Math.cos(pit), spv = Math.sin(pit);
+  fwd[0] = syv * cpv; fwd[1] = spv; fwd[2] = cyv * cpv;
+  var rx = cyv, rz = -syv;                                  /* right = normalize(cross(worldUp, fwd)) */
+  var ux = -spv * syv, uy = cpv, uz = -spv * cyv;           /* up = cross(fwd, right) */
+  var cr = Math.cos(cam.roll), sr = Math.sin(cam.roll);
+  right[0] = rx * cr + ux * sr; right[1] = uy * sr; right[2] = rz * cr + uz * sr;
+  up[0] = ux * cr - rx * sr; up[1] = uy * cr; up[2] = uz * cr - rz * sr;
+}
+var dragging = false, dragId = null, lastX = 0, lastY = 0, lastT = 0, pinchD = 0, pointers = {}, npt = 0;
+var K_LOOK = 0.0042;
+function markInput() { idle = 0; document.body.classList.add('manual'); $('#modeTxt').textContent = 'Manual control'; }
+function onDown(e) {
+  if (e.button > 0) return;
+  pointers[e.pointerId] = { x: e.clientX, y: e.clientY }; npt++;
+  try { e.target.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  if (npt === 1) { dragging = true; dragId = e.pointerId; lastX = e.clientX; lastY = e.clientY; lastT = performance.now(); glc.classList.add('drag'); fxc.classList.add('drag'); }
+  if (npt === 2) { var ks = Object.keys(pointers); pinchD = Math.hypot(pointers[ks[0]].x - pointers[ks[1]].x, pointers[ks[0]].y - pointers[ks[1]].y); dragging = false; }
+  markInput();
+}
+function onMove(e) {
+  hover.x = (e.clientX / window.innerWidth) * 2 - 1; hover.y = (e.clientY / window.innerHeight) * 2 - 1;
+  if (!pointers[e.pointerId]) { if (e.pointerType === 'mouse') markHover(); return; }
+  pointers[e.pointerId].x = e.clientX; pointers[e.pointerId].y = e.clientY;
+  if (npt >= 2) {
+    var ks = Object.keys(pointers), d = Math.hypot(pointers[ks[0]].x - pointers[ks[1]].x, pointers[ks[0]].y - pointers[ks[1]].y);
+    boost = clamp(boost + (d - pinchD) * 0.028, -0.4, 6); pinchD = d; markInput(); return;
+  }
+  if (dragging && e.pointerId === dragId) {
+    var dx = e.clientX - lastX, dy = e.clientY - lastY, now = performance.now(), dt = Math.max(0.006, (now - lastT) / 1000);
+    var k = K_LOOK * (window.innerHeight < 700 ? 1.15 : 1);
+    cam.yaw -= dx * k; cam.pitch = clamp(cam.pitch + dy * k, -1.35, 1.35);
+    cam.yawV = lerp(cam.yawV, -dx * k / dt, 0.35); cam.pitchV = lerp(cam.pitchV, dy * k / dt, 0.35);
+    lastX = e.clientX; lastY = e.clientY; lastT = now; markInput();
+  }
+}
+function markHover() { idle = Math.min(idle, 1.5); }
+function onUp(e) {
+  if (!pointers[e.pointerId]) return;
+  delete pointers[e.pointerId]; npt = Math.max(0, npt - 1);
+  if (e.pointerId === dragId) { dragging = false; dragId = null; glc.classList.remove('drag'); fxc.classList.remove('drag'); if (performance.now() - lastT > 90) { cam.yawV = 0; cam.pitchV = 0; } }
+  if (npt < 2) pinchD = 0;
+}
+[glc, fxc].forEach(function (c) {
+  c.addEventListener('pointerdown', onDown); c.addEventListener('pointermove', onMove);
+  c.addEventListener('pointerup', onUp); c.addEventListener('pointercancel', onUp);
+  c.addEventListener('wheel', function (e) { e.preventDefault(); boost = clamp(boost + Math.abs(e.deltaY) * 0.0042, -0.4, 6); markInput(); hideHint(); }, { passive: false });
+  c.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+});
+var thr = $('#thr');
+function setThrust(on) { thrust = on; thr.classList.toggle('on', on || spaceDown); if (on) { markInput(); hideHint(); } }
+thr.addEventListener('pointerdown', function (e) { e.preventDefault(); try { thr.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ } setThrust(true); });
+thr.addEventListener('pointerup', function () { setThrust(false); });
+thr.addEventListener('pointercancel', function () { setThrust(false); });
+var keys = {};
+window.addEventListener('keydown', function (e) {
+  if (e.key === ' ' && e.target !== thr && e.target.tagName !== 'BUTTON') { e.preventDefault(); spaceDown = true; thr.classList.add('on'); markInput(); hideHint(); return; }
+  if (e.key === '1' || e.key === '2' || e.key === '3') { setPalette(+e.key - 1); return; }
+  var k = e.key.toLowerCase();
+  if (k === 'arrowleft' || k === 'a' || k === 'arrowright' || k === 'd' || k === 'arrowup' || k === 'w' || k === 'arrowdown' || k === 's') {
+    if (e.target.tagName === 'BUTTON' && k.indexOf('arrow') === 0) return;
+    keys[k] = true; markInput(); hideHint();
+    if (k.indexOf('arrow') === 0) e.preventDefault();
+  }
+  if (k === 'h') document.body.classList.toggle('nohud');
+});
+window.addEventListener('keyup', function (e) { if (e.key === ' ') { spaceDown = false; thr.classList.toggle('on', thrust); } keys[e.key.toLowerCase()] = false; });
+var hintGone = false;
+function hideHint() { if (!hintGone) { hintGone = true; setTimeout(function () { $('#hint').classList.add('gone'); }, 5000); } }
+
+/* palette selector */
+var palBtns = Array.prototype.slice.call(document.querySelectorAll('#pal button'));
+function setPalette(i, focus) {
+  if (i === palIdx) return;
+  palIdx = i; markInput();
+  palBtns.forEach(function (b, j) { b.setAttribute('aria-checked', j === i ? 'true' : 'false'); b.tabIndex = j === i ? 0 : -1; });
+  $('#palName').textContent = PRESETS[i].name;
+  var c = PRESETS[i].css; var rs = document.documentElement.style; rs.setProperty('--g0', c[0]); rs.setProperty('--g1', c[1]); rs.setProperty('--g2', c[2]);
+  $('#live').textContent = 'Palette: ' + PRESETS[i].name;
+  if (focus) palBtns[i].focus();
+}
+palBtns.forEach(function (b, i) { b.tabIndex = i === 0 ? 0 : -1; b.addEventListener('click', function () { setPalette(i); }); });
+$('#pal').addEventListener('keydown', function (e) {
+  var d = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : (e.key === 'ArrowLeft' || e.key === 'ArrowUp') ? -1 : 0;
+  if (d) { e.preventDefault(); setPalette((palIdx + d + 3) % 3, true); }
+});
+
+/* ============================================================
+   star + cluster data
+   ============================================================ */
+var TILE = 64;
+var CLUSTERS = [[18, 30, 20], [47, 14, 40], [30, 52, 58]];
+var starData = null, N_FAR = 4200, N_NEAR = 2600, N_CL = 44, N_ALL = 0;
+var rs = 12345;
+function rnd() { rs = (rs + 0x6D2B79F5) >>> 0; var t = rs; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+function gauss() { var u = Math.max(1e-6, rnd()), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.2831853 * v); }
+function genStars() {
+  N_ALL = N_FAR + N_NEAR + N_CL * CLUSTERS.length;
+  starData = new Float32Array(N_ALL * 7);
+  var k = 0, i, c, u, a, r;
+  function put(x, y, z, m, h, ph, sd) { starData[k++] = x; starData[k++] = y; starData[k++] = z; starData[k++] = m; starData[k++] = h; starData[k++] = ph; starData[k++] = sd; }
+  for (i = 0; i < N_FAR; i++) { u = rnd() * 2 - 1; a = rnd() * 6.2831853; r = Math.sqrt(1 - u * u); put(r * Math.cos(a), u, r * Math.sin(a), Math.pow(rnd(), 4.2) * 0.97, rnd(), rnd(), rnd()); }
+  for (i = 0; i < N_NEAR; i++) put(rnd() * TILE, rnd() * TILE, rnd() * TILE, Math.pow(rnd(), 3) * 0.92, rnd(), rnd(), rnd());
+  for (c = 0; c < CLUSTERS.length; c++) {
+    var C = CLUSTERS[c];
+    put(C[0], C[1], C[2], 0.99, 0.2, rnd(), rnd());
+    for (i = 1; i < N_CL; i++) put(C[0] + gauss() * 1.7, C[1] + gauss() * 1.4, C[2] + gauss() * 1.7, 0.42 + rnd() * 0.5, rnd(), rnd(), rnd());
+  }
+}
+var clInfo = [{ i: 0, d: 99, p: [0, 0, 0] }, { i: 0, d: 99, p: [0, 0, 0] }, { i: 0, d: 99, p: [0, 0, 0] }];
+function updateClusters() {
+  var c, d, C, p, dx, dy, dz;
+  for (c = 0; c < 3; c++) {
+    C = CLUSTERS[c];
+    p = [C[0] + TILE * Math.round((cam.x - C[0]) / TILE), C[1] + TILE * Math.round((cam.y - C[1]) / TILE), C[2] + TILE * Math.round((cam.z - C[2]) / TILE)];
+    dx = p[0] - cam.x; dy = p[1] - cam.y; dz = p[2] - cam.z; d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    clInfo[c].p = p; clInfo[c].d = d; clInfo[c].i = sstep(31, 8, d);
+    clInfo[c].rel = [dx, dy, dz];
+  }
+}
+
+/* ============================================================
+   WebGL
+   ============================================================ */
+var VS_FULL = 'attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.0,1.0);}';
+var FS_NEB = [
+'#ifdef GL_FRAGMENT_PRECISION_HIGH',
+'precision highp float;',
+'#else',
+'precision mediump float;',
+'#endif',
+'uniform vec2 uRes; uniform float uTime, uFocal, uSteps;',
+'uniform vec3 uCam, uRight, uUp, uFwd, uC0, uC1, uC2, uB0, uB1, uL0, uL1, uL2, uLI;',
+'uniform vec4 uP, uQ;',
+'float hash13(vec3 p3){p3=fract(p3*.1031);p3+=dot(p3,p3.zyx+31.32);return fract((p3.x+p3.y)*p3.z);}',
+'float vn(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.0-2.0*f);',
+' return mix(mix(mix(hash13(i),hash13(i+vec3(1.,0.,0.)),f.x),mix(hash13(i+vec3(0.,1.,0.)),hash13(i+vec3(1.,1.,0.)),f.x),f.y),',
+'            mix(mix(hash13(i+vec3(0.,0.,1.)),hash13(i+vec3(1.,0.,1.)),f.x),mix(hash13(i+vec3(0.,1.,1.)),hash13(i+vec3(1.,1.,1.)),f.x),f.y),f.z);}',
+'const mat3 RM=mat3(0.00,0.80,0.60,-0.80,0.36,-0.48,-0.60,-0.48,0.64);',
+'float fbm3(vec3 p){float a=.5,s=0.;for(int i=0;i<3;i++){s+=a*vn(p);p=RM*p*2.03+vec3(3.1,1.7,5.3);a*=.5;}return s/.875;}',
+'float fbm4(vec3 p){float a=.5,s=0.;for(int i=0;i<4;i++){s+=a*vn(p);p=RM*p*2.03+vec3(3.1,1.7,5.3);a*=.5;}return s/.9375;}',
+'float ign(vec2 p){return fract(52.9829189*fract(dot(p,vec2(0.06711056,0.00583715))));}',
+'float dens(vec3 p,out float hue){',
+' float t=uTime*0.012;',
+' float env=vn(p*0.06+vec3(11.7,3.3,7.1));',
+' hue=0.5;',
+' if(env<0.22) return 0.0;',
+' vec3 q=p*0.38+vec3(0.0,0.0,t);',
+' float w=fbm3(q*0.85+vec3(3.7,1.2,8.4));',
+' hue=w;',
+' vec3 r=q*1.5+(w-0.5)*2.4;',
+' float n=fbm4(r);',
+' float e=smoothstep(0.22,0.62,env);',
+' float rg=1.0-abs(n*2.0-1.0); rg=rg*rg;',
+' float body=smoothstep(0.46,0.9,n*(0.5+0.8*e));',
+' return clamp(body*(0.25+1.6*rg),0.0,1.4)*e;',
+'}',
+'vec3 bgGlow(vec3 rd){float a=vn(rd*1.6+vec3(3.0,1.0,5.0));float b=vn(rd*3.2+vec3(9.0,2.0,1.0)+a);',
+' float g=smoothstep(0.55,1.0,a*0.7+b*0.55);return mix(uB0,uB1,b)*g*g*uQ.x;}',
+'void main(){',
+' vec2 uv=(gl_FragCoord.xy-0.5*uRes)/uRes.y;',
+' vec3 rd=normalize(uRight*uv.x+uUp*uv.y+uFwd*uFocal);',
+' float jit=ign(gl_FragCoord.xy);',
+' float t=0.3+jit*0.34; float dt=0.30;',
+' vec3 acc=vec3(0.0); float T=1.0;',
+' for(int i=0;i<40;i++){',
+'  if(float(i)>=uSteps||T<0.035) break;',
+'  vec3 p=uCam+rd*t;',
+'  vec3 v0=uL0-p,v1=uL1-p,v2=uL2-p;',
+'  float gl0=uLI.x/(1.0+dot(v0,v0)*0.5)+uLI.y/(1.0+dot(v1,v1)*0.5)+uLI.z/(1.0+dot(v2,v2)*0.5);',
+'  acc+=T*vec3(0.55,0.62,0.9)*gl0*dt*0.10;',
+'  float h; float d=dens(p,h)*smoothstep(0.25,1.9,t);',
+'  if(d>0.004){',
+'   float dl=d*dt*uP.x;',
+'   float ho=clamp(h*1.7-0.35,0.0,1.0);',
+'   vec3 col=mix(uC0,uC1,smoothstep(0.12,0.62,ho));',
+'   col=mix(col,uC2,smoothstep(0.52,1.0,d));',
+'   float sc=uLI.x/(1.0+dot(v0,v0)*0.30)+uLI.y/(1.0+dot(v1,v1)*0.30)+uLI.z/(1.0+dot(v2,v2)*0.30);',
+'   vec3 emit=col*(0.30+1.35*d)*uP.z+vec3(1.0,0.84,0.66)*sc*uP.w*(0.35+d);',
+'   acc+=T*emit*dl;',
+'   T*=exp(-dl*uP.y);',
+'  }',
+'  t+=dt; dt*=1.05;',
+' }',
+' vec3 col=acc+T*bgGlow(rd);',
+' col=1.0-exp(-col*uQ.y);',
+' gl_FragColor=vec4(col,T);',
+'}'].join('\n');
+var FS_BLIT = [
+'#ifdef GL_FRAGMENT_PRECISION_HIGH',
+'precision highp float;',
+'#else',
+'precision mediump float;',
+'#endif',
+'uniform sampler2D uTex; uniform vec2 uRes,uTexel; uniform vec3 uBase,uLP0,uLP1,uLP2,uLI; uniform float uFade;',
+'float ign(vec2 p){return fract(52.9829189*fract(dot(p,vec2(0.06711056,0.00583715))));}',
+'vec3 bloom(vec2 p,vec3 lp,float I,vec2 a){',
+' if(I<0.002||lp.z<0.2) return vec3(0.0);',
+' vec2 c=lp.xy*a; vec2 d=p-c; float d2=dot(d,d); float s=1.0/(1.0+0.13*lp.z);',
+' float g=0.32/(1.0+d2/(s*s*0.0016))+0.13/(1.0+d2/(s*s*0.03))+0.05/(1.0+d2/(s*s*0.35));',
+' return mix(vec3(0.80,0.88,1.0),vec3(1.0,0.72,0.55),smoothstep(0.02,0.5,d2*4.0))*g*I;}',
+'void main(){',
+' vec2 uv=gl_FragCoord.xy/uRes;',
+' vec4 n=0.25*(texture2D(uTex,uv+uTexel*vec2(-0.5,-0.5))+texture2D(uTex,uv+uTexel*vec2(0.5,-0.5))+texture2D(uTex,uv+uTexel*vec2(-0.5,0.5))+texture2D(uTex,uv+uTexel*vec2(0.5,0.5)));',
+' vec3 base=uBase+vec3(0.012,0.006,0.03)*(1.0-uv.y);',
+' vec3 col=n.rgb+base*n.a;',
+' vec2 a=vec2(uRes.x/uRes.y,1.0); vec2 p=(uv*2.0-1.0)*a;',
+' float vis=mix(0.45,1.0,n.a);',
+' col+=(bloom(p,uLP0,uLI.x,a)+bloom(p,uLP1,uLI.y,a)+bloom(p,uLP2,uLI.z,a))*vis;',
+' col+=(ign(gl_FragCoord.xy)-0.5)*(1.5/255.0);',
+' gl_FragColor=vec4(col*uFade,1.0);',
+'}'].join('\n');
+var VS_STAR = [
+'attribute vec3 aPos; attribute vec4 aData;',
+'uniform vec3 uCam,uRight,uUp,uFwd; uniform float uFocal,uKind,uBox,uTime,uPx,uSpeed,uMaxPt; uniform vec2 uRes;',
+'varying vec3 vCol; varying float vSize,vCore,vSpike,vStreak; varying vec2 vDir;',
+'void main(){',
+' vec3 rel; float fade=1.0;',
+' if(uKind<0.5){rel=aPos*700.0;}',
+' else{rel=mod(aPos-uCam+0.5*uBox,uBox)-0.5*uBox; float m=max(abs(rel.x),max(abs(rel.y),abs(rel.z))); fade=1.0-smoothstep(0.30*uBox,0.48*uBox,m);}',
+' float z=dot(rel,uFwd);',
+' if(z<0.2){gl_Position=vec4(3.0,3.0,3.0,1.0);gl_PointSize=0.0;vSize=1.0;vCore=1.0;vSpike=0.0;vCol=vec3(0.0);vStreak=0.0;vDir=vec2(1.0,0.0);return;}',
+' vec2 ndc=vec2(dot(rel,uRight),dot(rel,uUp))/z*uFocal*2.0*vec2(uRes.y/uRes.x,1.0);',
+' float mag=aData.x;',
+' float tw=0.86+0.14*sin(uTime*(1.2+aData.w*3.0)+aData.z*6.2831853);',
+' float dz=(uKind<0.5)?1.0:clamp(9.0/(z+2.0),0.35,2.2);',
+' float core=(0.5+1.35*mag*mag)*dz*uPx;',
+' float bright=(0.20+1.5*mag*mag)*tw*fade*((uKind>1.5)?1.35:1.0)*((uKind<0.5)?1.0:min(1.6,dz));',
+' float spike=smoothstep(0.80,0.95,mag)*((uKind>1.5)?0.75:1.0);',
+' float slen=(16.0+24.0*mag)*uPx*min(dz,1.6);',
+' float size=max(core*6.0,spike*slen*2.0);',
+' vStreak=(uKind>0.5)?clamp((uSpeed-1.4)*0.5,0.0,3.0)*clamp(length(ndc)*1.1,0.0,1.0):0.0;',
+' size*=(1.0+vStreak*2.5);',
+' vec2 dr=ndc*vec2(uRes.x/uRes.y,1.0); float dl=length(dr); vDir=dl>1e-4?dr/dl:vec2(1.0,0.0);',
+' vec3 col=mix(vec3(0.66,0.80,1.0),vec3(1.0,0.88,0.68),aData.y);',
+' if(uKind>1.5) col=mix(vec3(0.62,0.76,1.0),vec3(0.88,0.92,1.0),aData.y);',
+' vCol=col*bright; vSize=max(size,1.0); vCore=core; vSpike=spike;',
+' gl_Position=vec4(ndc,0.0,1.0); gl_PointSize=min(max(size,1.0),uMaxPt);',
+'}'].join('\n');
+var FS_STAR = [
+'#ifdef GL_FRAGMENT_PRECISION_HIGH',
+'precision highp float;',
+'#else',
+'precision mediump float;',
+'#endif',
+'varying vec3 vCol; varying float vSize,vCore,vSpike,vStreak; varying vec2 vDir;',
+'uniform sampler2D uTex; uniform vec2 uRes;',
+'void main(){',
+' vec2 q=(gl_PointCoord-0.5)*vSize; q.y=-q.y;',
+' float s=max(vCore,0.35);',
+' float al=dot(q,vDir), ac=dot(q,vec2(-vDir.y,vDir.x));',
+' float sl=s*(1.0+vStreak*5.0);',
+' float core=exp(-(ac*ac)/(2.0*s*s)-(al*al)/(2.0*sl*sl));',
+' float halo=0.26/(1.0+dot(q,q)/(s*s*5.0));',
+' float spk=0.0;',
+' if(vSpike>0.0){float L=vSize*0.5; float ax=abs(q.x),ay=abs(q.y); float w=max(1.0,s*0.55);',
+'  spk=(exp(-ay/w)*(1.0-smoothstep(0.0,L,ax))+exp(-ax/w)*(1.0-smoothstep(0.0,L,ay)))*0.5*vSpike;}',
+' float T=texture2D(uTex,gl_FragCoord.xy/uRes).a;',
+' vec3 c=vCol*(core*1.6+halo+spk)*mix(0.3,1.0,T);',
+' gl_FragColor=vec4(c,1.0);',
+'}'].join('\n');
+
+var G = { ok: false, prog: {}, u: {}, tgt: null, W: 0, H: 0, scale: 0.28, steps: 28, buf: null, tri: null, maxPt: 64, dpr: 1 };
+function compile(type, src, name) {
+  var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn('nebula: shader "' + name + '" failed: ' + gl.getShaderInfoLog(s)); return null; }
+  return s;
+}
+function program(vs, fs, name, attribs) {
+  var a = compile(gl.VERTEX_SHADER, vs, name + '.vs'), b = compile(gl.FRAGMENT_SHADER, fs, name + '.fs');
+  if (!a || !b) return null;
+  var p = gl.createProgram(); gl.attachShader(p, a); gl.attachShader(p, b);
+  attribs.forEach(function (n, i) { gl.bindAttribLocation(p, i, n); });
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.warn('nebula: link "' + name + '" failed: ' + gl.getProgramInfoLog(p)); return null; }
+  return p;
+}
+function uniforms(p, names) { var o = {}; names.forEach(function (n) { o[n] = gl.getUniformLocation(p, n); }); return o; }
+function makeTarget(w, h) {
+  if (G.tgt) { gl.deleteFramebuffer(G.tgt.fb); gl.deleteTexture(G.tgt.tex); G.tgt = null; }
+  var tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  var fb = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  var ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  if (!ok) { console.warn('nebula: framebuffer incomplete'); return false; }
+  G.tgt = { tex: tex, fb: fb, w: w, h: h }; return true;
+}
+function initGL() {
+  var opts = { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance', preserveDrawingBuffer: false };
+  try { gl = glc.getContext('webgl', opts) || glc.getContext('experimental-webgl', opts); } catch (e) { gl = null; }
+  if (!gl) return false;
+  G.prog.neb = program(VS_FULL, FS_NEB, 'nebula', ['aPos']);
+  G.prog.blit = program(VS_FULL, FS_BLIT, 'blit', ['aPos']);
+  G.prog.star = program(VS_STAR, FS_STAR, 'stars', ['aPos', 'aData']);
+  if (!G.prog.neb || !G.prog.blit || !G.prog.star) return false;
+  G.u.neb = uniforms(G.prog.neb, ['uRes', 'uTime', 'uFocal', 'uSteps', 'uCam', 'uRight', 'uUp', 'uFwd', 'uC0', 'uC1', 'uC2', 'uB0', 'uB1', 'uL0', 'uL1', 'uL2', 'uLI', 'uP', 'uQ']);
+  G.u.blit = uniforms(G.prog.blit, ['uTex', 'uRes', 'uTexel', 'uBase', 'uLP0', 'uLP1', 'uLP2', 'uLI', 'uFade']);
+  G.u.star = uniforms(G.prog.star, ['uCam', 'uRight', 'uUp', 'uFwd', 'uFocal', 'uKind', 'uBox', 'uTime', 'uPx', 'uSpeed', 'uMaxPt', 'uRes', 'uTex']);
+  G.tri = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, G.tri); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  genStars();
+  G.buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, G.buf); gl.bufferData(gl.ARRAY_BUFFER, starData, gl.STATIC_DRAW);
+  try { var r = gl.getParameter(gl.ALIASED_POINT_SIZE_RANGE); G.maxPt = Math.max(8, Math.min(96, r ? r[1] : 64)); } catch (e) { G.maxPt = 48; }
+  glc.addEventListener('webglcontextlost', function (e) { e.preventDefault(); console.warn('nebula: WebGL context lost, switching to the 2D fallback'); startFallback(); });
+  return true;
+}
+function sizeGL(force) {
+  var dpr = Math.min(window.devicePixelRatio || 1, 1.5), cw = Math.max(1, Math.round(window.innerWidth * dpr)), ch = Math.max(1, Math.round(window.innerHeight * dpr));
+  if (glc.width !== cw || glc.height !== ch) { glc.width = cw; glc.height = ch; force = true; }
+  G.dpr = dpr; G.W = cw; G.H = ch;
+  var tw = Math.max(64, Math.round(window.innerWidth * G.scale)), th = Math.max(48, Math.round(window.innerHeight * G.scale));
+  if (force || !G.tgt || G.tgt.w !== tw || G.tgt.h !== th) { if (!makeTarget(tw, th)) return false; }
+  return true;
+}
+function drawTri(prog) {
+  gl.bindBuffer(gl.ARRAY_BUFFER, G.tri); gl.enableVertexAttribArray(0); gl.disableVertexAttribArray(1);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0); gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+var timeNow = 0, fadeK = 0, frameNo = 0;
+function renderGL(t) {
+  var U, aspect = G.W / G.H, focal = 1.55;
+  /* pass A: raymarched nebula into the low-resolution target */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, G.tgt.fb); gl.viewport(0, 0, G.tgt.w, G.tgt.h); gl.disable(gl.BLEND);
+  gl.useProgram(G.prog.neb); U = G.u.neb;
+  gl.uniform2f(U.uRes, G.tgt.w, G.tgt.h); gl.uniform1f(U.uTime, t); gl.uniform1f(U.uFocal, focal); gl.uniform1f(U.uSteps, G.steps);
+  gl.uniform3f(U.uCam, cam.x, cam.y, cam.z); gl.uniform3fv(U.uRight, right); gl.uniform3fv(U.uUp, up); gl.uniform3fv(U.uFwd, fwd);
+  gl.uniform3fv(U.uC0, cur.c0); gl.uniform3fv(U.uC1, cur.c1); gl.uniform3fv(U.uC2, cur.c2); gl.uniform3fv(U.uB0, cur.b0); gl.uniform3fv(U.uB1, cur.b1);
+  gl.uniform3f(U.uL0, clInfo[0].p[0], clInfo[0].p[1], clInfo[0].p[2]); gl.uniform3f(U.uL1, clInfo[1].p[0], clInfo[1].p[1], clInfo[1].p[2]); gl.uniform3f(U.uL2, clInfo[2].p[0], clInfo[2].p[1], clInfo[2].p[2]);
+  gl.uniform3f(U.uLI, clInfo[0].i, clInfo[1].i, clInfo[2].i);
+  gl.uniform4fv(U.uP, cur.p); gl.uniform4f(U.uQ, cur.q[0], cur.q[1], 0, 0);
+  drawTri();
+  /* pass B: dithered upscale + cluster bloom */
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, G.W, G.H);
+  gl.useProgram(G.prog.blit); U = G.u.blit;
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, G.tgt.tex); gl.uniform1i(U.uTex, 0);
+  gl.uniform2f(U.uRes, G.W, G.H); gl.uniform2f(U.uTexel, 1 / G.tgt.w, 1 / G.tgt.h); gl.uniform3f(U.uBase, 0.039, 0.024, 0.125);
+  var lp = [], c, rel, z, ndc;
+  for (c = 0; c < 3; c++) {
+    rel = clInfo[c].rel; z = rel[0] * fwd[0] + rel[1] * fwd[1] + rel[2] * fwd[2];
+    if (z > 0.2) lp.push(((rel[0] * right[0] + rel[1] * right[1] + rel[2] * right[2]) / z * focal * 2) / aspect, (rel[0] * up[0] + rel[1] * up[1] + rel[2] * up[2]) / z * focal * 2, z);
+    else lp.push(0, 0, 0);
+  }
+  gl.uniform3f(U.uLP0, lp[0], lp[1], lp[2]); gl.uniform3f(U.uLP1, lp[3], lp[4], lp[5]); gl.uniform3f(U.uLP2, lp[6], lp[7], lp[8]);
+  gl.uniform3f(U.uLI, clInfo[0].i, clInfo[1].i, clInfo[2].i); gl.uniform1f(U.uFade, fadeK);
+  drawTri();
+  /* stars: far sphere, near parallax box, embedded clusters (additive) */
+  gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
+  gl.useProgram(G.prog.star); U = G.u.star;
+  gl.uniform3f(U.uCam, cam.x, cam.y, cam.z); gl.uniform3fv(U.uRight, right); gl.uniform3fv(U.uUp, up); gl.uniform3fv(U.uFwd, fwd);
+  gl.uniform1f(U.uFocal, focal); gl.uniform1f(U.uBox, TILE); gl.uniform1f(U.uTime, t); gl.uniform1f(U.uPx, G.dpr); gl.uniform1f(U.uSpeed, vel); gl.uniform1f(U.uMaxPt, G.maxPt);
+  gl.uniform2f(U.uRes, G.W, G.H); gl.uniform1i(U.uTex, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, G.buf); gl.enableVertexAttribArray(0); gl.enableVertexAttribArray(1);
+  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 28, 0); gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 28, 12);
+  gl.uniform1f(U.uKind, 0); gl.drawArrays(gl.POINTS, 0, N_FAR);
+  gl.uniform1f(U.uKind, 1); gl.drawArrays(gl.POINTS, N_FAR, N_NEAR);
+  gl.uniform1f(U.uKind, 2); gl.drawArrays(gl.POINTS, N_FAR + N_NEAR, N_CL * CLUSTERS.length);
+  gl.disable(gl.BLEND);
+}
+
+/* ============================================================
+   2D fallback: canvas starfield over CSS radial gradients
+   ============================================================ */
+var fb = { stars: null, on: false };
+function startFallback() {
+  if (fb.on) return; fb.on = true; G.ok = false;
+  document.documentElement.classList.add('nogl'); document.body.classList.add('nogl');
+  glc.hidden = true; fxc.hidden = false;
+  ctx2 = fxc.getContext('2d');
+  var i, n = 900; fb.stars = [];
+  for (i = 0; i < n; i++) fb.stars.push({ x: rnd() * TILE, y: rnd() * TILE, z: rnd() * TILE, m: Math.pow(rnd(), 3), h: rnd() });
+  sizeFx(); var c = PRESETS[palIdx].css; var r = document.documentElement.style; r.setProperty('--g0', c[0]); r.setProperty('--g1', c[1]); r.setProperty('--g2', c[2]);
+}
+function sizeFx() { var d = Math.min(window.devicePixelRatio || 1, 2); fxc.width = Math.round(window.innerWidth * d); fxc.height = Math.round(window.innerHeight * d); fb.d = d; }
+function renderFx(t) {
+  var W = fxc.width, H = fxc.height, i, s, rx, ry, rz, z, x, y, px, py, fx = 1.55, sc = H * fx, a;
+  ctx2.clearRect(0, 0, W, H);
+  /* soft drifting blobs (parallax with the view direction) */
+  var cols = PRESETS[palIdx].css, bx = -Math.sin(cam.yaw) * W * 0.5, by = Math.sin(cam.pitch) * H * 0.7;
+  for (i = 0; i < 3; i++) {
+    var gx = W * (0.3 + i * 0.22) + bx * (0.6 + i * 0.2) + Math.sin(t * 0.05 + i) * 30, gy = H * (0.4 + (i % 2) * 0.2) + by * (0.5 + i * 0.2), gr = Math.max(W, H) * (0.35 + i * 0.05);
+    var g = ctx2.createRadialGradient(gx, gy, 0, gx, gy, gr); g.addColorStop(0, cols[i] + '55'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx2.fillStyle = g; ctx2.fillRect(0, 0, W, H);
+  }
+  for (i = 0; i < fb.stars.length; i++) {
+    s = fb.stars[i];
+    rx = ((s.x - cam.x + TILE * 1.5) % TILE + TILE) % TILE - TILE / 2; ry = ((s.y - cam.y + TILE * 1.5) % TILE + TILE) % TILE - TILE / 2; rz = ((s.z - cam.z + TILE * 1.5) % TILE + TILE) % TILE - TILE / 2;
+    z = rx * fwd[0] + ry * fwd[1] + rz * fwd[2]; if (z < 0.3) continue;
+    x = rx * right[0] + ry * right[1] + rz * right[2]; y = rx * up[0] + ry * up[1] + rz * up[2];
+    px = W / 2 + x / z * sc; py = H / 2 - y / z * sc;
+    if (px < 0 || px > W || py < 0 || py > H) continue;
+    a = clamp(0.25 + s.m * 1.1, 0, 1) * clamp(9 / (z + 2), 0.3, 1);
+    var sz = (0.6 + s.m * 1.7 + 4 / (z + 2)) * fb.d;
+    ctx2.fillStyle = s.h > 0.6 ? 'rgba(255,226,180,' + a + ')' : 'rgba(190,215,255,' + a + ')';
+    if (vel > 1.6) { var len = Math.min(26, (vel - 1.4) * 6) * fb.d, dx2 = px - W / 2, dy2 = py - H / 2, dl = Math.hypot(dx2, dy2) || 1; ctx2.fillRect(px, py, Math.max(sz, 1), Math.max(sz, 1)); ctx2.fillStyle = 'rgba(200,220,255,' + a * 0.4 + ')'; ctx2.fillRect(px - dx2 / dl * len, py - dy2 / dl * len, Math.max(sz * 0.7, 1), Math.max(sz * 0.7, 1)); }
+    else ctx2.fillRect(px, py, sz, sz);
+    if (s.m > 0.86) { ctx2.fillStyle = 'rgba(230,240,255,' + a * 0.5 + ')'; ctx2.fillRect(px - sz * 3, py, sz * 7, Math.max(1, fb.d * 0.6)); ctx2.fillRect(px, py - sz * 3, Math.max(1, fb.d * 0.6), sz * 7); }
+  }
+}
+
+/* ============================================================
+   HUD helpers
+   ============================================================ */
+var reticleIn = $('#rIn'), reticleOut = $('#rOut'), elRa = $('#ra'), elDec = $('#dec'), elDist = $('#dist'), elVel = $('#vel'), elNear = $('#near'), elRender = $('#renderInfo');
+function pad(n, w) { var s = String(Math.floor(n)); while (s.length < w) s = '0' + s; return s; }
+function fmtRA(deg) {
+  var h = ((deg % 360) + 360) % 360 / 15, hh = Math.floor(h), m = (h - hh) * 60, mm = Math.floor(m), ss = Math.floor((m - mm) * 60);
+  return pad(hh, 2) + 'h ' + pad(mm, 2) + 'm ' + pad(ss, 2) + 's';
+}
+function fmtDec(deg) {
+  var sgn = deg < 0 ? '−' : '+', a = Math.abs(deg), d = Math.floor(a), m = (a - d) * 60, mm = Math.floor(m), ss = Math.floor((m - mm) * 60);
+  return sgn + pad(d, 2) + '° ' + pad(mm, 2) + '′ ' + pad(ss, 2) + '″';
+}
+var hudClock = 0;
+function updateHud(dt) {
+  hudClock += dt; if (hudClock < 0.1) return; hudClock = 0;
+  var raDeg = 83.82 + (cam.yaw - YAW0) * 57.2958 * 0.7, decDeg = clamp(-5.39 + cam.pitch * 57.2958 * 0.6, -89, 89);
+  elRa.textContent = fmtRA(raDeg); elDec.textContent = fmtDec(decDeg);
+  var ly = distU * LY; elDist.textContent = pad(ly, 4) + '.' + pad((ly - Math.floor(ly)) * 100, 2);
+  elVel.textContent = (vel * LY).toFixed(2);
+  var nd = Math.min(clInfo[0].d, clInfo[1].d, clInfo[2].d); elNear.textContent = (nd * LY).toFixed(1) + ' ly';
+  if (G.ok) elRender.textContent = 'Render ' + G.scale.toFixed(2) + '× · ' + G.steps + ' steps'; else elRender.textContent = 'Fallback starfield';
+  var m = document.body.classList.contains('manual'); $('#modeTxt').textContent = m ? 'Manual control' : 'Autopilot';
+}
+
+/* ============================================================
+   main loop
+   ============================================================ */
+var last = 0, acc = 0, ema = 50, lastAdapt = 0, tAbs = 0, introDone = false, born = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (!born) { born = now; last = now; }
+  var dtRaw = now - last; last = now;
+  var dt = Math.min(0.1, Math.max(0.001, dtRaw / 1000)); tAbs += dt;
+  if (!document.body.classList.contains('ready') && now - born > 500) document.body.classList.add('ready');
+  ema = ema * 0.88 + dtRaw * 0.12;
+
+  /* input -> flight */
+  idle += dt;
+  var wantAuto = idle > 4.5 ? 1 : 0;
+  autoBlend += (wantAuto - autoBlend) * Math.min(1, dt * 0.8);
+  if (idle > 6 && document.body.classList.contains('manual')) { document.body.classList.remove('manual'); }
+  var rm = REDUCE ? 0.25 : 1;
+  var keyYaw = (keys.arrowleft || keys.a ? 1 : 0) - (keys.arrowright || keys.d ? 1 : 0), keyPit = (keys.arrowup || keys.w ? 1 : 0) - (keys.arrowdown || keys.s ? 1 : 0);
+  if (keyYaw || keyPit) { cam.yawV += keyYaw * 1.6 * dt; cam.pitchV += -keyPit * 1.2 * dt; }
+  if (!dragging) {
+    cam.yaw += cam.yawV * dt; cam.pitch = clamp(cam.pitch + cam.pitchV * dt, -1.35, 1.35);
+    var dec = Math.exp(-dt * 2.3); cam.yawV *= dec; cam.pitchV *= dec;
+  }
+  cam.yaw += (0.045 * Math.sin(tAbs * 0.17) + 0.02) * autoBlend * dt * rm * 1.7;
+  cam.pitch += (0.022 * Math.sin(tAbs * 0.11 + 1.0) - cam.pitch * 0.02) * autoBlend * dt * rm * 1.7;
+  cam.roll += ((-cam.yawV * 0.18) - cam.roll) * Math.min(1, dt * 2.0);
+  hover.sx += (hover.x - hover.sx) * Math.min(1, dt * 2.5); hover.sy += (hover.y - hover.sy) * Math.min(1, dt * 2.5);
+  if (thrust || spaceDown) boost = Math.min(6, boost + dt * 3.5);
+  if (keys.arrowup || keys.w) boost = Math.min(6, boost + dt * 0.8);
+  if (keys.arrowdown || keys.s) boost = Math.max(-0.4, boost - dt * 1.4);
+  boost *= Math.exp(-dt * 0.55);
+  var cruise = lerp(0.34, 0.52, autoBlend) * rm;
+  var target = Math.max(0.05, cruise + boost);
+  vel += (target - vel) * Math.min(1, dt * 2.2);
+  basis();
+  cam.x += fwd[0] * vel * dt; cam.y += fwd[1] * vel * dt; cam.z += fwd[2] * vel * dt; distU += Math.abs(vel) * dt;
+  updateClusters(); stepPalette(dt);
+  fadeK = Math.min(1, (now - born) / 1800); fadeK = fadeK * fadeK * (3 - 2 * fadeK);
+  updateHud(dt);
+  var sc = 1 + clamp(vel - 0.6, 0, 6) * 0.05, rot = cam.roll * 57.3 + tAbs * 2.0 * rm;
+  reticleOut.style.transform = 'rotate(' + rot.toFixed(2) + 'deg) scale(' + sc.toFixed(3) + ')';
+  reticleIn.style.transform = 'rotate(' + (-rot * 0.6).toFixed(2) + 'deg)';
+
+  if (!G.ok) { if (fb.on) renderFx(tAbs); return; }
+
+  /* adaptive resolution: ramp up quickly on capable GPUs, back off on slow ones */
+  if (now - lastAdapt > 650 && !DBG.scale) {
+    lastAdapt = now;
+    var maxS = (window.innerWidth < 700 ? 0.55 : 0.8);
+    if (ema < 15 && G.scale < maxS) G.scale = Math.min(maxS, G.scale * 1.14);
+    else if (ema > 30 && G.scale > 0.2) G.scale = Math.max(0.2, G.scale / 1.2);
+    G.steps = G.scale < 0.4 ? 26 : G.scale < 0.6 ? 32 : 36;
+    if (!sizeGL(false)) { startFallback(); return; }
+  }
+  try { renderGL(tAbs); } catch (e) { console.warn('nebula: render failed, using the 2D fallback', e); startFallback(); }
+}
+
+/* ============================================================
+   boot
+   ============================================================ */
+(function grain() {
+  try {
+    var c = document.createElement('canvas'), x, im, d, i, v;
+    c.width = c.height = 160; x = c.getContext('2d'); im = x.createImageData(160, 160); d = im.data;
+    for (i = 0; i < d.length; i += 4) { v = 90 + Math.random() * 150; d[i] = v; d[i + 1] = v; d[i + 2] = v; d[i + 3] = 120 + Math.random() * 100; }
+    x.putImageData(im, 0, 0); $('#grain').style.backgroundImage = 'url(' + c.toDataURL('image/png') + ')';
+  } catch (e) { /* grain is optional */ }
+})();
+if (DBG.scale) { G.scale = DBG.scale; G.steps = DBG.steps || 34; }
+if (window.innerWidth < 700) G.scale = Math.min(G.scale, 0.24);
+if (!DBG.nogl && initGL() && sizeGL(true)) { G.ok = true; }
+else { if (gl && !DBG.nogl) console.warn('nebula: WebGL unavailable or shader build failed, using the 2D fallback'); genStars(); startFallback(); }
+window.addEventListener('resize', function () { if (G.ok) sizeGL(true); else if (fb.on) sizeFx(); });
+document.addEventListener('visibilitychange', function () { last = performance.now(); });
+if (mq.addEventListener) mq.addEventListener('change', function (e) { REDUCE = e.matches; });
+document.body.addEventListener('pointermove', function (e) { hover.x = (e.clientX / window.innerWidth) * 2 - 1; hover.y = (e.clientY / window.innerHeight) * 2 - 1; });
+basis(); updateClusters();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

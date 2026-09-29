@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Composing… — a typewriter loader</title>
+<meta name="description" content="Composing: a mint-teal typewriter types a letter to the reader while the page loads, rings its bell, corrects its typos and finally stamps the sheet APPROVED.">
+<style>
+:root{
+  --mint:#a7d3c8; --teal:#2f6f6a; --paper:#f8f3e6; --ink:#1b2a4a; --stamp:#c0392b; --kraft:#d8c3a0;
+  --kraft-d:#b99c6c; --cream:#f2ede0;
+  --type:"American Typewriter","Courier New",Courier,"Nimbus Mono PS","Liberation Mono","DejaVu Sans Mono",monospace;
+  --sans:"Avenir Next",Avenir,"Century Gothic","URW Gothic","Trebuchet MS",system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box}
+html{background:var(--kraft)}
+body{margin:0;height:100vh;height:100dvh;overflow:hidden;background:
+  radial-gradient(80% 60% at 30% 10%,rgba(255,244,214,.6),rgba(255,244,214,0) 60%),
+  radial-gradient(120% 100% at 50% 110%,rgba(90,60,20,.35),rgba(90,60,20,0) 60%),
+  var(--kraft);
+  color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;align-items:center;justify-content:center}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;background:
+  repeating-linear-gradient(12deg,rgba(120,84,30,.05) 0 2px,rgba(255,255,255,.04) 2px 5px),
+  repeating-linear-gradient(101deg,rgba(120,84,30,.04) 0 1px,transparent 1px 7px)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--stamp);outline-offset:3px;border-radius:4px}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+.chrome{position:fixed;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:flex-start;padding:clamp(14px,2vw,26px) clamp(16px,3vw,40px);z-index:5;pointer-events:none}
+.chrome>*{pointer-events:auto}
+.brand{font:700 11px/1.2 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:rgba(60,40,10,.7)}
+.brand small{display:block;margin-top:5px;font:italic 400 13px/1.2 var(--type);letter-spacing:0;text-transform:none;color:rgba(60,40,10,.55)}
+.tools{display:flex;gap:10px}
+.pill{appearance:none;cursor:pointer;padding:9px 15px;border-radius:999px;border:1.5px solid rgba(47,111,106,.7);background:rgba(248,243,230,.7);font:700 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--teal);transition:background .25s,color .25s,transform .25s var(--ease)}
+.pill:hover{background:var(--teal);color:var(--paper);transform:translateY(-1px)}
+.pill[aria-pressed="true"]{background:var(--teal);color:var(--paper)}
+
+.machine{position:relative;width:min(96vw,calc(84dvh * 1000 / 900));aspect-ratio:1000/900;margin-top:2vh}
+.machine svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+.key{cursor:pointer}
+.key .kp,.key .cap{transition:transform .06s}
+.key.down .kp,.key.down .cap{transform:translateY(4px)}
+.key:hover .rimw{stroke:#fff}
+#carriage{transition:transform 60ms linear}
+#carriage.ret{transition:transform 460ms cubic-bezier(.5,0,.2,1.15)}
+#scroller{transition:transform 260ms steps(3,end)}
+.ch{opacity:1}
+.ch.fresh{animation:strike .18s ease-out}
+@keyframes strike{0%{opacity:.2;transform:scale(1.5)}100%{opacity:1;transform:scale(1)}}
+.ch{transform-box:fill-box;transform-origin:center}
+#bellG{transform-box:fill-box;transform-origin:50% 100%}
+#bellG.ring{animation:ring .55s ease-out}
+@keyframes ring{0%,100%{transform:rotate(0)}15%{transform:rotate(-14deg)}35%{transform:rotate(12deg)}55%{transform:rotate(-8deg)}75%{transform:rotate(4deg)}}
+.spool{transform-box:fill-box;transform-origin:center}
+#lever{transform-box:fill-box;transform-origin:100% 100%;transition:transform .12s}
+#lever.pull{transform:rotate(-24deg)}
+
+.status{position:absolute;left:0;right:0;bottom:-2%;text-align:center;font:700 11px/1 var(--sans);letter-spacing:.32em;text-transform:uppercase;color:rgba(60,40,10,.7)}
+.status b{font:700 clamp(17px,2.4vw,26px)/1 var(--type);letter-spacing:.04em;color:var(--ink);margin-left:.6em}
+.rule{width:min(60%,420px);height:3px;margin:9px auto 0;border-radius:2px;background:rgba(60,40,10,.15);overflow:hidden}
+.rule i{display:block;height:100%;width:0;background:var(--teal);transition:width .3s}
+.hint{position:fixed;left:0;right:0;bottom:clamp(10px,2vh,22px);text-align:center;font:italic 13px/1.3 var(--type);color:rgba(60,40,10,.6);padding:0 16px}
+
+.cont{position:absolute;left:50%;top:22%;width:clamp(96px,17%,150px);aspect-ratio:1;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;border-radius:50%;border:0;padding:0;cursor:pointer;
+  background:radial-gradient(circle at 50% 50%,#1a1a1c 0 52%,var(--cream) 53% 66%,#c9ccd0 67% 76%,#8a8f96 77% 82%,transparent 83%);
+  filter:drop-shadow(0 10px 12px rgba(0,0,0,.35));transition:transform .6s cubic-bezier(.3,1.6,.4,1),opacity .4s}
+.cont span{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font:700 clamp(11px,1.4vw,15px)/1.1 var(--type);letter-spacing:.06em;color:var(--cream);text-transform:uppercase}
+.cont.on{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.cont:hover{transform:translate(-50%,-50%) scale(1.06)}
+.cont:active{transform:translate(-50%,-46%) scale(.96)}
+
+.end{position:fixed;inset:0;z-index:10;display:grid;place-items:center;background:rgba(216,195,160,.86);opacity:0;pointer-events:none;transition:opacity .6s}
+.end.on{opacity:1;pointer-events:auto}
+.end .sheet{width:min(88vw,460px);padding:clamp(26px,5vw,44px);background:var(--paper);box-shadow:0 30px 60px rgba(60,40,10,.4),0 0 0 1px rgba(60,40,10,.1);transform:translateY(60px) rotate(-1.5deg);transition:transform .8s var(--ease);font-family:var(--type);color:var(--ink)}
+.end.on .sheet{transform:none}
+.end h2{margin:0 0 12px;font:700 clamp(24px,5vw,34px)/1.1 var(--type)}
+.end p{margin:0 0 20px;font-size:clamp(14px,2.6vw,17px);line-height:1.5}
+@media (max-width:700px){
+  .machine{width:100vw;aspect-ratio:600/900;margin-top:0}
+  .brand small{display:none}
+  .hint{font-size:12px}
+}
+@media (prefers-reduced-motion:reduce){
+  #carriage,#carriage.ret,#scroller{transition:none}
+  .ch.fresh{animation:none}
+  #bellG.ring{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="chrome">
+  <div class="brand">Marlowe &amp; Vale<small>Correspondence, in progress</small></div>
+  <div class="tools">
+    <button type="button" class="pill" id="snd" aria-pressed="false">Sound off</button>
+    <button type="button" class="pill" id="rst">Restart</button>
+  </div>
+</div>
+
+<div class="machine" id="machine">
+<svg id="svg" viewBox="0 0 1000 900" role="img" aria-label="A mint-green typewriter typing a letter onto a sheet of paper">
+<defs>
+  <linearGradient id="gMint" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cdeae2"/><stop offset=".5" stop-color="#a7d3c8"/><stop offset="1" stop-color="#7fb5a8"/></linearGradient>
+  <linearGradient id="gTeal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f8a83"/><stop offset="1" stop-color="#245a56"/></linearGradient>
+  <linearGradient id="gChrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".45" stop-color="#b9c0c8"/><stop offset=".55" stop-color="#8a929b"/><stop offset="1" stop-color="#d9dde2"/></linearGradient>
+  <linearGradient id="gRubber" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a3a3e"/><stop offset=".3" stop-color="#151517"/><stop offset="1" stop-color="#050506"/></linearGradient>
+  <linearGradient id="gPaper" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#efe8d6"/><stop offset=".08" stop-color="#f8f3e6"/><stop offset=".92" stop-color="#f8f3e6"/><stop offset="1" stop-color="#ece4d0"/></linearGradient>
+  <linearGradient id="gPaperShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".8" stop-color="#000" stop-opacity=".02"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>
+  <radialGradient id="gKey" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#4a4a50"/><stop offset=".5" stop-color="#1b1b1e"/><stop offset="1" stop-color="#050506"/></radialGradient>
+  <linearGradient id="gWood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6b4422"/><stop offset=".4" stop-color="#b98450"/><stop offset="1" stop-color="#5a3719"/></linearGradient>
+  <radialGradient id="gSpool" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".6" stop-color="#a9b0b8"/><stop offset="1" stop-color="#6f767e"/></radialGradient>
+  <filter id="fBlur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+  <filter id="fInk" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.1" xChannelSelector="R" yChannelSelector="G"/></filter>
+  <filter id="fStamp" x="-10%" y="-20%" width="120%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="3" seed="8" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G" result="d"/><feGaussianBlur id="stBlur" in="d" stdDeviation="3"/></filter>
+  <filter id="fSpeck" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".7" numOctaves="2" seed="5" result="t"/><feColorMatrix in="t" type="matrix" values="0 0 0 0 .5  0 0 0 0 .38  0 0 0 0 .2  0 0 0 1.4 -.55"/></filter>
+  <clipPath id="paperClip"><rect x="-400" y="-400" width="2000" height="740"/></clipPath>
+  <g id="keyT">
+    <circle r="23" fill="url(#gChrome)"/><circle class="rimw" r="20.5" fill="#f2ede0" stroke="#8a8f96" stroke-width="1"/><g class="cap"><circle r="16" fill="url(#gKey)"/><ellipse cx="-5" cy="-7" rx="8" ry="4" fill="#fff" opacity=".22"/></g>
+  </g>
+</defs>
+
+<!-- desk shadow -->
+<ellipse cx="500" cy="862" rx="440" ry="36" fill="#3a2810" opacity=".45" filter="url(#fBlur)"/>
+
+<!-- ============ PAPER + CARRIAGE (slides left as it types) ============ -->
+<g id="carriage" style="transform:translate(0px,0px)">
+  <g clip-path="url(#paperClip)">
+    <g id="sheet" style="transform-origin:664px 250px">
+      <g id="scroller">
+        <rect x="454" y="98" width="420" height="1600" fill="url(#gPaper)"/>
+        <rect x="454" y="98" width="420" height="1600" fill="#fff" filter="url(#fSpeck)" opacity=".55"/>
+        <path d="M454 98H874" stroke="#d9cfb6" stroke-width="1"/>
+        <g id="lines" font-family="'American Typewriter','Courier New',Courier,'Nimbus Mono PS','Liberation Mono',monospace" font-size="20" fill="#1b2a4a" text-anchor="middle" filter="url(#fInk)"></g>
+        <g id="markG" opacity="0" transform="translate(664 205) rotate(-7)">
+          <g filter="url(#fStamp)" fill="none" stroke="#c0392b" opacity=".9">
+            <rect x="-150" y="-40" width="300" height="80" stroke-width="5"/><rect x="-142" y="-32" width="284" height="64" stroke-width="1.6"/>
+            <text x="0" y="12" text-anchor="middle" fill="#c0392b" stroke="none" font-family="Impact,'Arial Black','Nimbus Sans','Liberation Sans',sans-serif" font-weight="900" font-size="46" letter-spacing="5">APPROVED</text>
+            <text x="0" y="29" text-anchor="middle" fill="#c0392b" stroke="none" font-family="'Liberation Sans',Arial,sans-serif" font-weight="700" font-size="8" letter-spacing="3.5">SET · PROOFED · READY</text>
+          </g>
+        </g>
+      </g>
+      <rect x="454" y="284" width="420" height="56" fill="url(#gPaperShade)"/>
+    </g>
+  </g>
+  <!-- paper bail -->
+  <rect x="440" y="306" width="448" height="5" rx="2.5" fill="url(#gChrome)"/><circle cx="520" cy="309" r="6" fill="#dfe3e8" stroke="#7d848c"/><circle cx="810" cy="309" r="6" fill="#dfe3e8" stroke="#7d848c"/>
+  <!-- platen -->
+  <rect x="40" y="326" width="1000" height="56" rx="14" fill="url(#gRubber)"/><rect x="60" y="331" width="960" height="8" rx="4" fill="#fff" opacity=".13"/>
+  <rect x="40" y="378" width="1000" height="16" fill="url(#gChrome)"/>
+  <rect x="30" y="316" width="26" height="86" rx="6" fill="url(#gChrome)" stroke="#6d747c"/><rect x="1024" y="316" width="26" height="86" rx="6" fill="url(#gChrome)" stroke="#6d747c"/>
+  <g><circle cx="12" cy="354" r="26" fill="url(#gRubber)" stroke="#8a929b" stroke-width="3"/><circle cx="12" cy="354" r="10" fill="url(#gChrome)"/><path d="M-12 354h48M12 330v48" stroke="#fff" stroke-opacity=".08"/></g>
+  <g><circle cx="1068" cy="354" r="26" fill="url(#gRubber)" stroke="#8a929b" stroke-width="3"/><circle cx="1068" cy="354" r="10" fill="url(#gChrome)"/></g>
+</g>
+
+<!-- ============ MACHINE BODY ============ -->
+<path d="M120 400H880L930 690Q936 720 906 726L94 726Q64 720 70 690Z" fill="#2a625d" opacity=".0"/>
+<rect x="90" y="394" width="820" height="26" rx="6" fill="#1c3f3c"/>
+<!-- hood -->
+<path d="M150 428Q150 410 172 410H828Q850 410 850 428L880 520H120Z" fill="url(#gMint)"/>
+<path d="M150 428Q150 414 172 414H828Q846 414 848 428" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="2"/>
+<!-- typebar slot -->
+<rect x="360" y="424" width="280" height="44" rx="22" fill="#12312f"/>
+<g stroke="#9aa3ab" stroke-width="2.4" stroke-linecap="round" opacity=".8"><path d="M390 456L410 436M418 458L430 434M446 459L450 434M474 460L470 434M500 460V434M526 460L530 434M554 459L550 434M582 458L570 434M610 456L590 436"/></g>
+<line id="typebar" x1="500" y1="456" x2="500" y2="392" stroke="#d9dde2" stroke-width="5" stroke-linecap="round" opacity="0"/>
+<!-- ribbon + spools -->
+<path d="M262 470Q380 430 500 396Q620 430 738 470" fill="none" stroke="#141b30" stroke-width="4"/>
+<g><circle cx="262" cy="474" r="50" fill="url(#gSpool)" stroke="#5c636b" stroke-width="2"/><g class="spool" id="spoolL"><circle cx="262" cy="474" r="36" fill="none" stroke="#7d848c" stroke-width="2"/><circle cx="262" cy="474" r="10" fill="#e4e7ea" stroke="#6d747c"/><path d="M262 440v68M228 474h68M238 450l48 48M286 450l-48 48" stroke="#6d747c" stroke-width="1.5"/></g></g>
+<g><circle cx="738" cy="474" r="50" fill="url(#gSpool)" stroke="#5c636b" stroke-width="2"/><g class="spool" id="spoolR"><circle cx="738" cy="474" r="36" fill="none" stroke="#7d848c" stroke-width="2"/><circle cx="738" cy="474" r="10" fill="#e4e7ea" stroke="#6d747c"/><path d="M738 440v68M704 474h68M714 450l48 48M762 450l-48 48" stroke="#6d747c" stroke-width="1.5"/></g></g>
+<!-- bell -->
+<g id="bellG"><path d="M842 402a26 24 0 0 1 52 0z" fill="url(#gChrome)" stroke="#6d747c"/><rect x="864" y="404" width="8" height="10" fill="#8a929b"/><circle cx="868" cy="418" r="4" fill="#4b5158"/></g>
+<!-- return lever -->
+<g id="lever"><path d="M116 420L44 340" stroke="url(#gChrome)" stroke-width="9" stroke-linecap="round"/><circle cx="40" cy="336" r="9" fill="#151517"/></g>
+<!-- main body -->
+<path d="M120 520H880L920 836Q924 866 894 866H106Q76 866 80 836Z" fill="url(#gMint)"/>
+<path d="M96 780H904L920 836Q924 866 894 866H106Q76 866 80 836Z" fill="url(#gTeal)"/>
+<path d="M120 520H880" stroke="#fff" stroke-opacity=".7" stroke-width="3"/>
+<path d="M132 530L96 800" stroke="#fff" stroke-opacity=".25" stroke-width="6" stroke-linecap="round"/>
+<rect x="392" y="806" width="216" height="34" rx="4" fill="#f8f3e6" stroke="#1c3f3c" stroke-width="1.5"/>
+<text x="500" y="822" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="11" letter-spacing="2.4" fill="#1c3f3c" font-weight="700">MARLOWE &amp; VALE</text>
+<text x="500" y="835" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-size="8.5" letter-spacing="2" fill="#2f6f6a" font-style="italic">Portable No. 7</text>
+<g id="keys"></g>
+<!-- space bar -->
+<g class="key" data-k=" " id="spaceKey"><rect x="286" y="748" width="428" height="30" rx="15" fill="url(#gChrome)" stroke="#6d747c"/><rect class="cap" x="296" y="752" width="408" height="22" rx="11" fill="url(#gKey)"/></g>
+</svg>
+
+<button type="button" class="cont" id="cont" aria-label="Continue"><span>Con&shy;tinue</span></button>
+<div class="status" id="statusBar" aria-hidden="true">Composing<b id="pct">0%</b><div class="rule"><i id="ruleFill"></i></div></div>
+</div>
+
+<p class="sr-only" id="live" role="status" aria-live="polite">Composing, 0 percent.</p>
+<p class="hint" id="hint">Press any key, or tap the keys, to add a line of your own.</p>
+
+<div class="end" id="end" role="dialog" aria-modal="true" aria-labelledby="endH" aria-hidden="true">
+  <div class="sheet">
+    <h2 id="endH">Everything is in type.</h2>
+    <p>Dear Reader, the page you were waiting for is ready. Nothing more to load, nothing more to set. Thank you for your patience; the ribbon was fresh and the bell was loud.</p>
+    <button type="button" class="pill" id="again">Compose again</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const NS='http://www.w3.org/2000/svg';
+const RM=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const FAST=/fast/.test(location.hash)?6:1;
+const CW=12,LH=34,STRIKE_X=500;
+const svg=$('#svg'),carriage=$('#carriage'),scroller=$('#scroller'),linesG=$('#lines'),keysG=$('#keys');
+let mobile=false,maxCols=30;
+function fitView(){
+  mobile=window.innerWidth<=700;
+  svg.setAttribute('viewBox',mobile?'200 0 600 900':'0 0 1000 900');
+  maxCols=mobile?24:30;
+}
+fitView();window.addEventListener('resize',()=>{const m=mobile;fitView();if(m!==mobile&&!running){}});
+
+/* ---------- keyboard art ---------- */
+const ROWS=[['1','2','3','4','5','6','7','8','9','0'],['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L',';'],['Z','X','C','V','B','N','M',',','.','-']];
+const keyEls={};
+ROWS.forEach((row,r)=>{
+  const sc=.9+r*.035,y=560+r*54,pitch=58+r*2,x0=500-(row.length-1)*pitch/2+(r-1.5)*10;
+  row.forEach((k,i)=>{
+    const g=document.createElementNS(NS,'g');g.setAttribute('class','key');g.setAttribute('data-k',k);
+    g.setAttribute('transform','translate('+(x0+i*pitch).toFixed(1)+' '+y+') scale('+sc+')');
+    const kp=document.createElementNS(NS,'g');kp.setAttribute('class','kp');g.appendChild(kp);
+    const u=document.createElementNS(NS,'use');u.setAttribute('href','#keyT');kp.appendChild(u);
+    const t=document.createElementNS(NS,'text');t.setAttribute('y','5.5');t.setAttribute('text-anchor','middle');t.setAttribute('font-family','Georgia,serif');t.setAttribute('font-size','15');t.setAttribute('font-weight','700');t.setAttribute('fill','#f2ede0');t.setAttribute('pointer-events','none');t.textContent=k;
+    const cap=document.createElementNS(NS,'g');cap.setAttribute('class','cap');
+    kp.appendChild(t);keysG.appendChild(g);keyEls[k]=g;
+  });
+});
+keyEls[' ']=$('#spaceKey');
+const KMAP={'%':'5','!':'1','?':',',"'":';',':':';','&':'7','(':'9',')':'0','…':'.','—':'-','+':'-','=':'-','"':';'};
+function keyFor(ch){const u=ch.toUpperCase();return keyEls[u]||keyEls[KMAP[ch]]||keyEls['E']}
+function press(ch){
+  const k=keyFor(ch);if(!k)return;
+  k.classList.add('down');setTimeout(()=>k.classList.remove('down'),90/FAST);
+}
+
+/* ---------- audio ---------- */
+let AC=null,soundOn=false,master=null,noiseBuf=null;
+function initAudio(){
+  if(AC)return;
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.22;master.connect(AC.destination);
+    noiseBuf=AC.createBuffer(1,AC.sampleRate*.3,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+  }catch(e){AC=null}
+}
+function click(low){
+  if(!soundOn||!AC)return;
+  try{
+    const t=AC.currentTime,s=AC.createBufferSource();s.buffer=noiseBuf;
+    const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=low?500:1800+Math.random()*900;f.Q.value=1.2;
+    const g=AC.createGain();g.gain.setValueAtTime(low?.9:.6,t);g.gain.exponentialRampToValueAtTime(.001,t+(low?.14:.05));
+    s.connect(f);f.connect(g);g.connect(master);s.start(t);s.stop(t+.16);
+    const o=AC.createOscillator(),og=AC.createGain();o.frequency.value=low?90:170;og.gain.setValueAtTime(.25,t);og.gain.exponentialRampToValueAtTime(.001,t+.06);o.connect(og);og.connect(master);o.start(t);o.stop(t+.08);
+  }catch(e){}
+}
+function ding(){
+  if(!soundOn||!AC)return;
+  try{
+    const t=AC.currentTime;[2200,3310,4400].forEach((fr,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=fr;g.gain.setValueAtTime(.3/(i+1),t);g.gain.exponentialRampToValueAtTime(.0008,t+1.3);o.connect(g);g.connect(master);o.start(t);o.stop(t+1.4)});
+  }catch(e){}
+}
+function zip(){
+  if(!soundOn||!AC)return;
+  try{const t=AC.currentTime,s=AC.createBufferSource();s.buffer=noiseBuf;const f=AC.createBiquadFilter();f.type='bandpass';f.Q.value=3;f.frequency.setValueAtTime(700,t);f.frequency.exponentialRampToValueAtTime(2600,t+.4);const g=AC.createGain();g.gain.setValueAtTime(.35,t);g.gain.exponentialRampToValueAtTime(.001,t+.45);s.connect(f);f.connect(g);g.connect(master);s.start(t);s.stop(t+.46)}catch(e){}
+}
+function thump(){
+  if(!soundOn||!AC)return;
+  try{const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(40,t+.25);g.gain.setValueAtTime(.9,t);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(g);g.connect(master);o.start(t);o.stop(t+.32);click(true)}catch(e){}
+}
+$('#snd').addEventListener('click',e=>{
+  soundOn=!soundOn;if(soundOn)initAudio();
+  e.currentTarget.setAttribute('aria-pressed',soundOn?'true':'false');e.currentTarget.textContent=soundOn?'Sound on':'Sound off';
+  if(soundOn)ding();
+});
+
+/* ---------- typing engine ---------- */
+let token=0,running=false,col=0,line=0,userAt=0,pctShown=0,pctTarget=0;
+const sleep=ms=>new Promise(r=>setTimeout(r,Math.max(1,ms/FAST)));
+let lineEl=null;
+function ensureLine(){
+  if(lineEl)return lineEl;
+  lineEl=document.createElementNS(NS,'g');lineEl.setAttribute('data-l',line);linesG.appendChild(lineEl);
+  while(linesG.childNodes.length>13)linesG.removeChild(linesG.firstChild);
+  return lineEl;
+}
+function setCarriage(c,ret){
+  carriage.classList.toggle('ret',!!ret);
+  carriage.style.transform='translate('+(-c*CW)+'px,0px)';
+}
+function put(ch,over){
+  const g=ensureLine(),t=document.createElementNS(NS,'text');
+  t.setAttribute('class','ch fresh');
+  t.setAttribute('x',(454+46+col*CW+CW/2+(Math.random()-.5)*.8).toFixed(1));
+  t.setAttribute('y',(272+line*LH+(Math.random()-.5)*1.2).toFixed(1));
+  t.setAttribute('opacity',(.82+Math.random()*.18).toFixed(2));
+  t.setAttribute('transform','rotate('+((Math.random()-.5)*2.4).toFixed(1)+')');
+  t.textContent=ch;g.appendChild(t);
+  return t;
+}
+function bar(){
+  const b=$('#typebar');if(RM||!b.animate)return;
+  b.animate([{opacity:1,transform:'scaleY(.1)'},{opacity:1,transform:'scaleY(1)',offset:.4},{opacity:1,transform:'scaleY(1)',offset:.6},{opacity:0,transform:'scaleY(.1)'}],{duration:110/FAST});
+}
+b0();function b0(){const b=$('#typebar');b.style.transformOrigin='500px 456px';b.style.transformBox='view-box'}
+let spin=0;
+function strike(ch,typo){
+  if(ch!==' '){put(ch);}
+  press(ch);bar();click(ch===' ');
+  spin+=7;$('#spoolL').style.transform='rotate('+spin+'deg)';$('#spoolR').style.transform='rotate('+(-spin)+'deg)';
+  col++;setCarriage(col,false);
+}
+async function newline(){
+  ding();bellAnim();
+  await sleep(180);
+  $('#lever').classList.add('pull');zip();
+  line++;scroller.style.transform='translateY('+(-line*LH)+'px)';
+  col=0;setCarriage(0,true);lineEl=null;
+  await sleep(520);
+  $('#lever').classList.remove('pull');
+}
+function bellAnim(){const b=$('#bellG');b.classList.remove('ring');void b.getBoundingClientRect();b.classList.add('ring')}
+async function idleGate(my){while(Date.now()-userAt<1300&&my===token)await sleep(80*FAST)}
+async function typeText(txt,my,speed){
+  for(const ch of txt){
+    if(my!==token)return;
+    await idleGate(my);
+    strike(ch);
+    let d=(speed||62)*(.7+Math.random()*.7);
+    if(/[.,…]/.test(ch))d+=110;
+    await sleep(d);
+  }
+}
+async function typeWrapped(txt,my,opts){
+  const words=txt.split(' ');let cur='';const out=[];
+  for(const w of words){if((cur+(cur?' ':'')+w).length>maxCols){out.push(cur);cur=w}else cur+=(cur?' ':'')+w}
+  out.push(cur);
+  for(let i=0;i<out.length;i++){
+    if(my!==token)return;
+    if(col>0)await newline();
+    if(opts&&opts.typo&&i===0){
+      const [bad,good]=opts.typo,at=out[i].indexOf(bad0(opts.word));
+      /* type up to the misspelt word, mistype it, strike it out, retype */
+      const pre=out[i].slice(0,at),post=out[i].slice(at+opts.word.length);
+      await typeText(pre,my);await typeText(bad,my,80);await sleep(260);
+      for(let k=0;k<bad.length;k++){col--;setCarriage(col,false);click(true);await sleep(38)}
+      await sleep(140);
+      for(let k=0;k<bad.length;k++){strike('x');await sleep(46)}
+      await sleep(160);
+      await typeText(' '+good+post,my);
+    }else await typeText(out[i],my);
+  }
+}
+function bad0(w){return w}
+function setPct(p){
+  pctTarget=p;
+}
+function pctTick(){
+  requestAnimationFrame(pctTick);
+  if(pctShown<pctTarget){pctShown=Math.min(pctTarget,pctShown+Math.max(.3,(pctTarget-pctShown)*.06));}
+  const v=Math.round(pctShown);
+  $('#pct').textContent=v+'%';$('#ruleFill').style.width=v+'%';
+}
+pctTick();
+let lastLive=-1;
+function announce(p){if(Math.floor(p/10)!==lastLive){lastLive=Math.floor(p/10);$('#live').textContent='Composing, '+p+' percent.'}}
+
+const STEPS=[
+ [4,'oiling the typebars'],[13,'threading the ribbon',{word:'threading',typo:['threadng','threading']}],[24,'sharpening the serifs'],
+ [39,'aligning the margins',{word:'margins',typo:['marigns','margins']}],[52,'proofing the commas'],[66,'feeding a fresh sheet'],[78,'tightening the platen'],[91,'polishing the full stops']
+];
+async function run(){
+  const my=++token;running=true;
+  resetPaper();
+  await sleep(700);
+  await typeWrapped('Dear Reader,',my);
+  if(my!==token)return;
+  await sleep(260);
+  await typeWrapped('Please hold while we set the type.',my);
+  for(const st of STEPS){
+    if(my!==token)return;
+    await sleep(240);
+    const label=String(st[0]).padStart(3,' ')+'% - '+st[1]+'...';
+    const opt=st[2]?{typo:st[2].typo,word:st[2].word}:null;
+    if(col>0)await newline();
+    await newline();
+    setPct(st[0]);announce(st[0]);
+    if(opt&&label.length<=maxCols){
+      const at=label.indexOf(opt.word),pre=label.slice(0,at),post=label.slice(at+opt.word.length),bad=opt.typo[0];
+      await typeText(pre,my);await typeText(bad,my,80);await sleep(260);
+      for(let k=0;k<bad.length;k++){col--;setCarriage(col,false);click(true);await sleep(38)}
+      await sleep(140);
+      for(let k=0;k<bad.length;k++){strike('x');await sleep(46)}
+      await sleep(160);
+      await typeText(' '+opt.typo[1]+post,my);
+    }else await typeWrapped(label,my);
+    await sleep(200);
+  }
+  if(my!==token)return;
+  await newline();await newline();setPct(100);announce(100);
+  await typeText(' 100% - all in order.',my);
+  await newline();await newline();
+  await typeText('Yours faithfully,',my);await newline();await typeText('The Page',my);
+  await sleep(900);
+  if(my!==token)return;
+  await finale(my);
+}
+function resetPaper(){
+  linesG.textContent='';lineEl=null;col=0;line=0;setCarriage(0,false);scroller.style.transform='translateY(0px)';
+  $('#markG').setAttribute('opacity','0');$('#sheet').style.transition='none';$('#sheet').style.transform='none';$('#sheet').style.opacity='1';
+  $('#cont').classList.remove('on');pctShown=0;pctTarget=0;lastLive=-1;
+  $('#end').classList.remove('on');$('#end').setAttribute('aria-hidden','true');
+  $('#hint').style.opacity='1';
+}
+/* ---------- the stamp ---------- */
+function stampTool(){
+  const g=document.createElementNS(NS,'g');g.setAttribute('id','stampTool');
+  g.innerHTML='<ellipse cx="0" cy="-104" rx="22" ry="34" fill="url(#gWood)" stroke="#3a220d"/><rect x="-14" y="-72" width="28" height="30" fill="url(#gChrome)" stroke="#6d747c"/><rect x="-160" y="-44" width="320" height="30" rx="5" fill="url(#gWood)" stroke="#3a220d"/><rect x="-152" y="-16" width="304" height="14" rx="3" fill="#c0392b"/><ellipse cx="-8" cy="-116" rx="6" ry="16" fill="#fff" opacity=".22"/>';
+  return g;
+}
+async function finale(my){
+  const sheet=$('#sheet'),mark=$('#markG'),blur=$('#stBlur'),sv=svg;
+  /* stamp descends */
+  const tool=stampTool();tool.setAttribute('transform','translate(664 -400) rotate(-7)');sv.appendChild(tool);
+  const t0=performance.now(),dur=RM?1:340/FAST;
+  await new Promise(res=>{(function f(){
+    const u=Math.min(1,(performance.now()-t0)/dur),e=u*u;
+    tool.setAttribute('transform','translate(664 '+(-400+e*(232+400))+') rotate(-7)');
+    if(u<1)requestAnimationFrame(f);else res()})()});
+  if(my!==token){tool.remove();return}
+  /* impact */
+  mark.setAttribute('opacity','1');thump();
+  const t1=performance.now();
+  if(!RM&&sv.animate)sv.animate([{transform:'translateY(0)'},{transform:'translateY(5px)'},{transform:'translateY(-2px)'},{transform:'translateY(0)'}],{duration:320/FAST});
+  await new Promise(res=>{(function f(){
+    const u=Math.min(1,(performance.now()-t1)/(700/FAST));
+    blur.setAttribute('stdDeviation',(3.4*(1-u)+.5).toFixed(2));
+    const bounce=1-Math.sin(u*Math.PI*2.4)*.05*(1-u);
+    mark.setAttribute('transform','translate(664 205) rotate(-7) scale('+bounce.toFixed(3)+')');
+    tool.setAttribute('transform','translate(664 '+(232-(u>.35?(u-.35)*520:0))+') rotate(-7)');
+    if(u<1)requestAnimationFrame(f);else res()})()});
+  tool.remove();
+  await sleep(900);
+  if(my!==token)return;
+  /* the sheet lifts out */
+  sheet.style.transition=RM?'none':'transform 1.3s cubic-bezier(.5,0,.2,1),opacity 1s .4s';
+  sheet.style.transform='translateY(-760px) rotate(-3deg)';sheet.style.opacity='0';
+  $('#hint').style.opacity='0';
+  await sleep(1100);
+  if(my!==token)return;
+  $('#cont').classList.add('on');running=false;
+  $('#live').textContent='Done. Composing complete, 100 percent. Continue is available.';
+  $('#cont').focus({preventScroll:true});
+}
+$('#cont').addEventListener('click',()=>{ding();const e=$('#end');e.classList.add('on');e.setAttribute('aria-hidden','false');$('#again').focus()});
+$('#again').addEventListener('click',()=>run());
+$('#rst').addEventListener('click',()=>run());
+
+/* ---------- your own lines ---------- */
+function userKey(ch){
+  userAt=Date.now();
+  if(ch==='\n'){if(col>0)newline();return}
+  if(col>=maxCols){newline().then(()=>{if(ch.length===1)strike(ch)});return}
+  strike(ch);
+  pctTarget=Math.min(pctTarget<100?99:100,pctTarget+.8);
+}
+window.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  const t=e.target;if(t&&(t.tagName==='BUTTON')&&(e.key===' '||e.key==='Enter'))return;
+  if(e.key==='Enter'){userKey('\n');return}
+  if(e.key.length===1){e.preventDefault();userKey(e.key)}
+});
+keysG.addEventListener('pointerdown',e=>{const g=e.target.closest('.key');if(g)userKey(g.dataset.k)});
+$('#spaceKey').addEventListener('pointerdown',()=>userKey(' '));
+
+run();
+window.__tw={setSpeed:null};
+})();
+</script>
+</body>
+</html>

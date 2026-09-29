@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paper Hours — A Papercut Diorama</title>
+<meta name="description" content="Paper Hours: a layered paper-cut landscape in a shadow box. Tilt it, and choose the hour: dawn, noon, dusk or night.">
+<style>
+:root{
+  --wall:#3a2f52; --wall2:#241d38; --frame:#efe6d2; --frame-d:#cdbf9f; --ink:#3b3050; --accent:#e59aa0;
+  --sky1:#4a3f7a; --sky2:#8f6fa8; --sky3:#e59aa0; --sky4:#f7c6b0;
+  --c-far:#e9adb0; --c-mid:#c98aa4; --c-cloud:#fbe3da; --c-cloud2:#f5d0cf; --c-mtn:#a77fa8; --c-hill:#7a5f9a; --c-forest:#5c4a86; --c-river:#f0b3b0; --c-near:#2f2758; --c-pine:#3a2f63;
+  --c-sun:#fff1d6; --c-moon:#f3ecd2; --c-shade:rgba(40,20,60,.28); --c-light:rgba(255,255,255,.28);
+  --win:#ffd27a; --smoke:#fff4ec; --fog:255,226,214;
+  --round:ui-rounded,"SF Pro Rounded","Hiragino Maru Gothic ProN","Arial Rounded MT Bold","Varela Round",system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:22px 16px 26px;background:radial-gradient(120% 90% at 50% 30%,var(--wall) 0%,var(--wall2) 100%);color:#fff;font-family:var(--round);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.wrap{width:min(1080px,100%);display:grid;justify-items:center;gap:20px}
+h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* shadow-box frame */
+.frame{position:relative;width:min(100%,calc((100dvh - 190px) * 1.5));min-width:min(100%,300px);padding:clamp(12px,2.4vw,26px);background:linear-gradient(145deg,#f7f0df,var(--frame) 45%,var(--frame-d));border-radius:10px;
+  box-shadow:0 34px 60px rgba(0,0,0,.5),0 8px 0 -2px var(--frame-d),inset 0 2px 0 #fffaf0,inset 0 -3px 0 rgba(120,100,60,.35)}
+.frame::before{content:"";position:absolute;inset:clamp(6px,1.2vw,12px);border:1px solid rgba(120,100,60,.28);border-radius:6px;pointer-events:none}
+.box{position:relative;aspect-ratio:3/2;overflow:hidden;border-radius:3px;background:#1a1530;box-shadow:inset 0 0 0 2px rgba(60,40,20,.5);isolation:isolate}
+@media (max-width:640px){.box{aspect-ratio:4/5}}
+.stage{position:absolute;inset:0}
+.layer{position:absolute;left:0;top:0;width:100%;height:100%;will-change:transform}
+.layer svg{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+.paper{fill:var(--f)}
+.gr{fill:url(#grain)}
+.hl{fill:none;stroke:var(--c-light);stroke-width:2;stroke-linejoin:round}
+.sh{fill:var(--c-shade)}
+.inner{position:absolute;inset:0;pointer-events:none;z-index:9;box-shadow:inset 0 0 70px rgba(10,5,30,.55),inset 0 14px 30px rgba(10,5,30,.45),inset 0 -8px 20px rgba(10,5,30,.3);border-radius:3px}
+.fog{position:absolute;left:-10%;width:120%;pointer-events:none}
+.tag{position:relative;margin-top:-8px;padding:9px 20px 8px;background:#fbf4e4;color:var(--ink);border-radius:3px;font-size:12px;letter-spacing:.26em;text-transform:uppercase;font-weight:700;transform:rotate(-1.2deg);box-shadow:0 8px 14px rgba(0,0,0,.35),0 1px 0 #fff inset;background-image:var(--grain)}
+.tag::before,.tag::after{content:"";position:absolute;top:-8px;width:34px;height:16px;background:rgba(229,154,160,.75);transform:rotate(-8deg)}
+.tag::before{left:-14px}.tag::after{right:-14px;transform:rotate(7deg);background:rgba(95,179,167,.7)}
+.tag small{font-weight:500;letter-spacing:.14em;opacity:.7}
+
+/* time-of-day control */
+.seg{display:inline-flex;gap:4px;padding:5px;border-radius:999px;background:rgba(0,0,0,.28);box-shadow:inset 0 3px 8px rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.12);position:relative}
+.seg button{position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 18px;border:0;border-radius:999px;background:transparent;color:rgba(255,255,255,.75);font:600 13px/1 var(--round);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:color .3s}
+.seg button svg{width:18px;height:18px}
+.seg button[aria-checked="true"]{color:var(--ink)}
+.seg .pill{position:absolute;z-index:0;top:5px;bottom:5px;left:5px;width:80px;border-radius:999px;background:#fbf4e4;box-shadow:0 4px 8px rgba(0,0,0,.4),0 -2px 0 rgba(0,0,0,.08) inset;transition:transform .45s cubic-bezier(.3,1.3,.5,1),width .45s cubic-bezier(.3,1.3,.5,1)}
+.seg button:focus-visible,.auto:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center}
+.auto{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;font:600 12px/1 var(--round);letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.auto[aria-pressed="true"]{background:#fbf4e4;color:var(--ink)}
+.hint{margin:0;font-size:12px;letter-spacing:.08em;color:rgba(255,255,255,.6);text-align:center}
+@media (max-width:520px){.seg button{padding:0 11px;gap:5px;font-size:11px;letter-spacing:.08em}.seg button svg{width:16px;height:16px}}
+
+/* tiny animated details */
+.bird{transform-box:fill-box;transform-origin:center}
+.wing{transform-box:fill-box;animation:flap .5s ease-in-out infinite alternate}
+.wing.r{transform-origin:0% 60%}.wing.l{transform-origin:100% 60%}
+@keyframes flap{from{transform:rotate(-24deg)}to{transform:rotate(22deg)}}
+.wing.l{animation-name:flapl}
+@keyframes flapl{from{transform:rotate(24deg)}to{transform:rotate(-22deg)}}
+.puff{transform-box:fill-box;transform-origin:center;animation:puff 5.5s ease-out infinite;opacity:0}
+@keyframes puff{0%{transform:translate(0,0) scale(.4);opacity:0}15%{opacity:.95}50%{transform:translate(10px,-40px) scale(1)}100%{transform:translate(-8px,-100px) scale(1.7);opacity:0}}
+.flick{animation:flick 3.2s ease-in-out infinite}
+@keyframes flick{0%,100%{opacity:1}42%{opacity:.86}50%{opacity:1}72%{opacity:.92}}
+.twk{animation:twk 3s ease-in-out infinite}
+@keyframes twk{0%,100%{opacity:.25}50%{opacity:1}}
+.boat{animation:sail 70s linear infinite;animation-delay:-30s}
+@keyframes sail{from{transform:translateX(-160px)}to{transform:translateX(1360px)}}
+.bob{transform-box:fill-box;transform-origin:center bottom;animation:bob 3.6s ease-in-out infinite alternate}
+@keyframes bob{from{transform:rotate(-3deg) translateY(0)}to{transform:rotate(3deg) translateY(3px)}}
+.cl{animation:drift linear infinite}
+@keyframes drift{from{transform:translateX(-360px)}to{transform:translateX(1560px)}}
+.ff{animation:fly ease-in-out infinite alternate}
+@keyframes fly{from{transform:translate(0,0)}to{transform:translate(var(--dx),var(--dy))}}
+.stars,.fireflies,.moonlayer,.sunlayer{transition:none}
+@media (prefers-reduced-motion:reduce){
+  .wing,.puff,.flick,.twk,.boat,.bob,.cl,.ff{animation-duration:0s!important;animation-iteration-count:1!important}
+  .boat{transform:translateX(420px)}
+  .cl{transform:translateX(300px)}
+  .puff{opacity:.6}
+  .seg .pill{transition:none}
+}
+</style>
+</head>
+<body>
+<h1>Paper Hours</h1>
+<div class="wrap">
+  <div class="frame">
+    <div class="box" id="box" aria-label="A layered paper-cut diorama: mountains, hills, pines, a cabin and a river" role="img">
+      <div class="stage" id="stage">
+
+        <!-- 1 sky -->
+        <div class="layer" data-d="0.0"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="skyg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--sky1)"/><stop offset=".38" style="stop-color:var(--sky2)"/><stop offset=".68" style="stop-color:var(--sky3)"/><stop offset="1" style="stop-color:var(--sky4)"/></linearGradient></defs>
+          <rect x="-200" y="-100" width="1600" height="1000" fill="url(#skyg)"/><rect x="-200" y="-100" width="1600" height="1000" class="gr"/>
+          <g class="stars" id="stars" style="opacity:var(--stars,0)" fill="#fff8e0"></g>
+        </svg></div>
+
+        <!-- 2 sun and moon -->
+        <div class="layer" data-d="0.04"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+          <g id="sun" class="sunlayer"><circle r="150" fill="var(--c-sun)" opacity=".12"/><circle r="112" fill="var(--c-sun)" opacity=".2"/><circle r="80" fill="var(--c-sun)" opacity=".5"/><circle r="58" fill="var(--c-sun)"/><circle r="58" class="gr"/></g>
+          <g id="moon" class="moonlayer"><circle r="120" fill="var(--c-moon)" opacity=".1"/><circle r="88" fill="var(--c-moon)" opacity=".18"/><circle r="56" fill="var(--c-moon)"/><circle r="56" class="gr"/><g fill="#d9d0ae"><circle cx="-16" cy="-12" r="11"/><circle cx="18" cy="14" r="8"/><circle cx="14" cy="-24" r="5"/><circle cx="-24" cy="20" r="5"/></g></g>
+        </svg></div>
+
+        <!-- 3 far mountains -->
+        <div class="layer" data-d="0.12"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g filter="url(#sh1)">
+          <path class="paper" style="--f:var(--c-far)" d="M-200 800V430L-60 330L40 400L170 290L300 410L390 350L520 470L640 320L760 430L880 300L1010 420L1120 340L1260 430L1400 360V800Z"/>
+          <path class="sh" d="M170 290L300 410L250 470L200 400ZM640 320L760 430L700 480L660 400ZM880 300L1010 420L950 470L900 390Z"/>
+          <path class="gr" d="M-200 800V430L-60 330L40 400L170 290L300 410L390 350L520 470L640 320L760 430L880 300L1010 420L1120 340L1260 430L1400 360V800Z"/>
+          <path class="hl" d="M-60 330L40 400M170 290L300 410M640 320L760 430M880 300L1010 420M1120 340L1260 430"/></g>
+        </svg></div>
+
+        <!-- 4 back clouds -->
+        <div class="layer" data-d="0.2"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g filter="url(#sh1)">
+          <g class="cl" style="animation-duration:150s;animation-delay:-70s"><path class="paper" style="--f:var(--c-cloud2)" d="M0 260q0-34 34-34q10-30 44-28q26-24 58-6q40-10 52 24q30 4 30 30q0 20-24 22H24q-24 0-24-8z"/><path class="gr" d="M0 260q0-34 34-34q10-30 44-28q26-24 58-6q40-10 52 24q30 4 30 30q0 20-24 22H24q-24 0-24-8z"/></g>
+          <g class="cl" style="animation-duration:190s;animation-delay:-150s" transform="translate(0 70)"><path class="paper" style="--f:var(--c-cloud2)" d="M0 260q0-30 30-30q12-28 44-24q26-20 52-4q36-8 46 22q26 2 26 26q0 16-22 18H22q-22 0-22-8z"/><path class="gr" d="M0 260q0-30 30-30q12-28 44-24q26-20 52-4q36-8 46 22q26 2 26 26q0 16-22 18H22q-22 0-22-8z"/></g></g>
+        </svg></div>
+
+        <!-- 5 mid mountains -->
+        <div class="layer" data-d="0.3"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g filter="url(#sh2)">
+          <path class="paper" style="--f:var(--c-mid)" d="M-200 800V520L-80 430L60 500L200 400L340 520L470 450L600 540L740 420L880 520L1010 440L1150 530L1300 450L1400 500V800Z"/>
+          <path class="sh" d="M200 400L340 520L280 560L230 470ZM740 420L880 520L820 560L770 480Z"/>
+          <path class="gr" d="M-200 800V520L-80 430L60 500L200 400L340 520L470 450L600 540L740 420L880 520L1010 440L1150 530L1300 450L1400 500V800Z"/>
+          <path class="hl" d="M-80 430L60 500M200 400L340 520M470 450L600 540M740 420L880 520M1010 440L1150 530"/></g>
+        </svg></div>
+
+        <!-- 6 front clouds and birds -->
+        <div class="layer" data-d="0.4"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g filter="url(#sh1)">
+          <g class="cl" style="animation-duration:110s;animation-delay:-30s" transform="translate(0 -40)"><path class="paper" style="--f:var(--c-cloud)" d="M0 330q0-40 40-40q14-36 52-32q30-28 66-6q46-12 60 26q34 4 34 36q0 24-28 26H26q-26 0-26-10z"/><path class="gr" d="M0 330q0-40 40-40q14-36 52-32q30-28 66-6q46-12 60 26q34 4 34 36q0 24-28 26H26q-26 0-26-10z"/></g>
+          <g class="cl" style="animation-duration:130s;animation-delay:-100s" transform="translate(0 20)"><path class="paper" style="--f:var(--c-cloud)" d="M0 330q0-36 36-36q12-32 48-28q28-24 58-4q42-10 54 24q30 4 30 32q0 22-26 24H24q-24 0-24-10z"/><path class="gr" d="M0 330q0-36 36-36q12-32 48-28q28-24 58-4q42-10 54 24q30 4 30 32q0 22-26 24H24q-24 0-24-10z"/></g></g>
+          <g id="birds" fill="#3a2f4d"></g>
+        </svg></div>
+
+        <!-- 7 hills -->
+        <div class="layer" data-d="0.5"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g filter="url(#sh2)">
+          <path class="paper" style="--f:var(--c-hill)" d="M-200 800V560Q-40 500 140 540T440 520T740 550T1040 510T1400 540V800Z"/>
+          <path class="gr" d="M-200 800V560Q-40 500 140 540T440 520T740 550T1040 510T1400 540V800Z"/>
+          <path class="hl" d="M-40 520Q-40 500 140 540T440 520T740 550T1040 510T1400 540"/></g>
+        </svg></div>
+
+        <!-- 8 far bank: forest and cabin -->
+        <div class="layer" data-d="0.62"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><defs>
+          <g id="pine"><path d="M0-120L26-70H12L38-26H20L46 20H-46L-20-26H-38L-12-70H-26Z"/><rect x="-6" y="20" width="12" height="22"/></g></defs>
+          <g filter="url(#sh2)">
+          <path class="paper" style="--f:var(--c-forest)" d="M-200 800V600Q0 580 200 596T520 590T760 600T1000 580T1400 600V800Z"/>
+          <g style="fill:var(--c-forest)"><use href="#pine" transform="translate(70 590) scale(.8)"/><use href="#pine" transform="translate(140 596) scale(.62)"/><use href="#pine" transform="translate(230 598) scale(.9)"/><use href="#pine" transform="translate(330 602) scale(.55)"/><use href="#pine" transform="translate(960 590) scale(.85)"/><use href="#pine" transform="translate(1030 596) scale(.6)"/><use href="#pine" transform="translate(1110 592) scale(.95)"/><use href="#pine" transform="translate(1180 598) scale(.7)"/><use href="#pine" transform="translate(770 600) scale(.66)"/></g>
+          <g id="cabin" transform="translate(830 598)">
+            <rect x="-46" y="-52" width="92" height="52" style="fill:#7a4a3a"/><rect x="-46" y="-52" width="92" height="52" class="gr"/>
+            <path d="M-58-50L0-96L58-50Z" style="fill:#4d3341"/><path d="M-58-50L0-96L58-50Z" class="gr"/>
+            <rect x="22" y="-96" width="14" height="30" style="fill:#4d3341"/>
+            <rect x="-18" y="-40" width="26" height="28" rx="2" fill="var(--win)" class="flick" style="filter:drop-shadow(0 0 6px var(--win))"/><path d="M-5-40V-12M-18-26H8" stroke="#4d3341" stroke-width="2.4"/>
+            <rect x="-38" y="-30" width="14" height="30" style="fill:#3a2530"/>
+            <g id="smoke"><circle class="puff" cx="29" cy="-104" r="9" fill="var(--smoke)"/><circle class="puff" cx="29" cy="-104" r="8" fill="var(--smoke)" style="animation-delay:1.8s"/><circle class="puff" cx="29" cy="-104" r="10" fill="var(--smoke)" style="animation-delay:3.6s"/></g>
+          </g></g>
+        </svg></div>
+
+        <!-- 9 river -->
+        <div class="layer" data-d="0.74"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g filter="url(#sh2)">
+          <path class="paper" style="--f:var(--c-river)" d="M-200 800V640Q-40 612 160 632T520 626T860 640T1400 622V800Z"/>
+          <path class="gr" d="M-200 800V640Q-40 612 160 632T520 626T860 640T1400 622V800Z"/>
+          <g style="fill:var(--c-light)"><path d="M120 668q40-10 80 0q-40 8-80 0z"/><path d="M420 690q50-12 100 0q-50 10-100 0z"/><path d="M760 664q40-10 80 0q-40 8-80 0z"/><path d="M980 696q50-12 100 0q-50 10-100 0z"/><path d="M-20 700q40-10 80 0q-40 8-80 0z"/></g>
+          <g class="boat" transform="translate(0 0)"><g transform="translate(0 660)"><g class="bob"><path d="M-34 0H34L22 16H-22Z" style="fill:#fbf4e4"/><path d="M0-6V-56L26-10Z" style="fill:#fbf4e4"/><path d="M-3-10V-46L-24-10Z" style="fill:#f0d9cf"/><path d="M-34 0H34L22 16H-22Z" class="gr"/></g></g></g>
+          </g>
+        </svg></div>
+
+        <!-- 10 foreground -->
+        <div class="layer" data-d="0.9"><svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice"><g filter="url(#sh3)">
+          <path class="paper" style="--f:var(--c-near)" d="M-200 800V752Q-60 728 100 748T330 742T520 764T800 752T1040 742T1400 750V800Z"/>
+          <g style="fill:var(--c-near)"><use href="#pine" transform="translate(-10 780) scale(3.1)"/><use href="#pine" transform="translate(120 790) scale(2.2)"/><use href="#pine" transform="translate(1210 784) scale(3.3)"/><use href="#pine" transform="translate(1090 794) scale(2.3)"/></g>
+          <path class="gr" d="M-200 800V752Q-60 728 100 748T330 742T520 764T800 752T1040 742T1400 750V800Z"/>
+          <g style="fill:var(--c-near)"><path d="M300 750l6-34l6 34ZM316 750l8-46l8 46ZM930 750l6-30l6 30ZM950 750l8-40l8 40Z"/><ellipse cx="640" cy="762" rx="30" ry="9"/><ellipse cx="700" cy="768" rx="18" ry="6"/></g></g>
+          <g id="fireflies"></g>
+        </svg></div>
+      </div>
+      <div class="inner"></div>
+    </div>
+  </div>
+  <div class="tag">Paper Hours <small>&mdash; No. 11</small></div>
+  <div class="row">
+    <div class="seg" id="seg" role="radiogroup" aria-label="Time of day">
+      <span class="pill" id="pill"></span>
+      <button type="button" role="radio" aria-checked="true" data-t="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17h18M6 17a6 6 0 0 1 12 0M12 5v3M4.5 9.5l2 2M19.5 9.5l-2 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Dawn</button>
+      <button type="button" role="radio" aria-checked="false" data-t="1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Noon</button>
+      <button type="button" role="radio" aria-checked="false" data-t="2"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 8v3M5 12l2 1.5M19 12l-2 1.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Dusk</button>
+      <button type="button" role="radio" aria-checked="false" data-t="3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Night</button>
+    </div>
+    <button class="auto" id="auto" type="button" aria-pressed="false">Let the hours pass</button>
+  </div>
+  <p class="hint" id="hint">Move your pointer, or tilt your phone, to peer into the box.</p>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="sh1" x="-5%" y="-15%" width="110%" height="130%"><feDropShadow dx="0" dy="-3" stdDeviation="4" flood-color="#1a0f30" flood-opacity=".28"/></filter>
+  <filter id="sh2" x="-5%" y="-15%" width="110%" height="130%"><feDropShadow dx="0" dy="-4" stdDeviation="5" flood-color="#1a0f30" flood-opacity=".34"/></filter>
+  <filter id="sh3" x="-5%" y="-15%" width="110%" height="130%"><feDropShadow dx="0" dy="-6" stdDeviation="7" flood-color="#0c0620" flood-opacity=".42"/></filter>
+  <pattern id="grain" width="256" height="256" patternUnits="userSpaceOnUse"><image id="grainImg" width="256" height="256"/></pattern>
+</defs></svg>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const hex = h => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const NS = 'http://www.w3.org/2000/svg';
+
+/* paper grain tile */
+try {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), im = g.createImageData(256, 256);
+  let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < im.data.length; i += 4) { const v = r() < .5 ? 255 : 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = Math.round(r() * 30); }
+  g.putImageData(im, 0, 0);
+  g.lineCap = 'round';
+  for (let i = 0; i < 260; i++) { const x = r() * 256, y = r() * 256, a = r() * 6.28, l = 4 + r() * 12; g.strokeStyle = r() < .5 ? 'rgba(255,255,255,.10)' : 'rgba(40,20,30,.07)'; g.lineWidth = .7; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+  const url = c.toDataURL(); $('#grainImg').setAttribute('href', url); document.documentElement.style.setProperty('--grain', 'url("' + url + '")');
+} catch (e) { /* plain paper */ }
+
+/* palettes: one array of tokens per hour */
+const T = ['sky1', 'sky2', 'sky3', 'sky4', 'c-far', 'c-mid', 'c-cloud', 'c-cloud2', 'c-hill', 'c-forest', 'c-river', 'c-near', 'c-sun', 'c-moon', 'win', 'smoke', 'wall', 'wall2', 'accent', 'ink'];
+const P = [
+  // dawn
+  ['#4a3f7a', '#8f6fa8', '#e59aa0', '#f7c6b0', '#eab3b2', '#c78fa6', '#fde9df', '#f4cfcc', '#7a5f9a', '#5c4a86', '#f2b8b4', '#2f2758', '#fff1d6', '#e8e0f0', '#ffd27a', '#fff4ec', '#3a2f52', '#241d38', '#e59aa0', '#3b3050'],
+  // noon
+  ['#8fd0ec', '#bfe6f5', '#cdeedd', '#e4f7ee', '#b6ddd0', '#8fcfc0', '#ffffff', '#eaf7f8', '#5fb3a7', '#3f8f88', '#a9e0ee', '#245f5e', '#fff3b8', '#e9f2f5', '#ffe9a8', '#ffffff', '#2c5754', '#173735', '#5fb3a7', '#264b49'],
+  // dusk
+  ['#6b3f6e', '#a4546c', '#e8735a', '#ffb27a', '#f09a76', '#cf6d62', '#ffd6bd', '#f8b79f', '#a2526a', '#7c4568', '#f4a07c', '#3e2643', '#fff0cf', '#f0dccb', '#ffc46a', '#ffe8d8', '#4a2a48', '#2a1830', '#e8735a', '#4a2a48'],
+  // night
+  ['#0f1a36', '#1c2a4d', '#22405a', '#2a5c6b', '#2c4a70', '#243b62', '#5d7096', '#4b5f86', '#1f3556', '#182a45', '#2b5670', '#0d182b', '#e0d6b0', '#f3ecd2', '#ffcf72', '#9fb0c8', '#101a30', '#080d1c', '#8fb8d8', '#101a30']
+].map(a => a.map(hex));
+const root = document.documentElement.style;
+let cur = P[0].map(c => c.slice()), from = null, to = 0, tStart = 0, hour = 0;
+const setVars = () => T.forEach((k, i) => { const c = cur[i]; root.setProperty('--' + k, 'rgb(' + c.map(Math.round).join(',') + ')'); });
+setVars();
+
+/* celestial positions per hour: [sunx, suny, moonx, moony, stars] */
+const SKY = [[340, 436, 300, 900, 0], [640, 170, 300, 900, 0], [880, 430, 300, 900, 0], [300, 900, 770, 200, 1]];
+let cel = SKY[0].slice();
+const sun = $('#sun'), moon = $('#moon'), starsG = $('#stars');
+function placeCel() {
+  sun.setAttribute('transform', 'translate(' + cel[0].toFixed(1) + ' ' + cel[1].toFixed(1) + ')');
+  moon.setAttribute('transform', 'translate(' + cel[2].toFixed(1) + ' ' + cel[3].toFixed(1) + ')');
+  root.setProperty('--stars', cel[4].toFixed(2));
+}
+placeCel();
+
+/* build stars, birds, fireflies */
+(function build() {
+  let s = 11; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  let h = '';
+  for (let i = 0; i < 46; i++) { const x = r() * 1200, y = r() * 330, k = 1.2 + r() * 2.4; h += '<path class="twk" style="animation-delay:' + (-r() * 3).toFixed(2) + 's;animation-duration:' + (2 + r() * 3).toFixed(1) + 's" d="M' + x.toFixed(0) + ' ' + (y - k * 2).toFixed(1) + 'L' + (x + k * .5).toFixed(1) + ' ' + (y - k * .5).toFixed(1) + 'L' + (x + k * 2).toFixed(1) + ' ' + y.toFixed(1) + 'L' + (x + k * .5).toFixed(1) + ' ' + (y + k * .5).toFixed(1) + 'L' + x.toFixed(0) + ' ' + (y + k * 2).toFixed(1) + 'L' + (x - k * .5).toFixed(1) + ' ' + (y + k * .5).toFixed(1) + 'L' + (x - k * 2).toFixed(1) + ' ' + y.toFixed(1) + 'L' + (x - k * .5).toFixed(1) + ' ' + (y - k * .5).toFixed(1) + 'Z"/>'; }
+  starsG.innerHTML = h;
+  let b = '';
+  [[300, 250, 1, 24], [430, 200, .8, 30], [520, 290, .7, 34], [860, 230, .9, 28]].forEach((q, i) => {
+    b += '<g transform="translate(' + q[0] + ' ' + q[1] + ') scale(' + q[2] + ')"><g class="cl" style="animation-duration:' + (60 + i * 18) + 's;animation-delay:-' + (i * 17) + 's"><g class="bird" transform="translate(0 0)"><path class="wing l" d="M0 0L-26-10L-16 2Z" style="animation-duration:.' + (4 + i) + 's;animation-delay:-' + i * .13 + 's"/><path class="wing r" d="M0 0L26-10L16 2Z" style="animation-duration:.' + (4 + i) + 's;animation-delay:-' + i * .13 + 's"/></g></g></g>';
+  });
+  $('#birds').innerHTML = b;
+  let f = '';
+  for (let i = 0; i < 16; i++) { const x = 60 + r() * 1080, y = 560 + r() * 200, dx = (r() - .5) * 90, dy = (r() - .5) * 60; f += '<g class="ff" style="--dx:' + dx.toFixed(0) + 'px;--dy:' + dy.toFixed(0) + 'px;animation-duration:' + (4 + r() * 5).toFixed(1) + 's;animation-delay:-' + (r() * 5).toFixed(1) + 's"><circle cx="' + x.toFixed(0) + '" cy="' + y.toFixed(0) + '" r="9" fill="#e8ff8a" opacity=".22"/><circle class="twk" style="animation-delay:-' + (r() * 3).toFixed(1) + 's" cx="' + x.toFixed(0) + '" cy="' + y.toFixed(0) + '" r="3" fill="#f6ffb0"/></g>'; }
+  $('#fireflies').innerHTML = f; $('#fireflies').style.opacity = 'var(--stars,0)';
+})();
+
+/* time of day */
+const seg = $('#seg'), pill = $('#pill'), btns = $$('#seg button');
+function movePill() { const b = btns[hour]; pill.style.width = b.offsetWidth + 'px'; pill.style.transform = 'translateX(' + (b.offsetLeft - 5) + 'px)'; }
+function setHour(n, instant) {
+  hour = n; btns.forEach((b, i) => { b.setAttribute('aria-checked', String(i === n)); b.tabIndex = i === n ? 0 : -1; });
+  movePill();
+  from = { pal: cur.map(c => c.slice()), cel: cel.slice() }; to = n; tStart = performance.now();
+  if (instant || reduce) { cur = P[n].map(c => c.slice()); cel = SKY[n].slice(); setVars(); placeCel(); from = null; }
+}
+btns.forEach((b, i) => {
+  b.addEventListener('click', () => { autoOff(); setHour(i); });
+  b.addEventListener('keydown', e => { const k = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0; if (k) { e.preventDefault(); autoOff(); const n = (hour + k + 4) % 4; setHour(n); btns[n].focus(); } });
+});
+let autoT = 0; const autoB = $('#auto');
+function autoOff() { clearInterval(autoT); autoT = 0; autoB.setAttribute('aria-pressed', 'false'); }
+autoB.addEventListener('click', () => { if (autoT) { autoOff(); return; } autoB.setAttribute('aria-pressed', 'true'); autoT = setInterval(() => setHour((hour + 1) % 4), 6500); });
+addEventListener('resize', movePill);
+setTimeout(movePill, 60);
+
+/* parallax + idle sway */
+const layers = $$('.layer').map(l => ({ el: l, d: +l.dataset.d }));
+const box = $('#box');
+let tx = 0, ty = 0, px = 0, py = 0, lastPtr = -1e9;
+box.addEventListener('pointermove', e => { const r = box.getBoundingClientRect(); tx = (e.clientX - r.left) / r.width - .5; ty = (e.clientY - r.top) / r.height - .5; lastPtr = performance.now(); });
+box.addEventListener('pointerleave', () => { tx = ty = 0; });
+addEventListener('deviceorientation', e => { if (e.gamma == null || performance.now() - lastPtr < 2500) return; tx = clamp(e.gamma / 30, -.5, .5); ty = clamp((e.beta - 45) / 40, -.5, .5); });
+let lastF = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden || now - lastF < (from ? 110 : 33)) return; lastF = now;
+  if (from) {
+    const k = clamp((now - tStart) / 1500, 0, 1), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    for (let i = 0; i < T.length; i++) for (let j = 0; j < 3; j++) cur[i][j] = from.pal[i][j] + (P[to][i][j] - from.pal[i][j]) * e;
+    for (let i = 0; i < 5; i++) cel[i] = from.cel[i] + (SKY[to][i] - from.cel[i]) * e;
+    setVars(); placeCel(); if (k >= 1) from = null;
+  }
+  const t = now / 1000, sx = reduce ? 0 : Math.sin(t * .45) * .12 + Math.sin(t * .17) * .06, sy = reduce ? 0 : Math.sin(t * .31) * .05;
+  px += ((tx + sx) - px) * .08; py += ((ty + sy) - py) * .08;
+  const W = box.clientWidth;
+  for (const l of layers) l.el.style.transform = 'translate3d(' + (-px * W * .07 * (l.d - .3)).toFixed(2) + 'px,' + (-py * W * .03 * (l.d - .3)).toFixed(2) + 'px,0) scale(' + (1.06 + l.d * .02) + ')';
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weave — a study in over and under</title>
+<meta name="description" content="Weave: an animated Truchet-tile study that reads like woven textile. Arcs, braids and diagonals in indigo, madder, saffron and moss turn over and under each other in slow waves.">
+<style>
+:root{
+  --cream:#f4ead5; --indigo:#24356f; --madder:#c13b2a; --saffron:#e8a33d; --moss:#5f7f4a;
+  --bg:#16110e; --bg2:#231a14; --ink:#efe4cc; --muted:rgba(239,228,204,.62); --faint:rgba(239,228,204,.28);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif;
+  --sans:"Avenir Next",Avenir,"Century Gothic","URW Gothic","Trebuchet MS",system-ui,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --hem:12px;
+}
+*{box-sizing:border-box}
+html{color-scheme:dark;background:var(--bg)}
+body{margin:0;height:100vh;height:100dvh;overflow:hidden;background:
+  radial-gradient(90% 70% at 50% 34%,rgba(255,236,200,.09),rgba(255,236,200,0) 62%),
+  radial-gradient(120% 90% at 50% 120%,rgba(0,0,0,.55),rgba(0,0,0,0) 60%),
+  linear-gradient(180deg,var(--bg2),var(--bg));
+  color:var(--ink);font-family:var(--sans);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--saffron);outline-offset:3px;border-radius:3px}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* linen table texture (static) */
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;background:
+  repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,rgba(0,0,0,.05) 1px 3px),
+  repeating-linear-gradient(90deg,rgba(255,255,255,.01) 0 1px,rgba(0,0,0,.05) 1px 3px)}
+
+.frame{position:fixed;inset:clamp(8px,1.5vw,20px);z-index:6;pointer-events:none;border:1px solid var(--faint)}
+.frame::before,.frame::after{content:"";position:absolute;width:14px;height:14px;border:1px solid var(--muted)}
+.frame::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+.frame::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+
+/* ---------- top line ---------- */
+.top{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:clamp(20px,2.6vw,34px) clamp(24px,3.4vw,52px) 0;font:600 10.5px/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;color:var(--muted)}
+.top .dots{display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.top .dots span{display:inline-flex;align-items:center;gap:8px}
+.top i{display:inline-block;width:9px;height:9px;border-radius:50%;box-shadow:0 0 0 1px rgba(255,255,255,.18),0 1px 3px rgba(0,0,0,.5)}
+
+/* ---------- stage: swatch ---------- */
+.stage{position:relative;z-index:2;flex:1 1 auto;min-height:0;display:grid;place-items:center;padding:0 clamp(12px,3vw,40px)}
+.swatch{position:relative;width:0;height:0}
+.fringe{position:absolute;pointer-events:none}
+.cloth{position:absolute;left:0;top:0;background:var(--cream);touch-action:none;cursor:crosshair}
+.cloth::before{content:"";position:absolute;inset:0;z-index:-1;box-shadow:0 34px 60px rgba(0,0,0,.55),0 10px 20px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.25)}
+.cloth canvas{display:block;position:absolute;left:0;top:0;width:100%;height:100%}
+.ov{position:absolute;inset:0;pointer-events:none}
+.fabric{background:
+  repeating-linear-gradient(0deg,rgba(60,36,14,.045) 0 1px,rgba(255,255,255,.03) 1px 3px),
+  repeating-linear-gradient(90deg,rgba(60,36,14,.04) 0 1px,rgba(255,255,255,.025) 1px 3px);
+  box-shadow:inset 0 0 70px rgba(90,52,14,.22),inset 0 0 0 1px rgba(60,36,14,.25)}
+.noise{opacity:.55}
+.noise svg{width:100%;height:100%;display:block}
+.sheen{background:linear-gradient(105deg,rgba(255,255,255,0) 36%,rgba(255,250,235,.2) 50%,rgba(255,255,255,0) 64%);background-size:260% 100%;animation:sheen 11s linear infinite}
+@keyframes sheen{from{background-position:130% 0}to{background-position:-130% 0}}
+.hem{position:absolute;left:0;right:0;height:var(--hem);pointer-events:none;background:linear-gradient(180deg,#efe2c4,#f7eed9 55%,#e9dab8);box-shadow:0 1px 0 rgba(255,255,255,.4) inset}
+.hem::after{content:"";position:absolute;left:8px;right:8px;top:50%;height:0;border-top:1.6px dashed rgba(36,53,111,.72)}
+.hem-t{top:0;border-bottom:1px solid rgba(60,36,14,.28);box-shadow:0 5px 8px -3px rgba(60,36,14,.35)}
+.hem-b{top:auto;bottom:0;border-top:1px solid rgba(60,36,14,.28);box-shadow:0 -5px 8px -3px rgba(60,36,14,.35)}
+.tag{position:absolute;right:clamp(10px,3%,40px);bottom:calc(var(--hem) * -1 - 26px);z-index:3;width:min(300px,64%);padding:8px 12px 8px 14px;background:#f1e5c8;color:#3a2c1a;font:italic 11.5px/1.3 var(--serif);box-shadow:0 8px 14px rgba(0,0,0,.45);transform:rotate(-1.2deg);border-radius:1px}
+.tag::before{content:"";position:absolute;inset:3px;border:1px dashed rgba(36,53,111,.55);pointer-events:none}
+.tag b{font:700 9.5px/1 var(--sans);font-style:normal;letter-spacing:.22em;text-transform:uppercase;color:var(--madder);display:block;margin-bottom:3px}
+
+/* ---------- bottom bar ---------- */
+.bar{position:relative;z-index:4;display:grid;grid-template-columns:minmax(0,1.1fr) auto minmax(0,1.1fr);align-items:end;gap:18px 28px;padding:0 clamp(24px,3.4vw,52px) clamp(22px,2.8vw,38px)}
+.label h1{margin:0;font:italic 400 clamp(19px,2vw,27px)/1.1 var(--serif);letter-spacing:.005em;color:var(--ink)}
+.label h1 small{font:400 .62em/1 var(--sans);letter-spacing:.06em;color:var(--muted);font-style:normal;margin-left:.2em}
+.label p{margin:7px 0 0;font:500 10.5px/1.3 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+.modes{display:flex;gap:6px;justify-self:center;padding:4px;border:1px solid var(--faint);border-radius:999px;background:rgba(0,0,0,.25)}
+.modes button{appearance:none;border:0;background:none;cursor:pointer;padding:9px 15px;border-radius:999px;font:600 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);transition:background .3s,color .3s,transform .3s var(--ease)}
+.modes button kbd{font:inherit;opacity:.5;margin-right:6px}
+.modes button:hover{color:var(--ink);transform:translateY(-1px)}
+.modes button[aria-pressed="true"]{background:var(--cream);color:#2a1c0e;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+.ctrl{display:flex;align-items:center;justify-content:flex-end;gap:18px;flex-wrap:wrap}
+.size{display:flex;align-items:center;gap:12px;font:600 10.5px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.size output{display:inline-block;min-width:2.6ch;text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:clamp(110px,12vw,170px);height:22px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--indigo),var(--madder),var(--saffron),var(--moss));border-radius:2px}
+input[type=range]::-moz-range-track{height:2px;background:linear-gradient(90deg,var(--indigo),var(--madder),var(--saffron),var(--moss));border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-7px;border-radius:50%;background:var(--cream);border:2px solid #2a1c0e;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--cream);border:2px solid #2a1c0e;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.shuffle{appearance:none;cursor:pointer;padding:10px 18px;border-radius:999px;border:1px solid var(--muted);background:transparent;font:600 10.5px/1 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:var(--ink);transition:background .3s,color .3s,transform .3s var(--ease)}
+.shuffle:hover{background:var(--ink);color:#1c130b;transform:translateY(-1px)}
+.shuffle:active{transform:scale(.97)}
+.hint{grid-column:1/-1;margin:-4px 0 0;font:italic 12px/1.2 var(--serif);color:var(--faint)}
+
+@media (max-width:860px){
+  .bar{grid-template-columns:1fr;gap:12px;padding-bottom:22px}
+  .modes{justify-self:stretch;justify-content:space-between}
+  .modes button{padding:9px 9px;letter-spacing:.12em;flex:1 1 auto}
+  .modes button kbd{display:none}
+  .ctrl{justify-content:space-between}
+  .hint{display:none}
+  .top{white-space:nowrap}
+  .top .dots{gap:9px;flex-wrap:nowrap}
+  .top .dots span{font-size:0;gap:0}
+  .top .dots i{width:11px;height:11px}
+  .tag{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .sheen{animation:none;opacity:.5}
+}
+</style>
+</head>
+<body>
+<div class="frame" aria-hidden="true"></div>
+
+<header class="top">
+  <span>Textile studies · Nº 7</span>
+  <span class="dots" aria-hidden="true">
+    <span><i style="background:#24356f"></i>Indigo</span>
+    <span><i style="background:#c13b2a"></i>Madder</span>
+    <span><i style="background:#e8a33d"></i>Saffron</span>
+    <span><i style="background:#5f7f4a"></i>Moss</span>
+  </span>
+</header>
+
+<main class="stage" id="stage">
+  <div class="swatch" id="swatch">
+    <canvas class="fringe" id="fringe" aria-hidden="true"></canvas>
+    <div class="cloth" id="cloth">
+      <canvas id="weave" role="img" aria-label="A woven Truchet pattern of coloured ribbons"></canvas>
+      <div class="ov hem hem-t"></div>
+      <div class="ov hem hem-b"></div>
+      <div class="ov fabric"></div>
+      <div class="ov noise"><svg preserveAspectRatio="none" aria-hidden="true"><filter id="nz" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="4" stitchTiles="stitch" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 .22  0 0 0 0 .13  0 0 0 0 .05  0 0 0 1.5 -.58"/></filter><rect width="100%" height="100%" filter="url(#nz)"/></svg></div>
+      <div class="ov sheen"></div>
+      <div class="tag"><b>Swatch Nº 7</b>Plain weave, twill and braid in four natural dyes. One hundred percent imaginary cotton.</div>
+    </div>
+  </div>
+</main>
+
+<footer class="bar">
+  <div class="label">
+    <h1>Weave <small>· a study in over and under</small></h1>
+    <p id="stats" aria-live="off">— tiles · — strands</p>
+  </div>
+  <div class="modes" role="group" aria-label="Pattern mode" id="modes">
+    <button type="button" aria-pressed="false" data-mode="0"><kbd>1</kbd>Arcs</button>
+    <button type="button" aria-pressed="false" data-mode="1"><kbd>2</kbd>Braid</button>
+    <button type="button" aria-pressed="false" data-mode="2"><kbd>3</kbd>Diagonals</button>
+    <button type="button" aria-pressed="true" data-mode="3"><kbd>4</kbd>Mixed</button>
+  </div>
+  <div class="ctrl">
+    <div class="size"><label for="size">Tile</label><input type="range" id="size" min="28" max="92" step="2" value="48" aria-label="Tile size in pixels"><output id="sizeOut" for="size">48</output></div>
+    <button type="button" class="shuffle" id="shuffle">Shuffle</button>
+  </div>
+  <p class="hint">Hover to ripple · drag to paint the turn · click the cloth to change pattern · keys 1–4 · S to shuffle</p>
+</footer>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= palette & constants ================= */
+const PAL=[[36,53,111],[193,59,42],[232,163,61],[95,127,74]];          /* indigo, madder, saffron, moss */
+const NAMES=['Arcs','Braid','Diagonals','Mixed'];
+const CREAM='#f4ead5';
+const RIBW=.31;                                                          /* ribbon width as fraction of a tile */
+const RM=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+
+/* ================= deterministic randomness ================= */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let rng=mulberry32(20260929);
+function hash2(x,y){let h=Math.imul(x|0,374761393)+Math.imul(y|0,668265263)|0;h=Math.imul(h^(h>>>13),1274126177);return((h^(h>>>16))>>>0)/4294967296}
+function vnoise(x,y){
+  const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+  const a=hash2(xi,yi),b=hash2(xi+1,yi),c=hash2(xi,yi+1),d=hash2(xi+1,yi+1);
+  return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v;
+}
+
+/* ================= state ================= */
+const weave=$('#weave'),ctx=weave.getContext('2d'),fringeCv=$('#fringe'),fctx=fringeCv.getContext('2d');
+const cloth=$('#cloth'),swatch=$('#swatch'),stage=$('#stage'),statsEl=$('#stats');
+let C=0,R=0,T=0,S=48,Sd=48,dpr=1,cw=0,ch=0,FL=30,PADF=18,nodes=0,HN=0;
+let mode=3;
+/* per-tile arrays */
+let rot,ang,vel,act,vis,variant,swapAt,swapDir,flipT,flipDir,newVar,cool,pc0,pc1,pp0,pp1,fade,rndT,mixVar;
+/* per-node arrays */
+let nodeCol,oldComp,par,root,votes,domOld,domCnt,bestNew,bestCnt,compCol,bnd,compSize,prevSize;
+const ov=new Map();
+let strands=0,loops=0;
+let dirtyColors=false,needDraw=true,now=0,lastLayoutKey='';
+let sprites=null;
+const fcol=[];                                    /* fringe colour easing per exit */
+
+/* ================= layout ================= */
+function targetSize(){
+  const v=parseInt($('#size').value,10);return v;
+}
+function layout(intro){
+  const st=stage.getBoundingClientRect();
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  S=targetSize();
+  Sd=Math.max(12,Math.round(S*dpr));S=Sd/dpr;
+  FL=clamp(Math.round(S*.85),16,38);PADF=16;
+  const narrow=window.innerWidth<=860;
+  const availW=Math.max(120,st.width-2*(FL+10)-(narrow?4:24));
+  const availH=Math.max(120,st.height-(narrow?18:46));
+  C=Math.max(4,Math.floor(availW/S));R=Math.max(4,Math.floor(availH/S));
+  cw=C*S;ch=R*S;T=C*R;HN=(R+1)*C;nodes=HN+R*(C+1);
+  swatch.style.width=cw+'px';swatch.style.height=ch+'px';
+  cloth.style.width=cw+'px';cloth.style.height=ch+'px';
+  weave.width=C*Sd;weave.height=R*Sd;
+  const fw=cw+2*(FL+PADF),fh=ch+2*PADF;
+  fringeCv.style.left=(-(FL+PADF))+'px';fringeCv.style.top=(-PADF)+'px';fringeCv.style.width=fw+'px';fringeCv.style.height=fh+'px';
+  fringeCv.width=Math.round(fw*dpr);fringeCv.height=Math.round(fh*dpr);
+  document.documentElement.style.setProperty('--hem',Math.max(9,Math.round(S*.26))+'px');
+  swatch.style.transform='translateY(-'+Math.round(clamp(S*.15,0,12))+'px)';
+  buildSprites();
+  setup(intro);
+}
+
+/* ================= sprites ================= */
+function shade(c,k){return k<0?[c[0]*(1+k),c[1]*(1+k),c[2]*(1+k)]:[c[0]+(255-c[0])*k,c[1]+(255-c[1])*k,c[2]+(255-c[2])*k]}
+function rgba(c,a){return 'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+a+')'}
+function tracePath(g,kind,s){
+  g.beginPath();
+  if(kind===0){const e=1.6/(s/2);g.arc(s,0,s/2,Math.PI/2-e,Math.PI+e)}
+  else if(kind===1){g.moveTo(s/2,0);g.lineTo(s,s/2)}
+  else{g.moveTo(s/2,-1.5);g.lineTo(s/2,s+1.5)}
+}
+function newCanvas(sz){const c=document.createElement('canvas');c.width=c.height=sz;return c}
+function buildSprites(){
+  const m=Math.ceil(Sd*.2)+3,sz=Sd+2*m,w=Sd*RIBW;
+  const rib=[[],[],[]],shd=[];
+  for(let kind=0;kind<3;kind++){
+    for(let col=0;col<4;col++){
+      const cv=newCanvas(sz),g=cv.getContext('2d');g.translate(m,m);
+      g.lineCap=kind===1?'round':'butt';g.lineJoin='round';
+      const base=PAL[col];
+      const L=[[1,-.42,1],[.9,-.2,1],[.68,0,1],[.44,.17,.9],[.22,.36,.62]];
+      for(let q=0;q<L.length;q++){g.lineWidth=w*L[q][0];g.strokeStyle=rgba(shade(base,L[q][1]),L[q][2]);tracePath(g,kind,Sd);g.stroke()}
+      g.save();g.lineCap='butt';g.lineWidth=w*.92;g.setLineDash([Sd*.022,Sd*.03]);g.strokeStyle='rgba(20,8,0,.1)';tracePath(g,kind,Sd);g.stroke();g.restore();
+      g.save();g.lineCap='butt';g.lineWidth=w*.5;g.setLineDash([Sd*.022,Sd*.03]);g.lineDashOffset=-Sd*.011;g.strokeStyle='rgba(255,255,255,.09)';tracePath(g,kind,Sd);g.stroke();g.restore();
+      rib[kind][col]={cv,m};
+    }
+    /* soft ground shadow, silhouette only (offset is applied at draw time so the light stays fixed) */
+    const cv=newCanvas(sz),g=cv.getContext('2d'),BIG=sz+60;
+    g.translate(m-BIG,m);g.lineCap=kind===1?'round':'butt';g.lineJoin='round';
+    g.shadowColor='rgba(34,18,6,.62)';g.shadowBlur=Sd*.085;g.shadowOffsetX=BIG;g.shadowOffsetY=0;
+    g.lineWidth=w*.98;g.strokeStyle='#000';tracePath(g,kind,Sd);g.stroke();
+    shd[kind]={cv,m};
+  }
+  /* crossing shadow: cast by a vertical over-ribbon onto the horizontal ribbon beneath it */
+  const xc=newCanvas(sz),xg=xc.getContext('2d');xg.translate(m,m);
+  xg.beginPath();xg.rect(0,Sd/2-w/2,Sd,w);xg.clip();
+  let gr=xg.createLinearGradient(Sd/2-w*.5-Sd*.22,0,Sd/2-w*.5,0);gr.addColorStop(0,'rgba(20,8,0,0)');gr.addColorStop(1,'rgba(20,8,0,.26)');xg.fillStyle=gr;xg.fillRect(0,0,Sd,Sd);
+  gr=xg.createLinearGradient(Sd/2+w*.5,0,Sd/2+w*.5+Sd*.26,0);gr.addColorStop(0,'rgba(20,8,0,.5)');gr.addColorStop(1,'rgba(20,8,0,0)');xg.fillStyle=gr;xg.fillRect(0,0,Sd,Sd);
+  /* whole-tile shadow sprites for the two-ribbon kinds (one draw per tile instead of two) */
+  const psh=[];
+  for(let kind=0;kind<2;kind++){
+    const cv=newCanvas(sz),g=cv.getContext('2d');
+    g.drawImage(shd[kind].cv,0,0);g.translate(sz/2,sz/2);g.rotate(Math.PI);g.drawImage(shd[kind].cv,-sz/2,-sz/2);
+    psh[kind]={cv,m};
+  }
+  pairCache.clear();
+  sprites={rib,shd,psh,x:{cv:xc,m},m,sz};
+}
+const pairCache=new Map();
+function getPair(kind,c0,c1){
+  const key=(kind*4+c0)*4+c1;let sp=pairCache.get(key);if(sp)return sp;
+  const sz=sprites.sz,cv=newCanvas(sz),g=cv.getContext('2d');
+  g.drawImage(sprites.rib[kind][c0].cv,0,0);g.translate(sz/2,sz/2);g.rotate(Math.PI);g.drawImage(sprites.rib[kind][c1].cv,-sz/2,-sz/2);
+  sp={cv,m:sprites.m};pairCache.set(key,sp);return sp;
+}
+
+/* ================= grid setup ================= */
+function alloc(){
+  rot=new Int16Array(T);ang=new Float32Array(T);vel=new Float32Array(T);act=new Uint8Array(T);vis=new Uint8Array(T);variant=new Uint8Array(T);
+  swapAt=new Float32Array(T);swapDir=new Int8Array(T);flipT=new Float64Array(T);flipDir=new Int8Array(T);newVar=new Int8Array(T).fill(-1);cool=new Float64Array(T);
+  pc0=new Uint8Array(T);pc1=new Uint8Array(T);pp0=new Uint8Array(T);pp1=new Uint8Array(T);fade=new Float32Array(T).fill(1);rndT=new Float32Array(T);mixVar=new Uint8Array(T);
+  nodeCol=new Uint8Array(nodes);oldComp=new Int32Array(nodes);par=new Int32Array(nodes);root=new Int32Array(nodes);votes=new Uint16Array(nodes*4);
+  domOld=new Int32Array(nodes);domCnt=new Int32Array(nodes);bestNew=new Int32Array(nodes);bestCnt=new Int32Array(nodes);compCol=new Uint8Array(nodes);bnd=new Uint8Array(nodes);compSize=new Int32Array(nodes);prevSize=new Int32Array(nodes).fill(1);
+}
+function variantFor(m,t){return m===0?0:m===1?2:m===2?1:mixVar[t]}
+function setup(intro){
+  alloc();
+  const seedShift=(Math.random()*1000)|0;
+  for(let t=0;t<T;t++){
+    const i=t%C,j=(t/C)|0;
+    rndT[t]=hash2(i+seedShift,j*7+3);
+    const n=vnoise(i*.23+seedShift,j*.23)+ (hash2(i*3,j*5+seedShift)-.5)*.14;
+    mixVar[t]=n<.36?2:n<.72?0:1;
+  }
+  for(let t=0;t<T;t++){
+    const i=t%C,j=(t/C)|0;
+    variant[t]=variantFor(mode,t);vis[t]=variant[t];
+    rot[t]=variant[t]===2?(((i+j)&1)^(rndT[t]<.07?1:0)):(rndT[t]>.5?1:0);
+    ang[t]=rot[t];
+  }
+  for(let n=0;n<nodes;n++){oldComp[n]=n;nodeCol[n]=0}
+  recolor(true);
+  for(let t=0;t<T;t++){pc0[t]=pieceColor(t,0);pc1[t]=pieceColor(t,1);pp0[t]=pc0[t];pp1[t]=pc1[t];fade[t]=1}
+  const n0=performance.now()/1000;
+  if(intro&&!RM){
+    for(let t=0;t<T;t++){
+      const i=t%C,j=(t/C)|0;
+      rot[t]-=1;ang[t]=rot[t];
+      flipT[t]=n0+.15+(i*.045+j*.03)+rndT[t]*.25;flipDir[t]=1;
+    }
+    recolor(false);
+    for(let t=0;t<T;t++){pc0[t]=pieceColor(t,0);pc1[t]=pieceColor(t,1);pp0[t]=pc0[t];pp1[t]=pc1[t]}
+  }
+  fcol.length=0;
+  for(let s=0;s<2;s++){fcol[s]=[];for(let j=0;j<R;j++)fcol[s][j]=PAL[0].slice()}
+  updateStats();needDraw=true;
+  weave.setAttribute('aria-label','Woven Truchet pattern in '+NAMES[mode]+' mode: '+T+' tiles of ribbon in indigo, madder, saffron and moss.');
+}
+
+/* ================= strands: union-find with colour inertia ================= */
+function find(x){while(par[x]!==x){par[x]=par[par[x]];x=par[x]}return x}
+function union(a,b){a=find(a);b=find(b);if(a!==b)par[a]=b}
+function nodesOf(t){const i=t%C,j=(t/C)|0;const W=HN+j*(C+1)+i;return [t,W+1,t+C,W]}   /* N,E,S,W */
+function recolor(first){
+  for(let n=0;n<nodes;n++)par[n]=n;
+  for(let t=0;t<T;t++){
+    const i=t%C,j=(t/C)|0,N=t,S_=t+C,W=HN+j*(C+1)+i,E=W+1;
+    if(variant[t]===2){union(N,S_);union(W,E)}
+    else if((rot[t]&1)===0){union(N,E);union(S_,W)}
+    else{union(E,S_);union(W,N)}
+  }
+  votes.fill(0);ov.clear();domCnt.fill(0);bestCnt.fill(0);bnd.fill(0);
+  for(let n=0;n<nodes;n++){const r=find(n);root[n]=r;votes[r*4+nodeCol[n]]++;const key=oldComp[n]*nodes+r;ov.set(key,(ov.get(key)||0)+1)}
+  ov.forEach((cnt,key)=>{const o=(key/nodes)|0,r=key-o*nodes;if(cnt>domCnt[r]){domCnt[r]=cnt;domOld[r]=o}if(cnt>bestCnt[o]){bestCnt[o]=cnt;bestNew[o]=r}});
+  for(let i=0;i<C;i++){bnd[root[i]]=1;bnd[root[R*C+i]]=1}
+  for(let j=0;j<R;j++){bnd[root[HN+j*(C+1)]]=1;bnd[root[HN+j*(C+1)+C]]=1}
+  let comps=0,lp=0;
+  if(first){
+    /* balanced first dyeing: biggest strands first, each takes the least-used dye so far */
+    const sz=new Int32Array(nodes),list=[];
+    for(let n=0;n<nodes;n++)sz[root[n]]++;
+    for(let n=0;n<nodes;n++)if(root[n]===n)list.push(n);
+    list.sort((a,b)=>sz[b]-sz[a]);
+    const use=[0,0,0,0];
+    for(let q=0;q<list.length;q++){
+      const n=list[q];let bc=0,bu=1e9;
+      for(let k=0;k<4;k++){const u=use[k]+rng()*Math.max(1,sz[n]*.35);if(u<bu){bu=u;bc=k}}
+      compCol[n]=bc;use[bc]+=sz[n];
+    }
+  }
+  for(let n=0;n<nodes;n++){
+    if(root[n]!==n)continue;
+    comps++;if(!bnd[n])lp++;
+    let c;
+    if(first){c=compCol[n]}
+    else{
+      let best=-1,bc=0;for(let k=0;k<4;k++){const v=votes[n*4+k];if(v>best){best=v;bc=k}}
+      c=bc;
+      if(bestNew[domOld[n]]!==n)c=(bc+1+((rng()*3)|0))%4;
+    }
+    compCol[n]=c;
+  }
+  /* keep the four dyes in play: if one colour swallows the cloth, re-dye the biggest freshly-changed strand */
+  compSize.fill(0);for(let n=0;n<nodes;n++)compSize[root[n]]++;
+  if(!first){
+    const cnt=[0,0,0,0];for(let n=0;n<nodes;n++)if(root[n]===n)cnt[compCol[n]]+=compSize[n];
+    let dc=0,lc=0;for(let k=1;k<4;k++){if(cnt[k]>cnt[dc])dc=k;if(cnt[k]<cnt[lc])lc=k}
+    if(cnt[dc]>nodes*.33&&dc!==lc){
+      let bn=-1,bs=0;
+      for(let n=0;n<nodes;n++){if(root[n]!==n||compCol[n]!==dc)continue;const sz=compSize[n];if(sz>bs&&sz>6&&(domCnt[n]!==sz||prevSize[domOld[n]]!==sz)){bs=sz;bn=n}}
+      if(bn>=0)compCol[bn]=lc;
+    }
+  }
+  for(let n=0;n<nodes;n++){nodeCol[n]=compCol[root[n]];oldComp[n]=root[n];if(root[n]===n)prevSize[n]=compSize[n]}
+  strands=comps-lp;loops=lp;
+}
+function pieceColor(t,p){
+  const nd=nodesOf(t);
+  if(variant[t]===2)return nodeCol[p===0?nd[0]:nd[3]];
+  return nodeCol[nd[((rot[t]&3)+2*p)&3]];
+}
+function syncColors(){
+  for(let t=0;t<T;t++){
+    const a=pieceColor(t,0),b=pieceColor(t,1);
+    if(a!==pc0[t]||b!==pc1[t]){if(act[t]){pc0[t]=a;pc1[t]=b;pp0[t]=a;pp1[t]=b;fade[t]=1}else{pp0[t]=pc0[t];pp1[t]=pc1[t];pc0[t]=a;pc1[t]=b;fade[t]=0}}
+  }
+}
+function updateStats(){statsEl.textContent=T+' tiles · '+strands+' strands · '+loops+' loops'}
+
+/* ================= flips ================= */
+function startFlip(t,steps,nv){
+  rot[t]+=steps;act[t]=1;
+  if(nv!==undefined&&nv>=0&&nv!==variant[t]){variant[t]=nv;swapDir[t]=steps>0?1:-1;swapAt[t]=rot[t]-steps/2}
+  if(RM){ang[t]=rot[t];vel[t]=0;act[t]=0;vis[t]=variant[t]}
+  dirtyColors=true;needDraw=true;
+}
+function schedule(t,delay,steps,nv){
+  if(flipT[t]>0)return;
+  flipT[t]=now+delay;flipDir[t]=steps;newVar[t]=nv===undefined?-1:nv;
+}
+function setMode(m,ox,oy){
+  if(m===mode&&ox===undefined)return;
+  mode=m;
+  document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.mode===m?'true':'false'));
+  const cx=ox===undefined?cw/2:ox,cy=oy===undefined?ch/2:oy,speed=S*15;
+  for(let t=0;t<T;t++){
+    const nv=variantFor(m,t);
+    if(nv===variant[t])continue;
+    const i=t%C,j=(t/C)|0,dx=(i+.5)*S-cx,dy=(j+.5)*S-cy,d=Math.hypot(dx,dy)/speed;
+    let steps=1;
+    if(nv===2){const want=(i+j)&1;steps=((rot[t]&1)===want)?2:1}
+    flipT[t]=0;schedule(t,d+rndT[t]*.05,steps,nv);
+  }
+  weave.setAttribute('aria-label','Woven Truchet pattern in '+NAMES[mode]+' mode: '+T+' tiles of ribbon in indigo, madder, saffron and moss.');
+  needDraw=true;
+}
+function cycleMode(ox,oy){setMode((mode+1)%4,ox,oy)}
+function shuffle(){
+  const a=rng()*Math.PI*2,dx=Math.cos(a),dy=Math.sin(a),speed=S*16;
+  let mn=1e9;const pr=new Float32Array(T);
+  for(let t=0;t<T;t++){const i=t%C,j=(t/C)|0;pr[t]=(i+.5)*S*dx+(j+.5)*S*dy;if(pr[t]<mn)mn=pr[t]}
+  for(let t=0;t<T;t++){
+    if(rng()<.55){flipT[t]=0;schedule(t,(pr[t]-mn)/speed+rng()*.12,1)}
+  }
+}
+
+/* ================= idle wave ================= */
+let cursor=0;
+function idleTick(t){
+  if(RM)return;
+  const batch=Math.ceil(T/18),th=.55+t*.02;
+  const wx=Math.cos(th),wy=Math.sin(th);
+  for(let k=0;k<batch;k++){
+    const i=cursor%T;cursor++;
+    if(act[i]||flipT[i]>0)continue;
+    const x=i%C,y=(i/C)|0;
+    const band=Math.sin((x*wx+y*wy)*.34-t*.5);
+    const nz=vnoise(x*.19+t*.03,y*.19-t*.025);
+    const ra=variant[i]===2?.08:.4;
+    const f=.5+.17*band+.34*(nz-.5)+ra*(rndT[i]-.5);
+    let want=f>.5?1:0;
+    if(variant[i]===2)want^=((x+y)&1);
+    if((rot[i]&1)!==want)schedule(i,Math.random()*.35,1);
+  }
+}
+
+/* ================= pointer ================= */
+let drag=null,lastRip=[-99,-99];
+function tileAt(px,py){const i=Math.floor(px/S),j=Math.floor(py/S);return(i<0||j<0||i>=C||j>=R)?-1:j*C+i}
+function local(e){const r=cloth.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]}
+cloth.addEventListener('pointerdown',e=>{
+  const [x,y]=local(e),t=tileAt(x,y);
+  drag={x,y,t0:performance.now(),moved:false,val:t>=0?((rot[t]&1)^1):0,id:e.pointerId};
+  try{cloth.setPointerCapture(e.pointerId)}catch(_){}
+});
+cloth.addEventListener('pointermove',e=>{
+  const [x,y]=local(e);
+  if(drag&&e.pointerId===drag.id){
+    if(!drag.moved&&Math.hypot(x-drag.x,y-drag.y)>7)drag.moved=true;
+    if(drag.moved){
+      const ci=Math.floor(x/S),cj=Math.floor(y/S);
+      for(let dj=-1;dj<=1;dj++)for(let di=-1;di<=1;di++){
+        const i=ci+di,j=cj+dj;if(i<0||j<0||i>=C||j>=R)continue;
+        const cx=(i+.5)*S,cy=(j+.5)*S;if(Math.hypot(cx-x,cy-y)>S*.62)continue;
+        const t=j*C+i;
+        if((rot[t]&1)!==drag.val&&!act[t]&&flipT[t]===0)startFlip(t,1);
+      }
+    }
+    return;
+  }
+  /* hover ripple */
+  if(Math.hypot(x-lastRip[0],y-lastRip[1])<S*.4)return;
+  lastRip=[x,y];
+  const ci=Math.floor(x/S),cj=Math.floor(y/S);
+  for(let dj=-2;dj<=2;dj++)for(let di=-2;di<=2;di++){
+    const i=ci+di,j=cj+dj;if(i<0||j<0||i>=C||j>=R)continue;
+    const d=Math.hypot((i+.5)*S-x,(j+.5)*S-y)/S;if(d>1.9)continue;
+    const t=j*C+i;if(cool[t]>now||act[t]||flipT[t]>0)continue;
+    cool[t]=now+.9;schedule(t,d*.07,1);
+  }
+});
+function endDrag(e){
+  if(!drag)return;
+  const wasClick=!drag.moved&&performance.now()-drag.t0<480;
+  const [x,y]=local(e);
+  drag=null;
+  if(wasClick)cycleMode(x,y);
+}
+cloth.addEventListener('pointerup',endDrag);
+cloth.addEventListener('pointercancel',()=>{drag=null});
+cloth.addEventListener('pointerleave',()=>{lastRip=[-99,-99]});
+
+/* ================= UI ================= */
+document.querySelectorAll('#modes button').forEach(b=>b.addEventListener('click',()=>setMode(+b.dataset.mode)));
+$('#shuffle').addEventListener('click',shuffle);
+const sizeIn=$('#size'),sizeOut=$('#sizeOut');let sizeT=0;
+sizeIn.addEventListener('input',()=>{sizeOut.textContent=sizeIn.value;clearTimeout(sizeT);sizeT=setTimeout(()=>layout(true),90)});
+window.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.target&&e.target.tagName==='INPUT'&&e.target.type!=='range')return;
+  if(e.key>='1'&&e.key<='4')setMode(+e.key-1);
+  else if(e.key==='s'||e.key==='S')shuffle();
+});
+let rzT=0;
+function onResize(){clearTimeout(rzT);rzT=setTimeout(()=>{const k=Math.round(stage.clientWidth)+'x'+Math.round(stage.clientHeight)+'@'+window.devicePixelRatio;if(k!==lastLayoutKey){lastLayoutKey=k;layout(false)}},120)}
+if(window.ResizeObserver)new ResizeObserver(onResize).observe(stage);else window.addEventListener('resize',onResize);
+
+/* ================= drawing ================= */
+function drawTiles(){
+  const g=ctx,W=weave.width,H=weave.height,rb=sprites.rib,sh=sprites.shd,m=sprites.m,half=Sd/2;
+  g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.fillStyle=CREAM;g.fillRect(0,0,W,H);
+  const sdx=Sd*.045,sdy=Sd*.07,HP=Math.PI/2;
+  /* pass 1: ground shadows */
+  for(let t=0;t<T;t++){
+    const cx=(t%C)*Sd+half+sdx,cy=((t/C)|0)*Sd+half+sdy,a=ang[t]*HP,v=vis[t];
+    if(v===2){
+      const c=Math.cos(Math.PI*ang[t]),vOver=c>=0;
+      g.globalAlpha=.85;
+      drawS(g,sh[2],0,cx,cy,half);drawS(g,sh[2],HP,cx,cy,half);
+    }else{
+      g.globalAlpha=.8;
+      drawS(g,sprites.psh[v],a,cx,cy,half);
+    }
+  }
+  g.globalAlpha=1;
+  /* pass 2: ribbons */
+  for(let t=0;t<T;t++){
+    const ox=(t%C)*Sd+half,oy=((t/C)|0)*Sd+half,v=vis[t],f=fade[t];
+    if(v===2){
+      const c=Math.cos(Math.PI*ang[t]),vOver=c>=0,k=Math.abs(c);
+      const under=vOver?1:0,over=vOver?0:1;                     /* piece 0 = vertical ribbon, piece 1 = horizontal */
+      const cu=under===0?pc0[t]:pc1[t],co=over===0?pc0[t]:pc1[t];
+      const pu=under===0?pp0[t]:pp1[t],po=over===0?pp0[t]:pp1[t];
+      const wob=Math.sin(Math.PI*ang[t])*.045;
+      drawRib(g,rb[2],f<1?pu:cu,under===0?0:HP+wob,ox,oy,half,1,1,1);
+      if(f<1)drawRib(g,rb[2],cu,under===0?0:HP+wob,ox,oy,half,1,1,f);
+      g.setTransform(1,0,0,1,0,0);
+      drawS2(g,sprites.x,over===0?0:HP,ox,oy,half,.55+.45*k);
+      const bump=1.02+.07*k;
+      drawRib(g,rb[2],f<1?po:co,over===0?0:HP-wob,ox,oy,half,bump,1,1);
+      if(f<1)drawRib(g,rb[2],co,over===0?0:HP-wob,ox,oy,half,bump,1,f);
+    }else if(f>=1){
+      const sp=getPair(v,pc0[t],pc1[t]),a=ang[t]*HP,c=Math.cos(a),sn=Math.sin(a);
+      g.setTransform(c,sn,-sn,c,ox,oy);g.drawImage(sp.cv,-half-sp.m,-half-sp.m);
+    }else{
+      const a=ang[t]*HP;
+      drawRib(g,rb[v],f<1?pp0[t]:pc0[t],a,ox,oy,half,1,1,1);
+      if(f<1)drawRib(g,rb[v],pc0[t],a,ox,oy,half,1,1,f);
+      drawRib(g,rb[v],f<1?pp1[t]:pc1[t],a+Math.PI,ox,oy,half,1,1,1);
+      if(f<1)drawRib(g,rb[v],pc1[t],a+Math.PI,ox,oy,half,1,1,f);
+    }
+  }
+  g.globalAlpha=1;g.setTransform(1,0,0,1,0,0);
+}
+function drawS(g,sp,a,cx,cy,half){
+  const c=Math.cos(a),s=Math.sin(a);g.setTransform(c,s,-s,c,cx,cy);g.drawImage(sp.cv,-half-sp.m,-half-sp.m);
+}
+function drawS2(g,sp,a,cx,cy,half,alpha){
+  const c=Math.cos(a),s=Math.sin(a);g.globalAlpha=alpha;g.setTransform(c,s,-s,c,cx,cy);g.drawImage(sp.cv,-half-sp.m,-half-sp.m);g.globalAlpha=1;
+}
+function drawRib(g,list,col,a,cx,cy,half,sx,sy,alpha){
+  const sp=list[col],c=Math.cos(a),s=Math.sin(a);
+  g.globalAlpha=alpha;g.setTransform(c*sx,s*sx,-s*sy,c*sy,cx,cy);g.drawImage(sp.cv,-half-sp.m,-half-sp.m);g.globalAlpha=1;
+}
+
+/* fringe: the strands leave the cloth as loose threads */
+function drawFringe(t){
+  const g=fctx;g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,fringeCv.width,fringeCv.height);
+  g.setTransform(dpr,0,0,dpr,0,0);
+  const ox=FL+PADF,oy=PADF,w=S*RIBW,n=6;
+  g.lineCap='round';
+  for(let side=0;side<2;side++){
+    for(let j=0;j<R;j++){
+      const node=side===0?HN+j*(C+1):HN+j*(C+1)+C;
+      const tc=PAL[nodeCol[node]],fc=fcol[side][j];
+      for(let q=0;q<3;q++)fc[q]+=(tc[q]-fc[q])*.14;
+      const y0=oy+(j+.5)*S,dirx=side===0?-1:1,x0=ox+(side===0?0:cw);
+      for(let k=0;k<n;k++){
+        const off=(k-(n-1)/2)*(w/(n+.2)),hh=hash2(j*13+side*7,k*31+5);
+        const len=FL*(.55+.45*hh);
+        const sway=RM?0:Math.sin(t*1.15+j*.62+k*.83+side*2.1)*(1.2+len*.05);
+        const droop=(k-2.5)*.9+len*.16;
+        const ex=x0+dirx*len,ey=y0+off+droop+sway;
+        const cxp=x0+dirx*len*.55,cyp=y0+off+sway*.4+droop*.25;
+        const cc=shade(fc,(hh-.5)*.3);
+        g.strokeStyle=rgba(cc,1);g.lineWidth=1.9+hh*1.1;
+        g.beginPath();g.moveTo(x0-dirx*3,y0+off);g.quadraticCurveTo(cxp,cyp,ex,ey);g.stroke();
+        g.strokeStyle='rgba(255,255,255,.14)';g.lineWidth=.6;
+        g.beginPath();g.moveTo(x0,y0+off-.5);g.quadraticCurveTo(cxp,cyp-.5,ex,ey-.5);g.stroke();
+      }
+    }
+  }
+}
+
+/* ================= main loop ================= */
+let last=0,fAcc=0;
+function tick(dt,tnow){
+  now=tnow;
+  /* scheduled flips */
+  for(let t=0;t<T;t++){
+    if(flipT[t]>0&&now>=flipT[t]){
+      flipT[t]=0;const nv=newVar[t];newVar[t]=-1;
+      startFlip(t,flipDir[t],nv>=0?nv:undefined);
+    }
+  }
+  idleTick(now);
+  if(dirtyColors){dirtyColors=false;recolor(false);syncColors();updateStats()}
+  /* springs */
+  const K=240,Cd=13.5;let any=false;
+  for(let t=0;t<T;t++){
+    if(act[t]){
+      any=true;
+      const a=rot[t]-ang[t];
+      vel[t]+=(K*a-Cd*vel[t])*dt;ang[t]+=vel[t]*dt;
+      if(vis[t]!==variant[t]&&(ang[t]-swapAt[t])*swapDir[t]>=0)vis[t]=variant[t];
+      if(Math.abs(a)<.002&&Math.abs(vel[t])<.02){ang[t]=rot[t];vel[t]=0;act[t]=0;vis[t]=variant[t]}
+    }
+    if(fade[t]<1){any=true;fade[t]=Math.min(1,fade[t]+dt/.26)}
+  }
+  if(any||needDraw){drawTiles();needDraw=false}
+  fAcc+=dt;
+  if(fAcc>=.033){fAcc=0;drawFringe(now)}
+}
+function frame(ts){
+  requestAnimationFrame(frame);
+  if(document.hidden||(window.__wv&&window.__wv.paused)){last=0;return}
+  const dt=last?Math.min(.033,(ts-last)/1000):.016;last=ts;
+  tick(dt,ts/1000);
+}
+/* test hook: advance the simulation deterministically (used for automated checks) */
+window.__wv={paused:false,step:function(sec){const n=Math.round(sec*30);let tn=Math.max(now,performance.now()/1000);for(let i=0;i<n;i++){tn+=1/30;tick(1/30,tn)}}};
+
+/* ================= boot ================= */
+function boot(){
+  lastLayoutKey=Math.round(stage.clientWidth)+'x'+Math.round(stage.clientHeight)+'@'+window.devicePixelRatio;
+  if(window.innerWidth<=700){sizeIn.value=36;sizeOut.textContent='36'}
+  layout(true);
+  requestAnimationFrame(frame);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
+</body>
+</html>

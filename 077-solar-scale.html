@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#05060a">
+<title>How Big Is Empty? — The Solar System at True Scale</title>
+<style>
+:root{
+  color-scheme:dark;
+  --space:#05060a; --ink:#f4efe6; --sun:#ffb547;
+  --dim:rgba(244,239,230,.68); --mute:rgba(244,239,230,.42); --hair:rgba(244,239,230,.14);
+  --sans:"Avenir Next","Helvetica Neue","Segoe UI",Ubuntu,Cantarell,Roboto,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --gut:clamp(16px,3.2vw,48px); --top:clamp(16px,3.6vh,40px);
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--space);color:var(--ink)}
+body{height:100vh;height:100dvh;overflow:hidden;font-family:var(--sans);font-weight:300;-webkit-font-smoothing:antialiased;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#stage.drag{cursor:grabbing}
+#stage.pick{cursor:pointer}
+.veil{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(130% 100% at 42% 52%,transparent 58%,rgba(0,0,0,.5) 100%)}
+
+/* ---------- title + hud ---------- */
+.title{position:fixed;left:var(--gut);top:var(--top);z-index:3;pointer-events:none;max-width:min(680px,62vw);transition:opacity .9s var(--ease)}
+.title h1{font-weight:200;font-size:clamp(30px,5.2vw,82px);line-height:.98;letter-spacing:-.03em;text-shadow:0 2px 30px rgba(0,0,0,.7)}
+.title h1 span{display:block;color:var(--sun);letter-spacing:.34em;margin-left:.04em;font-weight:200;text-shadow:0 0 28px rgba(255,181,71,.35)}
+.sub{margin-top:clamp(10px,1.6vh,16px);font:400 clamp(10.5px,1vw,12.5px)/1.65 var(--mono);letter-spacing:.03em;color:var(--dim);max-width:38ch}
+.sub b{font-weight:500;color:var(--ink)}
+.hud{position:fixed;right:var(--gut);top:var(--top);z-index:3;text-align:right;font-family:var(--mono);pointer-events:none}
+.hud .k{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute)}
+.hud .big{font-size:clamp(24px,2.7vw,38px);font-weight:300;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:3px 0 10px;text-shadow:0 0 24px rgba(255,181,71,.25)}
+.hud .row{font-size:11px;line-height:1.75;color:var(--dim);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.hud .row b{font-weight:400;color:var(--ink)}
+
+/* ---------- callout cards ---------- */
+.card{position:fixed;left:0;top:0;z-index:2;width:min(330px,calc(100vw - 32px));padding:2px 0 2px 16px;border-left:1px solid var(--a,#fff);opacity:0;visibility:hidden;pointer-events:none;will-change:transform,opacity;text-shadow:0 1px 14px rgba(0,0,0,.95)}
+.card .kick{font:500 10px var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--a)}
+.card h2{font-weight:200;font-size:clamp(28px,3vw,42px);line-height:1.05;letter-spacing:-.02em;margin:5px 0 9px}
+.card p{font-size:14px;line-height:1.55;color:var(--dim);font-weight:300}
+.card dl{margin-top:12px;display:grid;gap:5px;font:400 11px var(--mono)}
+.card dl div{display:flex;justify-content:space-between;gap:14px;border-top:1px solid var(--hair);padding-top:5px}
+.card dt{color:var(--mute);letter-spacing:.12em;text-transform:uppercase;font-size:10px;white-space:nowrap}
+.card dd{color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- whispers, hints, beyond ---------- */
+.whisper{position:fixed;left:0;right:0;z-index:2;text-align:center;pointer-events:none;font:200 clamp(17px,2.1vw,27px)/1.4 var(--sans);letter-spacing:.01em;color:var(--ink);opacity:0;padding:0 var(--gut);text-shadow:0 0 30px rgba(0,0,0,.9);will-change:opacity}
+.whisper small{display:block;margin-top:8px;font:400 10.5px var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
+.intro{position:fixed;left:50%;transform:translateX(-50%);z-index:2;pointer-events:none;text-align:center;font:400 11px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--dim);white-space:nowrap;transition:opacity 1s var(--ease)}
+.intro i{display:inline-block;font-style:normal;animation:nudge 1.8s var(--ease) infinite}
+@keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(7px)}}
+.beyond{position:fixed;z-index:3;pointer-events:none;width:min(520px,calc(100vw - 2*var(--gut)));opacity:0;visibility:hidden;will-change:opacity;text-shadow:0 1px 16px rgba(0,0,0,.95)}
+.beyond h3{font-weight:200;font-size:clamp(26px,3vw,40px);letter-spacing:-.02em;margin-bottom:10px}
+.beyond p{font-size:14px;line-height:1.62;color:var(--dim);margin-bottom:10px}
+.beyond p b{font-weight:400;color:var(--ink)}
+.beyond .fine{font:400 10px/1.6 var(--mono);letter-spacing:.06em;color:var(--mute)}
+
+/* ---------- dock ---------- */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:4;padding:0 var(--gut) clamp(10px,2.4vh,24px);display:grid;gap:8px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+.btns{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 16px;border:1px solid rgba(244,239,230,.22);border-radius:999px;background:rgba(244,239,230,.04);color:var(--ink);font:500 11px var(--mono);letter-spacing:.18em;text-transform:uppercase;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:border-color .3s var(--ease),background .3s var(--ease),color .3s var(--ease),transform .2s var(--ease)}
+.btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.btn .tgt{font-weight:400;letter-spacing:.08em;color:var(--mute);text-transform:none}
+.btn .tgt:empty{display:none}
+.btn:hover{border-color:rgba(244,239,230,.55);background:rgba(244,239,230,.1)}
+.btn:active{transform:scale(.96)}
+.btn[aria-pressed="true"],.btn.warping{border-color:var(--sun);color:var(--sun);background:rgba(255,181,71,.09);box-shadow:0 0 18px rgba(255,181,71,.16)}
+.beyond .btn{margin-top:8px;pointer-events:auto}
+.plabel{position:fixed;left:0;top:0;z-index:2;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:64px;min-height:44px;padding:4px 8px;border:0;border-radius:6px;background:none;color:var(--ink);cursor:pointer;will-change:transform,opacity;visibility:hidden;text-shadow:0 1px 10px rgba(0,0,0,.95)}
+.plabel::before{content:"";width:1px;height:8px;margin-bottom:3px;background:var(--a);opacity:.75}
+.plabel b{font:500 10.5px var(--mono);letter-spacing:.24em;padding-left:.24em;text-transform:uppercase}
+.plabel i{font:400 9.5px var(--mono);font-style:normal;letter-spacing:.06em;color:var(--mute)}
+.plabel:hover b{color:var(--a)}
+.plabel:focus-visible{outline:2px solid var(--sun);outline-offset:1px}
+.btn:focus-visible,.stop:focus-visible,#map:focus-visible{outline:2px solid var(--sun);outline-offset:3px}
+.hint{font:400 10.5px var(--mono);letter-spacing:.08em;color:var(--mute)}
+.hint kbd{font:inherit;color:var(--dim);border:1px solid var(--hair);border-radius:4px;padding:1px 5px}
+.map{position:relative;height:58px;--pad:10px;max-width:1500px;width:100%;margin:0 auto}
+#map{position:absolute;left:0;top:0;width:100%;height:28px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:none}
+#map::-webkit-slider-runnable-track{height:28px;background:transparent}
+#map::-moz-range-track{height:28px;background:transparent}
+#map::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;margin-top:4px;border-radius:50%;background:var(--ink);border:0;box-shadow:0 0 0 5px rgba(255,181,71,.18),0 0 18px rgba(255,181,71,.7)}
+#map::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--ink);border:0;box-shadow:0 0 0 5px rgba(255,181,71,.18),0 0 18px rgba(255,181,71,.7)}
+.rail{position:absolute;left:var(--pad);right:var(--pad);top:14px;height:1px;background:var(--hair);pointer-events:none}
+.rail i{position:absolute;left:0;top:0;height:1px;width:0;background:var(--sun);box-shadow:0 0 8px var(--sun)}
+.dots{position:absolute;left:var(--pad);right:var(--pad);top:14px;height:0;pointer-events:none}
+.dots i{position:absolute;left:calc(100% * var(--i) / 9);top:-3px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);opacity:.9}
+.stop{position:absolute;top:27px;left:calc(var(--pad) + (100% - 2 * var(--pad)) * var(--i) / 9);transform:translateX(-50%);min-width:34px;height:31px;padding:0 2px;border:0;border-radius:6px;background:none;color:var(--mute);font:500 9px var(--mono);letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:color .3s}
+.stop:hover,.stop.here{color:var(--ink)}
+.stop .short{display:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media (max-width:720px){
+  .title{max-width:58vw}
+  .hud .row.opt{display:none}
+  .hud .k{letter-spacing:.14em;font-size:9px}
+  .hint,.btn .tgt{display:none}
+  .stop .full{display:none}.stop .short{display:inline;font-size:10px}
+  .btn{padding:0 13px;letter-spacing:.14em}
+  .sub{max-width:24ch}
+  .intro{white-space:normal;width:min(300px,84vw);line-height:1.8;letter-spacing:.16em}
+  .card dl div:nth-child(n+3){display:none}
+  .beyond .fine{display:none}
+  .beyond p{font-size:13px}
+  .beyond h3{margin-bottom:6px}
+}
+@media (max-width:420px){.sub{display:none}}
+@media (max-width:720px) and (max-height:720px){.card dl{display:none}.card p{font-size:13px}.card h2{font-size:28px}}
+@media (prefers-reduced-motion:reduce){.intro i{animation:none}.title,.intro,.btn{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="stage" role="img" aria-label="A dark strip of space drawn at true scale: the Sun at the far left and tiny glowing planets spread across enormous distances of nothing."></canvas>
+<div class="veil" aria-hidden="true"></div>
+
+<header class="title" id="title">
+  <h1>How Big Is <span>Empty?</span></h1>
+  <p class="sub">The Solar System at true scale. The Sun is <b>120&nbsp;px</b> wide, and everything else is measured against it.</p>
+</header>
+
+<section class="hud" aria-label="Live readouts">
+  <div class="k">Light left the Sun</div>
+  <div class="big" id="r-light">0 s ago</div>
+  <div class="row"><b id="r-au">0.000 AU</b> &middot; <b id="r-km">0 km</b></div>
+  <div class="row opt"><b id="r-px">0 px</b> along the line</div>
+  <div class="row opt">Speed <b id="r-v">at rest</b> &middot; 1 px &asymp; 11,600 km</div>
+</section>
+
+<article class="card" id="card-sun" style="--a:#ffb547" aria-hidden="true">
+  <p class="kick">The origin &middot; 0 AU</p>
+  <h2>The Sun</h2>
+  <p>A star 1,392,700 km across, drawn here at 120 px. Earth, at this scale, is a 1.1 px speck &mdash; a hundred and nine of them would line up across its face.</p>
+  <dl><div><dt>Diameter</dt><dd>1,392,700 km</dd></div><div><dt>Share of mass</dt><dd>99.86 %</dd></div><div><dt>Light to Earth</dt><dd>8 m 19 s</dd></div></dl>
+</article>
+<article class="card" id="card-mercury" style="--a:#c9c2b6" aria-hidden="true">
+  <p class="kick">01 &middot; The swift one</p>
+  <h2>Mercury</h2>
+  <p>No air to soften the shadows: noon bakes at 430&nbsp;&deg;C and midnight falls to &minus;180&nbsp;&deg;C. A 0.42 px grain, closer to the Sun than any other world.</p>
+  <dl><div><dt>From Sun</dt><dd>0.387 AU &middot; 57.9 M km</dd></div><div><dt>Diameter</dt><dd>4,879 km &middot; 0.42 px</dd></div><div><dt>Light-time</dt><dd>3 m 13 s</dd></div><div><dt>Year</dt><dd>88 days</dd></div></dl>
+</article>
+<article class="card" id="card-venus" style="--a:#f0d99a" aria-hidden="true">
+  <p class="kick">02 &middot; The veiled one</p>
+  <h2>Venus</h2>
+  <p>Almost Earth&rsquo;s twin in size &mdash; 1.04 px &mdash; yet its sky presses down ninety times harder than ours and its surface holds 465&nbsp;&deg;C, hot enough to melt lead.</p>
+  <dl><div><dt>From Sun</dt><dd>0.723 AU &middot; 108.2 M km</dd></div><div><dt>Diameter</dt><dd>12,104 km &middot; 1.04 px</dd></div><div><dt>Light-time</dt><dd>6 m 00 s</dd></div><div><dt>Year</dt><dd>225 days</dd></div></dl>
+</article>
+<article class="card" id="card-earth" style="--a:#6cc7dd" aria-hidden="true">
+  <p class="kick">03 &middot; You are here</p>
+  <h2>Earth</h2>
+  <p>Everyone you have ever known lives inside this 1.1 px. Even the Moon is only a 0.3 px speck, orbiting 33 px away.</p>
+  <dl><div><dt>From Sun</dt><dd>1.000 AU &middot; 149.6 M km</dd></div><div><dt>Diameter</dt><dd>12,742 km &middot; 1.10 px</dd></div><div><dt>Light-time</dt><dd>8 m 19 s</dd></div><div><dt>Year</dt><dd>365.25 days</dd></div></dl>
+</article>
+<article class="card" id="card-mars" style="--a:#e4784f" aria-hidden="true">
+  <p class="kick">04 &middot; The rust world</p>
+  <h2>Mars</h2>
+  <p>Half of Earth&rsquo;s width &mdash; 0.58 px &mdash; under a sky more than a hundred times thinner than ours. Iron-red dust, ice at both poles.</p>
+  <dl><div><dt>From Sun</dt><dd>1.524 AU &middot; 227.9 M km</dd></div><div><dt>Diameter</dt><dd>6,779 km &middot; 0.58 px</dd></div><div><dt>Light-time</dt><dd>12 m 40 s</dd></div><div><dt>Year</dt><dd>687 days</dd></div></dl>
+</article>
+<article class="card" id="card-jupiter" style="--a:#e6bd8c" aria-hidden="true">
+  <p class="kick">05 &middot; The giant</p>
+  <h2>Jupiter</h2>
+  <p>More massive than every other planet combined, and still only 12 px. The Great Red Spot is a storm about as wide as the whole Earth.</p>
+  <dl><div><dt>From Sun</dt><dd>5.203 AU &middot; 778.5 M km</dd></div><div><dt>Diameter</dt><dd>139,820 km &middot; 12.0 px</dd></div><div><dt>Light-time</dt><dd>43 m 16 s</dd></div><div><dt>Year</dt><dd>11.9 years</dd></div></dl>
+</article>
+<article class="card" id="card-saturn" style="--a:#efdcA8" aria-hidden="true">
+  <p class="kick">06 &middot; The ringed one</p>
+  <h2>Saturn</h2>
+  <p>Its rings span some 24 px, yet are often only tens of metres thick. Saturn is less dense than water: given an ocean big enough, it would float.</p>
+  <dl><div><dt>From Sun</dt><dd>9.537 AU &middot; 1.43 B km</dd></div><div><dt>Diameter</dt><dd>116,460 km &middot; 10.0 px</dd></div><div><dt>Light-time</dt><dd>1 h 19 m</dd></div><div><dt>Year</dt><dd>29.5 years</dd></div></dl>
+</article>
+<article class="card" id="card-uranus" style="--a:#a3e6e8" aria-hidden="true">
+  <p class="kick">07 &middot; The tipped-over one</p>
+  <h2>Uranus</h2>
+  <p>It rolls around the Sun on its side, axis tilted 98&deg;. It receives 1/368th of Earth&rsquo;s sunlight, and its faint rings stand almost upright.</p>
+  <dl><div><dt>From Sun</dt><dd>19.19 AU &middot; 2.87 B km</dd></div><div><dt>Diameter</dt><dd>50,724 km &middot; 4.4 px</dd></div><div><dt>Light-time</dt><dd>2 h 40 m</dd></div><div><dt>Year</dt><dd>84 years</dd></div></dl>
+</article>
+<article class="card" id="card-neptune" style="--a:#7b9bff" aria-hidden="true">
+  <p class="kick">08 &middot; The last planet</p>
+  <h2>Neptune</h2>
+  <p>Winds of 2,000 km/h tear across an ice giant so remote that one lap of the Sun takes 165 years. The Sun here is a bright star, yet still hundreds of times brighter than our full Moon.</p>
+  <dl><div><dt>From Sun</dt><dd>30.07 AU &middot; 4.50 B km</dd></div><div><dt>Diameter</dt><dd>49,244 km &middot; 4.2 px</dd></div><div><dt>Light-time</dt><dd>4 h 10 m</dd></div><div><dt>Year</dt><dd>165 years</dd></div></dl>
+</article>
+
+<p class="whisper" id="whisper" aria-live="off"><span id="w-text"></span><small id="w-sub"></small></p>
+<p class="intro" id="intro"><i>&rarr;</i>&nbsp; Scroll, drag or press &rarr; to leave the Sun</p>
+
+<section class="beyond" id="beyond" aria-label="Beyond Neptune">
+  <h3>Beyond Neptune</h3>
+  <p>Nothing you could see. The planets end here; the Sun&rsquo;s reach does not.</p>
+  <p><b>Voyager 1 is over four times farther still</b> &mdash; roughly 170 AU out, some 2.2 million px down this same line. The nearest star, Proxima Centauri, sits 3.46 billion px away: about forty days of nonstop scrolling.</p>
+  <p class="fine">Distances and sizes are true relative values (1 px &asymp; 11,600 km). Planet surfaces are illustrative; the Voyager figure is approximate.</p>
+  <button class="btn" id="b-return" type="button">Return to the light</button>
+</section>
+
+<footer class="dock">
+  <div class="bar">
+    <div class="btns">
+      <button class="btn" id="b-warp" type="button" aria-label="Warp to the next world (W)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3l5 5-5 5M8.5 3l5 5-5 5"/></svg>Warp<span class="tgt" id="w-tgt"></span></button>
+      <button class="btn" id="b-drift" type="button" aria-pressed="true" aria-label="Toggle slow autopilot drift (D)">Drift</button>
+      <button class="btn" id="b-home" type="button" aria-label="Return to the Sun (Home)"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2"/></svg>Sun</button>
+    </div>
+    <p class="hint"><kbd>&larr;</kbd> <kbd>&rarr;</kbd> travel &middot; <kbd>W</kbd> warp &middot; <kbd>1</kbd>&ndash;<kbd>8</kbd> jump to a planet &middot; map below is schematic</p>
+  </div>
+  <div class="map" id="mapwrap">
+    <div class="rail" aria-hidden="true"><i id="fill"></i></div>
+    <div class="dots" aria-hidden="true">
+      <i style="--i:0;--c:#ffb547"></i><i style="--i:1;--c:#c9c2b6"></i><i style="--i:2;--c:#f0d99a"></i><i style="--i:3;--c:#6cc7dd"></i><i style="--i:4;--c:#e4784f"></i><i style="--i:5;--c:#e6bd8c"></i><i style="--i:6;--c:#efdca8"></i><i style="--i:7;--c:#a3e6e8"></i><i style="--i:8;--c:#7b9bff"></i><i style="--i:9;--c:#f4efe6"></i>
+    </div>
+    <input id="map" type="range" min="0" max="1000" step="1" value="0" aria-label="Position along the Solar System (schematic map, not to scale)">
+    <button class="stop" type="button" style="--i:0" data-i="0" aria-label="Warp to the Sun"><span class="full">Sun</span><span class="short">Sun</span></button>
+    <button class="stop" type="button" style="--i:1" data-i="1" aria-label="Warp to Mercury"><span class="full">Mercury</span><span class="short">1</span></button>
+    <button class="stop" type="button" style="--i:2" data-i="2" aria-label="Warp to Venus"><span class="full">Venus</span><span class="short">2</span></button>
+    <button class="stop" type="button" style="--i:3" data-i="3" aria-label="Warp to Earth"><span class="full">Earth</span><span class="short">3</span></button>
+    <button class="stop" type="button" style="--i:4" data-i="4" aria-label="Warp to Mars"><span class="full">Mars</span><span class="short">4</span></button>
+    <button class="stop" type="button" style="--i:5" data-i="5" aria-label="Warp to Jupiter"><span class="full">Jupiter</span><span class="short">5</span></button>
+    <button class="stop" type="button" style="--i:6" data-i="6" aria-label="Warp to Saturn"><span class="full">Saturn</span><span class="short">6</span></button>
+    <button class="stop" type="button" style="--i:7" data-i="7" aria-label="Warp to Uranus"><span class="full">Uranus</span><span class="short">7</span></button>
+    <button class="stop" type="button" style="--i:8" data-i="8" aria-label="Warp to Neptune"><span class="full">Neptune</span><span class="short">8</span></button>
+    <button class="stop" type="button" style="--i:9" data-i="9" aria-label="Warp beyond Neptune"><span class="full">Beyond</span><span class="short">&infin;</span></button>
+  </div>
+</footer>
+<p class="sr" id="live" aria-live="polite"></p>
+
+<script>
+(function () {
+'use strict';
+/* ============ constants, data, helpers ============ */
+const $ = (s) => document.querySelector(s);
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const fmt = (n) => Math.round(n).toLocaleString('en-US');
+const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const SUN_D = 120;                 // the Sun is 120 px wide
+const AU = 12890;                  // px per astronomical unit at that scale
+const AU_KM = 149597871;
+const PX_KM = 1392700 / SUN_D;     // one px is about 11,606 km
+const C_PX = 299792.458 / PX_KM;   // light covers about 25.8 px each second
+const AU_LS = 499.005;             // light-seconds in one AU
+
+// rim = atmosphere glow [r,g,b,strength]; spin = rad/s of the magnified inset (not to scale in time)
+const BODIES = [
+  { id: 'sun', name: 'Sun', au: 0, km: 1392700, col: '#ffb547' },
+  { id: 'mercury', name: 'Mercury', au: 0.387, km: 4879, col: '#c9c2b6', glow: [201, 194, 182], spin: 0.16, rim: [190, 180, 170, 0.0] },
+  { id: 'venus', name: 'Venus', au: 0.723, km: 12104, col: '#f0d99a', glow: [240, 217, 154], spin: -0.06, rim: [255, 226, 160, 0.55] },
+  { id: 'earth', name: 'Earth', au: 1.0, km: 12742, col: '#6cc7dd', glow: [92, 170, 255], spin: 0.30, rim: [110, 175, 255, 0.75], cloud: true },
+  { id: 'mars', name: 'Mars', au: 1.524, km: 6779, col: '#e4784f', glow: [228, 120, 79], spin: 0.28, rim: [255, 170, 120, 0.22] },
+  { id: 'jupiter', name: 'Jupiter', au: 5.203, km: 139820, col: '#e6bd8c', glow: [230, 189, 140], spin: 0.55, rim: [240, 210, 170, 0.14] },
+  { id: 'saturn', name: 'Saturn', au: 9.537, km: 116460, col: '#efdca8', glow: [239, 220, 168], spin: 0.46, rim: [245, 225, 170, 0.14], ring: { tilt: -0.34, ratio: 0.3, a: 1.24, b: 2.3 } },
+  { id: 'uranus', name: 'Uranus', au: 19.19, km: 50724, col: '#a3e6e8', glow: [163, 230, 232], spin: 0.2, rim: [170, 245, 245, 0.42], tilt: 1.43, ring: { tilt: 1.43, ratio: 0.13, a: 1.55, b: 2.15, faint: true } },
+  { id: 'neptune', name: 'Neptune', au: 30.07, km: 49244, col: '#7b9bff', glow: [90, 130, 255], spin: 0.26, rim: [110, 150, 255, 0.5] }
+];
+BODIES.forEach((b, i) => { b.i = i; b.X = b.au * AU; b.d = b.km / PX_KM; b.card = $('#card-' + b.id); b.tex = null; b.busy = false; });
+const PMAX = BODIES[8].X + 20000;
+const STOPX = BODIES.map((b) => b.X).concat([PMAX]);     // ten stops: Sun, eight planets, the far dark
+const WHISPERS = [
+  ['Not even a speck yet.', 'Sun to Mercury'],
+  ['A short, hot silence.', 'Mercury to Venus'],
+  ['Nearly home. Still nothing in between.', 'Venus to Earth'],
+  ['Six thousand pixels of dark, and a rust-red dot at the end.', 'Earth to Mars'],
+  ['Somewhere in here drift a million asteroids. The biggest is 0.08 px.', 'Mars to Jupiter'],
+  ['Four Earth-orbits of nothing. Keep going.', 'Jupiter to Saturn'],
+  ['The longest stretch so far: 124,000 px of dark.', 'Saturn to Uranus'],
+  ['A hundred and forty thousand pixels, and the light is thinning.', 'Uranus to Neptune'],
+  ['The last planet is behind you now.', 'Beyond']
+];
+
+/* ============ state ============ */
+const cv = $('#stage'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1, axisY = 0, anchor = 0, narrow = false;
+let p = 0, pT = 0, v = 0;             // position, target, velocity (px along the line, px/s)
+let mode = 'free';                    // 'free' | 'warp'
+let drift = true, dragging = false, moved = 0, dragVel = 0, lastMoveT = 0, userTouched = false;
+let simT = 0, lastT = 0, warpK = 0, hidden = false;
+let MONO = 'ui-monospace, Menlo, Consolas, "DejaVu Sans Mono", monospace';
+const keys = { l: false, r: false, shift: false };
+const pulses = []; let nextPulse = 0.6;
+/* ============ procedural planet surfaces (built once, in slices) ============ */
+function h3(x, y, z, s) {
+  let h = Math.imul(x, 374761393) ^ Math.imul(y, 668265263) ^ Math.imul(z, 1440670441) ^ Math.imul(s, 1274126177);
+  h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+function vn(x, y, z, s) {
+  const xi = Math.floor(x), yi = Math.floor(y), zi = Math.floor(z);
+  const xf = x - xi, yf = y - yi, zf = z - zi;
+  const u = xf * xf * (3 - 2 * xf), w = yf * yf * (3 - 2 * yf), q = zf * zf * (3 - 2 * zf);
+  const a = h3(xi, yi, zi, s), b = h3(xi + 1, yi, zi, s), c = h3(xi, yi + 1, zi, s), d = h3(xi + 1, yi + 1, zi, s);
+  const e = h3(xi, yi, zi + 1, s), f = h3(xi + 1, yi, zi + 1, s), g = h3(xi, yi + 1, zi + 1, s), h = h3(xi + 1, yi + 1, zi + 1, s);
+  return lerp(lerp(lerp(a, b, u), lerp(c, d, u), w), lerp(lerp(e, f, u), lerp(g, h, u), w), q);
+}
+function fbm(x, y, z, s, o) {
+  let a = 0.5, f = 1, t = 0, n = 0;
+  for (let i = 0; i < o; i++) { t += a * vn(x * f, y * f, z * f, s + i * 17); n += a; a *= 0.5; f *= 2.02; }
+  return t / n;
+}
+function mixC(o, c1, c2, t) {
+  o[0] = c1[0] + (c2[0] - c1[0]) * t; o[1] = c1[1] + (c2[1] - c1[1]) * t; o[2] = c1[2] + (c2[2] - c1[2]) * t;
+}
+const wrapPi = (a) => (a > Math.PI ? a - TAU : a < -Math.PI ? a + TAU : a);
+
+const PAINT = {
+  mercury(x, y, z, lat, lon, o) {
+    const n = fbm(x * 2.6, y * 2.6, z * 2.6, 3, 4), m = fbm(x * 11, y * 11, z * 11, 9, 2);
+    const g = 0.3 + 0.42 * n + 0.12 * (m - 0.5);
+    o[0] = g * 262; o[1] = g * 246; o[2] = g * 230; return 0;
+  },
+  venus(x, y, z, lat, lon, o) {
+    const q = fbm(x * 1.3, y * 2.6, z * 1.3, 5, 3);
+    const n = fbm(x * 2.2 + q * 2.4, y * 4.8 + q * 1.2, z * 2.2 + q * 2.4, 11, 4);
+    const t = clamp((n - 0.25) * 1.9, 0, 1), s = Math.sin(lat * 5 + q * 6) * 0.5 + 0.5;
+    mixC(o, [206, 168, 92], [248, 236, 198], t * 0.72 + s * 0.28); return 0;
+  },
+  earth(x, y, z, lat, lon, o) {
+    const l = fbm(x * 1.5 + 3.1, y * 1.5, z * 1.5, 21, 5), det = fbm(x * 7, y * 7, z * 7, 33, 3);
+    const ay = Math.abs(y);
+    if (ay + (det - 0.5) * 0.14 > 0.9) { mixC(o, [226, 238, 246], [248, 251, 253], det); }
+    else if (l > 0.535) {
+      const m = fbm(x * 3 + 9, y * 3, z * 3, 41, 4);
+      mixC(o, [52, 118, 60], [190, 164, 98], clamp((m - 0.42) * 4.2 - ay * 0.4, 0, 1));
+      if (ay > 0.7) mixC(o, o, [126, 142, 118], (ay - 0.7) * 3);
+      const k = 0.82 + 0.34 * det; o[0] *= k; o[1] *= k; o[2] *= k;
+      if (l < 0.55) mixC(o, [92, 168, 158], o, (l - 0.535) / 0.015);
+    } else {
+      mixC(o, [40, 132, 176], [7, 30, 82], clamp((0.535 - l) * 5.2, 0, 1));
+    }
+    const q = fbm(x * 2, y * 4, z * 2, 51, 3);
+    const c = fbm(x * 3 + q * 1.6, y * 6 + q * 1.1, z * 3 + q * 1.6, 57, 4);
+    const band = 0.6 + 0.5 * Math.abs(Math.sin(lat * 2.3 + 0.4));
+    return sstep(0.5, 0.74, c * band);
+  },
+  mars(x, y, z, lat, lon, o) {
+    const a = fbm(x * 2.2, y * 2.2, z * 2.2, 7, 5), d = fbm(x * 3.2 + 5, y * 3.2, z * 3.2, 13, 4);
+    mixC(o, [164, 70, 38], [226, 142, 84], a);
+    mixC(o, o, [86, 52, 42], sstep(0.5, 0.66, d) * 0.72);
+    const cap = sstep(y > 0 ? 0.86 : 0.93, y > 0 ? 0.92 : 0.97, Math.abs(y) + (a - 0.5) * 0.07);
+    mixC(o, o, [244, 246, 250], cap); return 0;
+  },
+  jupiter(x, y, z, lat, lon, o) {
+    const t = fbm(x * 2.4, y * 7, z * 2.4, 3, 4);
+    const w = y * 7.2 + (t - 0.5) * 2.2 + fbm(x * 1.2, y * 1.4, z * 1.2, 19, 3) * 1.2;
+    const b = 0.5 + 0.375 * Math.sin(w * 2.2) + 0.125 * Math.sin(w * 5.1 + 1.3);
+    const s = fbm(x * 7, y * 38, z * 7, 29, 3);
+    if (b < 0.5) mixC(o, [140, 86, 58], [200, 156, 118], b * 2); else mixC(o, [200, 156, 118], [236, 220, 190], (b - 0.5) * 2);
+    const k = 0.9 + 0.2 * s; o[0] *= k; o[1] *= k; o[2] *= k;
+    const dl = wrapPi(lon - 4.2), dx = dl * Math.cos(lat) / 0.36, dy = (lat + 0.42) / 0.17, d2 = dx * dx + dy * dy;
+    if (d2 < 2.1) {
+      const core = sstep(1, 0.5, d2), halo = sstep(2.1, 1.1, d2) * (1 - core) * 0.6;
+      mixC(o, o, [242, 230, 208], halo);
+      mixC(o, o, [190, 80, 50], core * (0.8 + 0.2 * Math.sin(d2 * 9 + dx * 3)));
+    }
+    return 0;
+  },
+  saturn(x, y, z, lat, lon, o) {
+    const t = fbm(x * 2, y * 9, z * 2, 4, 3), w = y * 9 + (t - 0.5) * 1.1;
+    const b = 0.5 + 0.3 * Math.sin(w * 2.6 + 0.4) + 0.2 * Math.sin(w * 6.1);
+    mixC(o, [192, 160, 108], [242, 224, 174], clamp(b * 0.9 + 0.1 * t, 0, 1));
+    if (y > 0.78) mixC(o, o, [176, 176, 158], (y - 0.78) * 2.4); return 0;
+  },
+  uranus(x, y, z, lat, lon, o) {
+    const w = y * 6 + (fbm(x * 2, y * 5, z * 2, 4, 2) - 0.5) * 0.7, b = 0.5 + 0.5 * Math.sin(w * 2.2);
+    mixC(o, [138, 210, 220], [186, 242, 240], b * 0.5 + 0.25 + Math.max(0, y - 0.55) * 0.3); return 0;
+  },
+  neptune(x, y, z, lat, lon, o) {
+    const t = fbm(x * 2.2, y * 6, z * 2.2, 6, 4), w = y * 5 + (t - 0.5) * 1.2, b = 0.5 + 0.5 * Math.sin(w * 2.4);
+    mixC(o, [30, 58, 184], [66, 112, 240], b * 0.7 + t * 0.3);
+    const s = fbm(x * 3, y * 22, z * 3, 15, 3);
+    mixC(o, o, [222, 234, 255], sstep(0.62, 0.8, s) * (0.3 + 0.7 * Math.abs(Math.sin(y * 3.5))) * 0.6);
+    const dl = wrapPi(lon - 2.4), dx = dl * Math.cos(lat) / 0.34, dy = (lat + 0.36) / 0.18, d2 = dx * dx + dy * dy;
+    if (d2 < 1.4) mixC(o, o, [14, 28, 112], sstep(1.4, 0.4, d2) * 0.75);
+    const ex = wrapPi(lon - 2.05) * Math.cos(lat) / 0.16, ey = (lat + 0.5) / 0.05, e2 = ex * ex + ey * ey;
+    if (e2 < 1) mixC(o, o, [238, 244, 255], sstep(1, 0.2, e2) * 0.85);
+    return 0;
+  }
+};
+const TW = 384, TH = 192;
+const COSLON = new Float32Array(TW), SINLON = new Float32Array(TW), COSLAT = new Float32Array(TH), SINLAT = new Float32Array(TH);
+for (let i = 0; i < TW; i++) { const a = (i + 0.5) / TW * TAU; COSLON[i] = Math.cos(a); SINLON[i] = Math.sin(a); }
+for (let j = 0; j < TH; j++) { const a = Math.PI / 2 - (j + 0.5) / TH * Math.PI; COSLAT[j] = Math.cos(a); SINLAT[j] = Math.sin(a); }
+function craters(d, n, amt, rmin, rmax, seed) {
+  let s = seed; const rnd = () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+  for (let k = 0; k < n; k++) {
+    const cx = rnd() * TW, cy = (0.12 + 0.76 * rnd()) * TH, rr = rmin + Math.pow(rnd(), 2.2) * (rmax - rmin);
+    const cl = Math.max(0.3, COSLAT[Math.min(TH - 1, cy | 0)]);
+    const wx = Math.ceil(rr * 1.6 / cl), wy = Math.ceil(rr * 1.6);
+    for (let dy = -wy; dy <= wy; dy++) {
+      const yy = (cy + dy) | 0; if (yy < 0 || yy >= TH) continue;
+      for (let dx = -wx; dx <= wx; dx++) {
+        const dd = Math.hypot(dx * cl, dy) / rr; if (dd > 1.6) continue;
+        const xx = (((cx + dx) | 0) + TW) % TW, q = (yy * TW + xx) * 4;
+        let f;
+        if (dd < 0.85) f = 1 - amt * 0.4 + amt * 0.25 * dd;
+        else if (dd < 1.15) f = 1 + amt * (0.75 - Math.abs(dd - 1) * 3.4);
+        else f = 1 + amt * 0.18 * (1.6 - dd) / 0.45;
+        d[q] *= f; d[q + 1] *= f; d[q + 2] *= f;
+      }
+    }
+  }
+}
+const POST = { mercury: (d) => craters(d, 120, 0.4, 3, 15, 7), mars: (d) => craters(d, 30, 0.085, 3, 8, 19) };
+const buildQueue = []; let building = false;
+function requestTexture(b, urgent) {
+  if (b.tex || b.busy || b.id === 'sun') return;
+  b.busy = true;
+  b.job = { d: new Uint8ClampedArray(TW * TH * 4), c: b.cloud ? new Uint8ClampedArray(TW * TH) : null, row: 0 };
+  if (urgent) buildQueue.unshift(b); else buildQueue.push(b);
+  if (!building) pump();
+}
+function pump() {
+  const b = buildQueue[0];
+  if (!b) { building = false; return; }
+  building = true;
+  const job = b.job, paint = PAINT[b.id], o = [0, 0, 0], t0 = performance.now();
+  while (job.row < TH && performance.now() - t0 < 8) {
+    const j = job.row, cl = COSLAT[j], y = SINLAT[j], lat = Math.asin(y);
+    for (let i = 0; i < TW; i++) {
+      const ca = paint(cl * COSLON[i], y, cl * SINLON[i], lat, (i + 0.5) / TW * TAU, o), k = j * TW + i, q = k * 4;
+      job.d[q] = o[0]; job.d[q + 1] = o[1]; job.d[q + 2] = o[2]; job.d[q + 3] = 255;
+      if (job.c) job.c[k] = ca * 255;
+    }
+    job.row++;
+  }
+  if (job.row >= TH) {
+    if (POST[b.id]) POST[b.id](job.d);
+    b.tex = { d: job.d, c: job.c }; b.busy = false; b.job = null; buildQueue.shift();
+  }
+  setTimeout(pump, 0);
+}
+
+/* ============ sphere rasteriser: orthographic per-pixel lookup into the surface map ============ */
+const SN = 260;
+const sphC = document.createElement('canvas'); sphC.width = sphC.height = SN;
+const sctx = sphC.getContext('2d');
+const simg = sctx.createImageData(SN, SN), sd = simg.data;
+let sIdx, sU, sR, sN = 0;
+(function () {
+  const idx = [], uu = [], rr = [], R = SN / 2;
+  for (let y = 0; y < SN; y++) for (let x = 0; x < SN; x++) {
+    let nx = (x + 0.5 - R) / R, ny = -(y + 0.5 - R) / R; const r = Math.sqrt(nx * nx + ny * ny);
+    const cov = clamp((1 - r) * R + 0.5, 0, 1); if (cov <= 0) continue;
+    if (r > 1) { nx /= r; ny /= r; }
+    const i = y * SN + x, nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+    sd[i * 4 + 3] = cov * 255; idx.push(i); uu.push(Math.atan2(nx, nz) / TAU);
+    rr.push(clamp(Math.floor((0.5 - Math.asin(clamp(ny, -1, 1)) / Math.PI) * TH), 0, TH - 1));
+  }
+  sN = idx.length; sIdx = Int32Array.from(idx); sU = Float32Array.from(uu); sR = Int16Array.from(rr);
+})();
+function renderSphere(b, rot, crot) {
+  const td = b.tex.d, tc = b.tex.c, off = -rot / TAU, coff = -crot / TAU;
+  for (let k = 0; k < sN; k++) {
+    let u = sU[k] + off; u -= Math.floor(u);
+    const row = sR[k] * TW, j = (row + ((u * TW) | 0)) * 4;
+    let r = td[j], g = td[j + 1], bl = td[j + 2];
+    if (tc) {
+      let uc = sU[k] + coff; uc -= Math.floor(uc);
+      const a = tc[row + ((uc * TW) | 0)] * 0.0039216;
+      r += (255 - r) * a; g += (252 - g) * a; bl += (250 - bl) * a;
+    }
+    const o = sIdx[k] * 4; sd[o] = r; sd[o + 1] = g; sd[o + 2] = bl;
+  }
+  sctx.putImageData(simg, 0, 0);
+}
+
+/* ============ sprites: rings and the Sun ============ */
+function makeRing(cfg) {
+  const R = 100, Ro = R * cfg.b, Ri = R * cfg.a, w = Math.ceil(Ro * 2 + 8), h = Math.ceil(Ro * 2 * cfg.ratio + 8);
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const g = c.getContext('2d'); g.translate(w / 2, h / 2); g.scale(1, cfg.ratio);
+  const arc = (r, a, lw, col) => { g.beginPath(); g.arc(0, 0, r, 0, TAU); g.strokeStyle = 'rgba(' + col + ',' + a.toFixed(3) + ')'; g.lineWidth = lw; g.stroke(); };
+  if (cfg.faint) {
+    [1.58, 1.64, 1.7, 1.77, 1.88, 2.0, 2.1].forEach((k, i) => arc(R * k, 0.3 + 0.12 * (i % 3), 1.5, '206,214,220'));
+  } else {
+    for (let r = Ri; r <= Ro; r += 0.8) {
+      const t = (r - Ri) / (Ro - Ri); let a;
+      if (t < 0.17) a = 0.14 + t * 1.2;
+      else if (t < 0.58) a = 0.8 + 0.12 * Math.sin(t * 90) * Math.sin(t * 31);
+      else if (t < 0.66) a = 0.05;
+      else a = Math.abs(t - 0.92) < 0.012 ? 0.1 : 0.58 + 0.08 * Math.sin(t * 120);
+      a *= 0.86 + 0.28 * h3(Math.floor(r * 2), 3, 7, 1);
+      arc(r, clamp(a, 0, 1), 1.05, t < 0.58 ? '236,218,180' : '222,204,168');
+    }
+  }
+  return c;
+}
+BODIES.forEach((b) => { if (b.ring) b.ringImg = makeRing(b.ring); });
+
+const sunImg = (function () {
+  const S = 260, c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d'), im = g.createImageData(S, S), d = im.data, R = S / 2;
+  const spots = [[-0.28, 0.22, 0.09], [0.36, -0.12, 0.06], [0.05, -0.38, 0.05]];
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const nx = (x + 0.5 - R) / R, ny = -(y + 0.5 - R) / R, r = Math.sqrt(nx * nx + ny * ny);
+    const cov = clamp((1 - r) * R + 0.5, 0, 1); if (cov <= 0) continue;
+    const nz = Math.sqrt(Math.max(0, 1 - r * r));
+    let br = (1 - 0.6 * (1 - Math.pow(nz, 0.5))) * (0.88 + 0.26 * (fbm(nx * 9 + 3, ny * 9, nz * 9, 5, 3) * 0.55 + fbm(nx * 24, ny * 24, nz * 24, 9, 2) * 0.45));
+    for (let k = 0; k < 3; k++) { const q = Math.hypot(nx - spots[k][0], ny - spots[k][1]) / spots[k][2]; if (q < 1.7) br *= 1 - 0.42 * sstep(1.7, 0.7, q); }
+    const t = clamp(br * 1.08, 0, 1), i = (y * S + x) * 4;
+    d[i] = 255; d[i + 1] = 120 + 128 * Math.pow(t, 1.15); d[i + 2] = 18 + 200 * Math.pow(t, 2.2); d[i + 3] = cov * 255;
+  }
+  g.putImageData(im, 0, 0); return c;
+})();
+/* ============ stars (three depths), warp lines, grain ============ */
+const LAYERS = [
+  { n: 250, f: 0.0035, lw: 1.0, a: 0.5 },
+  { n: 120, f: 0.011, lw: 1.3, a: 0.68 },
+  { n: 44, f: 0.028, lw: 1.9, a: 0.9 }
+];
+let seed = 90210;
+const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+const stars = LAYERS.map((L) => {
+  const a = new Float32Array(L.n * 3); L.grp = new Uint8Array(L.n);
+  for (let i = 0; i < L.n; i++) { a[i * 3] = rnd(); a[i * 3 + 1] = rnd(); a[i * 3 + 2] = rnd(); const t = rnd(); L.grp[i] = t < 0.72 ? 0 : t < 0.87 ? 1 : 2; }
+  return a;
+});
+const STAR_COL = ['244,239,230', '255,214,168', '176,204,255'];
+const WL = []; for (let i = 0; i < 46; i++) WL.push({ x: rnd() * 1600, dy: (rnd() + rnd() + rnd() - 1.5) * 0.36, sp: 0.5 + rnd() * 0.9 });
+// a static film-grain tile (white noise with a little alpha) applied to the veil layer, so it costs nothing per frame
+(function () {
+  const c = document.createElement('canvas'); c.width = c.height = 160;
+  const g = c.getContext('2d'), im = g.createImageData(160, 160);
+  for (let i = 0; i < 160 * 160; i++) { im.data[i * 4] = 255; im.data[i * 4 + 1] = 250; im.data[i * 4 + 2] = 240; im.data[i * 4 + 3] = rnd() * rnd() * 20; }
+  g.putImageData(im, 0, 0);
+  try { $('.veil').style.backgroundImage = 'url(' + c.toDataURL('image/png') + '), radial-gradient(130% 100% at 42% 52%, transparent 58%, rgba(0,0,0,.5) 100%)'; $('.veil').style.backgroundSize = '160px 160px, auto'; } catch (_) { /* grain is optional */ }
+})();
+// a faint Milky Way band, painted once at half resolution (redone on resize)
+let mwC = null;
+function buildMilkyWay() {
+  const w = Math.ceil((W + 1100) / 2), h = Math.ceil(H / 2);
+  mwC = document.createElement('canvas'); mwC.width = w; mwC.height = h;
+  const g = mwC.getContext('2d');
+  g.translate(w * 0.5, h * 0.5); g.rotate(-0.42);
+  for (let i = 0; i < 30; i++) {
+    const x = (i / 29 - 0.5) * w * 1.3 + (rnd() - 0.5) * 30, y = (rnd() - 0.5) * h * 0.1, r = h * (0.14 + rnd() * 0.16), gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, rnd() < 0.35 ? 'rgba(255,214,170,.06)' : 'rgba(160,190,255,.065)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  g.globalCompositeOperation = 'destination-out';
+  for (let i = 0; i < 9; i++) {
+    const x = (rnd() - 0.5) * w, y = (rnd() - 0.5) * h * 0.05, r = h * (0.03 + rnd() * 0.05), gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, 'rgba(0,0,0,.55)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+  }
+  g.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 3200; i++) {
+    const x = (rnd() - 0.5) * w * 1.3, y = (rnd() + rnd() + rnd() - 1.5) * h * 0.11;
+    g.fillStyle = 'rgba(226,234,255,' + (0.05 + rnd() * rnd() * 0.32).toFixed(2) + ')'; g.fillRect(x, y, 1, 1);
+  }
+}
+// pre-rendered soft glow used for the Sun (drawn scaled, additively)
+const glowC = (function () {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gr.addColorStop(0, 'rgba(255,224,160,.62)'); gr.addColorStop(0.16, 'rgba(255,176,80,.32)'); gr.addColorStop(0.5, 'rgba(255,120,40,.1)'); gr.addColorStop(1, 'rgba(255,90,20,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256); return c;
+})();
+
+/* ============ layout ============ */
+const labels = [];
+function buildLabels() {
+  for (let i = 1; i < 9; i++) {
+    const b = BODIES[i], el = document.createElement('button');
+    el.type = 'button'; el.className = 'plabel'; el.style.setProperty('--a', b.col);
+    el.setAttribute('aria-label', 'Warp to ' + b.name);
+    el.innerHTML = '<b>' + b.name + '</b><i>' + b.au.toFixed(3) + ' AU</i>';
+    el.addEventListener('click', () => warpTo(b.X, true));
+    document.body.appendChild(el); b.label = el; labels.push(el);
+  }
+}
+function layout() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  narrow = W < 720;
+  buildMilkyWay();
+  MONO = (getComputedStyle(document.documentElement).getPropertyValue('--mono') || '').trim() || MONO;
+  axisY = Math.round(H * (narrow ? (H < 700 ? 0.43 : 0.47) : H < 780 ? 0.6 : 0.57));
+  anchor = Math.round(clamp(W * 0.27, 108, 420));
+  const intro = $('#intro'); intro.style.top = narrow ? (axisY - (H < 700 ? 134 : 170)) + 'px' : (axisY + 92) + 'px';
+  const wh = $('#whisper'); wh.style.top = (axisY + (narrow ? 100 : 100)) + 'px';
+  const by = $('#beyond'); by.style.left = (narrow ? 16 : anchor + 60) + 'px'; by.style.width = narrow ? (W - 32) + 'px' : ''; by.style.top = (narrow ? axisY + 46 : Math.max(110, axisY - 34 - by.offsetHeight)) + 'px';
+  BODIES.forEach((b) => { if (!b.card) return; b.card.style.width = narrow ? (W - 32) + 'px' : ''; b.ch = b.card.offsetHeight; b.cw = b.card.offsetWidth; });
+}
+
+/* ============ drawing ============ */
+const sunI = () => clamp(0.75 * Math.pow(Math.max(p, 60) / AU, -0.62), 0.05, 1);
+
+function drawStars(t) {
+  if (mwC) { ctx.globalAlpha = 0.85; ctx.drawImage(mwC, -p * 0.0026, 0, mwC.width * 2, mwC.height * 2); ctx.globalAlpha = 1; }
+  ctx.lineCap = 'round';
+  for (let li = 0; li < 3; li++) {
+    const L = LAYERS[li], s = stars[li], sh = -p * L.f, scr = -v * L.f;
+    const len = clamp(Math.abs(scr) * 0.075, 0, 380) * (REDUCED ? 0.2 : 1), dir = scr < 0 ? 1 : -1;
+    const tw0 = L.a * (0.86 + 0.14 * Math.sin(t * 0.7 + li * 2)), tw = tw0 / (1 + len * 0.012);
+    for (let g = 0; g < 3; g++) {
+      ctx.beginPath();
+      for (let i = 0; i < L.n; i++) {
+        if (L.grp[i] !== g) continue;
+        let x = (s[i * 3] * W + sh) % W; if (x < 0) x += W;
+        const y = s[i * 3 + 1] * H;
+        ctx.moveTo(x, y); ctx.lineTo(x + dir * (len * (0.55 + 0.45 * s[i * 3 + 2]) + 0.01), y);
+      }
+      ctx.strokeStyle = 'rgba(' + STAR_COL[g] + ',' + tw.toFixed(3) + ')'; ctx.lineWidth = L.lw; ctx.stroke();
+    }
+  }
+}
+
+function drawSun(t) {
+  const sx = anchor - p, I = sunI(), gr = 250 + 250 * I, gcx = Math.max(sx, -gr * 0.4), a = Math.min(1, I * 1.25);
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = a; ctx.drawImage(glowC, gcx - gr, axisY - gr, gr * 2, gr * 2); ctx.globalAlpha = 1;
+  if (sx > -SUN_D && I > 0.9) {           // a thin corona close to the star
+    const cg = ctx.createRadialGradient(sx, axisY, 52, sx, axisY, 118 + 5 * Math.sin(t * 0.9));
+    cg.addColorStop(0, 'rgba(255,200,110,.45)'); cg.addColorStop(1, 'rgba(255,150,50,0)');
+    ctx.fillStyle = cg; ctx.fillRect(sx - 130, axisY - 130, 260, 260);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  if (sx > -SUN_D) { const k = 1 + 0.008 * Math.sin(t * 1.4); ctx.drawImage(sunImg, sx - 60 * k, axisY - 60 * k, 120 * k, 120 * k); }
+}
+
+function drawAxis() {
+  const y = axisY, x0 = p - anchor, I = sunI(), av = Math.abs(v);
+  const a1 = 1 - clamp(av / 3500, 0, 1), a2 = 1 - clamp(av / 22000, 0, 1);
+  const g = ctx.createLinearGradient(0, 0, W, 0);
+  g.addColorStop(0, 'rgba(255,190,110,' + (0.1 + 0.3 * I).toFixed(3) + ')'); g.addColorStop(0.45, 'rgba(244,239,230,.12)'); g.addColorStop(1, 'rgba(244,239,230,.07)');
+  ctx.fillStyle = g; ctx.fillRect(0, y, W, 1);
+  ctx.lineWidth = 1;
+  const kA = Math.max(1, Math.ceil(x0 / 100)), kB = Math.floor((x0 + W) / 100);
+  ctx.beginPath();
+  for (let k = kA; k <= kB; k++) { if (k % 5 === 0) continue; const sx = Math.round(anchor + k * 100 - p) + 0.5; ctx.moveTo(sx, y); ctx.lineTo(sx, y - 3); }
+  ctx.strokeStyle = 'rgba(244,239,230,' + (0.2 * a1).toFixed(3) + ')'; ctx.stroke();
+  ctx.beginPath();
+  for (let k = kA; k <= kB; k++) { if (k % 5 !== 0 || k % 10 === 0) continue; const sx = Math.round(anchor + k * 100 - p) + 0.5; ctx.moveTo(sx, y); ctx.lineTo(sx, y - 6); }
+  ctx.strokeStyle = 'rgba(244,239,230,' + (0.3 * a2).toFixed(3) + ')'; ctx.stroke();
+  ctx.beginPath();
+  for (let k = kA; k <= kB; k++) { if (k % 10 !== 0) continue; const sx = Math.round(anchor + k * 100 - p) + 0.5; ctx.moveTo(sx, y); ctx.lineTo(sx, y - 10); }
+  ctx.strokeStyle = 'rgba(244,239,230,.34)'; ctx.stroke();
+  ctx.font = '400 9.5px ' + MONO; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  if (a2 > 0.05) {
+    ctx.fillStyle = 'rgba(244,239,230,' + (0.34 * a2).toFixed(3) + ')';
+    for (let k = kA; k <= kB; k++) { if (k % 10 !== 0) continue; ctx.fillText(fmt(k * 100) + ' px', Math.round(anchor + k * 100 - p), y - 17); }
+  }
+  const n0 = Math.max(1, Math.ceil(x0 / AU)), n1 = Math.floor((x0 + W) / AU);
+  for (let n = n0; n <= n1; n++) {
+    const sx = Math.round(anchor + n * AU - p) + 0.5;
+    ctx.strokeStyle = 'rgba(255,181,71,.65)'; ctx.beginPath(); ctx.moveTo(sx, y + 1); ctx.lineTo(sx, y - 22); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,181,71,.8)'; ctx.fillText(n + ' AU', sx, y - 30);
+  }
+}
+
+function drawBodies(t) {
+  const y = axisY;
+  for (let i = 1; i < 9; i++) {
+    const b = BODIES[i], sx = anchor + b.X - p, el = b.label;
+    const on = sx > -90 && sx < W + 90;
+    if (el) {
+      if (on) {
+        el.style.transform = 'translate(' + sx.toFixed(1) + 'px,' + (y + 16) + 'px) translateX(-50%)';
+        el.style.opacity = (1 - sstep(0.02, 0.3, b.near)).toFixed(3); el.style.visibility = b.near > 0.3 ? 'hidden' : 'visible';
+      } else el.style.visibility = 'hidden';
+    }
+    if (!on) continue;
+    const r = Math.max(b.d / 2, 0.6), gl = b.glow.join(','), gr = 9 + 3.4 * Math.sqrt(b.d);
+    ctx.globalCompositeOperation = 'lighter';
+    const g = ctx.createRadialGradient(sx, y, 0, sx, y, gr);
+    g.addColorStop(0, 'rgba(' + gl + ',.55)'); g.addColorStop(0.35, 'rgba(' + gl + ',.16)'); g.addColorStop(1, 'rgba(' + gl + ',0)');
+    ctx.fillStyle = g; ctx.fillRect(sx - gr, y - gr, gr * 2, gr * 2);
+    ctx.globalCompositeOperation = 'source-over';
+    if (b.ring) {
+      ctx.save(); ctx.translate(sx, y); ctx.rotate(b.ring.faint ? b.ring.tilt : b.ring.tilt * 0.6);
+      ctx.beginPath(); ctx.ellipse(0, 0, r * 2.05, r * (b.ring.faint ? 0.3 : 0.62), 0, 0, TAU);
+      ctx.strokeStyle = 'rgba(' + gl + ',' + (b.ring.faint ? 0.3 : 0.6) + ')'; ctx.lineWidth = b.ring.faint ? 0.7 : Math.max(0.9, r * 0.25); ctx.stroke(); ctx.restore();
+    }
+    ctx.fillStyle = b.col; ctx.beginPath(); ctx.arc(sx, y, r, 0, TAU); ctx.fill();
+    if (b.d > 6) { ctx.fillStyle = 'rgba(0,0,10,.28)'; ctx.beginPath(); ctx.arc(sx + r * 0.3, y, r * 0.86, -1.2, 1.2); ctx.fill(); }
+    // reticle: four ticks that make the dot findable
+    const ra = 0.5 * (1 - 0.8 * b.near), rr = r + 7 + (b.near * 6);
+    ctx.strokeStyle = 'rgba(244,239,230,' + ra.toFixed(3) + ')'; ctx.lineWidth = 1; ctx.beginPath();
+    ctx.moveTo(sx, y - rr); ctx.lineTo(sx, y - rr - 5); ctx.moveTo(sx, y + rr); ctx.lineTo(sx, y + rr + 5);
+    ctx.moveTo(sx - rr, y); ctx.lineTo(sx - rr - 5, y); ctx.moveTo(sx + rr, y); ctx.lineTo(sx + rr + 5, y); ctx.stroke();
+    if (b.id === 'earth') {                      // the Moon: 0.3 px wide, 33 px away
+      const a = t * 0.35;
+      ctx.strokeStyle = 'rgba(244,239,230,.07)'; ctx.beginPath(); ctx.ellipse(sx, y, 33.1, 33.1 * 0.36, 0, 0, TAU); ctx.stroke();
+      ctx.fillStyle = 'rgba(244,239,230,.85)'; ctx.fillRect(sx + Math.cos(a) * 33.1 - 0.5, y + Math.sin(a) * 33.1 * 0.36 - 0.5, 1, 1);
+      const pa = t - earthPing;                  // easter egg: press Earth again while parked on it
+      if (pa < 4.5) {
+        for (let k = 0; k < 3; k++) {
+          const q = pa - k * 0.45; if (q < 0) continue;
+          ctx.strokeStyle = 'rgba(108,199,221,' + (0.6 * (1 - q / 4)).toFixed(3) + ')'; ctx.beginPath(); ctx.arc(sx, y, 4 + q * 46, 0, TAU); ctx.stroke();
+        }
+        const ta = sstep(0, 0.6, pa) * (1 - sstep(3.4, 4.5, pa));
+        ctx.font = '400 10px ' + MONO; ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(244,239,230,' + (0.85 * ta).toFixed(3) + ')';
+        ctx.fillText('EVERYONE YOU HAVE EVER KNOWN IS INSIDE THIS DOT', sx, y + 86);
+      }
+    }
+  }
+}
+
+function drawInset(b, t) {
+  const sx = anchor + b.X - p, vis = b.near;
+  if (vis < 0.01 || !b.tex) return;
+  const rMax = clamp(Math.min(W, H) * 0.165, 54, 98), e = 1 - Math.pow(1 - vis, 3);
+  const r = lerp(10, rMax, e), gap = narrow ? 40 : 54, cy = axisY - gap - r, cx = sx;
+  const gl = b.glow.join(',');
+  ctx.save(); ctx.globalAlpha = clamp(vis * 1.6, 0, 1);
+  // zoom-lens leader lines from the true-size dot to the magnified circle
+  const dpc = axisY - 6 - cy, L = Math.sqrt(Math.max(1, dpc * dpc - r * r)), th = Math.asin(clamp(r / dpc, 0, 1));
+  const lg = ctx.createLinearGradient(0, axisY, 0, cy);
+  lg.addColorStop(0, 'rgba(' + gl + ',0)'); lg.addColorStop(1, 'rgba(' + gl + ',.5)');
+  ctx.strokeStyle = lg; ctx.lineWidth = 1; ctx.beginPath();
+  ctx.moveTo(cx, axisY - 6); ctx.lineTo(cx - Math.sin(th) * L, axisY - 6 - Math.cos(th) * L);
+  ctx.moveTo(cx, axisY - 6); ctx.lineTo(cx + Math.sin(th) * L, axisY - 6 - Math.cos(th) * L); ctx.stroke();
+  // halo
+  ctx.globalCompositeOperation = 'lighter';
+  const hg = ctx.createRadialGradient(cx, cy, r * 0.8, cx, cy, r * 2.1);
+  hg.addColorStop(0, 'rgba(' + gl + ',.22)'); hg.addColorStop(1, 'rgba(' + gl + ',0)');
+  ctx.fillStyle = hg; ctx.fillRect(cx - r * 2.2, cy - r * 2.2, r * 4.4, r * 4.4);
+  ctx.globalCompositeOperation = 'source-over';
+  // planet radius inside the lens (Saturn is drawn smaller so its rings fit)
+  const pr = b.id === 'saturn' ? r * 0.6 : b.id === 'uranus' ? r * 0.78 : r * 0.94;
+  const spin = (REDUCED ? 0.25 : 1) * b.spin;
+  if (b.ringImg) drawRing(b, cx, cy, pr, false);
+  renderSphere(b, simT * spin + b.i * 1.7, simT * spin * 1.35 + b.i * 1.7);
+  ctx.save(); ctx.translate(cx, cy); if (b.tilt) ctx.rotate(b.tilt);
+  ctx.drawImage(sphC, -pr, -pr, pr * 2, pr * 2); ctx.restore();
+  // atmosphere rim + terminator (sunlight comes from the left, where the Sun is)
+  const rm = b.rim;
+  if (rm[3] > 0) {
+    ctx.globalCompositeOperation = 'lighter';
+    const rg = ctx.createRadialGradient(cx, cy, pr * 0.78, cx, cy, pr * 1.09);
+    rg.addColorStop(0, 'rgba(' + rm[0] + ',' + rm[1] + ',' + rm[2] + ',0)'); rg.addColorStop(0.82, 'rgba(' + rm[0] + ',' + rm[1] + ',' + rm[2] + ',' + (0.35 * rm[3]).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(' + rm[0] + ',' + rm[1] + ',' + rm[2] + ',0)');
+    ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx, cy, pr * 1.09, 0, TAU); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  const sg = ctx.createRadialGradient(cx - pr * 0.46, cy - pr * 0.14, pr * 0.12, cx - pr * 0.08, cy, pr * 1.2);
+  sg.addColorStop(0, 'rgba(0,0,8,0)'); sg.addColorStop(0.5, 'rgba(0,0,8,.14)'); sg.addColorStop(0.8, 'rgba(0,0,10,.7)'); sg.addColorStop(1, 'rgba(0,0,12,.96)');
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(cx, cy, pr + 0.5, 0, TAU); ctx.fill();
+  if (b.ringImg) drawRing(b, cx, cy, pr, true);
+  // lens rim + magnification label
+  ctx.strokeStyle = 'rgba(244,239,230,.3)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, r + 5, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = 'rgba(' + gl + ',.5)'; ctx.beginPath(); ctx.arc(cx, cy, r + 5, -0.35, 0.35); ctx.stroke();
+  ctx.fillStyle = 'rgba(244,239,230,.55)'; ctx.font = '500 9px ' + MONO; ctx.textAlign = 'center';
+  ctx.fillText('MAGNIFIED ×' + fmt(pr * 2 / b.d), cx, cy - r - 13);
+  ctx.restore();
+}
+function drawRing(b, cx, cy, pr, front) {
+  const img = b.ringImg, s = pr / 100, w = img.width * s, h = img.height * s;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(b.ring.tilt);
+  ctx.beginPath(); if (front) ctx.rect(-w, 0, w * 2, h); else ctx.rect(-w, -h, w * 2, h); ctx.clip();
+  ctx.drawImage(img, -w / 2, -h / 2, w, h); ctx.restore();
+}
+
+function drawTraveler(t) {
+  const x = anchor, y = axisY;
+  ctx.fillStyle = 'rgba(244,239,230,.92)'; ctx.beginPath(); ctx.moveTo(x, y + 5); ctx.lineTo(x - 4.5, y + 13); ctx.lineTo(x + 4.5, y + 13); ctx.closePath(); ctx.fill();
+  const vg = ctx.createLinearGradient(0, y - 90, 0, y - 6); vg.addColorStop(0, 'rgba(244,239,230,0)'); vg.addColorStop(1, 'rgba(244,239,230,.16)');
+  ctx.fillStyle = vg; ctx.fillRect(x, y - 90, 1, 84);
+  // light pulses launched from where you are; light is only 25.8 px per second here
+  if (simT > nextPulse) { pulses.push(p, simT); nextPulse = simT + 2.6; }
+  ctx.globalCompositeOperation = 'lighter';
+  for (let i = pulses.length - 2; i >= 0; i -= 2) {
+    const age = simT - pulses[i + 1];
+    if (age > 9) { pulses.splice(i, 2); continue; }
+    const sx = anchor + (pulses[i] + C_PX * age) - p, a = 1 - age / 9;
+    if (sx < -60 || sx > W + 60) continue;
+    const tl = clamp(Math.abs(C_PX - v) * 0.05, 6, 260) * (v > C_PX ? -1 : 1);
+    const tg = ctx.createLinearGradient(sx, 0, sx - tl, 0); tg.addColorStop(0, 'rgba(255,236,190,' + (0.8 * a).toFixed(3) + ')'); tg.addColorStop(1, 'rgba(255,236,190,0)');
+    ctx.fillStyle = tg; ctx.fillRect(Math.min(sx, sx - tl), y - 1, Math.abs(tl), 2);
+    const pg = ctx.createRadialGradient(sx, y, 0, sx, y, 7);
+    pg.addColorStop(0, 'rgba(255,244,214,' + a.toFixed(3) + ')'); pg.addColorStop(1, 'rgba(255,200,120,0)');
+    ctx.fillStyle = pg; ctx.fillRect(sx - 7, y - 7, 14, 14);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  if (!narrow) {
+    ctx.font = '400 9px ' + MONO; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(244,239,230,.4)';
+    ctx.fillText('YOU   ·   LIGHT CREEPS ALONGSIDE AT 26 PX / S', x + 12, y + 72);
+  }
+}
+
+function drawWarp(dt) {
+  if (warpK < 0.02 || REDUCED) return;
+  ctx.lineCap = 'butt'; ctx.lineWidth = 1;
+  const av = Math.abs(v), dir = v > 0 ? -1 : 1;
+  for (let i = 0; i < WL.length; i++) {
+    const w = WL[i], len = clamp(av * w.sp * 0.03, 24, 620);
+    w.x += dir * av * w.sp * 0.26 * dt;
+    if (w.x < -len) w.x += W + len * 2; else if (w.x > W + len) w.x -= W + len * 2;
+    const y = axisY + w.dy * H;
+    const g = ctx.createLinearGradient(w.x, 0, w.x - dir * len, 0);
+    g.addColorStop(0, 'rgba(214,228,255,' + (warpK * (0.16 + 0.3 * w.sp)).toFixed(3) + ')'); g.addColorStop(1, 'rgba(214,228,255,0)');
+    ctx.strokeStyle = g; ctx.beginPath(); ctx.moveTo(w.x, y); ctx.lineTo(w.x - dir * len, y); ctx.stroke();
+  }
+}
+
+function drawBeyondMark() {
+  const sx = anchor + BODIES[8].X - p, ex = W - 26;
+  if (sx > W || p < BODIES[8].X - W * 0.4) return;
+  const a = sstep(BODIES[8].X - 600, BODIES[8].X + 2500, p);
+  if (a < 0.01) return;
+  const x0 = Math.max(sx + 30, anchor + 90);
+  ctx.strokeStyle = 'rgba(244,239,230,' + (0.35 * a).toFixed(3) + ')'; ctx.lineWidth = 1; ctx.setLineDash([2, 7]);
+  ctx.beginPath(); ctx.moveTo(x0, axisY); ctx.lineTo(ex, axisY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(ex, axisY); ctx.lineTo(ex - 8, axisY - 4); ctx.moveTo(ex, axisY); ctx.lineTo(ex - 8, axisY + 4); ctx.stroke();
+  ctx.font = '400 9.5px ' + MONO; ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(244,239,230,' + (0.6 * a).toFixed(3) + ')';
+  ctx.fillText('VOYAGER 1 · 2,190,000 PX THIS WAY', ex, axisY - 12);
+}
+
+function draw(dt, t) {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  ctx.fillStyle = '#05060a'; ctx.fillRect(0, 0, W, H);
+  drawStars(t); drawSun(t); drawWarp(dt); drawAxis(); drawBodies(t); drawBeyondMark();
+  for (let i = 1; i < 9; i++) drawInset(BODIES[i], t);
+  drawTraveler(t); drawEdges();
+}
+// when the next (or previous) world is off-screen, say where it is: the dark needs a direction
+function drawEdges() {
+  let nx = -1, pv = -1;
+  for (let i = 0; i < 9; i++) if (BODIES[i].X > p + 4) { nx = i; break; }
+  for (let i = 8; i >= 0; i--) if (BODIES[i].X < p - 4) { pv = i; break; }
+  const fade = 1 - 0.85 * warpK, y = axisY;
+  ctx.font = '500 10px ' + MONO; ctx.textBaseline = 'alphabetic';
+  if (nx >= 0) {
+    const b = BODIES[nx], d = b.X - p, off = anchor + d - (W - 30);
+    if (off > 0) {
+      const a = sstep(0, W * 0.3, off) * fade, ex = W - 22;
+      ctx.strokeStyle = 'rgba(244,239,230,' + (0.3 * a).toFixed(3) + ')'; ctx.lineWidth = 1; ctx.setLineDash([2, 6]);
+      ctx.beginPath(); ctx.moveTo(Math.max(anchor + 60, ex - (narrow ? 90 : 220)), y); ctx.lineTo(ex, y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(ex, y); ctx.lineTo(ex - 6, y - 3.5); ctx.moveTo(ex, y); ctx.lineTo(ex - 6, y + 3.5); ctx.stroke();
+      ctx.fillStyle = b.col; ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(ex, y, 2.6, 0, TAU); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(244,239,230,' + (0.72 * a).toFixed(3) + ')';
+      ctx.fillText(b.name.toUpperCase() + '  ·  ' + fmt(d) + ' PX', ex, y + 24);
+      if (!narrow) { ctx.fillStyle = 'rgba(244,239,230,' + (0.36 * a).toFixed(3) + ')'; ctx.font = '400 9.5px ' + MONO; ctx.fillText(fmt(d / AU * AU_LS) + ' LIGHT-SECONDS AWAY', ex, y + 40); ctx.font = '500 10px ' + MONO; }
+    }
+  }
+  if (pv >= 0 && !narrow) {
+    const b = BODIES[pv], d = p - b.X, off = 30 - (anchor - d);
+    if (off > 0 && d > 400) {
+      const a = sstep(0, W * 0.3, off) * fade * 0.8;
+      ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(244,239,230,' + (0.5 * a).toFixed(3) + ')';
+      ctx.fillText('‹  ' + b.name.toUpperCase() + '  ·  ' + fmt(d) + ' PX BEHIND', 24, y + 26);
+    }
+  }
+}
+/* ============ motion model ============ */
+function nearestDist(x) { let m = 1e12; for (let i = 0; i < 9; i++) { const d = Math.abs(BODIES[i].X - x); if (d < m) m = d; } return m; }
+// input gearing: 1:1 beside a world, up to ~120x in the middle of the dark
+const gear = (x) => 1 + Math.min(nearestDist(x), 60000) / 500;
+function pToS(x) { for (let i = 0; i < 9; i++) if (x <= STOPX[i + 1]) return (i + (x - STOPX[i]) / (STOPX[i + 1] - STOPX[i])) * 1000 / 9; return 1000; }
+function sToP(s) { const f = clamp(s, 0, 1000) * 9 / 1000, i = Math.min(8, Math.floor(f)); return lerp(STOPX[i], STOPX[i + 1], f - i); }
+
+function step(dt) {
+  const kx = (keys.r ? 1 : 0) - (keys.l ? 1 : 0);
+  if (kx) { mode = 'free'; pT = clamp(pT + kx * dt * (keys.shift ? 3.5 : 1) * 620 * gear(pT), 0, PMAX); }
+  else if (drift && !dragging && mode === 'free') {
+    pT = clamp(pT + dt * (REDUCED ? 26 : 58) * Math.pow(gear(pT), 0.85), 0, PMAX);
+    if (pT >= PMAX) { drift = false; syncButtons(); }
+  }
+  const warp = mode === 'warp';
+  const K = dragging ? 30 : warp ? 2.2 : 5, A = dragging ? 130 : warp ? 9 : 24, vCap = warp ? 75000 : 30000;
+  const rem = pT - p;
+  const want = Math.sign(rem) * Math.min(vCap, Math.abs(rem) * K + (warp ? 30 : 0));
+  v += (want - v) * (1 - Math.exp(-dt * A));
+  p += v * dt;
+  if (warp && Math.abs(pT - p) < 0.7 && Math.abs(v) < 60) { p = pT; v = 0; mode = 'free'; syncButtons(); }
+  else if (!warp && Math.abs(pT - p) < 0.02 && Math.abs(v) < 0.3) { p = pT; v = 0; }
+  if (p < 0) { p = 0; v = Math.max(v, 0); } else if (p > PMAX) { p = PMAX; v = Math.min(v, 0); }
+}
+function warpTo(x) {
+  mode = 'warp'; drift = false; userTouched = true; pT = clamp(x, 0, PMAX);
+  for (let i = 1; i < 9; i++) if (Math.abs(BODIES[i].X - pT) < 2 && Math.abs(p - pT) < 6 && BODIES[i].id === 'earth') earthPing = simT;
+  syncButtons();
+}
+function cancelWarp() { if (mode === 'warp') { mode = 'free'; pT = clamp(p + v * 0.3, 0, PMAX); syncButtons(); } }
+function warpNext(dir) {
+  if (mode === 'warp') { cancelWarp(); return; }
+  let target = null;
+  if (dir > 0) { for (let i = 0; i < STOPX.length; i++) if (STOPX[i] > p + 8) { target = STOPX[i]; break; } }
+  else { for (let i = STOPX.length - 1; i >= 0; i--) if (STOPX[i] < p - 8) { target = STOPX[i]; break; } }
+  if (target === null) target = dir > 0 ? 0 : PMAX;
+  warpTo(target);
+}
+function userInput() { if (!userTouched || drift) { userTouched = true; drift = false; syncButtons(); } }
+let earthPing = -99;
+
+/* ============ focus, cards, readouts ============ */
+const ui = { light: $('#r-light'), au: $('#r-au'), km: $('#r-km'), px: $('#r-px'), v: $('#r-v'), fill: $('#fill'), map: $('#map'), title: $('#title'), intro: $('#intro'),
+  whisper: $('#whisper'), wText: $('#w-text'), wSub: $('#w-sub'), beyond: $('#beyond'), live: $('#live'), warp: $('#b-warp'), wtgt: $('#w-tgt'), drift: $('#b-drift'), stops: Array.from(document.querySelectorAll('.stop')) };
+let nearestI = 0, nearestD = 0, lastSay = -1, hudT = 1, seg = -1, maxNear = 0, sliderActive = false;
+function setText(el, s) { if (el._s !== s) { el._s = s; el.textContent = s; } }
+function fmtLight(s) {
+  s = Math.max(0, s);
+  if (s < 60) return s.toFixed(s < 10 ? 1 : 0) + ' s';
+  if (s < 3600) return Math.floor(s / 60) + ' m ' + String(Math.floor(s % 60)).padStart(2, '0') + ' s';
+  return Math.floor(s / 3600) + ' h ' + String(Math.floor((s % 3600) / 60)).padStart(2, '0') + ' m ' + String(Math.floor(s % 60)).padStart(2, '0') + ' s';
+}
+function syncButtons() {
+  ui.drift.setAttribute('aria-pressed', drift ? 'true' : 'false');
+  ui.warp.classList.toggle('warping', mode === 'warp');
+}
+function updateFocus() {
+  const Rs = clamp(W * 0.5, 280, 760);
+  let ni = 0, nd = 1e12;
+  for (let i = 0; i < 9; i++) { const d = Math.abs(BODIES[i].X - p); if (d < nd) { nd = d; ni = i; } }
+  nearestI = ni; nearestD = nd; maxNear = 0;
+  for (let i = 1; i < 9; i++) {
+    const b = BODIES[i], d = Math.abs(b.X - p);
+    b.near = sstep(Rs, Rs * 0.3, d);
+    if (b.near > 0.02) requestTexture(b, true);
+    if (b.near > maxNear) maxNear = b.near;
+  }
+  BODIES[0].near = sstep(Rs * 1.1, Rs * 0.25, p);
+  warpK = sstep(1800, 30000, Math.abs(v));
+}
+function updateCards() {
+  const rMax = clamp(Math.min(W, H) * 0.165, 54, 98);
+  for (let i = 0; i < 9; i++) {
+    const b = BODIES[i], c = b.card, a = b.near;
+    if (a < 0.02) { if (b.shown) { c.style.opacity = '0'; c.style.visibility = 'hidden'; c.setAttribute('aria-hidden', 'true'); b.shown = false; } continue; }
+    const cw = b.cw || 330, ch = b.ch || 260;
+    let left, top;
+    if (narrow) { left = 16; top = axisY + 62; }
+    else if (i === 0) { left = Math.max(anchor + 100, anchor - p + 100); top = axisY - 34 - ch; }
+    else {
+      const sx = anchor + b.X - p, r = lerp(10, rMax, 1 - Math.pow(1 - a, 3));
+      left = Math.max(anchor + rMax + 40, sx + r + 34);
+      if (left + cw > W - 16) left = W - 16 - cw;
+      top = axisY - 34 - ch;
+    }
+    c.style.transform = 'translate(' + left.toFixed(1) + 'px,' + top.toFixed(1) + 'px)';
+    c.style.opacity = sstep(0.32, 0.85, a).toFixed(3);
+    if (!b.shown) { c.style.visibility = 'visible'; c.setAttribute('aria-hidden', 'false'); b.shown = true; }
+  }
+}
+function updateHUD(dt) {
+  hudT += dt;
+  const base = narrow ? 1 - sstep(300, 3200, p) : 1 - 0.8 * sstep(500, 6000, p);
+  ui.title.style.opacity = (base * (1 - sstep(0.04, 0.4, maxNear))).toFixed(3);
+  ui.intro.style.opacity = (userTouched || p > 300) ? '0' : '1';
+  const bo = sstep(BODIES[8].X + 700, BODIES[8].X + 2600, p);
+  ui.beyond.style.opacity = bo.toFixed(3); ui.beyond.style.visibility = bo > 0.01 ? 'visible' : 'hidden';
+  let s = 0; for (let i = 1; i < 9; i++) if (p > BODIES[i].X) s = i;
+  if (s !== seg) { seg = s; const w = WHISPERS[s]; ui.wText.textContent = s === 8 ? '' : w[0]; ui.wSub.textContent = s === 8 ? '' : w[1]; }
+  const wa = s === 8 ? 0 : sstep(W * 0.7, Math.min(W * 1.25, 1900), nearestD) * (1 - clamp(Math.abs(v) / 2500, 0, 1));
+  ui.whisper.style.opacity = wa.toFixed(3);
+  if (nearestD < 300 && nearestI !== lastSay) { lastSay = nearestI; const b = BODIES[nearestI]; ui.live.textContent = b.id === 'sun' ? 'At the Sun. One hundred and twenty pixels wide.' : 'At ' + b.name + ', ' + b.au.toFixed(3) + ' astronomical units from the Sun.'; }
+  else if (nearestD > 900) lastSay = -1;
+  if (!sliderActive) ui.map.value = String(Math.round(pToS(p)));
+  ui.fill.style.width = (pToS(p) / 10).toFixed(2) + '%';
+  if (hudT < 0.06) return; hudT = 0;
+  const au = p / AU, ratio = Math.abs(v) / C_PX;
+  setText(ui.light, fmtLight(au * AU_LS) + ' ago');
+  setText(ui.au, au.toFixed(3) + ' AU');
+  setText(ui.km, fmt(au * AU_KM) + ' km');
+  setText(ui.px, fmt(p) + ' px' + (p > W * 0.25 ? ' · ' + (p / W).toFixed(p / W < 10 ? 1 : 0) + ' screens' : ''));
+  setText(ui.v, Math.abs(v) < 0.4 ? 'at rest' : ratio < 0.95 ? (ratio * 100).toFixed(0) + '% of light' : (ratio < 10 ? ratio.toFixed(1) : fmt(ratio)) + '× light');
+  for (let i = 0; i < ui.stops.length; i++) ui.stops[i].classList.toggle('here', Math.abs(STOPX[i] - p) < 220);
+  let ni = STOPX.findIndex((x) => x > p + 8); if (ni < 0) ni = 0;
+  const nm = ni === 0 ? 'the Sun' : ni === 9 ? 'the far dark' : BODIES[ni].name;
+  setText(ui.wtgt, '\u2192 ' + nm); ui.warp.setAttribute('aria-label', 'Warp to ' + nm + ' (W)');
+}
+/* ============ input: wheel, drag, keys, slider, buttons ============ */
+window.addEventListener('wheel', (e) => {
+  e.preventDefault(); userInput(); cancelWarp();
+  let d = e.deltaY + e.deltaX * 0.6;
+  if (e.deltaMode === 1) d *= 33; else if (e.deltaMode === 2) d *= 420;
+  if (e.ctrlKey) d *= 2.2;
+  mode = 'free'; pT = clamp(pT + d * 0.7 * gear(pT), 0, PMAX);
+}, { passive: false });
+
+let dragId = -1, dragX = 0;
+cv.addEventListener('pointerdown', (e) => {
+  if (dragId !== -1) return;
+  dragId = e.pointerId; dragging = true; moved = 0; dragX = e.clientX; dragVel = 0; lastMoveT = performance.now();
+  cancelWarp(); userInput(); pT = p; mode = 'free';
+  try { cv.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+  cv.classList.add('drag');
+});
+cv.addEventListener('pointermove', (e) => {
+  if (e.pointerId !== dragId) return;
+  const dx = e.clientX - dragX, now = performance.now(), dtm = Math.max(1, now - lastMoveT);
+  dragX = e.clientX; lastMoveT = now; moved += Math.abs(dx);
+  pT = clamp(pT - dx * gear(pT), 0, PMAX);
+  dragVel = lerp(dragVel, dx / (dtm / 1000), 0.35);
+});
+function endDrag(e) {
+  if (e.pointerId !== dragId) return;
+  dragId = -1; dragging = false; cv.classList.remove('drag');
+  const idle = performance.now() - lastMoveT;
+  if (idle < 90 && Math.abs(dragVel) > 80) pT = clamp(pT - dragVel * 0.3 * gear(pT), 0, PMAX);   // a flick carries on
+}
+cv.addEventListener('pointerup', endDrag); cv.addEventListener('pointercancel', endDrag);
+
+const goKey = (e) => { e.preventDefault(); userInput(); cancelWarp(); };
+window.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if (e.target === ui.map && (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'Home' || k === 'End')) { userInput(); return; }
+  if (k === 'ArrowRight') { goKey(e); keys.r = true; }
+  else if (k === 'ArrowLeft') { goKey(e); keys.l = true; }
+  else if (k === 'Shift') keys.shift = true;
+  else if (k === 'w' || k === 'W' || k === 'PageDown' || k === 'PageUp') { e.preventDefault(); userInput(); warpNext(k === 'PageUp' || e.shiftKey ? -1 : 1); }
+  else if (k === 'd' || k === 'D') { userTouched = true; drift = !drift; if (drift) { cancelWarp(); pT = p; } syncButtons(); }
+  else if (k === 'Home') { e.preventDefault(); userInput(); warpTo(0); }
+  else if (k === 'End') { e.preventDefault(); userInput(); warpTo(PMAX); }
+  else if (k === 'Escape') cancelWarp();
+  else if (k.length === 1 && k >= '0' && k <= '8') { userInput(); warpTo(BODIES[+k].X); }
+});
+window.addEventListener('keyup', (e) => { if (e.key === 'ArrowRight') keys.r = false; else if (e.key === 'ArrowLeft') keys.l = false; else if (e.key === 'Shift') keys.shift = false; });
+window.addEventListener('blur', () => { keys.l = keys.r = keys.shift = false; });
+
+ui.map.addEventListener('input', () => { sliderActive = true; userInput(); mode = 'warp'; drift = false; pT = sToP(+ui.map.value); syncButtons(); });
+ui.map.addEventListener('change', () => { sliderActive = false; });
+ui.map.addEventListener('pointerup', () => { sliderActive = false; });
+ui.map.addEventListener('blur', () => { sliderActive = false; });
+ui.stops.forEach((el) => el.addEventListener('click', () => { userInput(); warpTo(STOPX[+el.dataset.i]); }));
+ui.warp.addEventListener('click', () => { userInput(); warpNext(1); });
+ui.drift.addEventListener('click', () => { userTouched = true; drift = !drift; if (drift) { cancelWarp(); pT = p; } syncButtons(); });
+$('#b-home').addEventListener('click', () => { userInput(); warpTo(0); });
+$('#b-return').addEventListener('click', () => { userInput(); warpTo(0); });
+window.addEventListener('hashchange', () => { const b = BODIES.find((q) => q.id === location.hash.slice(1)); if (b) { userInput(); warpTo(b.X); } });
+/* ============ boot ============ */
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden) { lastT = 0; return; }
+  let dt = lastT ? (now - lastT) / 1000 : 1 / 60;
+  lastT = now; dt = Math.min(dt, 1 / 30); simT += dt;
+  step(dt); updateFocus(); draw(dt, simT); updateCards(); updateHUD(dt);
+}
+buildLabels();
+layout();
+window.addEventListener('resize', layout);
+const hashBody = BODIES.find((q) => q.id === location.hash.slice(1));
+if (hashBody) { p = pT = hashBody.X; drift = false; userTouched = true; }
+syncButtons();
+setTimeout(() => { for (let i = 1; i < 9; i++) requestTexture(BODIES[i], false); }, 600);
+document.addEventListener('visibilitychange', () => { lastT = 0; });
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

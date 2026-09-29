@@ -1,0 +1,25 @@
+==================== PROMPT ====================
+Create a punk-zine cut-and-paste collage page "NOISE FLOOR — issue #3". Photocopy aesthetic: high-contrast black on off-white #eeeae0 with visible toner grain, halftone dots (CSS radial-gradient patterns), torn paper edges (clip-path jagged polygons), strips of tan masking tape with slight rotation and shadow, a ransom-note headline whose letters are cut from different type styles (each in a rotated box with its own font family, weight and background: serif, slab, mono, heavy sans, outlined), hand-drawn scribbles and arrows in SVG, star and burst stickers, a xeroxed "photo" of a stylised guitarist silhouette drawn with shapes then processed by an ordered-dither filter on canvas, and fluorescent spot colours (#ff5f1f orange, #b8ff2c acid green) as multiply-blended overprint blocks. Content: gig listings, a fake interview with pull quotes, a "DIY tips" list, a fold line. Interaction: every collage piece is draggable with pointer events (raise z-index, jitter rotation and lift shadow on pick-up), double-click rotates a piece 15°, a "Re-glue" button animates all pieces back to their original layout, scrolling reveals extra pages. Type stacks: Impact / Arial Black / Courier / Georgia. Deliberately messy, but composed.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Noise Floor Zine Collage
+
+==================== DESCRIPTION ====================
+A four-page photocopied punk fanzine, "NOISE FLOOR #3", laid out as a dark desk with off-white sheets. Page 1 is the cover: a ten-letter ransom-note masthead (serif, heavy sans, mono, slab, outlined and Impact letters on paper, newsprint, kraft, black, orange and acid-green scraps), a xeroxed guitarist drawn from shapes and ordered-dithered on a canvas, tape strips, burst and star stickers, a Dymo label, a newspaper clipping and a coupon, with orange and acid-green multiply overprint blocks and a giant halftone sun. Page 2 lists six invented gigs on differently coloured paper tickets with a fold line, a bands-wanted ad and classifieds. Page 3 is a fake interview with the band Lung Fish beside a dithered singer portrait, pull quotes and a set list. Page 4 is a DIY guide on notebook paper with chord diagrams, a back-cover notice and a cut-out coupon. Every piece can be picked up and moved; Re-glue springs everything back.
+
+==================== TECHNIQUES ====================
+- Toner grain tile drawn once on a small canvas (dark specks, dropouts, dust, hairs) and used as a boiling fixed overlay
+- Torn-paper edges: jagged clip-path polygons generated at runtime per element with a seeded random and re-computed by ResizeObserver
+- Scissor-cut ransom letters using hand-written clip-path polygons, each with its own font stack, weight and background
+- Halftone dots from radial-gradient patterns and a contrast-filter halftone sun
+- Ordered (Bayer 8x8) dither of a canvas-drawn guitarist and singer, with toner streaks and specks; pointer swings the stage light and re-dithers
+- Multiply-blended fluorescent orange and acid-green overprint blocks with printer's registration-mark grips
+- Masking tape with jagged ends and fibre stripes; burst, star and ring-text stickers; wobble-filtered SVG scribbles and arrows
+- Design in 1320-unit container-query coordinates (cqw) so a composed collage scales uniformly; stacked flow layout on phones
+- Individual CSS transform properties (translate, rotate, scale) driven by custom properties for dragging, jitter, lift and spring return
+- Pages are slapped down with staggered animations via IntersectionObserver
+
+==================== INTERACTION ====================
+Drag any piece with mouse, pen or touch (on touch, press and hold about 190 ms then drag so page scrolling still works). Picking up raises the piece, lifts its shadow and jitters its rotation; it is kept partly on its sheet. Double-click or double-tap rotates it 15 degrees. Keyboard: focus a piece, arrows nudge (Shift for larger), R or Enter rotates, Escape resets it. The Re-glue button in the top bar springs every piece back with a stagger and shows how many are loose. Moving the pointer across a dithered photo swings the stage light. Scrolling (or the 1-4 page buttons) reveals and slaps down the further pages. With prefers-reduced-motion the grain stops boiling, pages appear without animation and Re-glue is instant.

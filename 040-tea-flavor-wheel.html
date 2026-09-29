@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Tea Wheel — Leaf, Liquor, Aftertaste</title>
+<meta name="description" content="An interactive sunburst of tea flavour: six families, twenty-four flavour groups and sixty-seven tasting notes, with brewing guidance and a steeping timer.">
+<meta name="theme-color" content="#f6f1e7">
+<style>
+:root{
+  --paper:#f6f1e7; --ink:#2b2622; --mute:rgba(43,38,34,.62); --hair:rgba(43,38,34,.16);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif;
+  --sans:"Gill Sans","Gill Sans MT",Optima,Calibri,"Segoe UI",Ubuntu,Cantarell,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--paper)}
+body{margin:0;min-height:100vh;min-height:100dvh;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  background:radial-gradient(80% 60% at 70% 40%,#fbf8f0,rgba(251,248,240,0) 70%),var(--paper)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.page{display:grid;grid-template-columns:minmax(280px,400px) minmax(0,1fr);gap:clamp(20px,4vw,64px);max-width:1500px;margin:0 auto;padding:clamp(20px,3.4vw,52px);min-height:100vh;min-height:100dvh;align-items:center}
+.side{position:relative;align-self:stretch;display:flex;flex-direction:column;justify-content:center;gap:22px;padding-bottom:190px}
+.kicker{font:600 11px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+h1{margin:0;font:400 clamp(44px,5.4vw,78px)/.95 var(--serif);letter-spacing:-.02em}
+h1 em{display:block;font-size:.34em;letter-spacing:.02em;margin-top:.6em;color:var(--mute);line-height:1.25}
+.lede{margin:0;font-size:16px;line-height:1.55;color:var(--mute);max-width:36ch}
+.search{position:relative}
+.search input{width:100%;padding:13px 44px 13px 18px;border:1.5px solid var(--ink);border-radius:99px;background:transparent;font-size:15px;letter-spacing:.01em}
+.search input::placeholder{color:rgba(43,38,34,.45)}
+.search button{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;border:0;background:transparent;font-size:18px;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .3s}
+.search.has button{opacity:.7;pointer-events:auto}
+.count{margin:8px 0 0 18px;font:600 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);min-height:12px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin:0;padding:0;list-style:none}
+.legend li{display:flex;align-items:center;gap:7px;font:600 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.legend i{width:11px;height:11px;border-radius:50%;background:var(--c)}
+.howto{margin:0;font-size:13px;line-height:1.5;color:var(--mute);max-width:38ch;border-top:1px solid var(--hair);padding-top:14px}
+.fine{position:absolute;left:0;bottom:8px;font:600 10px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:rgba(43,38,34,.42);max-width:260px}
+.teapot{position:absolute;left:-6px;bottom:52px;width:170px;height:auto;overflow:visible;color:var(--ink);cursor:pointer;background:none;border:0;padding:0}
+.teapot path{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:var(--l,900);stroke-dashoffset:var(--l,900);animation:draw 2.4s var(--ease) forwards}
+.teapot .st{stroke-width:1.6;opacity:.55;stroke-dasharray:6 8;animation:none;stroke-dashoffset:0}
+.teapot .lid{transform-box:fill-box;transform-origin:20% 100%}
+.teapot:hover .lid,.teapot.pour .lid{animation:lid .6s var(--ease)}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes lid{40%{transform:rotate(-9deg) translateY(-3px)}}
+.tip{position:absolute;left:150px;bottom:110px;max-width:220px;padding:10px 14px;border:1.5px solid var(--ink);border-radius:14px;background:var(--paper);font-size:12.5px;line-height:1.4;opacity:0;transform:translateY(8px);transition:opacity .4s,transform .5s var(--ease);pointer-events:none}
+.tip.on{opacity:1;transform:none}
+
+/* ---------- wheel stage ---------- */
+.stage{display:grid;place-items:center;position:relative;min-width:0;width:100%}
+.stage>*{grid-area:1/1}
+.wheel{width:min(100%,calc(100vh - 60px),820px);width:min(100%,calc(100dvh - 60px),820px);aspect-ratio:1;display:block;overflow:visible}
+.arc{cursor:pointer;transition:opacity .35s}
+.arc path{stroke-width:6;stroke-linejoin:round;transition:filter .3s}
+.arc text{font:600 10px var(--sans);pointer-events:none;letter-spacing:.02em;text-anchor:middle;dominant-baseline:central}
+.dim .arc:not(.on){opacity:.2}
+.dim .arc:not(.on) text{opacity:.6}
+.arc.match path{filter:drop-shadow(0 0 5px rgba(43,38,34,.55))}
+.arc,.arc:focus,.arc:focus-visible{outline:none}
+.arc:focus-visible path{stroke:var(--ink);stroke-width:8}
+.hubring{fill:none;stroke-width:4;stroke-linecap:round}
+.hubtrack{fill:none;stroke:var(--hair);stroke-width:4}
+.steam path{fill:none;stroke:var(--paper);stroke-width:5;stroke-linecap:round;opacity:0}
+.hot .steam path{animation:rise 3.4s ease-in-out infinite}
+.hot .steam path:nth-child(2){animation-delay:1.1s}.hot .steam path:nth-child(3){animation-delay:2.2s}
+@keyframes rise{0%{opacity:0;transform:translateY(24px) scaleY(.6)}30%{opacity:.75}100%{opacity:0;transform:translateY(-92px) scaleY(1.1)}}
+
+/* ---------- centre card ---------- */
+.card{z-index:2;place-self:center;width:min(236px,29%);text-align:center;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:5px}
+.card button{pointer-events:auto}
+.card .kind{font:600 9.5px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.card h2{margin:0;font:400 clamp(19px,2.1vw,26px)/1.05 var(--serif);letter-spacing:-.01em}
+.card .desc{margin:0;font-size:12.5px;line-height:1.38;color:var(--mute)}
+.card .brew{font:600 11px/1.2 var(--mono);letter-spacing:.06em}
+.cup{width:44px;height:38px;overflow:visible}
+.cup .liq{transition:transform 1s var(--ease);transform-origin:50% 100%;transform-box:fill-box}
+.cup path.body{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.timer{display:flex;align-items:center;gap:8px;margin-top:3px}
+.steepbtn{padding:6px 13px;border:1.5px solid var(--ink);border-radius:99px;background:transparent;font:600 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:background-color .3s,color .3s}
+.steepbtn:hover,.steepbtn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.demo{padding:5px 8px;border:1px dashed var(--mute);border-radius:99px;background:transparent;font:600 9.5px/1 var(--mono);letter-spacing:.08em;color:var(--mute);cursor:pointer}
+.demo[aria-pressed="true"]{background:var(--mute);color:var(--paper);border-style:solid}
+.back{position:absolute;left:0;top:0;z-index:3;padding:9px 16px 9px 12px;border:1.5px solid var(--ink);border-radius:99px;background:var(--paper);font:600 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .4s}
+.back.on{opacity:1;pointer-events:auto}
+.stagewrap{position:relative;width:100%;display:grid;place-items:center}
+
+@media (max-width:860px){
+  .page{grid-template-columns:minmax(0,1fr);align-items:start;padding-top:24px}
+  .side{padding-bottom:0;gap:16px}
+  .fine{position:static;margin-top:6px}
+  .teapot{position:static;width:110px;margin-top:4px}
+  .tip{display:none}
+  .stage{grid-template-rows:auto auto}
+  .stage>.wheel{grid-area:1/1}
+  .stage>.card{grid-area:2/1;width:100%;max-width:420px;margin-top:8px;padding:14px 8px 4px;border-top:1px solid var(--hair);pointer-events:auto}
+  .small .l3{display:none}
+  .back{top:-8px}
+}
+@media (prefers-reduced-motion:reduce){
+  .teapot path{animation:none;stroke-dashoffset:0}
+  .hot .steam path{animation:none}
+  .arc,.cup .liq,.back{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <section class="side" aria-label="Introduction">
+    <p class="kicker">Field guide · illustrative data</p>
+    <h1>The Tea Wheel<em>Leaf, Liquor, Aftertaste</em></h1>
+    <p class="lede">Six families of tea, twenty-four flavour groups and sixty-seven tasting notes — from fresh-cut hay to pine smoke. Hover to trace a lineage, click a family to dive in.</p>
+    <div class="search" id="search"><input id="q" type="search" placeholder="Find a note — try “smoke” or “honey”" aria-label="Search tasting notes" autocomplete="off"><button type="button" id="qx" aria-label="Clear search">×</button><p class="count" id="count" aria-live="polite"></p></div>
+    <ul class="legend" id="legend"></ul>
+    <p class="howto">Inner ring: the tea. Middle ring: what it tastes of. Outer ring: the specific notes. The centre gives brewing temperature and time — press Steep to time a cup.</p>
+    <button type="button" class="teapot" id="pot" aria-label="Teapot: tap for a brewing tip">
+      <svg viewBox="0 0 180 130" width="170" height="122" aria-hidden="true">
+        <path style="--l:420" d="M46 52 C34 62 32 96 52 108 C72 118 112 118 130 106 C146 94 144 62 130 52 C110 44 66 44 46 52 Z"/>
+        <path class="lid" style="--l:150" d="M56 47 C58 38 108 38 120 47 M88 38 C86 30 92 28 96 33 C99 28 104 30 100 38"/>
+        <path style="--l:120" d="M132 68 C152 62 164 70 158 80 C154 88 146 90 138 90"/>
+        <path style="--l:100" d="M44 66 C30 60 20 56 14 46 C12 42 18 40 22 44 C28 50 36 54 44 58"/>
+        <path style="--l:120" d="M60 116 L56 124 M116 116 L120 124 M50 124 L128 124"/>
+        <path class="st" d="M76 30 C70 22 82 16 76 8"/><path class="st" d="M96 26 C90 18 102 12 96 4"/>
+      </svg>
+    </button>
+    <div class="tip" id="tip" role="status" aria-live="polite"></div>
+    <p class="fine">Illustrative data — flavour groupings are a simplification, brew times a starting point.</p>
+  </section>
+
+  <section class="stagewrap" aria-label="Tea flavour wheel">
+    <button type="button" class="back" id="back">← Back</button>
+    <div class="stage" id="stage">
+      <svg class="wheel" id="wheel" viewBox="-364 -364 728 728" role="group" aria-label="Sunburst wheel of tea flavours. Use Tab to move between families, Enter to zoom or select, Escape to go back.">
+        <g id="arcs"></g>
+        <circle class="hubtrack" r="120"/>
+        <circle class="hubring" id="hubring" r="120" transform="rotate(-90)" stroke-dasharray="754" stroke-dashoffset="754"/>
+        <g class="steam" id="steam" aria-hidden="true"><path d="M-28 -60 C-44 -84 -12 -100 -28 -124"/><path d="M0 -66 C-16 -90 16 -108 0 -132"/><path d="M28 -60 C12 -84 44 -100 28 -124"/></g>
+      </svg>
+      <div class="card" id="card">
+        <svg class="cup" viewBox="0 0 44 38" aria-hidden="true"><defs><clipPath id="cupClip"><path d="M8 12 H34 L32 28 C31 33 28 35 22 35 C16 35 13 33 12 28 Z"/></clipPath></defs>
+          <g clip-path="url(#cupClip)"><rect class="liq" id="liq" x="6" y="12" width="30" height="24" fill="#6fae83" style="transform:scaleY(0)"/></g>
+          <path class="body" d="M8 12 H34 L32 28 C31 33 28 35 22 35 C16 35 13 33 12 28 Z M34 15 C41 14 41 24 33 24"/></svg>
+        <span class="kind" id="ckind">Hover a segment</span>
+        <h2 id="cname">The Tea Wheel</h2>
+        <p class="desc" id="cdesc">Six families, one leaf. Follow an arc outward to find what is in the cup.</p>
+        <span class="brew" id="cbrew">&nbsp;</span>
+        <div class="timer"><button type="button" class="steepbtn" id="steep" aria-pressed="false">Steep</button><button type="button" class="demo" id="demo" aria-pressed="false" title="Run the timer twenty times faster">×20</button></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var clamp=function(v,a,b){return Math.min(b,Math.max(a,v))};
+var reduced=false;try{reduced=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+var PAPER='#f6f1e7',INK='#2b2622',TAU=Math.PI*2;
+
+/* ============================================================ data (illustrative) */
+var TEAS=[
+{n:'White',c:'#b8d8be',liq:'#e6dca4',temp:'75–85°C',time:'3 min',secs:180,d:'Barely touched buds, wilted and dried in the air: quiet, sweet and translucent.',f:[
+ ['Melon','Cool, watery sweetness from the green side of the fruit bowl.',[['Honeydew','Pale, dewy melon flesh with no sharpness.'],['Cucumber water','Clean, cooling and faintly vegetal.'],['Pear skin','A fine, slightly powdery fruit sweetness.']]],
+ ['Meadow','Sun-dried grass and grain, soft as a barn in August.',[['Barley water','Round, mild and gently cereal.'],['Dried chamomile','Apple-like, hay-sweet and calming.'],['Warm straw','Toasted-grass warmth, never smoky.']]],
+ ['Blossom','Delicate flowers that appear on the exhale.',[['Honeysuckle','Sugary nectar with a green edge.'],['Elderflower','Muscat-like and lightly citrus.'],['Magnolia','Creamy petals and a hint of lemon.']]],
+ ['Sweetness','The lingering sugar of silver buds.',[['Rock sugar','Clear, crystalline, slow-melting sweetness.'],['Acacia honey','Light honey with a floral tail.']]]]},
+{n:'Green',c:'#6fae83',liq:'#c9d67a',temp:'75–80°C',time:'2 min',secs:120,d:'Fixed by heat straight after picking to keep the leaf bright, fresh and lively.',f:[
+ ['Grassy','Freshly cut lawn and spring vegetables.',[['Fresh-cut hay','Sweet, sun-dried grass — the first thing a spring sencha says.'],['Snap pea','Crisp green sweetness in the pod.'],['Spring nettle','Herbal, mineral and bright.']]],
+ ['Marine','The sea in the cup: umami, brine and shore.',[['Nori','Toasted seaweed with savoury depth.'],['Sea spray','A clean saline lift on the finish.'],['Kombu broth','Deep, soupy umami.']]],
+ ['Nutty','Toasted seeds and kernels from pan-fired leaf.',[['Toasted chestnut','Warm, sweet and softly starchy.'],['Green almond','Milky kernel with a bitter edge.'],['Roasted barley','Deeper grain, lightly caramelised.']]],
+ ['Floral','Fragrant blooms, high and airy.',[['Orchid','Cool, creamy and slightly waxy petals.'],['Lilac','Sweet, powdery spring perfume.'],['Wisteria','Grape-soda florals over green leaf.']]]]},
+{n:'Oolong',c:'#d98f3e',liq:'#e0a94f',temp:'90–95°C',time:'3 min',secs:180,d:'Partly oxidised and rolled: the widest range of any tea, from green cream to roasted caramel.',f:[
+ ['Creamy','Milky and buttery, the hallmark of lightly oxidised leaf.',[['Sweet cream','Rounded dairy sweetness.'],['Fresh butter','Rich, fatty and comforting.']]],
+ ['Floral','Perfumed and lush, like a garden after rain.',[['Gardenia','Heady, creamy white flower.'],['Osmanthus','Apricot-scented blossom.'],['Lily of the valley','Bright, soapy-clean sweetness.']]],
+ ['Stone fruit','Orchard fruit warmed in the sun.',[['Ripe peach','Juicy, downy sweetness.'],['Dried apricot','Concentrated, tangy and chewy.']]],
+ ['Roasted','Charcoal-fired depth and toasted sugar.',[['Charcoal','Gentle ember warmth.'],['Toasted sesame','Nutty and oily with a sweet finish.'],['Wet slate','Cool minerality from high-mountain rock.']]]]},
+{n:'Black',c:'#a8442f',liq:'#b5502f',temp:'95–100°C',time:'4 min',secs:240,d:'Fully oxidised for depth, malt and colour: the tea most people mean by “tea”.',f:[
+ ['Malty','Bread, biscuit and baked grain.',[['Dark malt','Deep, roasty cereal richness.'],['Biscuit crust','Buttery, toasted edges.']]],
+ ['Fruity','Dark fruit and vine from careful oxidation.',[['Blackcurrant','Tart, musky and juicy.'],['Muscatel','Grapey sweetness of a fine Darjeeling.'],['Dried fig','Jammy, seedy and honeyed.']]],
+ ['Cocoa','Chocolate, treacle and roast.',[['Dark chocolate','Bittersweet and drying.'],['Molasses','Dark, sticky sweetness.']]],
+ ['Smoky','Fire-dried leaf and resinous wood.',[['Pine smoke','Campfire resin, the signature of Lapsang.'],['Campfire','Warm ash and toasted wood.'],['Dried longan','Sweet, smoky fruit on the finish.']]]]},
+{n:'Pu-erh',c:'#6b4a3a',liq:'#7a4a30',temp:'95–100°C',time:'1 min',secs:60,d:'Post-fermented and aged, often pressed into cakes: it tastes of cellar, forest and years.',f:[
+ ['Earthy','Damp ground, roots and rain.',[['Forest floor','Leaf litter and cool shade.'],['Petrichor','The smell of rain on dry earth.'],['Porcini','Meaty, woodsy umami.']]],
+ ['Woody','Resin, bark and aged timber.',[['Aged cedar','Sweet pencil-shaving warmth.'],['Camphor','Cooling, medicinal and clean.'],['Sandalwood','Creamy, incense-like softness.']]],
+ ['Sweet','Dark sugars that build over years.',[['Jujube','Date-like, tangy and syrupy.'],['Brown sugar','Deep, soft and toffee-ish.'],['Dried date','Sticky, mellow sweetness.']]],
+ ['Aged','The character of time itself.',[['Old books','Paper, dust and quiet rooms.'],['Leather','Supple, warm and slightly animal.'],['Tobacco leaf','Sweet, cured and mellow.']]]]},
+{n:'Herbal',c:'#8c5a86',liq:'#a3506a',temp:'100°C',time:'5 min',secs:300,d:'Tisanes: flowers, roots, leaves and fruit. No Camellia required, no caffeine invited.',f:[
+ ['Floral','Petals and blooms steeped whole.',[['Rose petal','Soft, perfumed and gently astringent.'],['Hibiscus','Tart, ruby and cranberry-bright.'],['Lavender','Herbal, soapy and calming.']]],
+ ['Minty','Cool leaves that clear the palate.',[['Spearmint','Sweet, rounded mint.'],['Peppermint','Sharp, icy menthol.'],['Lemon balm','Lemon-scented and soothing.']]],
+ ['Citrus','Peel and zest, bright and bitter.',[['Lemon verbena','Sherbet-lemon lift.'],['Orange peel','Oily zest with a bitter finish.'],['Yuzu','Tart, floral and fragrant.']]],
+ ['Root & spice','Warming rhizomes and seeds.',[['Ginger','Spicy heat that lingers.'],['Licorice root','Sweet, anise and cooling.'],['Cardamom','Resinous, citrusy and warm.']]]]}
+];
+
+/* ============================================================ colour helpers */
+function hex(h){return [parseInt(h.substr(1,2),16),parseInt(h.substr(3,2),16),parseInt(h.substr(5,2),16)]}
+function mix(a,b,t){var A=hex(a),B=hex(b),o=A.map(function(v,i){return Math.round(v+(B[i]-v)*t)});return '#'+o.map(function(v){return (v<16?'0':'')+v.toString(16)}).join('')}
+function lum(h){var c=hex(h).map(function(v){v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
+
+/* ============================================================ build the node tree */
+var nodes=[],tea=[],total=0;
+TEAS.forEach(function(t,ti){
+  var tn={name:t.n,depth:1,tea:ti,kids:[],desc:t.d,col:t.c,brew:true,kind:'Tea family',parent:null,w:0};
+  t.f.forEach(function(f){
+    var fn={name:f[0],depth:2,tea:ti,kids:[],desc:f[1],parent:tn,w:0,kind:t.n+' tea · flavour'};
+    f[2].forEach(function(nt){var nn={name:nt[0],depth:3,tea:ti,kids:[],desc:nt[1],parent:fn,w:1,kind:t.n+' · '+f[0]+' · note'};fn.kids.push(nn);fn.w++});
+    tn.kids.push(fn);tn.w+=fn.w;
+  });
+  tea.push(tn);total+=tn.w;
+});
+(function assign(){
+  var a=0;
+  tea.forEach(function(tn){
+    tn.a0=a;tn.a1=a+tn.w/total*TAU;var b=tn.a0;
+    tn.kids.forEach(function(fn){fn.a0=b;fn.a1=b+fn.w/total*TAU;var c=fn.a0;fn.kids.forEach(function(nn){nn.a0=c;nn.a1=c+nn.w/total*TAU;c=nn.a1});b=fn.a1});
+    a=tn.a1;
+  });
+})();
+tea.forEach(function(tn){nodes.push(tn);tn.kids.forEach(function(fn){nodes.push(fn);fn.kids.forEach(function(nn){nodes.push(nn)})})});
+nodes.forEach(function(n,i){
+  n.id=i;var base=TEAS[n.tea].c;
+  n.fill=n.depth===1?base:n.depth===2?mix(base,PAPER,.34):mix(base,PAPER,.6);
+  n.txt=lum(n.fill)>.36?INK:PAPER;
+  n.cur={a0:n.a0,a1:n.a1,o:1};n.tg={a0:n.a0,a1:n.a1,o:1};
+});
+var RAD={1:[124,182],2:[186,266],3:[270,360]};
+
+/* ============================================================ svg */
+var arcsG=$('#arcs');
+function esc(s){return s.replace(/&/g,'&amp;')}
+nodes.forEach(function(n){
+  n.gEl=document.createElementNS('http://www.w3.org/2000/svg','g');
+  n.gEl.setAttribute('class','arc l'+n.depth);n.gEl.setAttribute('role','button');n.gEl.setAttribute('tabindex',n.depth===3?'-1':'0');
+  n.gEl.setAttribute('aria-label',n.name+(n.depth<3?', '+n.kind+'. Press Enter to zoom in.':', '+n.kind+'. Press Enter to select.'));
+  n.pEl=document.createElementNS('http://www.w3.org/2000/svg','path');n.pEl.setAttribute('fill',n.fill);n.pEl.setAttribute('stroke',n.fill);
+  n.tEl=document.createElementNS('http://www.w3.org/2000/svg','text');n.tEl.setAttribute('fill',n.txt);n.tEl.textContent=n.name;
+  n.gEl.appendChild(n.pEl);n.gEl.appendChild(n.tEl);arcsG.appendChild(n.gEl);
+});
+/* natural label widths at 10px */
+nodes.forEach(function(n){try{n.tw=n.tEl.getComputedTextLength()||n.name.length*5.6}catch(e){n.tw=n.name.length*5.6}});
+
+function pt(r,a){return [r*Math.sin(a),-r*Math.cos(a)]}
+function sector(r0,r1,a0,a1){
+  var rc=3,ri=r0+rc,ro=r1-rc,span=a1-a0;
+  if(span<.002)return '';
+  if(span>TAU-.01){
+    return 'M0 '+(-ro)+'A'+ro+' '+ro+' 0 1 1 0 '+ro+'A'+ro+' '+ro+' 0 1 1 0 '+(-ro)+'ZM0 '+(-ri)+'A'+ri+' '+ri+' 0 1 0 0 '+ri+'A'+ri+' '+ri+' 0 1 0 0 '+(-ri)+'Z';
+  }
+  var g=1+rc,ao0=a0+Math.asin(Math.min(1,g/ro)),ao1=a1-Math.asin(Math.min(1,g/ro)),ai0=a0+Math.asin(Math.min(1,g/ri)),ai1=a1-Math.asin(Math.min(1,g/ri));
+  if(ao1<=ao0||ai1<=ai0)return '';
+  var p1=pt(ro,ao0),p2=pt(ro,ao1),p3=pt(ri,ai1),p4=pt(ri,ai0),lf=(ao1-ao0)>Math.PI?1:0,lf2=(ai1-ai0)>Math.PI?1:0;
+  return 'M'+p1[0].toFixed(2)+' '+p1[1].toFixed(2)+'A'+ro+' '+ro+' 0 '+lf+' 1 '+p2[0].toFixed(2)+' '+p2[1].toFixed(2)+'L'+p3[0].toFixed(2)+' '+p3[1].toFixed(2)+'A'+ri+' '+ri+' 0 '+lf2+' 0 '+p4[0].toFixed(2)+' '+p4[1].toFixed(2)+'Z';
+}
+function draw(n){
+  var c=n.cur,r=RAD[n.depth];
+  n.gEl.style.display=c.o<.02?'none':'';
+  n.gEl.setAttribute('opacity',c.o.toFixed(2));
+  n.pEl.setAttribute('d',sector(r[0],r[1],c.a0,c.a1));
+  var span=c.a1-c.a0,mid=(c.a0+c.a1)/2,rm=(r[0]+r[1])/2,thick=r[1]-r[0]-14,arcLen=span*rm;
+  var full=span>TAU-.05,ang=full?0:mid,fs=clamp(Math.min(arcLen*.46,n.depth===1?15:n.depth===2?12.5:11.5),0,17);
+  var need=n.tw*fs/10;
+  if(full){
+    var p=pt(rm,0);n.tEl.setAttribute('transform','translate('+p[0].toFixed(1)+' '+p[1].toFixed(1)+')');
+    n.tEl.style.fontSize=Math.min(fs,15)+'px';n.tEl.style.display='';return;
+  }
+  var deg=ang*180/Math.PI-90,flip=(ang>Math.PI);
+  if(fs<6.2||need>thick+(n.depth===1?10:0)){
+    if(fs>=6.2&&need>thick){fs=Math.max(6.2,fs*thick/need);need=n.tw*fs/10}
+    if(fs<6.2||need>thick+2){n.tEl.style.display='none';return}
+  }
+  n.tEl.style.display='';n.tEl.style.fontSize=fs.toFixed(1)+'px';
+  var q=pt(rm,ang);
+  n.tEl.setAttribute('transform','translate('+q[0].toFixed(1)+' '+q[1].toFixed(1)+') rotate('+(flip?deg+180:deg).toFixed(1)+')');
+}
+
+/* ============================================================ zoom logic */
+var root=null,anim=0,pinned=null,hovered=null,curTea=null;
+function isDesc(n,r){while(n){if(n===r)return true;n=n.parent}return false}
+function targets(){
+  nodes.forEach(function(n){
+    if(!root){n.tg={a0:n.a0,a1:n.a1,o:1};return}
+    if(n===root||isDesc(n,root)){var s=TAU/(root.a1-root.a0);n.tg={a0:(n.a0-root.a0)*s,a1:(n.a1-root.a0)*s,o:1}}
+    else if(isDesc(root,n)){n.tg={a0:0,a1:TAU,o:1}}
+    else{var m=(n.a0+n.a1)/2;n.tg={a0:m,a1:m,o:0}}
+  });
+}
+function animate(){
+  cancelAnimationFrame(anim);
+  var from=nodes.map(function(n){return {a0:n.cur.a0,a1:n.cur.a1,o:n.cur.o}}),t0=performance.now(),D=reduced?1:760;
+  (function f(now){
+    var t=clamp((now-t0)/D,0,1),e=t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+    nodes.forEach(function(n,i){var a=from[i],b=n.tg;n.cur.a0=a.a0+(b.a0-a.a0)*e;n.cur.a1=a.a1+(b.a1-a.a1)*e;n.cur.o=a.o+(b.o-a.o)*e;draw(n)});
+    if(t<1)anim=requestAnimationFrame(f);
+  })(t0);
+  var zoomed=!!root;
+  $('#back').classList.toggle('on',zoomed);
+  nodes.forEach(function(n){var vis=!root||n===root||isDesc(n,root)||isDesc(root,n);n.gEl.setAttribute('tabindex',vis&&(n.depth<3||zoomed)?'0':'-1')});
+  $('#wheel').classList.toggle('zoomedv',zoomed);
+  document.body.classList.toggle('zoomed',zoomed);
+  $('#wheel').classList.toggle('small',window.innerWidth<=860&&!zoomed);
+}
+function zoomTo(n){root=n;hoverOff();targets();animate();if(n)show(n,true);else resetCard()}
+nodes.forEach(function(n){draw(n)});
+
+/* ============================================================ lineage highlight + card */
+var wheel=$('#wheel');
+function lineage(n){var s=[];while(n){s.push(n);n=n.parent}return s}
+function setOn(list,cls){nodes.forEach(function(n){n.gEl.classList.toggle(cls||'on',list.indexOf(n)>=0)})}
+function highlight(n){
+  var l=lineage(n);function down(x){l.push(x);x.kids.forEach(down)}
+  n.kids.forEach(down);setOn(l,'on');wheel.classList.add('dim');
+}
+function clearHl(){wheel.classList.remove('dim');nodes.forEach(function(n){n.gEl.classList.remove('on')})}
+var steepT=0,steepLeft=0,steepTotal=0,steeping=false,demo=false;
+function show(n,keep){
+  var t=TEAS[n.tea];curTea=n.tea;
+  $('#ckind').textContent=n.kind;$('#cname').textContent=n.name;$('#cdesc').textContent=n.desc;
+  $('#cbrew').textContent=t.n+' '+t.temp+' · '+t.time;
+  var liq=$('#liq');liq.setAttribute('fill',t.liq);liq.style.transform='scaleY(0)';
+  requestAnimationFrame(function(){requestAnimationFrame(function(){liq.style.transform='scaleY(.86)'})});
+  $('#hubring').setAttribute('stroke',t.c);
+  $('#steam').setAttribute('class','steam');wheel.classList.add('hot');
+  if(!steeping)setRing(1);
+}
+function resetCard(){
+  hovered=null;$('#ckind').textContent='Hover a segment';$('#cname').textContent='The Tea Wheel';$('#cdesc').textContent='Six families, one leaf. Follow an arc outward to find what is in the cup.';$('#cbrew').innerHTML='&nbsp;';
+  $('#liq').style.transform='scaleY(0)';wheel.classList.remove('hot');curTea=null;if(!steeping)setRing(0);
+}
+function hoverOn(n){hovered=n;highlight(n);show(n)}
+function hoverOff(){hovered=null;if(pinned){highlight(pinned);show(pinned)}else if(root){clearHl();show(root)}else{clearHl();resetCard()}}
+nodes.forEach(function(n){
+  n.gEl.addEventListener('pointerenter',function(e){if(e.pointerType==='touch')return;hoverOn(n)});
+  n.gEl.addEventListener('pointerleave',function(e){if(e.pointerType==='touch')return;hoverOff()});
+  n.gEl.addEventListener('focus',function(){hoverOn(n)});
+  n.gEl.addEventListener('blur',function(){hoverOff()});
+  n.gEl.addEventListener('click',function(){activate(n)});
+  n.gEl.addEventListener('keydown',function(e){
+    if(e.key==='Enter'||e.key===' '){e.preventDefault();activate(n)}
+    else if(e.key==='Escape'||e.key==='Backspace'){if(root){e.preventDefault();back()}}
+    else if(e.key==='ArrowRight'||e.key==='ArrowLeft'){var sib=(n.parent?n.parent.kids:tea).filter(function(x){return x.tg.o>0}),i=sib.indexOf(n),j=(i+(e.key==='ArrowRight'?1:-1)+sib.length)%sib.length;sib[j].gEl.focus();e.preventDefault()}
+    else if(e.key==='ArrowUp'&&n.parent){n.parent.gEl.focus();e.preventDefault()}
+    else if(e.key==='ArrowDown'&&n.kids.length){n.kids[0].gEl.focus();e.preventDefault()}
+  });
+});
+function activate(n){
+  if(n.depth<3){if(root===n)return;pinned=null;zoomTo(n)}
+  else{pinned=pinned===n?null:n;if(pinned){highlight(n);show(n)}else hoverOff()}
+}
+function back(){pinned=null;if(root&&root.depth===2)zoomTo(root.parent);else zoomTo(null)}
+$('#back').addEventListener('click',back);
+window.addEventListener('keydown',function(e){if(e.key==='Escape'&&root&&document.activeElement===document.body)back();if(e.key==='/'&&document.activeElement!==$('#q')){e.preventDefault();$('#q').focus()}});
+
+/* ============================================================ search */
+var q=$('#q');
+function doSearch(){
+  var v=q.value.trim().toLowerCase(),box=$('#search');box.classList.toggle('has',!!v);
+  nodes.forEach(function(n){n.gEl.classList.remove('match')});
+  if(!v){$('#count').textContent='';if(!hovered&&!pinned&&!root)clearHl();return}
+  var hits=nodes.filter(function(n){return n.depth===3&&(n.name.toLowerCase().indexOf(v)>=0||n.desc.toLowerCase().indexOf(v)>=0)});
+  var l=[];hits.forEach(function(h){lineage(h).forEach(function(x){if(l.indexOf(x)<0)l.push(x)});h.gEl.classList.add('match')});
+  $('#count').textContent=hits.length?hits.length+(hits.length>1?' notes match':' note matches'):'No note matches “'+q.value.trim()+'”';
+  if(hits.length){l.forEach(function(x){});setOn(l,'on');wheel.classList.add('dim');
+    if(root&&hits.every(function(h){return !isDesc(h,root)}))zoomTo(null);
+    if(hits.length===1){pinned=hits[0];show(hits[0])}
+  }else clearHl();
+}
+q.addEventListener('input',doSearch);
+$('#qx').addEventListener('click',function(){q.value='';pinned=null;doSearch();hoverOff();q.focus()});
+
+/* ============================================================ steeping timer */
+var CIRC=2*Math.PI*120,ring=$('#hubring');ring.setAttribute('stroke-dasharray',CIRC.toFixed(1));
+function setRing(f){ring.setAttribute('stroke-dashoffset',(CIRC*(1-clamp(f,0,1))).toFixed(1))}
+function fmt(s){s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+':'+(s%60<10?'0':'')+(s%60)}
+function stopSteep(msg){steeping=false;cancelAnimationFrame(steepT);$('#steep').setAttribute('aria-pressed','false');$('#steep').textContent='Steep';if(msg)$('#cbrew').textContent=msg}
+$('#steep').addEventListener('click',function(){
+  if(steeping){stopSteep();if(curTea!=null)$('#cbrew').textContent=TEAS[curTea].n+' '+TEAS[curTea].temp+' · '+TEAS[curTea].time;setRing(curTea!=null?1:0);return}
+  var ti=curTea!=null?curTea:1,t=TEAS[ti];if(curTea==null){show(tea[ti])}
+  steeping=true;steepTotal=t.secs;steepLeft=t.secs;$('#steep').setAttribute('aria-pressed','true');$('#steep').textContent='Stop';
+  var last=performance.now();
+  (function f(now){
+    var dt=(now-last)/1000;last=now;steepLeft-=dt*(demo?20:1);
+    setRing(steepLeft/steepTotal);$('#cbrew').textContent=t.n+' · '+fmt(steepLeft);
+    if(steepLeft<=0){stopSteep(t.n+' · ready — pour');setRing(0);tone();return}
+    steepT=requestAnimationFrame(f);
+  })(last);
+});
+$('#demo').addEventListener('click',function(){demo=!demo;this.setAttribute('aria-pressed',demo?'true':'false')});
+function tone(){try{var A=window.AudioContext||window.webkitAudioContext,c=new A(),o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=880;g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.08,c.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+1.2);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+1.3)}catch(e){}}
+
+/* ============================================================ legend, teapot tip */
+TEAS.forEach(function(t,i){var li=document.createElement('li');li.style.setProperty('--c',t.c);li.innerHTML='<i></i>'+t.n;$('#legend').appendChild(li)});
+var TIPS=['Water off the boil: 80°C is a kettle you forgot for two minutes.','Rinse pu-erh for ten seconds first. It wakes the leaf.','Cold-brew white tea overnight for a sweeter cup.','Use a warm pot. Tea hates a cold start.','Oolong gets better with each infusion — keep the leaves.'];
+var tipI=0,tipT=0;
+$('#pot').addEventListener('click',function(){
+  var p=$('#pot'),t=$('#tip');p.classList.remove('pour');void p.offsetWidth;p.classList.add('pour');
+  t.textContent=TIPS[tipI++%TIPS.length];t.classList.add('on');clearTimeout(tipT);tipT=setTimeout(function(){t.classList.remove('on')},4200);
+});
+window.addEventListener('resize',function(){$('#wheel').classList.toggle('small',window.innerWidth<=860&&!root)});
+$('#wheel').classList.toggle('small',window.innerWidth<=860);
+})();
+</script>
+</body>
+</html>

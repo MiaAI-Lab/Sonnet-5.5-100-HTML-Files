@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thin Film — Soap Bubbles</title>
+<meta name="description" content="Iridescent soap bubbles rendered with a thin-film interference shader in a sunlit room. Push them, pop them, blow new ones.">
+<style>
+:root{
+  --wall-a:#efe7dc;--wall-b:#d9cbb8;
+  --ui:#3a2e24;--ui-soft:rgba(58,46,36,.62);--ui-faint:rgba(58,46,36,.16);
+  --glass:rgba(255,251,244,.58);--glass-line:rgba(58,46,36,.14);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif;
+  --sans:"Avenir Next",Avenir,"Helvetica Neue","URW Gothic","Nimbus Sans",Helvetica,Arial,sans-serif;
+  color-scheme:light;
+}
+body.studio{
+  --ui:#f1eadf;--ui-soft:rgba(241,234,223,.66);--ui-faint:rgba(241,234,223,.2);
+  --glass:rgba(22,19,32,.55);--glass-line:rgba(255,255,255,.14);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;min-height:100vh;min-height:100dvh;background:#ddd0bd;color:var(--ui);font-family:var(--sans);overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;transition:background .8s,color .6s}
+body.studio{background:#0b0a10}
+canvas{position:fixed;left:0;top:0;width:100%;height:100%;display:block}
+#gl{z-index:0;cursor:crosshair}
+#fx{z-index:1;pointer-events:none}
+.sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---------- captions ---------- */
+.cap{position:fixed;z-index:3;left:clamp(18px,3.2vw,44px);top:clamp(16px,3vh,38px);max-width:min(430px,calc(100vw - 36px));pointer-events:none;text-shadow:0 0 18px var(--wall-a)}
+body.studio .cap{text-shadow:0 0 18px rgba(0,0,0,.7)}
+.brand{margin:0;display:flex;align-items:center;gap:12px;font-size:11px;font-weight:600;letter-spacing:.46em;text-transform:uppercase}
+.brand i{display:block;width:26px;height:1px;background:currentColor;opacity:.7}
+.note{margin:10px 0 0;font-family:var(--serif);font-style:italic;font-size:clamp(15px,1.5vw,19px);line-height:1.35;color:var(--ui)}
+.note b{font-weight:600;font-style:normal;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.note2{margin:8px 0 0;font-family:var(--serif);font-size:13px;line-height:1.5;color:var(--ui-soft);max-width:34em}
+
+/* ---------- dock ---------- */
+.dock{position:fixed;z-index:3;left:50%;bottom:clamp(14px,3.4vh,34px);transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:7px 8px 7px 7px;border-radius:999px;background:var(--glass);border:1px solid var(--glass-line);box-shadow:0 18px 40px -22px rgba(30,20,10,.55);transition:background .6s,border-color .6s;touch-action:auto}
+.pillbtn{display:inline-flex;align-items:center;gap:9px;height:42px;padding:0 18px 0 14px;border:0;border-radius:999px;background:var(--ui);color:var(--wall-a);font:600 12px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:transform .3s cubic-bezier(.34,1.56,.64,1),background .5s,color .5s}
+body.studio .pillbtn{background:#f1eadf;color:#15121d}
+.pillbtn:hover{transform:translateY(-1px)}
+.pillbtn:active{transform:scale(.95)}
+.pillbtn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pillbtn .sun{display:none}
+body.studio .pillbtn .sun{display:block}
+body.studio .pillbtn .moon{display:none}
+:focus-visible{outline:2px solid var(--ui);outline-offset:3px}
+.film{display:flex;align-items:center;gap:14px;padding:0 14px 0 16px;height:42px;font-size:11px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;white-space:nowrap}
+.film output{min-width:5.2em;text-align:right;font-family:var(--serif);font-style:italic;font-size:15px;font-weight:400;letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}
+.film input{-webkit-appearance:none;appearance:none;width:clamp(110px,18vw,210px);height:22px;margin:0;background:transparent;cursor:pointer;touch-action:pan-x}
+.film input::-webkit-slider-runnable-track{height:8px;border-radius:8px;background:var(--spectrum,linear-gradient(90deg,#c8a,#8cf,#af8));box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),0 1px 6px rgba(0,0,0,.18)}
+.film input::-moz-range-track{height:8px;border-radius:8px;background:var(--spectrum,linear-gradient(90deg,#c8a,#8cf,#af8));box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+.film input::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:22px;height:22px;margin-top:-7px;border-radius:50%;border:0;background:radial-gradient(circle at 34% 28%,#fff 0 22%,#f3ecff 60%,#d5c9ee 100%);box-shadow:0 2px 8px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.7)}
+.film input::-moz-range-thumb{width:22px;height:22px;border-radius:50%;border:0;background:radial-gradient(circle at 34% 28%,#fff 0 22%,#f3ecff 60%,#d5c9ee 100%);box-shadow:0 2px 8px rgba(0,0,0,.35),0 0 0 1px rgba(255,255,255,.7)}
+.film input:focus-visible{outline:2px solid var(--ui);outline-offset:4px;border-radius:6px}
+
+.hint{position:fixed;z-index:3;right:clamp(18px,3.2vw,44px);bottom:clamp(20px,4.2vh,44px);margin:0;max-width:230px;text-align:right;font-size:11px;font-weight:600;letter-spacing:.22em;line-height:1.9;text-transform:uppercase;color:var(--ui-soft);pointer-events:none;text-shadow:0 0 14px var(--wall-a);transition:opacity 1.2s}
+body.studio .hint{text-shadow:0 0 14px #000}
+.hint kbd{font:inherit;color:var(--ui);letter-spacing:.1em}
+.hint.gone{opacity:0}
+
+/* ---------- fallback (no WebGL): CSS bubbles ---------- */
+.fb{position:fixed;inset:0;z-index:0;display:none;overflow:hidden;background:
+  linear-gradient(112deg,transparent 42%,rgba(255,236,190,.55) 54%,rgba(255,236,190,.55) 72%,transparent 84%),
+  radial-gradient(ellipse at 14% 100%,rgba(70,88,52,.55),transparent 42%),
+  linear-gradient(180deg,var(--wall-a),var(--wall-b));transition:filter .8s}
+body.nogl .fb{display:block}
+body.nogl #gl{display:none}
+body.nogl.studio .fb{filter:brightness(.16) saturate(.8)}
+.fb .bub{position:absolute;border-radius:50%;width:var(--s);height:var(--s);left:var(--x);top:var(--y);cursor:pointer;
+  background:
+    radial-gradient(circle at 30% 24%,rgba(255,255,255,.95) 0 4%,rgba(255,255,255,0) 8%),
+    radial-gradient(circle at 74% 78%,rgba(255,255,255,.4) 0 5%,rgba(255,255,255,0) 9%),
+    radial-gradient(circle at 50% 50%,rgba(255,255,255,0) 50%,rgba(255,110,200,.28) 66%,rgba(110,220,255,.38) 82%,rgba(255,255,255,.7) 100%),
+    conic-gradient(from 20deg,rgba(255,120,200,.12),rgba(120,200,255,.14),rgba(190,255,150,.12),rgba(255,220,120,.14),rgba(255,120,200,.12));
+  box-shadow:inset 0 0 22px rgba(255,255,255,.42),inset 0 0 3px rgba(255,255,255,.7),0 0 16px rgba(255,255,255,.22);
+  animation:fbdrift var(--d) ease-in-out infinite alternate,fbhue 9s linear infinite;transition:transform .35s,opacity .35s}
+.fb .bub.pop{transform:scale(1.35);opacity:0;animation-play-state:paused}
+@keyframes fbdrift{from{translate:0 0}to{translate:var(--dx) var(--dy)}}
+@keyframes fbhue{from{filter:hue-rotate(var(--h0,0deg)) blur(.6px)}to{filter:hue-rotate(calc(var(--h0,0deg) + 360deg)) blur(.6px)}}
+
+@media (max-width:640px){
+  .note2{display:none}
+  .dock{flex-wrap:nowrap;max-width:calc(100vw - 20px);gap:2px;padding:6px}
+  .film{padding:0 8px 0 10px;gap:8px;letter-spacing:.1em}
+  .film>label{display:none}
+  .film input{width:clamp(96px,32vw,170px)}
+  .film output{min-width:4.4em;font-size:14px}
+  .pillbtn{padding:0 14px 0 12px}
+  .hint{left:18px;right:auto;bottom:calc(clamp(14px,3.4vh,34px) + 62px);text-align:left;max-width:60vw;font-size:10px;letter-spacing:.18em}
+  .hint .keys{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .fb .bub{animation-duration:30s,60s}
+  .hint{transition:none}
+}
+</style>
+</head>
+<body>
+<canvas id="gl" role="img" aria-label="Iridescent soap bubbles floating in a softly lit room. Move the pointer to push them, click to pop, press and hold to blow new bubbles."></canvas>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="fb" id="fb" aria-hidden="true"></div>
+
+<header class="cap">
+  <p class="brand"><i></i>Thin Film</p>
+  <p class="note">Interference of light on a <b id="noteNm">500</b>&#8201;nm film</p>
+  <p class="note2">Light bounces off both faces of the soap skin. Where the two returning waves arrive in step a colour blooms; where they cancel, it disappears.</p>
+</header>
+
+<div class="dock" role="group" aria-label="Scene controls">
+  <button class="pillbtn" id="studioBtn" type="button" aria-label="Switch to dark studio lighting">
+    <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/></svg>
+    <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/></svg>
+    <span id="studioLbl">Studio</span>
+  </button>
+  <div class="film"><label for="thick">Film thickness</label><input id="thick" type="range" min="200" max="900" step="5" value="500"><output id="thickOut" for="thick">500 nm</output></div>
+</div>
+
+<p class="hint" id="hint">Move to push · click to pop<br>hold to blow<span class="keys"><br><kbd>B</kbd> blow · <kbd>P</kbd> pop · <kbd>S</kbd> studio</span></p>
+
+<script>
+(function () {
+'use strict';
+
+/* ================================================================
+   Shaders. One full-screen triangle; every bubble is an analytic sphere
+   shaded per pixel: thin-film interference (sin^2 per RGB wavelength on
+   optical path 2 n t cos(theta_t)), Fresnel-weighted reflection of a window
+   soft-box (front face) and its inverted twin (back face), gravity-thinned film
+   with swirling noise, and a hole-growing pop.
+   ================================================================ */
+const VS = 'attribute vec2 aPos;\nvoid main(){ gl_Position = vec4(aPos, 0.0, 1.0); }\n';
+
+const FS = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+#define MAXB __MAXB__
+uniform vec2 uRes;
+uniform float uTime;
+uniform float uN;
+uniform float uStudio;
+uniform float uThick;
+uniform float uCalm;
+uniform vec4 uB[MAXB];
+uniform vec4 uW[MAXB];
+uniform vec4 uP[MAXB];
+
+float hash21(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+vec2 rot(vec2 v, float a){ float c = cos(a), s = sin(a); return vec2(c * v.x - s * v.y, s * v.x + c * v.y); }
+
+/* ---------- blurred interior: wall, slanted sun patch, plant, bokeh ---------- */
+float leaf(vec2 p, float ang, float len, float wid, float bend){
+  vec2 d = rot(p, -ang);
+  float x = d.x / len;
+  if (x < 0.0 || x > 1.0) return 0.0;
+  d.y -= bend * x * x * len;
+  float u = pow(x, 0.85);
+  float w = wid * sin(3.14159265 * u) * (1.0 - 0.2 * u);
+  return smoothstep(-0.02, 0.07, w - abs(d.y)) * smoothstep(0.0, 0.12, x);
+}
+float plant(vec2 p){
+  float m = 0.0;
+  for (int i = 0; i < 9; i++){
+    float fi = float(i);
+    float a = 0.78 + fi * 0.22 + 0.04 * sin(uTime * 0.32 * uCalm + fi * 1.9);
+    float L = 0.30 + 0.22 * fract(sin(fi * 12.9898) * 43758.5453);
+    float Wd = 0.05 + 0.035 * fract(sin(fi * 78.233) * 12345.678);
+    float bend = fi < 4.0 ? -0.16 : 0.16;
+    m = max(m, leaf(p - vec2(0.0, 0.05), a, L, Wd, bend));
+  }
+  vec2 q = p - vec2(0.0, -0.05);
+  float hw = 0.09 + q.y * 0.3;
+  float pot = (1.0 - smoothstep(-0.03, 0.04, abs(q.x) - hw)) * (1.0 - smoothstep(-0.03, 0.04, abs(q.y) - 0.095));
+  return max(m * 0.92, pot);
+}
+vec3 bokeh(vec2 uv, float asp, vec3 tint, float amt){
+  vec3 acc = vec3(0.0);
+  vec2 p = vec2(uv.x * asp, uv.y);
+  for (int i = 0; i < 6; i++){
+    float fi = float(i);
+    vec2 c = vec2(fract(sin(fi * 17.13) * 9375.0) * asp, fract(sin(fi * 7.77) * 4123.0));
+    c += 0.02 * vec2(sin(uTime * 0.05 * uCalm + fi * 2.0), cos(uTime * 0.04 * uCalm + fi * 3.0));
+    float r = 0.05 + 0.06 * fract(sin(fi * 31.7) * 1717.0);
+    float d = length(p - c);
+    float disc = 1.0 - smoothstep(r * 0.86, r, d);
+    float ring = smoothstep(r * 0.72, r * 0.95, d) * disc;
+    acc += tint * (disc * 0.45 + ring * 0.55) * (0.55 + 0.45 * sin(fi * 5.0));
+  }
+  return acc * amt;
+}
+vec3 bgRoom(vec2 uv, float asp){
+  vec3 topC = vec3(0.937, 0.906, 0.863);
+  vec3 botC = vec3(0.851, 0.796, 0.722);
+  vec3 g = mix(botC, topC, smoothstep(0.0, 1.0, uv.y * 0.85 + 0.12));
+  float ra = clamp(asp, 0.9, 1.9);
+  vec2 p = (uv - vec2(0.62, 0.56)) * vec2(ra, 1.0);
+  vec2 s = p;
+  s.x += s.y * 0.60;
+  s = rot(s, -0.10);
+  vec2 dd = abs(s) - vec2(0.33, 0.30);
+  float patch = 1.0 - smoothstep(-0.02, 0.07, max(dd.x, dd.y));
+  float mv = smoothstep(0.008, 0.03, abs(s.x - 0.015));
+  float mh = smoothstep(0.008, 0.03, abs(s.y + 0.03));
+  float lit = patch * (0.6 + 0.4 * mv * mh);
+  vec3 sunC = vec3(1.0, 0.93, 0.78);
+  vec3 c = mix(g * vec3(0.965, 0.955, 0.94), g * 1.02 + sunC * 0.045, lit);
+  c += sunC * 0.025 * exp(-dot(p, p) * 1.6);
+  c += bokeh(uv, asp, vec3(1.0, 0.92, 0.75), 0.03);
+  vec2 pp = vec2(uv.x * asp, uv.y);
+  vec2 base = vec2(min(0.30, 0.22 * asp + 0.05), -0.02);
+  float pl = plant(pp - base);
+  vec3 leafC = mix(vec3(0.27, 0.32, 0.20), vec3(0.46, 0.52, 0.27), lit * 0.8);
+  c = mix(c, leafC, pl * 0.72);
+  c *= 1.0 - 0.20 * smoothstep(0.50, 1.20, length((uv - 0.5) * vec2(asp * 0.85, 1.0)));
+  return c;
+}
+vec3 bgStudio(vec2 uv, float asp){
+  vec2 p = (uv - vec2(0.5, 0.56)) * vec2(asp * 0.9, 1.0);
+  float d = length(p);
+  vec3 c = mix(vec3(0.115, 0.098, 0.150), vec3(0.012, 0.010, 0.022), smoothstep(0.0, 0.95, d));
+  c += vec3(0.05, 0.03, 0.07) * (1.0 - smoothstep(0.0, 0.55, uv.y)) * 0.6;
+  c += bokeh(uv, asp, vec3(0.36, 0.30, 0.55), 0.10);
+  return c;
+}
+
+/* ---------- environment reflected by the bubble ---------- */
+float softRect(vec3 r, vec3 dir, vec2 hs, float soft, out vec2 g){
+  vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), dir));
+  vec3 up = cross(dir, right);
+  float k = dot(r, dir);
+  g = vec2(dot(r, right), dot(r, up)) / max(k, 0.08);
+  vec2 d = abs(g) - hs;
+  float m = 1.0 - smoothstep(-soft, soft, max(d.x, d.y));
+  return m * smoothstep(0.02, 0.2, k);
+}
+vec3 envRoom(vec3 r){
+  vec2 g;
+  float w = softRect(r, normalize(vec3(-0.70, 0.52, 0.49)), vec2(0.42, 0.55), 0.04, g);
+  float bar = 1.0 - smoothstep(0.014, 0.034, abs(g.x));
+  bar = max(bar, 1.0 - smoothstep(0.014, 0.034, abs(g.y - 0.03)));
+  float panes = 1.0 - bar * 0.9;
+  vec3 sky = vec3(1.0, 0.96, 0.88) * 2.3;
+  vec3 wall = vec3(0.95, 0.88, 0.78) * (0.58 + 0.22 * r.y + 0.10 * r.x);
+  vec3 c = mix(wall, sky, w * panes);
+  c += vec3(0.45, 0.32, 0.18) * smoothstep(0.0, 0.9, -r.y) * 0.4;
+  return c;
+}
+vec3 envStudio(vec3 r){
+  vec2 g;
+  float a = softRect(r, normalize(vec3(-0.62, 0.30, 0.72)), vec2(0.30, 0.62), 0.06, g);
+  float b = softRect(r, normalize(vec3(0.72, 0.18, 0.66)), vec2(0.10, 0.70), 0.04, g);
+  float c = softRect(r, normalize(vec3(0.05, 0.86, 0.50)), vec2(0.70, 0.16), 0.05, g);
+  vec3 col = vec3(0.62, 0.52, 0.86) * (0.5 + 0.6 * (r.y * 0.5 + 0.5));
+  col += a * vec3(1.0, 0.94, 0.86) * 3.4;
+  col += b * vec3(0.60, 0.78, 1.00) * 3.0;
+  col += c * vec3(1.00, 0.72, 0.90) * 0.9;
+  return col;
+}
+vec3 env(vec3 r){
+  if (uStudio < 0.002) return envRoom(r);
+  if (uStudio > 0.998) return envStudio(r);
+  return mix(envRoom(r), envStudio(r), uStudio);
+}
+
+/* ---------- thin film ---------- */
+float swirl(vec2 q, float seed){
+  vec2 p = q * 2.1 + seed * 7.3;
+  float t = uTime * 0.16 * uCalm;
+  p += 0.55 * vec2(sin(p.y * 1.7 + t * 1.3 + seed), cos(p.x * 1.5 - t));
+  p += 0.35 * vec2(sin(p.y * 3.1 - t * 1.9), cos(p.x * 2.7 + t * 1.6 + seed * 2.0));
+  return sin(p.x * 1.4 + p.y * 0.9 + t) * 0.5 + sin(p.y * 2.3 - p.x * 1.1 - t * 0.7) * 0.35 + sin(dot(p, vec2(2.1, 3.3)) + t * 1.7) * 0.15;
+}
+float thickness(vec2 q, float seed){
+  return uThick - q.y * 215.0 + swirl(q, seed) * 58.0;
+}
+vec3 filmColor(float t, float cosT){
+  float opd = 2.0 * 1.33 * t * cosT;
+  vec3 s = sin(3.14159265 * opd / vec3(650.0, 550.0, 450.0));
+  vec3 c = s * s;
+  float g = dot(c, vec3(0.3333));
+  return max(mix(vec3(g), c, 1.28), 0.0);
+}
+
+void main(){
+  vec2 frag = gl_FragCoord.xy;
+  vec2 uv = frag / uRes;
+  float asp = uRes.x / uRes.y;
+  vec3 col;
+  if (uStudio < 0.002) col = bgRoom(uv, asp);
+  else if (uStudio > 0.998) col = bgStudio(uv, asp);
+  else col = mix(bgRoom(uv, asp), bgStudio(uv, asp), uStudio);
+  vec3 key = normalize(mix(vec3(-0.70, 0.52, 0.49), vec3(-0.62, 0.30, 0.72), uStudio));
+  for (int i = 0; i < MAXB; i++){
+    if (float(i) >= uN) break;
+    vec4 B = uB[i];
+    vec4 Wv = uW[i];
+    vec4 P = uP[i];
+    vec2 d = frag - B.xy;
+    float R = B.z;
+    if (dot(d, d) > R * R * 1.3) continue;
+    vec2 q = rot(d, -Wv.z) / (Wv.xy * R);
+    float r2 = dot(q, q);
+    if (r2 > 1.05) continue;
+    float rr = sqrt(r2);
+    float aa = 1.6 / R;
+    float cover = 1.0 - smoothstep(1.0 - aa, 1.0 + aa * 0.5, rr);
+    float nz = sqrt(max(1.0 - r2, 0.0));
+    vec3 n = normalize(vec3(rot(q, Wv.z), nz + 0.0001));
+    float ndv = n.z;
+    float F = 0.03 + 0.97 * pow(1.0 - ndv, 4.0);
+    float cosT = sqrt(max(1.0 - (1.0 - ndv * ndv) / 1.769, 0.0));
+    vec3 fc1 = filmColor(max(thickness(q, B.w), 8.0), cosT);
+    vec3 fc2 = filmColor(max(thickness(vec2(-q.x, q.y), B.w + 3.7), 8.0), cosT);
+    vec3 r1 = vec3(2.0 * ndv * n.x, 2.0 * ndv * n.y, 2.0 * ndv * ndv - 1.0);
+    vec3 r2v = vec3(-r1.x, -r1.y, r1.z);
+    float fr = 0.03 + 1.0 * F;
+    vec3 add = env(r1) * (fc1 * fr * 1.25 + F * 0.24) + env(r2v) * (fc2 * fr * 0.80 + F * 0.08);
+    add += vec3(1.0, 0.97, 0.92) * pow(max(dot(r1, key), 0.0), 700.0) * 2.6;
+    add += vec3(0.9, 0.95, 1.0) * pow(max(dot(r2v, key), 0.0), 500.0) * 0.8;
+    if (P.x >= 0.0){
+      float hr = P.x * 2.7;
+      float dh = length(q - P.yz);
+      float hole = smoothstep(hr - 0.02, hr + 0.10 + P.x * 0.15, dh);
+      float k = (dh - hr) / (0.05 + 0.06 * P.x);
+      float rim = exp(-k * k) * (1.0 - P.x);
+      add += vec3(1.0, 0.95, 0.98) * rim * 1.4;
+      cover *= max(hole, rim * 0.6);
+      cover *= 1.0 - smoothstep(0.82, 1.0, P.x);
+    }
+    add = add / (1.0 + add * 0.5);
+    col = col * (1.0 - cover * (0.025 + 0.10 * F)) + add * cover;
+  }
+  col += (hash21(frag + fract(uTime)) - 0.5) / 255.0;
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+/* ================================================================
+   Setup
+   ================================================================ */
+const $ = s => document.querySelector(s);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const rand = (a, b) => a + Math.random() * (b - a);
+const TAU = Math.PI * 2;
+const body = document.body;
+const glc = $('#gl'), fxc = $('#fx'), fbEl = $('#fb'), hintEl = $('#hint');
+const fx = fxc.getContext('2d');
+let reduce = false;
+try {
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  reduce = mq.matches;
+  const on = e => { reduce = e.matches; };
+  if (mq.addEventListener) mq.addEventListener('change', on); else if (mq.addListener) mq.addListener(on);
+} catch (e) { /* no matchMedia */ }
+const HQ = /[?&]hq\b/.test(location.search);   // fixed full-resolution rendering, no adaptive scaling
+
+let gl = null, prog = null, maxB = 12;
+const U = {};
+const dB = new Float32Array(48), dW = new Float32Array(48), dP = new Float32Array(48);
+
+function compile(type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn('Shader compile failed:', gl.getShaderInfoLog(s)); return null; }
+  return s;
+}
+function initGL() {
+  const opts = { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' };
+  try { gl = glc.getContext('webgl', opts) || glc.getContext('experimental-webgl', opts); } catch (e) { gl = null; }
+  if (!gl) return false;
+  try {
+    const maxVec = gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS) || 16;
+    maxB = clamp(Math.floor((maxVec - 12) / 3), 4, 12);
+    const vs = compile(gl.VERTEX_SHADER, VS);
+    const fs = compile(gl.FRAGMENT_SHADER, FS.replace('__MAXB__', String(maxB)));
+    if (!vs || !fs) return false;
+    prog = gl.createProgram();
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.warn('Program link failed:', gl.getProgramInfoLog(prog)); return false; }
+    gl.useProgram(prog);
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(prog, 'aPos');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    ['uRes', 'uTime', 'uN', 'uStudio', 'uThick', 'uCalm'].forEach(n => { U[n] = gl.getUniformLocation(prog, n); });
+    ['uB', 'uW', 'uP'].forEach(n => { U[n] = gl.getUniformLocation(prog, n + '[0]') || gl.getUniformLocation(prog, n); });
+    glc.addEventListener('webglcontextlost', e => { e.preventDefault(); enterFallback(); });
+    return true;
+  } catch (e) {
+    console.warn('WebGL setup failed:', e);
+    return false;
+  }
+}
+
+/* ================================================================
+   Simulation state
+   ================================================================ */
+let W = 0, H = 0, dpr = 1, scale = 1, maxScale = 1;
+let simT = 0, studio = 0, studioT = 0, thick = 500, thickT = 500, blowDelay = 0;
+const bubbles = [];
+const respawn = [];
+const rings = [], drops = [];
+let blow = null, fxDirty = false;
+const ptr = { x: -999, y: -999, vx: 0, vy: 0, down: false, active: false, blowing: false, type: 'mouse', lt: 0 };
+
+const baseR = () => (W < 640 ? clamp(Math.min(W, H) * 0.165, 46, 90) : clamp(Math.min(W, H) * 0.115, 40, 130));
+const targetCount = () => (W < 640 ? 7 : 9);
+
+function applyScale() {
+  if (!gl) return;
+  glc.width = Math.max(2, Math.round(W * scale));
+  glc.height = Math.max(2, Math.round(H * scale));
+  gl.viewport(0, 0, glc.width, glc.height);
+}
+function resize() {
+  W = Math.max(320, window.innerWidth);
+  H = Math.max(320, window.innerHeight);
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  maxScale = HQ ? Math.min(dpr, 2) : Math.min(dpr, 1.5);
+  if (!scale || scale > maxScale) scale = maxScale;
+  applyScale();
+  fxc.width = Math.round(W * dpr);
+  fxc.height = Math.round(H * dpr);
+  fx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  bubbles.forEach(b => { b.x = clamp(b.x, Math.min(b.r, W / 2), Math.max(W - b.r, W / 2)); if (!b.entering) b.y = clamp(b.y, Math.min(b.r, H / 2), Math.max(H - b.r, H / 2)); });
+}
+
+function makeBubble(x, y, r) {
+  return {
+    x: x, y: y, r: r, vx: 0, vy: 0, seed: Math.random() * 6.28, hph: Math.random() * 100,
+    wq: 0, wv: 0, wang: Math.random() * Math.PI, wph: Math.random() * 6.28,
+    pop: -1, pox: 0, poy: 0, growing: false, target: r, entering: false, age: 0, hold: 0
+  };
+}
+function spawnInitial() {
+  bubbles.length = 0;
+  const n = targetCount();
+  const cols = W < 640 ? 2 : 3, rows = Math.ceil(n / cols);
+  const cw = W / cols, ch = H / rows;
+  const cells = [];
+  for (let i = 0; i < cols * rows; i++) cells.push(i);
+  for (let i = cells.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; const t = cells[i]; cells[i] = cells[j]; cells[j] = t; }
+  for (let i = 0; i < n; i++) {
+    const cx = (cells[i] % cols + .5) * cw, cy = (Math.floor(cells[i] / cols) + .5) * ch;
+    const r = Math.min(baseR() * rand(.55, 1.3), Math.min(cw, ch) * .52);
+    bubbles.push(makeBubble(clamp(cx + rand(-.22, .22) * cw, r, W - r), clamp(cy + rand(-.22, .22) * ch, r, H - r), r));
+  }
+}
+function spawnRising() {
+  if (bubbles.length >= maxB) return;
+  const r = baseR() * rand(.6, 1.3);
+  const b = makeBubble(rand(r, Math.max(r + 1, W - r)), H + r + 30, r);
+  b.vy = -rand(100, 170);
+  b.vx = rand(-30, 30);
+  b.entering = true;
+  bubbles.push(b);
+}
+function liveCount() { let n = 0; for (let i = 0; i < bubbles.length; i++) if (bubbles[i].pop < 0) n++; return n; }
+
+/* ---------- pop: shader hole + 2D rings and droplets ---------- */
+function popBubble(b, px, py) {
+  if (b.pop >= 0) return;
+  const R = b.r;
+  let ox = (px - b.x) / R, oy = -(py - b.y) / R;
+  const l = Math.hypot(ox, oy) || 1;
+  if (l > .98) { ox = ox / l * .98; oy = oy / l * .98; }
+  const c = Math.cos(-b.wang), s = Math.sin(-b.wang);
+  const rx = c * ox - s * oy, ry = s * ox + c * oy;
+  b.pox = rx / (1 - b.wq);
+  b.poy = ry / (1 + b.wq);
+  b.pop = 0;
+  b.growing = false;
+  if (blow === b) blow = null;
+  rings.push({ x: b.x, y: b.y, r0: R * .96, r1: R * 1.34, t: 0, dur: .56, w: 3.8 });
+  rings.push({ x: b.x, y: b.y, r0: R * .9, r1: R * 1.16, t: -.04, dur: .4, w: 1.6 });
+  const n = Math.max(8, Math.round(clamp(Math.round(R * .42), 14, 54) * (reduce ? .5 : 1)));
+  for (let i = 0; i < n; i++) {
+    const a = rand(0, TAU), sp = rand(70, 250) * (.6 + R / 140);
+    drops.push({
+      x: b.x + Math.cos(a) * R * rand(.7, 1), y: b.y + Math.sin(a) * R * rand(.7, 1),
+      vx: Math.cos(a) * sp + b.vx * .5, vy: Math.sin(a) * sp * .9 + b.vy * .5 - 30,
+      r: rand(.9, 3.8), ttl: rand(.55, 1.3), t: 0, h: rand(170, 340)
+    });
+  }
+}
+function pickBubble(x, y) {
+  let best = null, bd = 1e9;
+  for (let i = 0; i < bubbles.length; i++) {
+    const b = bubbles[i];
+    if (b.pop >= 0 || b.growing) continue;
+    const d = Math.hypot(x - b.x, y - b.y) - b.r * 1.02;
+    if (d < 0 && d < bd) { bd = d; best = b; }
+  }
+  return best;
+}
+
+/* ---------- blowing new bubbles ---------- */
+function startBlow() {
+  if (liveCount() >= maxB) {
+    const old = bubbles.find(b => b.pop < 0 && !b.growing);
+    if (old) popBubble(old, old.x + old.r * .3, old.y - old.r * .3);
+  }
+  const b = makeBubble(ptr.x, ptr.y, 6);
+  b.growing = true;
+  b.target = baseR() * rand(.6, 1.5);
+  bubbles.push(b);
+  blow = b;
+}
+function releaseBlow(b) {
+  b.growing = false;
+  if (blow === b) blow = null;
+  b.vx = ptr.vx * .6 + rand(-40, 40);
+  b.vy = ptr.vy * .6 - rand(20, 70);
+  b.wv = .8;
+  if (ptr.blowing) blowDelay = .38;
+}
+
+/* ================================================================
+   Physics step
+   ================================================================ */
+function step(dt) {
+  const d = dt * (reduce ? .5 : 1);
+  simT += d;
+  ptr.vx *= Math.exp(-5 * dt);
+  ptr.vy *= Math.exp(-5 * dt);
+  for (let i = respawn.length - 1; i >= 0; i--) if (respawn[i] <= simT) { respawn.splice(i, 1); spawnRising(); }
+  if (ptr.blowing && !blow) { blowDelay -= dt; if (blowDelay <= 0) startBlow(); }
+
+  const n = bubbles.length;
+  for (let i = 0; i < n; i++) {
+    const b = bubbles[i];
+    b.age += d;
+    if (b.pop >= 0) { b.pop += dt / .24; b.x += b.vx * d * .2; b.y += b.vy * d * .2; continue; }
+    if (b.growing) {
+      b.hold += dt;
+      b.x = ptr.x; b.y = ptr.y - b.r * .2;
+      b.r += (b.target - b.r) * Math.min(1, dt * 2.6);
+      b.wv += Math.sin(b.hold * 9) * .35 * dt * 8;
+      b.wq += b.wv * d; b.wv *= .9;
+      if (b.hold > 1.8 || b.r > b.target * .985) releaseBlow(b);
+      continue;
+    }
+    if (b.r < b.target - .4) b.r += (b.target - b.r) * Math.min(1, dt * 3);
+    b.hph += d * .045;
+    const hx = W * (.5 + .4 * Math.sin(b.hph * 1.13 + b.seed * 2.1));
+    const hy = H * (.47 + .32 * Math.sin(b.hph * .91 + b.seed * 3.3));
+    let ax = (hx - b.x) * .16 + 26 * Math.sin(simT * .71 + b.seed * 3.1 + b.y * .004);
+    let ay = (hy - b.y) * .16 + 22 * Math.cos(simT * .57 + b.seed * 2.3 + b.x * .003) - 8;
+    if (ptr.active) {
+      const dx = b.x - ptr.x, dy = b.y - ptr.y, dist = Math.hypot(dx, dy) || 1;
+      const range = b.r + 130;
+      if (dist < range) {
+        const k = 1 - dist / range, f = k * k * 3400;
+        ax += dx / dist * f + ptr.vx * .9 * k;
+        ay += dy / dist * f + ptr.vy * .9 * k;
+        b.wang = Math.atan2(dy, dx);
+        b.wv += k * k * 16 * d;
+      }
+    }
+    b.vx += ax * d;
+    b.vy += ay * d;
+    const damp = Math.exp(-.8 * d);
+    b.vx *= damp; b.vy *= damp;
+    const sp = Math.hypot(b.vx, b.vy);
+    if (sp > 270) { b.vx *= 270 / sp; b.vy *= 270 / sp; }
+    b.x += b.vx * d;
+    b.y += b.vy * d;
+    if (b.entering && b.y < H - b.r * .5) b.entering = false;
+    if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * .55; b.wv += .5; b.wang = 0; }
+    else if (b.x > W - b.r) { b.x = W - b.r; b.vx = -Math.abs(b.vx) * .55; b.wv += .5; b.wang = 0; }
+    if (b.y < b.r) { b.y = b.r; b.vy = Math.abs(b.vy) * .55; b.wv += .5; b.wang = Math.PI / 2; }
+    else if (!b.entering && b.y > H - b.r) { b.y = H - b.r; b.vy = -Math.abs(b.vy) * .55; b.wv += .5; b.wang = Math.PI / 2; }
+    b.wv += (-60 * b.wq - 3.2 * b.wv) * d;
+    b.wq = clamp(b.wq + b.wv * d, -.085, .085);
+  }
+
+  for (let i = 0; i < n; i++) {
+    const a = bubbles[i];
+    if (a.pop >= 0 || a.growing) continue;
+    for (let j = i + 1; j < n; j++) {
+      const c = bubbles[j];
+      if (c.pop >= 0 || c.growing) continue;
+      const dx = c.x - a.x, dy = c.y - a.y, dist = Math.hypot(dx, dy), min = (a.r + c.r) * .97;
+      if (dist < min && dist > .001) {
+        const nx = dx / dist, ny = dy / dist, over = min - dist;
+        const ma = a.r * a.r, mc = c.r * c.r, mt = ma + mc;
+        a.x -= nx * over * (mc / mt); a.y -= ny * over * (mc / mt);
+        c.x += nx * over * (ma / mt); c.y += ny * over * (ma / mt);
+        const rv = (c.vx - a.vx) * nx + (c.vy - a.vy) * ny;
+        if (rv < 0) {
+          const jn = -(1.55) * rv / (1 / ma + 1 / mc);
+          a.vx -= jn * nx / ma; a.vy -= jn * ny / ma;
+          c.vx += jn * nx / mc; c.vy += jn * ny / mc;
+          const imp = Math.min(.9, -rv * .012) * 6;
+          a.wv += imp; c.wv += imp;
+          a.wang = c.wang = Math.atan2(dy, dx);
+        }
+      }
+    }
+  }
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    if (bubbles[i].pop >= 1) {
+      bubbles.splice(i, 1);
+      if (bubbles.length + respawn.length < targetCount()) respawn.push(simT + rand(1.3, 3.2));
+    }
+  }
+}
+
+/* ================================================================
+   Rendering
+   ================================================================ */
+function render() {
+  gl.uniform2f(U.uRes, glc.width, glc.height);
+  gl.uniform1f(U.uTime, simT);
+  gl.uniform1f(U.uStudio, studio);
+  gl.uniform1f(U.uThick, thick);
+  gl.uniform1f(U.uCalm, reduce ? .4 : 1);
+  let n = 0;
+  for (let i = 0; i < bubbles.length && n < maxB; i++) {
+    const b = bubbles[i], o = n * 4;
+    dB[o] = b.x * scale; dB[o + 1] = (H - b.y) * scale; dB[o + 2] = b.r * scale; dB[o + 3] = b.seed;
+    const wq = clamp(b.wq + .01 * Math.sin(simT * 1.9 + b.wph), -.095, .095);
+    dW[o] = 1 - wq; dW[o + 1] = 1 + wq; dW[o + 2] = b.wang; dW[o + 3] = 1;
+    dP[o] = b.pop; dP[o + 1] = b.pox; dP[o + 2] = b.poy; dP[o + 3] = 0;
+    n++;
+  }
+  gl.uniform1f(U.uN, n);
+  gl.uniform4fv(U.uB, dB);
+  gl.uniform4fv(U.uW, dW);
+  gl.uniform4fv(U.uP, dP);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+function drawFx(dt) {
+  if (!rings.length && !drops.length && !(ptr.blowing && ptr.down)) {
+    if (fxDirty) { fx.clearRect(0, 0, W, H); fxDirty = false; }
+    return;
+  }
+  fx.clearRect(0, 0, W, H);
+  fxDirty = true;
+  const dark = studio > .5;
+  for (let i = rings.length - 1; i >= 0; i--) {
+    const g = rings[i];
+    g.t += dt;
+    if (g.t < 0) continue;
+    const k = g.t / g.dur;
+    if (k >= 1) { rings.splice(i, 1); continue; }
+    const e = 1 - Math.pow(1 - k, 3), r = lerp(g.r0, g.r1, e), a = (1 - k) * .9;
+    fx.lineWidth = g.w * (1 - k) + .5;
+    fx.strokeStyle = 'hsla(322,85%,' + (dark ? 78 : 66) + '%,' + (a * .55).toFixed(3) + ')';
+    fx.beginPath(); fx.arc(g.x, g.y, r * 1.012, 0, TAU); fx.stroke();
+    fx.strokeStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
+    fx.beginPath(); fx.arc(g.x, g.y, r, 0, TAU); fx.stroke();
+  }
+  for (let i = drops.length - 1; i >= 0; i--) {
+    const p = drops[i];
+    p.t += dt;
+    const k = p.t / p.ttl;
+    if (k >= 1) { drops.splice(i, 1); continue; }
+    p.vy += 620 * dt;
+    p.vx *= 1 - 1.4 * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    const a = 1 - k * k;
+    fx.beginPath(); fx.arc(p.x, p.y, p.r, 0, TAU);
+    fx.fillStyle = 'hsla(' + p.h.toFixed(0) + ',' + (dark ? 85 : 70) + '%,' + (dark ? 80 : 88) + '%,' + (a * .88).toFixed(3) + ')';
+    fx.fill();
+    if (!dark) { fx.lineWidth = .8; fx.strokeStyle = 'hsla(' + p.h.toFixed(0) + ',35%,40%,' + (a * .32).toFixed(3) + ')'; fx.stroke(); }
+    fx.beginPath(); fx.arc(p.x - p.r * .3, p.y - p.r * .3, Math.max(.4, p.r * .32), 0, TAU);
+    fx.fillStyle = 'rgba(255,255,255,' + (a * .9).toFixed(3) + ')';
+    fx.fill();
+  }
+  if (ptr.blowing && ptr.down) {
+    fx.lineWidth = 2;
+    fx.strokeStyle = dark ? 'rgba(240,232,255,.8)' : 'rgba(58,46,36,.62)';
+    fx.beginPath(); fx.arc(ptr.x, ptr.y + 5, 12, 0, TAU); fx.stroke();
+    fx.beginPath(); fx.moveTo(ptr.x + 9, ptr.y + 14); fx.lineTo(ptr.x + 34, ptr.y + 66); fx.stroke();
+  }
+}
+
+/* ================================================================
+   Input
+   ================================================================ */
+let hintTimer = 0;
+window.addEventListener('pointermove', e => {
+  const now = performance.now();
+  if (ptr.lt) {
+    const dtp = Math.max(8, now - ptr.lt) / 1000;
+    ptr.vx = lerp(ptr.vx, clamp((e.clientX - ptr.x) / dtp, -1600, 1600), .35);
+    ptr.vy = lerp(ptr.vy, clamp((e.clientY - ptr.y) / dtp, -1600, 1600), .35);
+  }
+  ptr.x = e.clientX; ptr.y = e.clientY; ptr.lt = now;
+  ptr.type = e.pointerType || 'mouse';
+  ptr.active = ptr.type === 'mouse' ? true : ptr.down;
+}, { passive: true });
+document.documentElement.addEventListener('mouseleave', () => { if (ptr.type === 'mouse') ptr.active = false; });
+glc.addEventListener('pointerdown', e => {
+  if (e.button > 0) return;
+  ptr.x = e.clientX; ptr.y = e.clientY; ptr.lt = performance.now(); ptr.vx = 0; ptr.vy = 0;
+  ptr.down = true; ptr.active = true; ptr.type = e.pointerType || 'mouse';
+  try { glc.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+  const hit = pickBubble(e.clientX, e.clientY);
+  if (hit) popBubble(hit, e.clientX, e.clientY);
+  else { ptr.blowing = true; blowDelay = .16; }
+  if (!hintTimer) hintTimer = setTimeout(() => hintEl.classList.add('gone'), 4200);
+});
+function endPress() {
+  ptr.down = false;
+  ptr.blowing = false;
+  if (blow) releaseBlow(blow);
+  if (ptr.type !== 'mouse') ptr.active = false;
+}
+glc.addEventListener('pointerup', endPress);
+glc.addEventListener('pointercancel', endPress);
+glc.addEventListener('lostpointercapture', endPress);
+
+window.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === 'b') {
+    if (liveCount() >= maxB) {
+      const old = bubbles.find(x => x.pop < 0 && !x.growing);
+      if (old) popBubble(old, old.x, old.y);
+    }
+    const b = makeBubble(rand(W * .2, W * .8), rand(H * .45, H * .8), 8);
+    b.target = baseR() * rand(.7, 1.4);
+    b.vy = -30;
+    bubbles.push(b);
+  } else if (k === 'p') {
+    const live = bubbles.filter(b => b.pop < 0 && !b.growing);
+    if (live.length) {
+      const b = live[(Math.random() * live.length) | 0];
+      popBubble(b, b.x + rand(-.5, .5) * b.r, b.y + rand(-.5, .5) * b.r);
+    }
+  } else if (k === 's') {
+    setStudio(studioT < .5);
+  }
+});
+
+/* ================================================================
+   Controls
+   ================================================================ */
+const studioBtn = $('#studioBtn'), studioLbl = $('#studioLbl'), thickIn = $('#thick'), thickOut = $('#thickOut'), noteNm = $('#noteNm');
+function setStudio(on) {
+  studioT = on ? 1 : 0;
+  body.classList.toggle('studio', on);
+  studioLbl.textContent = on ? 'Daylight' : 'Studio';
+  studioBtn.setAttribute('aria-label', on ? 'Switch to daylight room lighting' : 'Switch to dark studio lighting');
+}
+studioBtn.addEventListener('click', () => setStudio(studioT < .5));
+function setThick(v) {
+  thickT = v;
+  thickOut.textContent = v + ' nm';
+  noteNm.textContent = String(v);
+  fbEl.style.setProperty('--h0', ((v - 500) * .45).toFixed(0) + 'deg');
+}
+thickIn.addEventListener('input', () => setThick(Number(thickIn.value)));
+function buildSpectrum() {
+  const stops = [];
+  for (let i = 0; i <= 28; i++) {
+    const t = 200 + 700 * i / 28;
+    const c = [650, 550, 450].map(l => {
+      const s = Math.sin(Math.PI * 2 * 1.33 * t / l);
+      return Math.round(clamp(255 * Math.pow(s * s, .8) * .92 + 8, 0, 255));
+    });
+    stops.push('rgb(' + c.join(',') + ') ' + (i / 28 * 100).toFixed(1) + '%');
+  }
+  thickIn.style.setProperty('--spectrum', 'linear-gradient(90deg,' + stops.join(',') + ')');
+}
+try {
+  if (window.matchMedia('(pointer:coarse)').matches) hintEl.innerHTML = 'Drag to push · tap to pop<br>hold to blow';
+} catch (e) { /* ignore */ }
+
+/* ================================================================
+   No-WebGL fallback: CSS bubbles
+   ================================================================ */
+let fbMode = false;
+function makeCssBubble() {
+  const s = Math.round(baseR() * rand(1.3, 2.6));
+  const el = document.createElement('div');
+  el.className = 'bub';
+  el.style.cssText = '--s:' + s + 'px;--x:' + rand(0, Math.max(1, 100 - s / W * 100)).toFixed(1) + '%;--y:' + rand(2, 86).toFixed(1) + '%;--dx:' + rand(-46, 46).toFixed(0) + 'px;--dy:' + rand(-70, 70).toFixed(0) + 'px;--d:' + rand(6, 12).toFixed(1) + 's';
+  el.addEventListener('pointerdown', () => {
+    el.classList.add('pop');
+    setTimeout(() => { el.remove(); setTimeout(() => { if (fbMode) makeCssBubble(); }, 1400); }, 380);
+  });
+  fbEl.appendChild(el);
+}
+function enterFallback() {
+  if (fbMode) return;
+  fbMode = true;
+  gl = null;
+  body.classList.add('nogl');
+  fbEl.textContent = '';
+  const n = W < 640 ? 7 : 10;
+  for (let i = 0; i < n; i++) makeCssBubble();
+  setThick(thickT);
+}
+
+/* ================================================================
+   Main loop
+   ================================================================ */
+let last = 0, raf = 0, ftAvg = 16, lastAdapt = 0, rz = 0;
+function adapt(dtMs, now) {
+  if (dtMs > 250) return;
+  ftAvg = ftAvg * .9 + dtMs * .1;
+  if (HQ || !gl || now - lastAdapt < 1800) return;
+  if (ftAvg > 42 && scale > .55) { scale = Math.max(.55, scale * .82); applyScale(); lastAdapt = now; }
+  else if (ftAvg < 15 && scale < maxScale - .01) { scale = Math.min(maxScale, scale * 1.12); applyScale(); lastAdapt = now; }
+}
+function frame(now) {
+  raf = 0;
+  if (document.hidden) return;
+  const dtMs = last ? now - last : 16;
+  last = now;
+  const dt = Math.min(1 / 30, dtMs / 1000);
+  const ed = Math.min(.25, dtMs / 1000);
+  studio += (studioT - studio) * Math.min(1, ed * 3.2);
+  thick += (thickT - thick) * Math.min(1, ed * 5);
+  step(dt);
+  if (gl) render();
+  drawFx(dt);
+  adapt(dtMs, now);
+  raf = requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && !raf) { last = 0; raf = requestAnimationFrame(frame); }
+});
+window.addEventListener('resize', () => { cancelAnimationFrame(rz); rz = requestAnimationFrame(resize); });
+
+resize();
+if (!initGL()) gl = null;
+resize();
+spawnInitial();
+buildSpectrum();
+setThick(500);
+if (!gl) enterFallback();
+raf = requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

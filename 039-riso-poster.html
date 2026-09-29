@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sundown Sessions — a risograph poster</title>
+<meta name="description" content="An interactive three-ink risograph poster for Sundown Sessions, open-air jazz in Lisbon on August 9. Slide the registration, toggle inks, reprint the sheet and drag the sun.">
+<meta name="theme-color" content="#8d8f92">
+<script>document.documentElement.className+=' js'</script>
+<style>
+:root{
+  --paper:#f3ecd9; --pink:#ff48b0; --blue:#0078bf; --yellow:#ffe800;
+  --desk:#8d8f92; --dark:#141c36; --dim:#4a5068; --line:rgba(20,28,54,.16);
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --cond:Impact,Haettenschweiler,"Franklin Gothic Heavy","Arial Black","Nimbus Sans Narrow","Liberation Sans Narrow","Arial Narrow",sans-serif;
+  --sans:"Helvetica Neue",Helvetica,Arial,"Nimbus Sans","Liberation Sans",sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--desk)}
+body{margin:0;min-height:100vh;min-height:100dvh;color:var(--dark);font-family:var(--sans);-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(90% 70% at 22% 12%,rgba(255,255,255,.34),rgba(255,255,255,0) 60%),
+    radial-gradient(120% 90% at 50% 120%,rgba(30,30,40,.34),rgba(30,30,40,0) 60%),
+    var(--desk);
+  overflow-x:hidden}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2.5px solid var(--blue);outline-offset:3px}
+.hidden{position:absolute;width:0;height:0;overflow:hidden}
+.deskgrain{position:fixed;inset:0;pointer-events:none;opacity:.42;mix-blend-mode:multiply}
+
+/* ================= layout ================= */
+.desk{position:relative;min-height:100vh;min-height:100dvh;max-width:1480px;margin:0 auto;padding:clamp(18px,3vw,44px);
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(290px,340px);gap:clamp(24px,4.5vw,72px);align-items:center}
+.bench{display:grid;place-items:center;min-width:0}
+.stage{position:relative;width:min(calc((100vh - 88px) * .75),100%);width:min(calc((100dvh - 88px) * .75),100%);aspect-ratio:3/4;
+  box-shadow:0 46px 70px -28px rgba(18,18,26,.55),0 12px 20px -6px rgba(18,18,26,.32),0 1px 3px rgba(18,18,26,.4)}
+.tape{position:absolute;z-index:6;width:clamp(64px,11%,104px);height:clamp(22px,3.6%,34px);pointer-events:none;
+  background:linear-gradient(180deg,rgba(236,230,208,.86),rgba(214,206,178,.8));box-shadow:0 2px 5px rgba(20,20,30,.28);
+  clip-path:polygon(0 8%,3% 0,6% 10%,9% 0,100% 0,100% 100%,9% 100%,6% 88%,3% 100%,0 92%)}
+.tape.a{left:-4%;top:1.5%;transform:rotate(-40deg)}
+.tape.b{right:-4%;top:1.5%;transform:rotate(40deg)}
+.poster{position:absolute;inset:0;background:var(--paper);overflow:hidden;isolation:isolate;-webkit-user-select:none;user-select:none}
+.paper{position:absolute;inset:0;pointer-events:none}
+.paper svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+/* ================= inks ================= */
+.ink{position:absolute;inset:0;mix-blend-mode:multiply;will-change:transform;transition:opacity .5s var(--ease);color:var(--c);pointer-events:none;
+  -webkit-mask-repeat:repeat;mask-repeat:repeat}
+.ink.off{opacity:0}
+.js .ink{visibility:hidden}
+.ink svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+.ink.yellow{--c:var(--yellow)} .ink.pink{--c:var(--pink)} .ink.blue{--c:var(--blue)}
+.f{fill:var(--c)} .s{stroke:var(--c)}
+.ttl{font-family:var(--cond);font-weight:900;letter-spacing:-1px}
+.mono{font-family:var(--mono);font-weight:700}
+.cond{font-family:var(--cond);font-weight:900}
+.cssdots{position:absolute;pointer-events:none;
+  background-image:radial-gradient(circle at 50% 50%,var(--c) 0 34%,transparent 36%);background-size:var(--ds,8px) var(--ds,8px)}
+.roller{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.9;
+  background:
+    linear-gradient(90deg,rgba(0,120,191,0) 0,rgba(0,120,191,0) 61%,rgba(0,120,191,.05) 63%,rgba(0,120,191,.03) 66%,rgba(0,120,191,0) 68%),
+    linear-gradient(180deg,rgba(255,72,176,0) 0,rgba(255,72,176,0) 41%,rgba(255,72,176,.05) 44%,rgba(255,72,176,.02) 50%,rgba(255,72,176,0) 53%)}
+.pressbar{position:absolute;left:0;right:0;top:0;height:11%;pointer-events:none;mix-blend-mode:multiply;opacity:0;
+  background:linear-gradient(180deg,rgba(0,0,0,0),var(--c),rgba(0,0,0,0));--c:var(--yellow)}
+.edge{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(90,70,40,.14),inset 0 0 22px rgba(120,90,50,.12)}
+
+/* sun handle */
+.handle{position:absolute;z-index:4;left:0;top:0;border-radius:50%;cursor:grab;touch-action:none;-webkit-tap-highlight-color:transparent}
+.handle:active,.handle.drag{cursor:grabbing}
+.handle:focus-visible{outline:2.5px dashed var(--blue);outline-offset:-4px}
+
+/* ================= console ================= */
+.console{position:relative;padding:22px 22px 20px;background:#f6f0df;color:var(--dark);border-radius:3px;
+  box-shadow:0 30px 50px -26px rgba(18,18,26,.55),0 6px 12px rgba(18,18,26,.22);
+  background-image:linear-gradient(90deg,var(--yellow) 0 33.4%,var(--pink) 33.4% 66.7%,var(--blue) 66.7%);background-size:100% 6px;background-repeat:no-repeat}
+.console::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(90,70,40,.12)}
+.tag{display:flex;justify-content:space-between;gap:10px;margin:6px 0 14px;font:700 10px/1.2 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.console h1{margin:0;font:900 clamp(34px,3.4vw,44px)/.9 var(--cond);letter-spacing:.01em;text-transform:uppercase;color:var(--dark)}
+.console h1 span{color:var(--pink)}
+.console .sub{margin:10px 0 18px;font-size:13.5px;line-height:1.45;color:var(--dim)}
+.ctl{padding:14px 0;border-top:1px dashed var(--line)}
+.ctl .row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.lbl{font:700 10.5px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+output{font:700 13px/1 var(--mono);letter-spacing:.04em;color:var(--dark);font-variant-numeric:tabular-nums}
+.note{margin:9px 0 0;font-size:12.5px;line-height:1.4;color:var(--dim);min-height:2.8em}
+.range{--v:92%;-webkit-appearance:none;appearance:none;width:100%;height:30px;margin:8px 0 0;background:transparent;cursor:pointer;touch-action:pan-y}
+.range::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--pink) var(--v),rgba(20,28,54,.22) var(--v))}
+.range::-moz-range-track{height:2px;background:linear-gradient(90deg,var(--pink) var(--v),rgba(20,28,54,.22) var(--v))}
+.range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;margin-top:-12px;border-radius:50%;border:2px solid var(--blue);
+  background:radial-gradient(circle,var(--pink) 0 3px,transparent 3.5px),linear-gradient(var(--blue),var(--blue)) center/2px 100% no-repeat,linear-gradient(var(--blue),var(--blue)) center/100% 2px no-repeat,#f6f0df;box-shadow:0 2px 6px rgba(20,28,54,.25)}
+.range::-moz-range-thumb{width:22px;height:22px;border-radius:50%;border:2px solid var(--blue);
+  background:radial-gradient(circle,var(--pink) 0 3px,transparent 3.5px),linear-gradient(var(--blue),var(--blue)) center/2px 100% no-repeat,linear-gradient(var(--blue),var(--blue)) center/100% 2px no-repeat,#f6f0df;box-shadow:0 2px 6px rgba(20,28,54,.25)}
+.ticks{display:flex;justify-content:space-between;margin-top:-2px;font:700 9px/1 var(--mono);letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:9px 13px 9px 10px;border:1.5px solid var(--dark);border-radius:99px;background:transparent;cursor:pointer;
+  font:700 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;transition:background-color .3s,color .3s,transform .3s var(--ease)}
+.chip i{width:14px;height:14px;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 1.5px rgba(20,28,54,.35);transition:transform .3s var(--ease)}
+.chip small{font-size:9px;letter-spacing:.06em;color:var(--dim);font-weight:700}
+.chip[aria-pressed="true"]{background:var(--dark);color:#f6f0df}
+.chip[aria-pressed="true"] small{color:rgba(246,240,223,.62)}
+.chip[aria-pressed="false"] i{transform:scale(.55);opacity:.5}
+.chip:hover{transform:translateY(-1px)}
+.chip.y{--c:var(--yellow)}.chip.p{--c:var(--pink)}.chip.b{--c:var(--blue)}
+.big{width:100%;padding:15px 20px;border:0;border-radius:99px;background:var(--pink);color:#fff;cursor:pointer;
+  font:900 20px/1 var(--cond);letter-spacing:.12em;text-transform:uppercase;box-shadow:0 5px 0 #b30f73,0 12px 18px -8px rgba(179,15,115,.6);transition:transform .25s var(--ease),box-shadow .25s var(--ease),background-color .3s}
+.big:hover{transform:translateY(-2px);box-shadow:0 7px 0 #b30f73,0 16px 22px -8px rgba(179,15,115,.6)}
+.big:active{transform:translateY(4px);box-shadow:0 1px 0 #b30f73,0 4px 8px -4px rgba(179,15,115,.6)}
+.big[disabled]{background:#c98cb1;box-shadow:0 5px 0 #a26b8b;cursor:progress}
+.status{margin:12px 0 0;font:700 11px/1.45 var(--mono);letter-spacing:.06em;color:var(--dim);min-height:2.9em}
+.tip{margin:4px 0 0;padding-top:12px;border-top:1px dashed var(--line);font-size:12px;line-height:1.45;color:var(--dim)}
+.tip kbd{font:700 10.5px var(--mono);padding:1px 5px;border:1px solid var(--line);border-radius:3px;background:rgba(255,255,255,.5)}
+.fine{margin:12px 0 0;font:700 9px/1.5 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:rgba(20,28,54,.45)}
+
+@media (max-width:900px){
+  .desk{grid-template-columns:minmax(0,1fr);gap:26px;padding-top:26px;padding-bottom:40px}
+  .stage{width:min(100%,560px)}
+  .console{max-width:560px;width:100%;margin:0 auto}
+}
+@media (prefers-reduced-motion:reduce){
+  .ink,.chip,.big{transition:none}
+}
+</style>
+</head>
+<body>
+<svg class="hidden" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- paper tooth + mottling -->
+    <filter id="pTooth" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="3"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 .38  0 0 0 0 .3  0 0 0 0 .18  0 0 0 -1.5 .85"/>
+    </filter>
+    <filter id="pMottle" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011 0.016" numOctaves="3" seed="14"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 .6  0 0 0 0 .48  0 0 0 0 .28  0 0 0 -1.7 1.02"/>
+    </filter>
+    <filter id="dTooth" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="8"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 .18  0 0 0 0 .18  0 0 0 0 .2  0 0 0 -1.5 .95"/>
+    </filter>
+
+    <!-- the saxophonist, drawn once, leaning back a little; re-used as knock-out and as ink -->
+    <g id="personShape" transform="rotate(-4.5 410 668)">
+      <path d="M371 490 L414 490 L408 660 L378 660 Z"/>
+      <path d="M412 490 L455 490 L470 660 L440 660 Z"/>
+      <ellipse cx="385" cy="668" rx="22" ry="8.5"/>
+      <ellipse cx="460" cy="668" rx="24" ry="8.5"/>
+      <path d="M364 386 C384 368 432 366 452 382 L462 508 L360 508 Z"/>
+      <rect x="396" y="356" width="24" height="28"/>
+      <circle cx="408" cy="333" r="25"/>
+      <path d="M430 330 l11 9 l-11 4z"/>
+      <ellipse cx="408" cy="312" rx="44" ry="7.5" transform="rotate(-5 408 312)"/>
+      <path d="M381 311 C381 288 394 277 408 277 C422 277 435 288 435 311 Z"/>
+      <path d="M372 398 Q356 454 386 468 L470 448" fill="none" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M450 394 Q480 430 487 470" fill="none" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g id="saxShape" transform="rotate(-4.5 410 668)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M430 337 C454 330 472 342 476 366" stroke-width="9"/>
+      <path d="M476 366 L485 552" stroke-width="27"/>
+      <path d="M485 552 C489 608 548 614 553 566" stroke-width="31"/>
+      <path d="M553 566 L567 496" stroke-width="34"/>
+      <path d="M540 520 L556 452 L604 446 L587 526 Z" fill="currentColor" stroke="none"/>
+      <ellipse cx="582" cy="450" rx="35" ry="11.5" transform="rotate(-14 582 450)" fill="currentColor" stroke="none"/>
+    </g>
+    <!-- a slightly fatter twin of the sax: the paper-white "sticker" outline that keeps the brass legible -->
+    <g id="saxRing" transform="rotate(-4.5 410 668)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M430 337 C454 330 472 342 476 366" stroke-width="18"/>
+      <path d="M476 366 L485 552" stroke-width="37"/>
+      <path d="M485 552 C489 608 548 614 553 566" stroke-width="41"/>
+      <path d="M553 566 L567 496" stroke-width="44"/>
+      <path d="M540 520 L556 452 L604 446 L587 526 Z" fill="currentColor" stroke="currentColor" stroke-width="10"/>
+      <ellipse cx="582" cy="450" rx="35" ry="11.5" transform="rotate(-14 582 450)" fill="currentColor" stroke="currentColor" stroke-width="10"/>
+    </g>
+  </defs>
+</svg>
+<svg class="deskgrain" width="100%" height="100%" aria-hidden="true"><rect width="100%" height="100%" filter="url(#dTooth)"/></svg>
+
+<main class="desk">
+  <section class="bench" aria-label="Poster">
+    <div class="stage" id="stage">
+      <span class="tape a" aria-hidden="true"></span><span class="tape b" aria-hidden="true"></span>
+      <div class="poster" id="poster" role="img" aria-label="Risograph poster in pink, blue and yellow ink on cream paper. A saxophonist in a hat plays in front of a striped setting sun above the sea, palm leaves in the corners. Title: Sundown Sessions. Open-air jazz, Lisbon, August 9. Doors 18:00, free entry. Lineup: 18:30 Alfama Brass Club, 19:45 Marisol Vaz Quartet, 21:00 Tiago Serra Trio, 22:15 Ines and the Night Ferry.">
+
+        <div class="paper" aria-hidden="true">
+          <svg viewBox="0 0 900 1200" preserveAspectRatio="none">
+            <rect width="900" height="1200" filter="url(#pMottle)" opacity=".3"/>
+            <rect width="900" height="1200" filter="url(#pTooth)" opacity=".3"/>
+            <g id="fibres" fill="none" stroke-linecap="round"></g>
+          </svg>
+        </div>
+
+        <!-- ================= YELLOW drum ================= -->
+        <div class="ink yellow" id="inkY" aria-hidden="true">
+          <svg viewBox="0 0 900 1200">
+            <defs>
+              <mask id="mHoleY" maskUnits="userSpaceOnUse" x="0" y="0" width="900" height="1200">
+                <rect width="900" height="1200" fill="#fff"/><use href="#personShape" style="fill:#000;stroke:#000"/><use href="#saxRing" style="color:#000;stroke:#000"/>
+              </mask>
+              <mask id="mStripeY" maskUnits="userSpaceOnUse" x="-300" y="-300" width="600" height="600">
+                <rect x="-300" y="-300" width="600" height="600" fill="#fff"/>
+                <path fill="#000" d="M-300 30h600v6h-600zM-300 62h600v9h-600zM-300 96h600v12h-600zM-300 132h600v16h-600zM-300 172h600v21h-600zM-300 216h600v26h-600z"/>
+              </mask>
+              <clipPath id="clipSkyY"><rect x="0" y="112" width="900" height="540"/></clipPath>
+            </defs>
+            <g clip-path="url(#clipSkyY)"><g class="sunG" transform="translate(450 400)"><path id="glowY" class="f" d=""/></g></g>
+            <g mask="url(#mHoleY)"><g class="sunG" transform="translate(450 400)"><g mask="url(#mStripeY)"><circle r="235" class="f"/></g></g></g>
+            <use href="#saxShape" class="f s"/>
+            <g id="starsY" class="f"></g>
+            <path class="f" d="M776 566 l42 72 h-84z"/>
+            <circle class="f" cx="96" cy="404" r="17"/><circle class="f" cx="822" cy="452" r="11"/>
+            <text x="63" y="868" class="ttl f s" font-size="215" textLength="820" lengthAdjust="spacingAndGlyphs" stroke-width="5" style="paint-order:stroke">SUNDOWN</text>
+            <text x="63" y="1004" class="ttl f s" font-size="188" textLength="820" lengthAdjust="spacingAndGlyphs" stroke-width="5" style="paint-order:stroke">SESSIONS</text>
+            <rect class="f" x="492" y="1034" width="222" height="48"/>
+            <g id="regY" class="s" fill="none" stroke-width="2"></g>
+            <g id="speckY" class="f"></g>
+          </svg>
+        </div>
+
+        <!-- ================= PINK drum ================= -->
+        <div class="ink pink" id="inkP" aria-hidden="true">
+          <svg viewBox="0 0 900 1200">
+            <defs>
+              <mask id="mHoleP" maskUnits="userSpaceOnUse" x="0" y="0" width="900" height="1200">
+                <rect width="900" height="1200" fill="#fff"/><use href="#personShape" style="fill:#000;stroke:#000"/><use href="#saxRing" style="color:#000;stroke:#000"/>
+              </mask>
+              <mask id="mStripeP" maskUnits="userSpaceOnUse" x="-300" y="-300" width="600" height="600">
+                <rect x="-300" y="-300" width="600" height="600" fill="#fff"/>
+                <path fill="#000" d="M-300 30h600v6h-600zM-300 62h600v9h-600zM-300 96h600v12h-600zM-300 132h600v16h-600zM-300 172h600v21h-600zM-300 216h600v26h-600z"/>
+              </mask>
+              <mask id="mSaxP" maskUnits="userSpaceOnUse" x="0" y="0" width="900" height="1200">
+                <rect width="900" height="1200" fill="#000"/><use href="#saxShape" style="color:#fff;stroke:#fff"/>
+              </mask>
+              <clipPath id="clipSkyP"><rect x="0" y="112" width="900" height="540"/></clipPath>
+            </defs>
+            <g clip-path="url(#clipSkyP)"><g class="sunG" transform="translate(450 400)"><path id="glowP" class="f" d=""/></g></g>
+            <g mask="url(#mHoleP)"><g class="sunG" transform="translate(450 400)"><g mask="url(#mStripeP)"><path id="sunDotsP" class="f" d=""/></g></g></g>
+            <g mask="url(#mSaxP)"><path id="saxDotsP" class="f" d=""/></g>
+            <path id="frondsP" class="f"/><path id="ribsP" class="s" fill="none" stroke-width="3" stroke-linecap="round"/>
+            <g id="starsP" class="f"></g>
+            <path class="f" d="M122 322 l38 66 h-76z"/>
+            <path class="f" d="M792 262 a44 44 0 0 1 -88 0z"/>
+            <g id="notesP" class="f s"></g>
+            <text x="50" y="855" class="ttl f s" font-size="215" textLength="820" lengthAdjust="spacingAndGlyphs" stroke-width="5" style="paint-order:stroke">SUNDOWN</text>
+            <path class="f" d="M40 58h820v2H40zM40 96h820v3H40zM40 103h820v1.6H40z"/>
+            <text x="500" y="1074" class="cond f" font-size="54" textLength="206" lengthAdjust="spacingAndGlyphs">DOORS 18:00</text>
+            <g class="mono f" font-size="15">
+              <text x="40" y="1076">18:30</text><text x="40" y="1106">19:45</text><text x="40" y="1136">21:00</text><text x="40" y="1166">22:15</text>
+              <text x="40" y="1046" font-size="13" letter-spacing="3">LINEUP</text>
+            </g>
+            <g id="regP" class="s" fill="none" stroke-width="2"></g>
+            <g id="speckP" class="f"></g>
+          </svg>
+          <div class="cssdots" style="left:81.5%;top:10.5%;width:15%;aspect-ratio:1;border-radius:50%;--ds:9px;opacity:.85"></div>
+        </div>
+
+        <!-- ================= BLUE drum ================= -->
+        <div class="ink blue" id="inkB" aria-hidden="true">
+          <svg viewBox="0 0 900 1200">
+            <defs>
+              <mask id="mSkyB" maskUnits="userSpaceOnUse" x="0" y="0" width="900" height="1200">
+                <rect width="900" height="1200" fill="#fff"/><rect x="0" y="52" width="900" height="60" fill="#000"/><circle id="sunHoleB" cx="450" cy="400" r="235" fill="#000"/>
+              </mask>
+              <mask id="mNoSaxB" maskUnits="userSpaceOnUse" x="0" y="0" width="900" height="1200">
+                <rect width="900" height="1200" fill="#fff"/><use href="#saxRing" style="color:#000;stroke:#000"/>
+              </mask>
+            </defs>
+            <g class="mono f" font-size="15.5" letter-spacing="2.6"><text x="40" y="84">LISBOA · 38.72°N 9.14°W</text><text x="450" y="84" text-anchor="middle">OPEN-AIR JAZZ</text><text x="860" y="84" text-anchor="end">AUG 9</text></g>
+            <g mask="url(#mSkyB)"><path id="skyB" class="f" d=""/></g>
+            <path id="frondsB" class="f"/><path id="ribsB" class="s" fill="none" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="112" cy="252" r="34" fill="none" class="s" stroke-width="5"/>
+            <path d="M150 560 l40 70 h-80z" fill="none" class="s" stroke-width="5" stroke-linejoin="round"/>
+            <path d="M708 208 q14 -22 28 0 t28 0 t28 0 t28 0" fill="none" class="s" stroke-width="5" stroke-linecap="round"/>
+            <path d="M40 650h820" class="s" stroke-width="3" fill="none"/>
+            <path d="M292 668h300v13H292z" class="f"/>
+            <path id="wavesB" class="s" fill="none" stroke-width="3" stroke-linecap="round"/>
+            <g mask="url(#mNoSaxB)"><use href="#personShape" class="f s"/></g>
+            <g class="f" transform="rotate(-4.5 410 668)"><circle cx="481" cy="404" r="5"/><circle cx="482" cy="434" r="5"/><circle cx="483" cy="464" r="5"/><circle cx="484" cy="494" r="5"/><circle cx="485" cy="524" r="5"/><circle cx="520" cy="591" r="5"/></g>
+            <g id="notesB" class="f s"></g>
+            <path id="starsB" class="f"/>
+            <text x="50" y="855" class="ttl s" font-size="215" textLength="820" lengthAdjust="spacingAndGlyphs" fill="none" stroke-width="4" transform="translate(-7 -6)">SUNDOWN</text>
+            <text x="50" y="992" class="ttl f s" font-size="188" textLength="820" lengthAdjust="spacingAndGlyphs" stroke-width="5" style="paint-order:stroke">SESSIONS</text>
+            <g class="cond f" font-size="25"><text x="118" y="1076">ALFAMA BRASS CLUB</text><text x="118" y="1106">MARISOL VAZ QUARTET</text><text x="118" y="1136">TIAGO SERRA TRIO</text><text x="118" y="1166">INÊS &amp; THE NIGHT FERRY</text></g>
+            <path d="M40 1052h330v2H40z" class="f"/>
+            <text x="500" y="1124" class="cond f" font-size="54" textLength="206" lengthAdjust="spacingAndGlyphs">FREE ENTRY</text>
+            <text x="500" y="1152" class="mono f" font-size="11.5" letter-spacing="1.6">TERRAÇO DO POENTE · LISBOA</text>
+            <path id="qrB" class="f" d=""/>
+            <text x="450" y="1190" text-anchor="middle" class="mono f" font-size="9.5" letter-spacing="2.4">NO. 137/200 · THREE-COLOUR RISOGRAPH · PRINTED ONE INK AT A TIME</text>
+            <g id="regB" class="s" fill="none" stroke-width="2"></g>
+            <g id="speckB" class="f"></g>
+          </svg>
+          <div class="cssdots" style="left:5.4%;top:38.8%;width:15%;aspect-ratio:1.15;--ds:8px;clip-path:polygon(50% 0,100% 100%,0 100%);opacity:.9"></div>
+        </div>
+
+        <div class="roller" aria-hidden="true"></div>
+        <div class="pressbar" id="pressbar" aria-hidden="true"></div>
+        <div class="edge" aria-hidden="true"></div>
+      </div>
+      <div class="handle" id="handle" role="slider" tabindex="0" aria-label="Sun position. Drag, or use the arrow keys to move the sun; Home to reset" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="Sun centred, above the horizon"></div>
+    </div>
+  </section>
+
+  <aside class="console" aria-label="Press console">
+    <div class="tag"><span>Job 0809 · Sundown Sessions</span><span>3 inks</span></div>
+    <h1>The <span>press</span> room</h1>
+    <p class="sub">A three-drum riso print, fed by hand. Slide the drums out of register, lift an ink, or run the sheet through again.</p>
+
+    <div class="ctl">
+      <div class="row"><label class="lbl" for="reg">Registration</label><output id="regOut" for="reg">Alignment 92%</output></div>
+      <input class="range" id="reg" type="range" min="0" max="100" value="92" step="1" aria-describedby="regNote">
+      <div class="ticks" aria-hidden="true"><span>Sloppy</span><span>Perfect</span></div>
+      <p class="note" id="regNote">Hand-fed — a hair off, the good kind.</p>
+    </div>
+
+    <div class="ctl">
+      <span class="lbl" id="inkLbl">Ink layers</span>
+      <div class="chips" role="group" aria-labelledby="inkLbl">
+        <button type="button" class="chip y" data-ink="Y" aria-pressed="true"><i></i>Yellow <small>1st</small></button>
+        <button type="button" class="chip p" data-ink="P" aria-pressed="true"><i></i>Pink <small>2nd</small></button>
+        <button type="button" class="chip b" data-ink="B" aria-pressed="true"><i></i>Blue <small>3rd</small></button>
+      </div>
+    </div>
+
+    <div class="ctl">
+      <button type="button" class="big" id="reprint">Reprint</button>
+      <p class="status" id="status" role="status" aria-live="polite">Ready — three inks on cream stock.</p>
+    </div>
+
+    <p class="tip">Drag the <b>sun</b> and watch the inks overprint. <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> nudge it when focused, <kbd>Home</kbd> or a double-click puts it back.</p>
+    <p class="fine">Doors 18:00 · Free entry · Terraço do Poente · illustrative event, fictional line-up</p>
+  </aside>
+</main>
+
+<script>
+(function(){
+'use strict';
+var $=function(s,r){return (r||document).querySelector(s)};
+var clamp=function(v,a,b){return Math.min(b,Math.max(a,v))};
+var sst=function(a,b,x){var t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+var reduced=false;try{reduced=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+var TAU=Math.PI*2;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function put(g,html){g.insertAdjacentHTML('beforeend',html)}
+
+/* ============================================================ riso stencil grain: a tileable drop-out mask per drum */
+function grainTile(seed,size,thr){
+  var c=document.createElement('canvas');c.width=c.height=size;var g=c.getContext('2d');
+  if(!g)return '';
+  var im=g.createImageData(size,size),rnd=mulberry32(seed),n=new Float32Array(size*size),b=new Float32Array(size*size),i,x,y,dx,dy;
+  for(i=0;i<n.length;i++)n[i]=rnd();
+  for(y=0;y<size;y++)for(x=0;x<size;x++){var s=0;for(dy=-1;dy<=1;dy++)for(dx=-1;dx<=1;dx++)s+=n[((y+dy+size)%size)*size+((x+dx+size)%size)];b[y*size+x]=s/9}
+  for(i=0;i<n.length;i++){
+    var v=.5*n[i]+.5*((b[i]-.5)*2.7+.5),a=clamp((v-thr)*11,0,1);
+    im.data[i*4]=0;im.data[i*4+1]=0;im.data[i*4+2]=0;im.data[i*4+3]=Math.round(a*255);
+  }
+  g.putImageData(im,0,0);
+  try{return c.toDataURL()}catch(e){return ''}
+}
+[['inkY',71,.075,'0px 0px'],['inkP',72,.08,'93px 41px'],['inkB',73,.085,'37px 121px']].forEach(function(z){
+  var u=grainTile(z[1],256,z[2]);if(!u)return;var el=$('#'+z[0]);
+  var cssU=['u','r','l','('].join('')+'"'+u+'")';
+  el.style.webkitMaskImage=cssU;el.style.maskImage=cssU;
+  el.style.webkitMaskSize='256px 256px';el.style.maskSize='256px 256px';
+  el.style.webkitMaskPosition=z[3];el.style.maskPosition=z[3];
+});
+
+/* ============================================================ halftone helper: one path of dots */
+function dots(fn,o){
+  var a=o.ang*Math.PI/180,c=Math.cos(a),s=Math.sin(a),sp=o.sp,cx=(o.x0+o.x1)/2,cy=(o.y0+o.y1)/2,R=Math.hypot(o.x1-o.x0,o.y1-o.y0)/2+sp,d='',u,v;
+  for(u=-R;u<=R;u+=sp)for(v=-R;v<=R;v+=sp){
+    var x=cx+u*c-v*s,y=cy+u*s+v*c;if(x<o.x0||x>o.x1||y<o.y0||y>o.y1)continue;
+    var k=fn(x,y);if(k<.045)continue;
+    var r=Math.min(sp*.75,sp*.76*Math.sqrt(k));
+    d+='M'+(x-r).toFixed(1)+' '+y.toFixed(1)+'a'+r.toFixed(1)+' '+r.toFixed(1)+' 0 1 0 '+(2*r).toFixed(1)+' 0a'+r.toFixed(1)+' '+r.toFixed(1)+' 0 1 0 '+(-2*r).toFixed(1)+' 0';
+  }
+  return d;
+}
+function starPath(x,y,s){return 'M'+x+' '+(y-s)+'Q'+x+' '+y+' '+(x+s)+' '+y+'Q'+x+' '+y+' '+x+' '+(y+s)+'Q'+x+' '+y+' '+(x-s)+' '+y+'Q'+x+' '+y+' '+x+' '+(y-s)+'Z'}
+
+/* ============================================================ artwork (procedural parts) */
+var SUN={x:450,y:400,r:235,x0:450,y0:400};
+(function build(){
+  var SP=11;
+  /* sun: pink halftone that grows toward the bottom of the disc (local coordinates) */
+  $('#sunDotsP').setAttribute('d',dots(function(x,y){return Math.hypot(x,y)<=237?sst(-70,205,y):0},{x0:-238,y0:-238,x1:238,y1:238,ang:75,sp:SP-1}));
+  /* glow rings around the sun: pink close in, yellow wider and softer */
+  $('#glowP').setAttribute('d',dots(function(x,y){var d=Math.hypot(x,y);if(d<236||y>262)return 0;var t=1-(d-236)/190;return t<=0?0:Math.pow(t,1.8)*.8},{x0:-450,y0:-400,x1:450,y1:262,ang:75,sp:SP}));
+  $('#glowY').setAttribute('d',dots(function(x,y){var d=Math.hypot(x,y);if(d<236||y>262)return 0;var t=1-(d-236)/270;return t<=0?0:Math.pow(t,1.4)*.8},{x0:-450,y0:-400,x1:450,y1:262,ang:15,sp:SP+1}));
+  /* dusk: blue dots thicken toward the top edge, denser in the corners */
+  $('#skyB').setAttribute('d',dots(function(x,y){var t=1-sst(0,300,y);return t*(.55+.3*Math.abs(x-450)/450)*.9},{x0:0,y0:0,x1:900,y1:320,ang:45,sp:SP}));
+  /* brass: a whisper of pink warms the belly of the saxophone */
+  $('#saxDotsP').setAttribute('d',dots(function(x,y){return sst(470,620,y)*.5},{x0:420,y0:320,x1:660,y1:660,ang:75,sp:8}));
+
+  /* palm fronds */
+  function frond(x,y,ang,len,curl,leaf,rib,leaves){
+    var N=18,step=len/N,a=ang*Math.PI/180,da=curl*Math.PI/180/N,pts=[],i,px=x,py=y;
+    for(i=0;i<=N;i++){pts.push([px,py,a]);px+=Math.cos(a)*step;py+=Math.sin(a)*step;a+=da}
+    rib.d+='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1);
+    for(i=1;i<=N;i++)rib.d+='L'+pts[i][0].toFixed(1)+' '+pts[i][1].toFixed(1);
+    for(i=2;i<=N;i++){
+      var p=pts[i],t=i/N,L=leaf*(Math.sin(Math.PI*Math.min(1,t*1.04))*.85+.2)*(1-.3*t),side;
+      for(side=-1;side<=1;side+=2){
+        var b=p[2]+side*(1.12-.4*t),tx=p[0]+Math.cos(b)*L,ty=p[1]+Math.sin(b)*L,mx=(p[0]+tx)/2,my=(p[1]+ty)/2,nx=-Math.sin(b),ny=Math.cos(b),w=L*.15;
+        leaves.d+='M'+p[0].toFixed(1)+' '+p[1].toFixed(1)+'Q'+(mx+nx*w).toFixed(1)+' '+(my+ny*w).toFixed(1)+' '+tx.toFixed(1)+' '+ty.toFixed(1)+'Q'+(mx-nx*w).toFixed(1)+' '+(my-ny*w).toFixed(1)+' '+p[0].toFixed(1)+' '+p[1].toFixed(1)+'Z';
+      }
+    }
+  }
+  var rB={d:''},lB={d:''},rP={d:''},lP={d:''};
+  frond(-30,150,22,350,-16,116,rB,lB);frond(-30,150,50,300,-22,104,rB,lB);frond(-30,150,-2,280,12,90,rB,lB);frond(-24,236,60,230,-14,84,rB,lB);
+  frond(930,170,158,340,16,112,rP,lP);frond(930,170,130,300,22,104,rP,lP);frond(930,170,182,270,-10,90,rP,lP);frond(936,262,118,210,16,80,rP,lP);
+  $('#frondsB').setAttribute('d',lB.d);$('#ribsB').setAttribute('d',rB.d);$('#frondsP').setAttribute('d',lP.d);$('#ribsP').setAttribute('d',rP.d);
+
+  /* stars, notes */
+  var sY='',sP='',sB='',stars=[[86,150,15,0],[188,186,9,1],[300,130,12,2],[610,132,10,1],[730,158,14,0],[840,320,8,2],[70,420,11,1],[840,398,13,2],[150,610,9,0],[770,610,12,1],[560,150,7,0],[382,142,7,1],[812,500,9,0],[54,540,8,2]];
+  stars.forEach(function(s){var p=starPath(s[0],s[1],s[2]);if(s[3]===0)sY+='<path d="'+p+'"/>';else if(s[3]===1)sP+='<path d="'+p+'"/>';else sB+=p})
+  put($('#starsY'),sY);put($('#starsP'),sP);$('#starsB').setAttribute('d',sB);
+  function note(x,y,sc,rot){return '<g transform="translate('+x+' '+y+') rotate('+rot+') scale('+sc+')"><ellipse cx="0" cy="0" rx="9" ry="6.5" transform="rotate(-22)" stroke="none"/><path d="M8 -3 V-46 q16 6 14 24" fill="none" stroke-width="3.6" stroke-linecap="round"/></g>'}
+  put($('#notesP'),note(650,392,1.2,-8)+note(716,330,.9,10));
+  put($('#notesB'),note(676,440,1,6)+note(752,382,1.3,-6)+note(808,320,.85,12));
+
+  /* ripples beside the pier */
+  var w='',row,x;
+  for(row=0;row<3;row++){var yy=666+row*11;for(x=40;x<=270;x+=6)w+=(x===40?'M':'L')+x+' '+(yy+Math.sin(x*.09+row)*3.4).toFixed(1);for(x=612;x<=860;x+=6)w+=(x===612?'M':'L')+x+' '+(yy+Math.sin(x*.09+row*1.3)*3.4).toFixed(1)}
+  $('#wavesB').setAttribute('d',w);
+
+  /* QR-ish block (decorative, not scannable) */
+  (function(){
+    var n=23,x0=724,y0=1026,size=134,cell=size/n,rnd=mulberry32(2026),d='',r,c;
+    function fnd(i,j){return i===0||i===6||j===0||j===6||(i>=2&&i<=4&&j>=2&&j<=4)}
+    for(r=0;r<n;r++)for(c=0;c<n;c++){
+      var on=false;
+      if(r<7&&c<7)on=fnd(r,c);else if(r<7&&c>=n-7)on=fnd(r,c-(n-7));else if(r>=n-7&&c<7)on=fnd(r-(n-7),c);
+      else if((r<8&&c<8)||(r<8&&c>=n-8)||(r>=n-8&&c<8))on=false;
+      else on=rnd()<.5;
+      if(on)d+='M'+(x0+c*cell).toFixed(1)+' '+(y0+r*cell).toFixed(1)+'h'+(cell+.3).toFixed(2)+'v'+(cell+.3).toFixed(2)+'h-'+(cell+.3).toFixed(2)+'z';
+    }
+    $('#qrB').setAttribute('d',d);
+  })();
+
+  /* registration crosses in every drum: they fan apart as the drums drift */
+  ['Y','P','B'].forEach(function(k){
+    var g=$('#reg'+k),h='',pts=[[26,610],[874,610],[26,1174],[874,1174]];
+    pts.forEach(function(p){h+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="8"/><path d="M'+(p[0]-15)+' '+p[1]+'h30M'+p[0]+' '+(p[1]-15)+'v30"/>'});
+    put(g,h);
+  });
+
+  /* stray ink speckles per drum */
+  [['Y',31],['P',47],['B',63]].forEach(function(z){
+    var rnd=mulberry32(z[1]),h='',i;
+    for(i=0;i<34;i++){var x=rnd()*900,y=rnd()*1200,r=.7+rnd()*rnd()*3.2;h+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+r.toFixed(1)+'"/>'}
+    put($('#speck'+z[0]),h);
+  });
+
+  /* paper fibres */
+  (function(){
+    var rnd=mulberry32(88),g=$('#fibres'),h='',i;
+    for(i=0;i<150;i++){
+      var x=rnd()*900,y=rnd()*1200,a=rnd()*TAU,l=6+rnd()*22,cx=x+Math.cos(a)*l*.5+(rnd()-.5)*8,cy=y+Math.sin(a)*l*.5+(rnd()-.5)*8,ex=x+Math.cos(a)*l,ey=y+Math.sin(a)*l;
+      var col=rnd()<.82?(rnd()<.5?'rgba(120,96,58,.20)':'rgba(255,252,240,.6)'):(rnd()<.5?'rgba(255,72,176,.22)':'rgba(0,120,191,.2)');
+      h+='<path d="M'+x.toFixed(1)+' '+y.toFixed(1)+'Q'+cx.toFixed(1)+' '+cy.toFixed(1)+' '+ex.toFixed(1)+' '+ey.toFixed(1)+'" stroke="'+col+'" stroke-width="'+(.6+rnd()*.9).toFixed(2)+'"/>';
+    }
+    put(g,h);
+  })();
+
+  /* deckled edge: a barely-there wobble around the sheet */
+  (function(){
+    var rnd=mulberry32(5),pts=[],i,n=64;
+    function j(){return (rnd()*1.1).toFixed(2)}
+    for(i=0;i<=n;i++)pts.push((i/n*100).toFixed(2)+'% '+j()+'px');
+    for(i=1;i<=n;i++)pts.push('calc(100% - '+j()+'px) '+(i/n*100).toFixed(2)+'%');
+    for(i=n-1;i>=0;i--)pts.push((i/n*100).toFixed(2)+'% calc(100% - '+j()+'px)');
+    for(i=n-1;i>=1;i--)pts.push(j()+'px '+(i/n*100).toFixed(2)+'%');
+    $('#poster').style.clipPath='polygon('+pts.join(',')+')';
+  })();
+})();
+
+/* ============================================================ registration (drum drift) */
+var layers={Y:$('#inkY'),P:$('#inkP'),B:$('#inkB')};
+var BASE={Y:{dx:.42,dy:.9,r:.18},P:{dx:1.0,dy:-.72,r:.34},B:{dx:-.9,dy:.52,r:-.3}};
+var jit={Y:{a:0,s:1},P:{a:0,s:1},B:{a:0,s:1}};
+var align=92,stageEl=$('#stage'),pw=600;
+function amp(){return Math.pow((100-align)/100,1.12)*46}
+function applyReg(){
+  var k=pw/900,A=amp()*k,key;
+  for(key in layers){
+    var b=BASE[key],j=jit[key],ca=Math.cos(j.a),sa=Math.sin(j.a),dx=(b.dx*ca-b.dy*sa)*j.s*A,dy=(b.dx*sa+b.dy*ca)*j.s*A,rot=b.r*j.s*(amp()/46)*2.6;
+    layers[key].style.transform='translate('+dx.toFixed(2)+'px,'+dy.toFixed(2)+'px) rotate('+rot.toFixed(3)+'deg)';
+  }
+  var out=$('#regOut'),mm=(amp()/900*420).toFixed(1);
+  out.textContent='Alignment '+align+'%';
+  var note=align>=100?'Perfect. Suspiciously perfect.':align>=96?'Tight — off by a whisker.':align>=84?'Hand-fed — a hair off, the good kind.':align>=68?'Loose — the drum is tired ('+mm+' mm off).':align>=44?'Sloppy — Saturday-night sloppy.':'Chaos — the ink has opinions.';
+  $('#regNote').textContent=note;
+  $('#reg').style.setProperty('--v',align+'%');
+}
+function measure(){pw=stageEl.getBoundingClientRect().width||600;applyReg();placeHandle()}
+$('#reg').addEventListener('input',function(e){align=+e.target.value;applyReg()});
+if('ResizeObserver' in window)new ResizeObserver(measure).observe(stageEl);else window.addEventListener('resize',measure);
+
+/* ============================================================ ink toggles */
+var inkOn={Y:true,P:true,B:true};
+Array.prototype.forEach.call(document.querySelectorAll('.chip'),function(b){
+  b.addEventListener('click',function(){
+    var k=b.getAttribute('data-ink');inkOn[k]=!inkOn[k];b.setAttribute('aria-pressed',inkOn[k]?'true':'false');
+    layers[k].classList.toggle('off',!inkOn[k]);
+    var n=(inkOn.Y?1:0)+(inkOn.P?1:0)+(inkOn.B?1:0);
+    setStatus(n===3?'All three drums down.':n===0?'No ink at all — a very expensive blank sheet.':n+' of 3 inks on the sheet.');
+  });
+});
+function setStatus(t){$('#status').textContent=t}
+
+/* ============================================================ reprint animation */
+var printing=false,EASE='cubic-bezier(.2,.8,.2,1)',INK_NAME={Y:'Yellow',P:'Pink',B:'Blue'},INK_CSS={Y:'var(--yellow)',P:'var(--pink)',B:'var(--blue)'};
+function runPrint(fresh){
+  if(printing)return;printing=true;var btn=$('#reprint');btn.disabled=true;
+  if(fresh){var key;for(key in jit){jit[key]={a:(Math.random()-.5)*1.5,s:.75+Math.random()*.5}}applyReg()}
+  var order=['Y','P','B'].filter(function(k){return inkOn[k]}),n=order.length,i=0;
+  if(!n){printing=false;btn.disabled=false;setStatus('Nothing to print — switch an ink on.');return}
+  var bar=$('#pressbar'),dur=reduced?1:480,gap=reduced?120:180;
+  function step(){
+    if(i>=n){printing=false;btn.disabled=false;setStatus('Printed — '+n+' ink'+(n>1?'s':'')+', one pass each. Alignment '+align+'%.');return}
+    var k=order[i],el=layers[k];setStatus('Printing '+(i+1)+'/'+n+' — '+INK_NAME[k]+'…');
+    var fin=el.style.transform;
+    el.style.visibility='visible';
+    if(reduced||!el.animate){i++;setTimeout(step,gap);return}
+    var off='translate('+((k==='P'?-1:1)*46)+'px,-38px) rotate('+((k==='B'?-1:1)*3.2)+'deg)';
+    var a=el.animate([
+      {transform:off+' '+fin,clipPath:'inset(0 0 100% 0)',opacity:0},
+      {opacity:1,offset:.12},
+      {transform:fin,clipPath:'inset(0 0 0% 0)',opacity:1}
+    ],{duration:dur,easing:EASE,fill:'both'});
+    bar.style.setProperty('--c',INK_CSS[k]);
+    bar.animate([{transform:'translateY(-100%)',opacity:.55},{transform:'translateY(910%)',opacity:.55},{opacity:0}],{duration:dur,easing:'cubic-bezier(.4,0,.3,1)'});
+    a.finished.then(function(){a.cancel()},function(){});
+    i++;setTimeout(step,dur*.5+gap);
+  }
+  /* the sheet starts blank: every active drum is lifted until its turn */
+  order.forEach(function(k){layers[k].style.visibility='hidden'});
+  step();
+}
+$('#reprint').addEventListener('click',function(){runPrint(true)});
+
+/* ============================================================ drag the sun */
+var handle=$('#handle'),dragging=false,grab={x:0,y:0};
+function setSun(x,y){
+  SUN.x=clamp(x,110,790);SUN.y=clamp(y,150,560);
+  Array.prototype.forEach.call(document.querySelectorAll('.sunG'),function(g){g.setAttribute('transform','translate('+SUN.x.toFixed(1)+' '+SUN.y.toFixed(1)+')')});
+  var h=$('#sunHoleB');h.setAttribute('cx',SUN.x.toFixed(1));h.setAttribute('cy',SUN.y.toFixed(1));
+  placeHandle();
+  handle.setAttribute('aria-valuenow',String(Math.round((SUN.x-110)/680*100)));
+  handle.setAttribute('aria-valuetext',SUN.y>440?'Sun low, near the horizon':SUN.y<260?'Sun high in the sky':'Sun mid-sky');
+}
+function placeHandle(){
+  var k=pw/900,d=SUN.r*2*k;
+  handle.style.width=d+'px';handle.style.height=d+'px';handle.style.transform='translate('+((SUN.x-SUN.r)*k).toFixed(1)+'px,'+((SUN.y-SUN.r)*k).toFixed(1)+'px)';
+}
+function toPoster(e){var r=stageEl.getBoundingClientRect(),k=900/r.width;return {x:(e.clientX-r.left)*k,y:(e.clientY-r.top)*k}}
+handle.addEventListener('pointerdown',function(e){
+  if(e.button!==undefined&&e.button!==0)return;
+  dragging=true;handle.classList.add('drag');try{handle.setPointerCapture(e.pointerId)}catch(err){}
+  var p=toPoster(e);grab={x:SUN.x-p.x,y:SUN.y-p.y};e.preventDefault();
+});
+handle.addEventListener('pointermove',function(e){if(!dragging)return;var p=toPoster(e);setSun(p.x+grab.x,p.y+grab.y)});
+function endDrag(){if(!dragging)return;dragging=false;handle.classList.remove('drag');setStatus('The sun sits '+Math.round(SUN.x/9)+'% across, '+Math.round(SUN.y/12)+'% down.')}
+handle.addEventListener('pointerup',endDrag);handle.addEventListener('pointercancel',endDrag);
+handle.addEventListener('dblclick',function(){glideSun(SUN.x0,SUN.y0)});
+handle.addEventListener('keydown',function(e){
+  var s=e.shiftKey?36:14;
+  if(e.key==='ArrowLeft')setSun(SUN.x-s,SUN.y);else if(e.key==='ArrowRight')setSun(SUN.x+s,SUN.y);
+  else if(e.key==='ArrowUp')setSun(SUN.x,SUN.y-s);else if(e.key==='ArrowDown')setSun(SUN.x,SUN.y+s);
+  else if(e.key==='Home')glideSun(SUN.x0,SUN.y0);else return;
+  e.preventDefault();
+});
+function glideSun(tx,ty){
+  var fx=SUN.x,fy=SUN.y,t0=performance.now(),D=reduced?1:520;
+  (function f(now){var t=clamp((now-t0)/D,0,1),e=1-Math.pow(1-t,3);setSun(fx+(tx-fx)*e,fy+(ty-fy)*e);if(t<1)requestAnimationFrame(f)})(t0);
+}
+
+/* ============================================================ boot */
+setSun(SUN.x,SUN.y);
+measure();
+setTimeout(function(){runPrint(false)},reduced?0:120);
+})();
+</script>
+</body>
+</html>

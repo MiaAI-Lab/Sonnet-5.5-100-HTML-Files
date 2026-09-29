@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flyways — a chord atlas of shorebird migration</title>
+<style>
+:root{
+  --paper:#f5f0e6;
+  --paper-2:#ede6d6;
+  --ink:#26221d;
+  --muted:#6e665a;
+  --hair:rgba(38,34,29,.16);
+  --tundra:#56707a;
+  --namer:#c8553d;
+  --camer:#e0a12b;
+  --samer:#6b8f47;
+  --europe:#2f3f8f;
+  --africa:#9a5a2e;
+  --asia:#1f8a8a;
+  --serif:"Bodoni 72","Bodoni MT",Didot,"Didot LT STD","Playfair Display","Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:"Avenir Next",Avenir,"Gill Sans","Gill Sans MT",Optima,Calibri,"Segoe UI",Ubuntu,Cantarell,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box}
+html{color-scheme:light}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);min-height:100vh;min-height:100dvh;
+  background-image:radial-gradient(90% 70% at 30% 20%,rgba(255,252,244,.9),rgba(245,240,230,0) 70%),radial-gradient(80% 60% at 90% 100%,rgba(224,161,43,.10),rgba(224,161,43,0) 70%)}
+.grain{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:40;opacity:.07;mix-blend-mode:multiply}
+.sc{font-variant-caps:all-small-caps;letter-spacing:.14em}
+
+.page{max-width:1500px;margin:0 auto;padding:clamp(18px,3vw,44px) clamp(16px,3vw,48px) 30px;display:grid;
+  grid-template-columns:minmax(300px,410px) minmax(0,1fr);column-gap:clamp(20px,3.6vw,64px);align-items:start}
+.side{position:sticky;top:clamp(14px,3vw,36px);display:flex;flex-direction:column;gap:22px;min-width:0}
+
+header .kicker{margin:0 0 10px;font-size:13px;color:var(--muted)}
+.brand{display:flex;align-items:flex-end;gap:14px}
+h1{margin:0;font-family:var(--serif);font-weight:400;font-size:clamp(64px,8.6vw,124px);line-height:.86;letter-spacing:-.025em}
+h1 i{font-style:italic;color:var(--namer)}
+.bird{width:clamp(70px,8vw,112px);height:auto;flex:none;margin-bottom:.35em;overflow:visible}
+.bird path,.bird circle{fill:none;stroke:var(--ink);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.bird .dot{fill:var(--ink);stroke:none}
+.bird .draw{stroke-dasharray:var(--len,400);stroke-dashoffset:var(--len,400);animation:drawbird 2.4s var(--ease) .3s forwards}
+@keyframes drawbird{to{stroke-dashoffset:0}}
+.lede{margin:16px 0 0;font-family:var(--serif);font-size:clamp(16px,1.5vw,19px);line-height:1.5;color:#3a352e;max-width:38ch}
+.lede em{color:var(--namer)}
+
+.panel{border-top:1px solid var(--ink);padding-top:14px;display:flex;flex-direction:column;gap:14px}
+.panel h2{margin:0;font-size:12px;font-weight:600;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--ink);border-radius:999px;overflow:hidden;align-self:flex-start;max-width:100%}
+.seg button{appearance:none;border:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;font-variant-caps:all-small-caps;letter-spacing:.13em;min-height:42px;padding:0 16px;cursor:pointer;transition:background .25s,color .25s;white-space:nowrap}
+.seg button+button{border-left:1px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.seg button:not([aria-pressed="true"]):hover{background:rgba(38,34,29,.08)}
+:focus-visible{outline:2px solid var(--europe);outline-offset:3px}
+.monthrow{display:flex;align-items:center;gap:12px}
+.pbtn{appearance:none;flex:none;width:42px;height:42px;border-radius:50%;border:1px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;display:grid;place-items:center;transition:background .25s,color .25s}
+.pbtn:hover{background:var(--ink);color:var(--paper)}
+.pbtn svg{width:16px;height:16px;fill:currentColor}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:0;height:40px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--ink)}
+input[type=range]::-moz-range-track{height:2px;background:var(--ink)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;margin-top:-9px;border-radius:50%;background:var(--namer);border:3px solid var(--paper);box-shadow:0 0 0 1px var(--ink)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--namer);border:3px solid var(--paper);box-shadow:0 0 0 1px var(--ink)}
+.mout{font-size:15px;min-width:5.6em;text-align:right;font-variant-numeric:tabular-nums}
+.spark{width:100%;height:auto;display:block;overflow:visible}
+.spark text{font-family:var(--sans);font-size:9px;fill:var(--muted);letter-spacing:.12em}
+.readout{display:flex;justify-content:space-between;gap:12px;align-items:baseline;font-size:13px;color:var(--muted)}
+.readout b{font-family:var(--serif);font-weight:400;font-size:26px;color:var(--ink);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.lock{min-height:22px;font-size:13px;color:var(--muted);font-style:italic}
+
+.legend{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.legend li{min-width:0}
+.legend button{appearance:none;width:100%;border:0;background:transparent;font:inherit;color:var(--ink);display:flex;align-items:center;gap:9px;padding:6px 6px;min-height:40px;cursor:pointer;text-align:left;border-radius:6px;transition:background .2s}
+.legend button:hover,.legend button[aria-pressed="true"]{background:rgba(38,34,29,.07)}
+.legend .sw{width:14px;height:14px;border-radius:50%;flex:none;background:var(--c)}
+.legend .nm{font-size:13px;font-variant-caps:all-small-caps;letter-spacing:.1em;flex:1;min-width:0;line-height:1.15}
+.legend .tt{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* main chart */
+.main{min-width:0;position:relative}
+.chartWrap{position:relative;width:min(100%,calc((100vh - 60px) * 1.07));aspect-ratio:1220/1140;margin:0 auto}
+@supports (height:100dvh){.chartWrap{width:min(100%,calc((100dvh - 60px) * 1.07))}}
+.chartWrap svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.rib{stroke:var(--paper);stroke-width:2px;transition:opacity .28s ease;cursor:pointer}
+.arc{cursor:pointer;transition:opacity .28s ease}
+.arc:focus{outline:none}
+.arc:focus-visible{stroke:var(--ink);stroke-width:4px}
+.rlabel{font-family:var(--sans);pointer-events:none;transition:opacity .28s ease}
+.rlabel .n{font-size:27px;font-variant-caps:all-small-caps;letter-spacing:.12em;fill:var(--ink)}
+.rlabel .v{font-size:19px;fill:var(--muted);font-family:var(--serif)}
+.mlabel{font-family:var(--sans);font-size:17px;fill:var(--muted);letter-spacing:.12em;text-anchor:middle;dominant-baseline:central}
+.tickring line{stroke:var(--ink);stroke-opacity:.45}
+.tipbox{position:fixed;z-index:30;pointer-events:none;background:var(--ink);color:var(--paper);padding:10px 14px 11px;border-radius:2px;max-width:min(300px,86vw);
+  font-size:14px;line-height:1.35;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;box-shadow:0 10px 30px rgba(38,34,29,.3)}
+.tipbox.on{opacity:1;transform:none}
+.tipbox b{font-family:var(--serif);font-weight:400;font-size:17px;display:block;margin-bottom:2px}
+.tipbox small{display:block;color:rgba(245,240,230,.72);font-size:12px;letter-spacing:.04em}
+.tipbox .chipc{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:0}
+
+.tablewrap{display:none;padding:8px 0 0;overflow-x:auto}
+.tablewrap.on{display:block}
+.chartWrap.off{display:none}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums;min-width:640px}
+caption{text-align:left;font-family:var(--serif);font-size:20px;padding:0 0 12px}
+caption small{display:block;font-family:var(--sans);font-size:12px;color:var(--muted);margin-top:4px}
+th,td{padding:10px 10px;border-bottom:1px solid var(--hair);text-align:right}
+thead th{font-size:11px;font-weight:600;font-variant-caps:all-small-caps;letter-spacing:.12em;color:var(--muted);vertical-align:bottom}
+tbody th{text-align:left;font-weight:500;white-space:nowrap}
+tbody th span{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+td.s{background:rgba(107,143,71,.14)}
+td.a{background:rgba(200,85,61,.12)}
+td.z{color:rgba(38,34,29,.28)}
+tr.on th,tr.on td{background-image:linear-gradient(rgba(38,34,29,.05),rgba(38,34,29,.05))}
+.tkey{font-size:12px;color:var(--muted);margin-top:10px;display:flex;gap:16px;flex-wrap:wrap}
+.tkey i{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:6px}
+.foot{grid-column:1/-1;margin-top:26px;padding-top:12px;border-top:1px solid var(--hair);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+
+@media (max-width:980px){
+  .page{grid-template-columns:minmax(0,1fr);row-gap:22px}
+  .side{position:static}
+  .main{order:2}
+  .side.a{order:1}
+  .side.b{order:3}
+  .foot{order:9}
+  .chartWrap{width:100%}
+  .rlabel,.mlabel{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .bird .draw{animation:none;stroke-dashoffset:0}
+  .rib,.arc,.rlabel,.tipbox{transition:none}
+}
+</style>
+</head>
+<body>
+<svg class="grain" aria-hidden="true" focusable="false"><filter id="gr" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .25  0 0 0 0 .18  0 0 0 1.1 -.15"/></filter><rect width="100%" height="100%" filter="url(#gr)"/></svg>
+
+<div class="page">
+  <div class="side a">
+    <header>
+      <p class="kicker sc">An atlas of shorebird migration · Illustrative data</p>
+      <div class="brand">
+        <h1>Fly<i>ways</i></h1>
+        <svg class="bird" viewBox="0 0 100 64" role="img" aria-label="Hand-drawn line icon of a sandpiper in flight">
+          <path class="draw" style="--len:330" pathLength="330" d="M4 27 L14 26 C18 17 28 14 37 21 C48 11 64 9 80 19 C66 22 56 28 49 35 C39 46 22 43 14 26 M31 42 L27 57 M36 42 L39 57"/>
+          <circle class="dot" cx="17" cy="24" r="1.4"/>
+        </svg>
+      </div>
+      <p class="lede" id="lede">Each year millions of shorebirds trace the same seven invisible corridors between tundra nests and southern shores. This is their ledger, drawn as <em>chords</em>: the wider the ribbon, the more birds on the wing.</p>
+    </header>
+
+    <section class="panel" aria-label="Season and month controls">
+      <h2 class="sc">Season</h2>
+      <div class="seg" role="group" aria-label="Season">
+        <button type="button" id="bSpring" aria-pressed="false">Spring ↑ north</button>
+        <button type="button" id="bAutumn" aria-pressed="false">Autumn ↓ south</button>
+      </div>
+      <h2 class="sc">Month</h2>
+      <div class="monthrow">
+        <button class="pbtn" type="button" id="bPlay" aria-label="Pause the year"><svg id="playIco" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h4v16H6zM14 4h4v16h-4z"/></svg></button>
+        <input type="range" id="month" min="0" max="11.99" step="0.01" value="4" aria-label="Month of the year" aria-valuetext="May">
+        <output class="mout sc" id="mout" for="month">May</output>
+      </div>
+      <svg class="spark" id="spark" viewBox="0 0 300 74" role="img" aria-label="Seasonal activity curves: spring northbound peaks in May, autumn southbound peaks in September"></svg>
+      <div class="readout"><span id="phase" class="sc">Spring · northbound</span><span>on the wing <b id="fly">0</b></span></div>
+      <div class="lock" id="lock" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <main class="main">
+    <div class="chartWrap" id="chartWrap">
+      <svg id="chart" viewBox="-110 -70 1220 1140" role="group" aria-label="Chord diagram of shorebird migration between seven regions"></svg>
+      <canvas id="fx" aria-hidden="true"></canvas>
+    </div>
+    <div class="tablewrap" id="tableWrap"></div>
+  </main>
+
+  <div class="side b">
+    <section class="panel" aria-label="View and legend">
+      <h2 class="sc">View</h2>
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" id="vChart" aria-pressed="true">Diagram</button>
+        <button type="button" id="vTable" aria-pressed="false">Table</button>
+      </div>
+      <h2 class="sc">Regions · total flow</h2>
+      <ul class="legend" id="legend"></ul>
+    </section>
+  </div>
+
+  <footer class="foot"><span>Illustrative data. Counts are invented for the purpose of design, in thousands of birds per annual passage.</span><span>Hover a ribbon or arc · click to lock · Esc to release</span></footer>
+</div>
+<div class="tipbox" id="tip" role="status"></div>
+
+<script>
+(function(){
+'use strict';
+var reduce=false;try{reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+var PI=Math.PI,TAU=PI*2;
+function clamp(x,a,b){return x<a?a:x>b?b:x;}
+function lerp(a,b,t){return a+(b-a)*t;}
+
+/* ---------------- data ---------------- */
+var REG=[
+ {n:'Arctic Tundra',c:'#56707a'},
+ {n:'North America',c:'#c8553d'},
+ {n:'Central America',c:'#e0a12b'},
+ {n:'South America',c:'#6b8f47'},
+ {n:'Europe',c:'#2f3f8f'},
+ {n:'Africa',c:'#9a5a2e'},
+ {n:'Asia-Pacific',c:'#1f8a8a'}
+];
+/* [from,to,thousands,season] S = northbound spring passage, A = southbound autumn passage */
+var FL=[
+ [0,1,420,'A'],[0,2,160,'A'],[0,3,1200,'A'],[0,4,640,'A'],[0,5,880,'A'],[0,6,980,'A'],
+ [1,0,380,'S'],[1,2,340,'A'],[1,3,520,'A'],
+ [2,0,140,'S'],[2,1,300,'S'],[2,3,210,'A'],
+ [3,0,1080,'S'],[3,1,460,'S'],[3,2,190,'S'],
+ [4,0,610,'S'],[4,5,360,'A'],
+ [5,0,820,'S'],[5,4,520,'S'],
+ [6,0,930,'S']
+];
+var N=REG.length,MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var flows=FL.map(function(f,i){return {id:i,from:f[0],to:f[1],v:f[2],s:f[3]};});
+var out=[],inn=[],tot=[],maxF=0,sumA=0,sumS=0,i,j;
+for(i=0;i<N;i++){out[i]=0;inn[i]=0;}
+flows.forEach(function(f){out[f.from]+=f.v;inn[f.to]+=f.v;maxF=Math.max(maxF,f.v);if(f.s==='A')sumA+=f.v;else sumS+=f.v;});
+for(i=0;i<N;i++)tot[i]=out[i]+inn[i];
+function fmt(v){
+  if(v>=1000){var m=v/1000,s=m.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');return s+'M';}
+  return v+'k';
+}
+function fmtBirds(v){return fmt(v)+' birds';}
+
+/* ---------------- geometry ---------------- */
+var CX=500,CY=500,R_OUT=402,R_IN=374,R_TICK=366,R_CH=322,GAP=.05;
+var total=0;for(i=0;i<N;i++)total+=tot[i];
+var kAng=(TAU-GAP*N)/total,start=[],end=[],a=-PI/2+GAP/2;
+for(i=0;i<N;i++){start[i]=a;end[i]=a+tot[i]*kAng;a=end[i]+GAP;}
+/* allocate sub-spans (clockwise, neighbours placed toward the neighbouring arc) */
+var span={};
+for(i=0;i<N;i++){
+  var cur=start[i];
+  for(var q=1;q<N;q++){
+    j=((i-q)%N+N)%N;
+    flows.forEach(function(f){
+      if(f.from===i&&f.to===j){span[f.id+':s']=[cur,cur+f.v*kAng];cur+=f.v*kAng;}
+    });
+    flows.forEach(function(f){
+      if(f.from===j&&f.to===i){span[f.id+':t']=[cur,cur+f.v*kAng];cur+=f.v*kAng;}
+    });
+  }
+}
+function P(r,ang){return [CX+r*Math.cos(ang),CY+r*Math.sin(ang)];}
+function f1(n){return n.toFixed(1);}
+function arcPath(a0,a1,r0,r1){
+  var lg=(a1-a0)>PI?1:0,p0=P(r1,a0),p1=P(r1,a1),p2=P(r0,a1),p3=P(r0,a0);
+  return 'M'+f1(p0[0])+' '+f1(p0[1])+'A'+r1+' '+r1+' 0 '+lg+' 1 '+f1(p1[0])+' '+f1(p1[1])+'L'+f1(p2[0])+' '+f1(p2[1])+'A'+r0+' '+r0+' 0 '+lg+' 0 '+f1(p3[0])+' '+f1(p3[1])+'Z';
+}
+function ribPath(f){
+  var s=span[f.id+':s'],t=span[f.id+':t'];
+  var s0=P(R_CH,s[0]),s1=P(R_CH,s[1]),t0=P(R_CH,t[0]),t1=P(R_CH,t[1]);
+  var lgS=(s[1]-s[0])>PI?1:0,lgT=(t[1]-t[0])>PI?1:0;
+  return 'M'+f1(s0[0])+' '+f1(s0[1])+'A'+R_CH+' '+R_CH+' 0 '+lgS+' 1 '+f1(s1[0])+' '+f1(s1[1])+
+    'Q'+CX+' '+CY+' '+f1(t0[0])+' '+f1(t0[1])+'A'+R_CH+' '+R_CH+' 0 '+lgT+' 1 '+f1(t1[0])+' '+f1(t1[1])+
+    'Q'+CX+' '+CY+' '+f1(s0[0])+' '+f1(s0[1])+'Z';
+}
+
+/* ---------------- build the chart ---------------- */
+var svg=document.getElementById('chart');
+var h='<defs>';
+flows.forEach(function(f){
+  var s=span[f.id+':s'],t=span[f.id+':t'];
+  var ps=P(R_CH,(s[0]+s[1])/2),pt=P(R_CH,(t[0]+t[1])/2);
+  h+='<linearGradient id="g'+f.id+'" gradientUnits="userSpaceOnUse" x1="'+f1(ps[0])+'" y1="'+f1(ps[1])+'" x2="'+f1(pt[0])+'" y2="'+f1(pt[1])+'"><stop offset="0" stop-color="'+REG[f.from].c+'"/><stop offset="1" stop-color="'+REG[f.to].c+'"/></linearGradient>';
+});
+h+='</defs>';
+/* concentric hairlines */
+h+='<g fill="none" stroke="#26221d" stroke-opacity=".10">';
+[80,160,240,R_CH].forEach(function(r){h+='<circle cx="'+CX+'" cy="'+CY+'" r="'+r+'"/>';});
+h+='</g>';
+/* ribbons, largest first so small ones stay on top */
+var order=flows.slice().sort(function(x,y){return y.v-x.v;});
+h+='<g id="ribs">';
+order.forEach(function(f){
+  h+='<path class="rib" vector-effect="non-scaling-stroke" data-f="'+f.id+'" fill="url(#g'+f.id+')" d="'+ribPath(f)+'"><title>'+REG[f.from].n+' → '+REG[f.to].n+': '+fmtBirds(f.v)+'</title></path>';
+});
+h+='</g>';
+/* tick ring with months */
+h+='<g class="tickring">';
+for(i=0;i<48;i++){
+  var ang=-PI/2+i/48*TAU,maj=i%4===0,p0=P(R_TICK,ang),p1=P(R_TICK-(maj?14:7),ang);
+  h+='<line x1="'+f1(p0[0])+'" y1="'+f1(p0[1])+'" x2="'+f1(p1[0])+'" y2="'+f1(p1[1])+'" stroke-width="'+(maj?1.6:1)+'"/>';
+}
+h+='</g>';
+for(i=0;i<12;i++){
+  var am=-PI/2+(i+.5)/12*TAU,pm=P(R_TICK-32,am);
+  h+='<text class="mlabel" x="'+f1(pm[0])+'" y="'+f1(pm[1])+'">'+MONTHS[i].toUpperCase()+'</text>';
+}
+/* month marker */
+h+='<g id="mmark"><path id="mtri" d="M500 '+(CY-R_IN+2)+' l-9 -17 h18 z" fill="#26221d"/><circle cx="500" cy="'+(CY-R_IN-24)+'" r="4" fill="#c8553d"/></g>';
+/* region arcs + labels */
+h+='<g id="arcs">';
+for(i=0;i<N;i++){
+  h+='<path class="arc" tabindex="0" role="button" aria-pressed="false" data-r="'+i+'" fill="'+REG[i].c+'" d="'+arcPath(start[i],end[i],R_IN,R_OUT)+'" aria-label="'+REG[i].n+': '+fmt(out[i])+' birds leaving, '+fmt(inn[i])+' arriving. Press to lock selection."></path>';
+}
+h+='</g><g id="labels">';
+for(i=0;i<N;i++){
+  var mid=(start[i]+end[i])/2,pl=P(R_OUT+26,mid),cs=Math.cos(mid),anc=cs>.3?'start':cs<-.3?'end':'middle';
+  var dy=Math.sin(mid)>.6?22:Math.sin(mid)<-.6?-30:-4;
+  h+='<g class="rlabel" data-r="'+i+'" transform="translate('+f1(pl[0])+' '+f1(pl[1]+dy)+')" text-anchor="'+anc+'"><text class="n" y="0">'+REG[i].n+'</text><text class="v" y="24">↑'+fmt(out[i])+'  ↓'+fmt(inn[i])+'</text></g>';
+}
+h+='</g>';
+svg.innerHTML=h;
+var ribEls={},arcEls=[],lblEls=[];
+Array.prototype.forEach.call(svg.querySelectorAll('.rib'),function(e){ribEls[e.getAttribute('data-f')]=e;});
+Array.prototype.forEach.call(svg.querySelectorAll('.arc'),function(e){arcEls[+e.getAttribute('data-r')]=e;});
+Array.prototype.forEach.call(svg.querySelectorAll('.rlabel'),function(e){lblEls[+e.getAttribute('data-r')]=e;});
+var mmark=document.getElementById('mmark'),mtri=document.getElementById('mtri');
+
+/* ---------------- legend ---------------- */
+var legend=document.getElementById('legend'),legBtns=[];
+REG.forEach(function(r,idx){
+  var li=document.createElement('li'),b=document.createElement('button');b.type='button';b.setAttribute('aria-pressed','false');
+  b.innerHTML='<span class="sw" style="--c:'+r.c+'"></span><span class="nm">'+r.n+'</span><span class="tt">'+fmt(tot[idx])+'</span>';
+  b.setAttribute('aria-label',r.n+', total flow '+fmt(tot[idx])+' birds. Toggle isolate.');
+  b.addEventListener('pointerenter',function(){hoverArc(idx);});
+  b.addEventListener('pointerleave',function(){hoverArc(-1);});
+  b.addEventListener('focus',function(){hoverArc(idx);});
+  b.addEventListener('blur',function(){hoverArc(-1);});
+  b.addEventListener('click',function(){toggleLock({k:'r',i:idx});});
+  li.appendChild(b);legend.appendChild(li);legBtns.push(b);
+});
+document.getElementById('lede').innerHTML='Each year some <em>'+(sumA/1000).toFixed(1)+' million</em> shorebirds trace the same seven invisible corridors between tundra nests and southern shores. This is their ledger, drawn as chords: the wider the ribbon, the more birds on the wing.';
+
+/* ---------------- table view ---------------- */
+(function(){
+  var M=[];for(i=0;i<N;i++){M[i]=[];for(j=0;j<N;j++)M[i][j]=null;}
+  flows.forEach(function(f){M[f.from][f.to]=f;});
+  var t='<table><caption>Departures by region, in thousands of birds<small>Rows depart, columns arrive. Green cells are spring (northbound) passages, terracotta cells autumn (southbound). Illustrative data.</small></caption><thead><tr><th scope="col" style="text-align:left">From \\ To</th>';
+  for(j=0;j<N;j++)t+='<th scope="col">'+REG[j].n+'</th>';
+  t+='<th scope="col">Total out</th></tr></thead><tbody>';
+  for(i=0;i<N;i++){
+    t+='<tr data-r="'+i+'"><th scope="row"><span style="background:'+REG[i].c+'"></span>'+REG[i].n+'</th>';
+    for(j=0;j<N;j++){var f=M[i][j];t+=f?'<td class="'+(f.s==='S'?'s':'a')+'">'+f.v.toLocaleString('en-US')+'</td>':'<td class="z">·</td>';}
+    t+='<td><strong>'+out[i].toLocaleString('en-US')+'</strong></td></tr>';
+  }
+  t+='</tbody></table><div class="tkey"><span><i style="background:rgba(107,143,71,.35)"></i>Spring, northbound</span><span><i style="background:rgba(200,85,61,.3)"></i>Autumn, southbound</span></div>';
+  document.getElementById('tableWrap').innerHTML=t;
+})();
+
+/* ---------------- state ---------------- */
+var month=4.0,monthTarget=null,playing=!reduce,hover={k:'',i:-1},locked=null,lastStyle=0;
+if(reduce)month=4.0;
+function gauss(x,mu,sg){var d=Math.abs(x-mu);d=Math.min(d,12-d);return Math.exp(-(d*d)/(2*sg*sg));}
+function springAct(m){return gauss(m,4.1,1.05);}
+function autumnAct(m){return gauss(m,7.9,1.35);}
+function actOf(f,m){return .03+.97*(f.s==='S'?springAct(m):autumnAct(m));}
+function focus(){return locked||(hover.k?hover:null);}
+function related(f,fc){
+  if(!fc)return true;
+  if(fc.k==='r')return f.from===fc.i||f.to===fc.i;
+  return f.id===fc.i;
+}
+var opA=[];
+function applyStyles(){
+  var fc=focus();
+  flows.forEach(function(f){
+    var act=actOf(f,month),o;
+    if(fc){o=related(f,fc)?(.55+.4*act):.05;if(fc.k==='f'&&f.id===fc.i)o=.95;}
+    else o=.13+.77*act;
+    opA[f.id]=o;
+    ribEls[f.id].style.opacity=o.toFixed(3);
+  });
+  for(var r=0;r<N;r++){
+    var on=!fc||(fc.k==='r'&&fc.i===r);
+    if(fc&&fc.k==='f'){var ff=flows[fc.i];on=(ff.from===r||ff.to===r);}
+    else if(fc&&fc.k==='r'&&fc.i!==r){
+      on=flows.some(function(f){return (f.from===fc.i&&f.to===r)||(f.to===fc.i&&f.from===r);});
+    }
+    arcEls[r].style.opacity=on?1:.28;lblEls[r].style.opacity=on?1:.3;
+    arcEls[r].setAttribute('aria-pressed',locked&&locked.k==='r'&&locked.i===r?'true':'false');
+    legBtns[r].setAttribute('aria-pressed',locked&&locked.k==='r'&&locked.i===r?'true':'false');
+  }
+  var rows=document.querySelectorAll('#tableWrap tr[data-r]');
+  Array.prototype.forEach.call(rows,function(tr){tr.classList.toggle('on',!!(fc&&fc.k==='r'&&fc.i===+tr.getAttribute('data-r')));});
+}
+function hoverArc(i){hover=i<0?{k:'',i:-1}:{k:'r',i:i};applyStyles();}
+function toggleLock(t){
+  if(locked&&locked.k===t.k&&locked.i===t.i)locked=null;else locked=t;
+  var lk=document.getElementById('lock');
+  lk.textContent=locked?(locked.k==='r'?'Locked on '+REG[locked.i].n+'. Click it again, or press Esc, to release.':'Locked on '+REG[flows[locked.i].from].n+' → '+REG[flows[locked.i].to].n+'. Press Esc to release.'):'';
+  applyStyles();
+}
+
+/* ---------------- tooltip ---------------- */
+var tip=document.getElementById('tip');
+function showTip(html,x,y){
+  tip.innerHTML=html;tip.classList.add('on');
+  var w=tip.offsetWidth,hh=tip.offsetHeight;
+  var px=clamp(x+16,8,window.innerWidth-w-8),py=y+18+hh>window.innerHeight?y-hh-14:y+18;
+  tip.style.left=px+'px';tip.style.top=Math.max(8,py)+'px';
+}
+function hideTip(){tip.classList.remove('on');}
+function regionHTML(i){
+  return '<b><span class="chipc" style="background:'+REG[i].c+'"></span>'+REG[i].n+'</b><small>Leaving: '+fmtBirds(out[i])+'</small><small>Arriving: '+fmtBirds(inn[i])+'</small><small>Total flow: '+fmtBirds(tot[i])+'</small>';
+}
+function flowHTML(f){
+  return '<b>'+REG[f.from].n+' → '+REG[f.to].n+': '+fmtBirds(f.v)+'</b><small>'+(f.s==='S'?'Spring passage, northbound':'Autumn passage, southbound')+'</small>';
+}
+svg.addEventListener('pointermove',function(e){
+  var t=e.target;
+  if(t.classList&&t.classList.contains('rib')){
+    var f=flows[+t.getAttribute('data-f')];
+    if(hover.k!=='f'||hover.i!==f.id){hover={k:'f',i:f.id};applyStyles();}
+    showTip(flowHTML(f),e.clientX,e.clientY);
+  }else if(t.classList&&t.classList.contains('arc')){
+    var r=+t.getAttribute('data-r');
+    if(hover.k!=='r'||hover.i!==r){hover={k:'r',i:r};applyStyles();}
+    showTip(regionHTML(r),e.clientX,e.clientY);
+  }else{if(hover.k){hover={k:'',i:-1};applyStyles();}hideTip();}
+});
+svg.addEventListener('pointerleave',function(){hover={k:'',i:-1};applyStyles();hideTip();});
+svg.addEventListener('click',function(e){
+  var t=e.target;
+  if(t.classList&&t.classList.contains('rib'))toggleLock({k:'f',i:+t.getAttribute('data-f')});
+  else if(t.classList&&t.classList.contains('arc'))toggleLock({k:'r',i:+t.getAttribute('data-r')});
+  else if(locked)toggleLock(locked);
+});
+arcEls.forEach(function(el,i){
+  el.addEventListener('focus',function(){hover={k:'r',i:i};applyStyles();var r=el.getBoundingClientRect();showTip(regionHTML(i),r.left+r.width/2,r.top+r.height/2);});
+  el.addEventListener('blur',function(){hover={k:'',i:-1};applyStyles();hideTip();});
+  el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleLock({k:'r',i:i});}});
+});
+window.addEventListener('keydown',function(e){if(e.key==='Escape'&&locked)toggleLock(locked);});
+
+/* ---------------- controls ---------------- */
+var bSpring=document.getElementById('bSpring'),bAutumn=document.getElementById('bAutumn'),bPlay=document.getElementById('bPlay'),playIco=document.getElementById('playIco');
+var slider=document.getElementById('month'),mout=document.getElementById('mout'),phase=document.getElementById('phase'),fly=document.getElementById('fly');
+function setPlaying(p){
+  playing=p;bPlay.setAttribute('aria-label',p?'Pause the year':'Play the year');
+  playIco.innerHTML=p?'<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>':'<path d="M7 4l13 8-13 8z"/>';
+}
+function goMonth(m){monthTarget=m;setPlaying(false);}
+bSpring.addEventListener('click',function(){goMonth(4.0);});
+bAutumn.addEventListener('click',function(){goMonth(7.9);});
+bPlay.addEventListener('click',function(){monthTarget=null;setPlaying(!playing);});
+slider.addEventListener('input',function(){month=+slider.value;monthTarget=null;setPlaying(false);applyStyles();updateReadouts();});
+var vChart=document.getElementById('vChart'),vTable=document.getElementById('vTable'),wrap=document.getElementById('chartWrap'),tw=document.getElementById('tableWrap');
+function setView(t){
+  vChart.setAttribute('aria-pressed',!t);vTable.setAttribute('aria-pressed',t);
+  wrap.classList.toggle('off',t);tw.classList.toggle('on',t);hideTip();
+}
+vChart.addEventListener('click',function(){setView(false);});
+vTable.addEventListener('click',function(){setView(true);});
+
+/* sparkline */
+(function(){
+  var W=300,Hh=54,x0=6,y0=8,s='<g fill="none" stroke-linecap="round">';
+  function path(fn,col){
+    var d='';for(var m=0;m<=12;m+=.25){var x=x0+(W-2*x0)*m/12,y=y0+Hh*(1-fn(m%12+(m>=12?0:0)));d+=(m?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);}
+    return '<path d="'+d+'" stroke="'+col+'" stroke-width="2"/>';
+  }
+  s+='<line x1="'+x0+'" x2="'+(W-x0)+'" y1="'+(y0+Hh)+'" y2="'+(y0+Hh)+'" stroke="#26221d" stroke-opacity=".3"/>';
+  s+=path(springAct,'#6b8f47')+path(autumnAct,'#c8553d')+'</g>';
+  for(var m=0;m<12;m+=1){var x=x0+(W-2*x0)*(m+.5)/12;s+='<text x="'+x.toFixed(1)+'" y="'+(y0+Hh+13)+'" text-anchor="middle">'+MONTHS[m].charAt(0)+'</text>';}
+  s+='<text x="'+(x0+(W-2*x0)*4.1/12)+'" y="'+(y0-1)+'" text-anchor="middle" fill="#6b8f47">SPRING</text><text x="'+(x0+(W-2*x0)*7.9/12)+'" y="'+(y0-1)+'" text-anchor="middle" fill="#c8553d">AUTUMN</text>';
+  s+='<g id="sparkCur"><line id="scl" x1="0" x2="0" y1="'+(y0+2)+'" y2="'+(y0+Hh)+'" stroke="#26221d" stroke-width="1.4"/><circle id="scd" cx="0" cy="'+(y0+Hh)+'" r="4" fill="#26221d"/></g>';
+  document.getElementById('spark').innerHTML=s;
+  window.__sparkGeom={W:W,x0:x0,y0:y0,H:Hh};
+})();
+var scl=document.getElementById('scl'),scd=document.getElementById('scd');
+function updateReadouts(){
+  var mi=Math.floor(month)%12;
+  mout.textContent=MONTHS[mi];slider.value=month.toFixed(2);slider.setAttribute('aria-valuetext',MONTHS[mi]);
+  var sp=springAct(month),au=autumnAct(month);
+  var ph=sp>=au&&sp>.3?'Spring · northbound':au>sp&&au>.3?'Autumn · southbound':'Winter grounds · at rest';
+  phase.textContent=ph;
+  bSpring.setAttribute('aria-pressed',sp>=au&&sp>.3?'true':'false');bAutumn.setAttribute('aria-pressed',au>sp&&au>.3?'true':'false');
+  var g=window.__sparkGeom,x=g.x0+(g.W-2*g.x0)*month/12,yv=g.y0+g.H*(1-Math.max(sp,au));
+  scl.setAttribute('x1',x.toFixed(1));scl.setAttribute('x2',x.toFixed(1));scd.setAttribute('cx',x.toFixed(1));scd.setAttribute('cy',yv.toFixed(1));
+  var inflight=0;flows.forEach(function(f){inflight+=f.v*actOf(f,month);});
+  fly.textContent=fmt(Math.round(inflight/10)*10);
+  var ang=month/12*360;
+  mmark.setAttribute('transform','rotate('+ang.toFixed(2)+' 500 500)');
+  mtri.setAttribute('fill',sp>=au?'#6b8f47':'#c8553d');
+}
+
+/* ---------------- particles (little birds) ---------------- */
+var fx=document.getElementById('fx'),c=fx.getContext('2d'),scaleK=1,VBX=-110,VBY=-70,VBW=1220;
+function colorSteps(a0,b0){
+  var pa=parseInt(a0.slice(1),16),pb=parseInt(b0.slice(1),16),o=[];
+  for(var k=0;k<12;k++){var t=k/11;o.push('rgba('+Math.round(lerp(pa>>16,pb>>16,t))+','+Math.round(lerp((pa>>8)&255,(pb>>8)&255,t))+','+Math.round(lerp(pa&255,pb&255,t))+',');}
+  return o;
+}
+var parts=[];
+flows.forEach(function(f){
+  var n=clamp(Math.round(f.v/48),4,26),s=span[f.id+':s'],t=span[f.id+':t'];
+  for(var k=0;k<n;k++){
+    var u=(k+Math.random()*.9)/n;
+    var as=lerp(s[1],s[0],u),at=lerp(t[0],t[1],u);
+    var p0=P(R_CH,as),p2=P(R_CH,at);
+    parts.push({f:f,x0:p0[0],y0:p0[1],x2:p2[0],y2:p2[1],t:Math.random(),sp:.04+.13*(f.v/maxF)+Math.random()*.012,sz:5.5+Math.random()*2.5,cs:null});
+  }
+});
+flows.forEach(function(f){var cs=colorSteps('#fdf9ef','#fdf9ef');parts.forEach(function(p){if(p.f===f)p.cs=cs;});});
+function fitCanvas(){
+  var r=fx.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2);
+  var w=Math.max(1,Math.round(r.width*dpr)),hh=Math.max(1,Math.round(r.height*dpr));
+  if(fx.width!==w||fx.height!==hh){fx.width=w;fx.height=hh;}
+  scaleK=fx.width/VBW;
+}
+function drawParticles(dt){
+  c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,fx.width,fx.height);
+  c.setTransform(scaleK,0,0,scaleK,-VBX*scaleK,-VBY*scaleK);
+  var slow=reduce?.35:1;
+  for(var i=0;i<parts.length;i++){
+    var p=parts[i],f=p.f,act=actOf(f,month);
+    var op=opA[f.id]||.2;
+    p.t+=p.sp*dt*slow*(.25+1.15*act);
+    if(p.t>=1)p.t-=1;
+    var t=p.t,u=1-t;
+    var x=u*u*p.x0+2*u*t*CX+t*t*p.x2,y=u*u*p.y0+2*u*t*CY+t*t*p.y2;
+    var dx=2*u*(CX-p.x0)+2*t*(p.x2-CX),dy=2*u*(CY-p.y0)+2*t*(p.y2-CY);
+    var L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;
+    var al=clamp((op-.04)/.85,0,1)*Math.min(1,t*8)*Math.min(1,(1-t)*8);
+    if(al<.03)continue;
+    var s=p.sz*(.75+.5*act);
+    c.fillStyle='rgba(253,249,239,'+(al*.95).toFixed(2)+')';
+    c.beginPath();
+    c.moveTo(x+dx*s,y+dy*s);
+    c.lineTo(x-dx*s*.7-dy*s*.62,y-dy*s*.7+dx*s*.62);
+    c.lineTo(x-dx*s*.25,y-dy*s*.25);
+    c.lineTo(x-dx*s*.7+dy*s*.62,y-dy*s*.7-dx*s*.62);
+    c.closePath();c.fill();
+  }
+}
+
+/* ---------------- loop ---------------- */
+var last=performance.now();
+function frame(now){
+  var dt=Math.min(.05,(now-last)/1000);last=now;
+  if(!document.hidden){
+    if(monthTarget!==null){
+      var d=monthTarget-month;
+      if(Math.abs(d)<.02){month=monthTarget;monthTarget=null;}else month+=d*Math.min(1,dt*3.2);
+    }else if(playing){month+=dt*.5;if(month>=12)month-=12;}
+    if(now-lastStyle>60){lastStyle=now;applyStyles();updateReadouts();}
+    if(!wrap.classList.contains('off'))drawParticles(dt);
+  }
+  requestAnimationFrame(frame);
+}
+if('ResizeObserver' in window)new ResizeObserver(fitCanvas).observe(wrap);else window.addEventListener('resize',fitCanvas);
+fitCanvas();applyStyles();updateReadouts();setPlaying(playing);
+if(reduce){monthTarget=null;}
+document.addEventListener('visibilitychange',function(){last=performance.now();});
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

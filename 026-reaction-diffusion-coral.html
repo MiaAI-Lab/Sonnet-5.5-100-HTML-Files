@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#06303a">
+<title>Coral Lab — a Gray–Scott reaction–diffusion reef</title>
+<meta name="description" content="Coral Lab: paint into a living Gray–Scott reaction–diffusion simulation. Drag to seed coral, travel the feed/kill map, and watch Turing patterns grow.">
+<style>
+:root{
+  --teal:#06303a; --turq:#17a2a2; --peach:#ffb590; --coral:#ff6f59; --cream:#fff1de; --panel:#fff8ef;
+  --ink:#06303a; --ink2:rgba(6,48,58,.66); --line:rgba(6,48,58,.14);
+  --serif:"Cooper Black","Bookman Old Style","URW Bookman","Bookman","Baskerville","Palatino Linotype",Georgia,serif;
+  --sans:"Gill Sans","Gill Sans MT",Optima,"Avenir Next",Avenir,Calibri,"Segoe UI",Ubuntu,Cantarell,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --spring:cubic-bezier(.2,.9,.25,1.25); --out:cubic-bezier(.2,.8,.2,1);
+  color-scheme:light;
+}
+*{ box-sizing:border-box }
+html,body{ height:100% }
+body{ margin:0; background:var(--teal); color:var(--ink); font-family:var(--sans); overflow:hidden; -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent; }
+button{ font:inherit; color:inherit }
+:focus-visible{ outline:3px solid var(--coral); outline-offset:2px }
+
+/* ---------- stage ---------- */
+.stage{ position:fixed; inset:0; background:var(--teal); touch-action:none; cursor:none; }
+.stage canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; outline-offset:-4px }
+#c2d[hidden]{ display:none }
+#gl,#c2d{ opacity:0; transition:opacity .8s ease }
+.stage.ready #gl,.stage.ready #c2d{ opacity:1 }
+#fx{ pointer-events:none }
+.veil{ position:fixed; inset:0; pointer-events:none; background:radial-gradient(120% 95% at 50% 46%,rgba(2,18,22,0) 52%,rgba(2,18,22,.52) 100%); }
+.ring{ position:fixed; left:0; top:0; width:24px; height:24px; margin:-12px 0 0 -12px; border-radius:50%; pointer-events:none; opacity:0;
+  border:2px solid rgba(255,241,222,.95); box-shadow:0 0 0 1px rgba(6,48,58,.55),inset 0 0 0 1px rgba(6,48,58,.4);
+  transition:opacity .25s ease,border-color .2s ease,width .14s ease,height .14s ease,margin .14s ease; }
+.ring.on{ opacity:1 }
+.ring.erase{ border-style:dashed; border-color:var(--peach) }
+.ring.down{ background:rgba(255,241,222,.16) }
+.probe{ position:fixed; left:0; top:0; pointer-events:none; opacity:0; padding:5px 9px; border-radius:99px; background:rgba(255,248,239,.94); color:var(--ink);
+  font:600 11px/1 var(--mono); white-space:nowrap; transform:translate(16px,16px); transition:opacity .2s ease; }
+.probe.on{ opacity:1 }
+.hint{ position:fixed; left:50%; bottom:22px; margin:0; max-width:min(92vw,560px); padding:9px 16px; border-radius:99px; text-align:center; pointer-events:none;
+  background:rgba(4,30,37,.62); color:var(--cream); font-size:13px; letter-spacing:.01em; transform:translateX(-50%);
+  transition:opacity 1s ease,transform 1s var(--out); }
+.hint.gone{ opacity:0; transform:translate(-50%,10px) }
+
+/* ---------- panel ---------- */
+.panel{ position:fixed; left:20px; top:20px; z-index:5; width:322px; max-height:calc(100vh - 40px); max-height:calc(100dvh - 40px); overflow:auto;
+  padding:20px 22px 18px; background:var(--panel); border-radius:28px; scrollbar-width:thin; scrollbar-color:rgba(6,48,58,.25) transparent;
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 34px 80px -24px rgba(1,14,18,.75),0 10px 28px rgba(1,14,18,.28);
+  transition:transform .7s var(--out),opacity .45s ease; animation:panelIn 1.1s var(--out) .15s backwards; }
+.panel.off{ transform:translateX(calc(-100% - 40px)); opacity:0; pointer-events:none; visibility:hidden; transition:transform .7s var(--out),opacity .45s ease,visibility 0s linear .7s }
+@keyframes panelIn{ from{ transform:translateX(-30px); opacity:0 } }
+.ph{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px }
+.notes{ margin:2px 0 5px; font:700 10.5px/1.2 var(--sans); letter-spacing:.16em; text-transform:uppercase; color:var(--ink2) }
+h1{ margin:0; font:900 clamp(40px,3.5vw,50px)/.95 var(--serif); letter-spacing:-.012em; white-space:nowrap;
+  -webkit-text-stroke:.05em currentColor; }
+h1 .c1{ color:var(--teal) }
+h1 .c2{ color:var(--coral) }
+.ico{ flex:none; width:40px; height:40px; margin:-2px -6px 0 0; display:grid; place-items:center; border:0; border-radius:50%; background:rgba(6,48,58,.07); color:var(--ink); cursor:pointer; transition:background .2s ease,transform .3s var(--spring); }
+.ico:hover{ background:rgba(255,111,89,.22); transform:scale(1.06) }
+.ico svg{ width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
+.stat{ display:flex; align-items:center; gap:8px; margin:12px 0 2px; font:600 11.5px/1 var(--mono); color:var(--ink2) }
+.stat .dot{ width:8px; height:8px; border-radius:50%; background:var(--coral); animation:pulse 1.7s ease-in-out infinite }
+.stat.paused .dot{ background:var(--ink2); animation:none }
+.stat .tn{ margin-left:auto; font-variant-numeric:tabular-nums }
+@keyframes pulse{ 50%{ transform:scale(.55); opacity:.55 } }
+.sec{ margin-top:18px }
+h2{ margin:0 0 9px; font:700 10.5px/1.2 var(--sans); letter-spacing:.16em; text-transform:uppercase; color:var(--ink2) }
+.chips{ display:flex; flex-wrap:wrap; gap:6px }
+.chip{ position:relative; display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 10px 0 7px; border-radius:99px; border:1.5px solid var(--line); background:#fff;
+  font:700 12.5px/1 var(--sans); letter-spacing:.01em; cursor:pointer; transition:transform .3s var(--spring),background .2s ease,border-color .2s ease; }
+.chip svg{ width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round }
+.chip:hover{ transform:translateY(-2px); border-color:var(--coral) }
+.chip[aria-pressed="true"]{ background:var(--coral); border-color:var(--coral); color:var(--teal) }
+.chip kbd{ font:600 9.5px/1 var(--mono); opacity:.5; margin-left:1px }
+.desc{ min-height:38px; margin:10px 0 0; font-size:13px; line-height:1.4; color:var(--ink2) }
+.sl{ display:grid; grid-template-columns:1fr auto; gap:3px 10px; align-items:baseline; margin:0 0 10px; font-size:13px; font-weight:700 }
+.sl b{ font:italic 700 15px/1 var(--serif); color:var(--coral); margin-left:3px }
+.sl .val{ font:600 12.5px/1 var(--mono); color:var(--ink2); font-variant-numeric:tabular-nums }
+.sl input{ grid-column:1 / -1 }
+input[type=range]{ -webkit-appearance:none; appearance:none; width:100%; height:24px; margin:0; background:transparent; cursor:pointer }
+input[type=range]::-webkit-slider-runnable-track{ height:6px; border-radius:99px; background:linear-gradient(90deg,var(--coral) var(--p,50%),rgba(6,48,58,.14) var(--p,50%)) }
+input[type=range]::-moz-range-track{ height:6px; border-radius:99px; background:rgba(6,48,58,.14) }
+input[type=range]::-moz-range-progress{ height:6px; border-radius:99px; background:var(--coral) }
+input[type=range]::-webkit-slider-thumb{ -webkit-appearance:none; width:22px; height:22px; margin-top:-8px; border-radius:50%; background:var(--cream); border:3px solid var(--coral); box-shadow:0 2px 6px rgba(6,48,58,.32); transition:transform .2s var(--spring) }
+input[type=range]::-moz-range-thumb{ width:16px; height:16px; border-radius:50%; background:var(--cream); border:3px solid var(--coral) }
+input[type=range]:hover::-webkit-slider-thumb{ transform:scale(1.12) }
+.map{ position:relative; margin-top:4px }
+#map{ display:block; width:100%; height:138px; border-radius:16px; border:1px solid var(--line); cursor:crosshair; touch-action:none; background:#0a3a45 }
+.mapcap{ display:flex; justify-content:space-between; margin:6px 2px 0; font:600 10.5px/1.2 var(--mono); color:var(--ink2) }
+.two{ display:grid; grid-template-columns:1fr 1fr; gap:0 16px }
+.seg{ display:grid; grid-template-columns:1fr 1fr; margin-bottom:12px; padding:3px; border-radius:99px; background:rgba(6,48,58,.08) }
+.seg button{ height:32px; border:0; border-radius:99px; background:transparent; font:700 13px/1 var(--sans); cursor:pointer; transition:background .25s ease,color .25s ease,box-shadow .25s ease }
+.seg button[aria-pressed="true"]{ background:var(--teal); color:var(--cream) }
+.acts{ display:flex; gap:8px; margin-top:16px }
+.act{ flex:1; height:40px; border-radius:99px; border:1.5px solid var(--line); background:#fff; font:700 13px/1 var(--sans); cursor:pointer; transition:transform .3s var(--spring),background .2s ease,border-color .2s ease }
+.act:hover{ transform:translateY(-2px); border-color:var(--coral) }
+.act[aria-pressed="true"]{ background:var(--teal); border-color:var(--teal); color:var(--cream) }
+.act.main{ background:var(--coral); border-color:var(--coral); color:var(--teal) }
+.tech{ margin:12px 0 0; font:500 10.5px/1.5 var(--mono); color:var(--ink2); letter-spacing:.01em }
+.unfold{ position:fixed; left:20px; bottom:20px; z-index:5; height:44px; padding:0 20px; border:0; border-radius:99px; background:var(--panel); color:var(--ink); font:800 13px/1 var(--sans); letter-spacing:.04em; cursor:pointer;
+  box-shadow:0 14px 34px -10px rgba(1,14,18,.7); animation:panelIn .6s var(--out) backwards }
+.unfold[hidden]{ display:none }
+.cap{ position:fixed; right:34px; bottom:26px; z-index:2; margin:0; text-align:right; pointer-events:none; opacity:0; color:var(--cream); text-shadow:0 2px 28px rgba(2,18,22,.7),0 0 2px rgba(2,18,22,.5) }
+.cap b{ display:block; font:900 italic clamp(44px,6.4vw,104px)/.9 var(--serif); letter-spacing:-.02em }
+.cap span{ display:block; margin-top:8px; font:600 12px/1 var(--mono); letter-spacing:.08em }
+.cap.show{ animation:capIn 3.2s var(--out) both }
+@keyframes capIn{ 0%{ opacity:0; transform:translateY(18px) } 14%{ opacity:1; transform:none } 72%{ opacity:1 } 100%{ opacity:0 } }
+.sr{ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
+
+@media (max-width:720px){
+  .panel{ left:10px; right:10px; top:auto; bottom:10px; width:auto; max-height:min(46vh,430px); max-height:min(46dvh,430px); padding:14px 16px 14px; border-radius:24px }
+  .panel.off{ transform:translateY(calc(100% + 30px)) }
+  @keyframes panelIn{ from{ transform:translateY(30px); opacity:0 } }
+  h1{ font-size:38px }
+  .sec{ margin-top:14px }
+  .chips{ flex-wrap:nowrap; overflow-x:auto; margin:0 -16px; padding:2px 16px 6px; scrollbar-width:none }
+  .chips::-webkit-scrollbar{ display:none }
+  .chip{ flex:none; height:40px }
+  .chip kbd{ display:none }
+  .desc{ min-height:0 }
+  .hint{ bottom:auto; top:16px; font-size:12px; white-space:normal }
+  .cap{ right:18px; top:16px; bottom:auto }
+  .cap b{ font-size:44px }
+  .unfold{ left:14px; bottom:14px }
+  #map{ height:120px }
+  .act{ height:44px }
+  .seg button{ height:36px }
+  .tech{ display:none }
+}
+@media (prefers-reduced-motion:reduce){
+  .panel,.unfold,.cap.show{ animation:none }
+  .cap.show{ opacity:.9 }
+  .stat .dot{ animation:none }
+  .panel,.panel.off,.hint,.chip,.act,.ico,#gl,#c2d{ transition-duration:.01ms !important }
+}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <canvas id="gl" tabindex="0" role="img" aria-label="Living coral simulation. Drag to seed new coral. With the keyboard, arrow keys move the brush, Enter seeds and Backspace erases."></canvas>
+  <canvas id="c2d" hidden></canvas>
+  <canvas id="fx" aria-hidden="true"></canvas>
+</div>
+<div class="veil" aria-hidden="true"></div>
+<div class="ring" id="ring" aria-hidden="true"></div>
+<div class="probe" id="probe" aria-hidden="true"></div>
+<p class="cap" id="cap" aria-hidden="true"><b id="capN">Coral</b><span id="capV">f 0.0545 · k 0.0620</span></p>
+<p class="hint" id="hint">Drag on the water to seed new coral · hold Shift, or pick Erase, to wipe it away</p>
+
+<aside class="panel" id="panel" aria-label="Coral Lab controls">
+  <header class="ph">
+    <div>
+      <p class="notes">Turing patterns · Gray–Scott</p>
+      <h1><span class="c1">Coral</span> <span class="c2">Lab</span></h1>
+    </div>
+    <button class="ico" id="fold" type="button" aria-label="Hide controls (H)" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+  </header>
+  <p class="stat" id="stat"><i class="dot"></i><span id="statTxt">growing</span><span class="tn" id="stepN">step 0</span></p>
+
+  <section class="sec" aria-labelledby="h-pre">
+    <h2 id="h-pre">Reef presets</h2>
+    <div class="chips" role="group" aria-label="Presets">
+      <button class="chip" type="button" data-p="coral" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-8M12 13c-3.4 0-5-2.2-5-5V4M12 13c3.4 0 5-2.2 5-5V4M12 13V7"/></svg>Coral <kbd>1</kbd></button>
+      <button class="chip" type="button" data-p="mitosis" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="12" r="3.8"/><circle cx="16.8" cy="12" r="3.3"/><path d="M11.3 12h2.2"/></svg>Mitosis <kbd>2</kbd></button>
+      <button class="chip" type="button" data-p="worms" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 15c3.2-7 5.6 7 9 0s5.6 7 9 0"/></svg>Worms <kbd>3</kbd></button>
+      <button class="chip" type="button" data-p="mazes" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 20V4H4v16h12V8H8v8h4"/></svg>Mazes <kbd>4</kbd></button>
+      <button class="chip" type="button" data-p="spots" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="8" r="2.2"/><circle cx="16.5" cy="7" r="2.2"/><circle cx="11.5" cy="15" r="2.6"/><circle cx="18.5" cy="17" r="1.6"/></svg>Spots <kbd>5</kbd></button>
+    </div>
+    <p class="desc" id="desc">Brain-coral labyrinths that branch and fold — the classic reef.</p>
+  </section>
+
+  <section class="sec" aria-labelledby="h-par">
+    <h2 id="h-par">Chemistry</h2>
+    <label class="sl"><span>Feed<b>f</b></span><span class="val" id="fo">0.0545</span><input id="fs" type="range" min="0.010" max="0.090" step="0.0001" value="0.0545"></label>
+    <label class="sl"><span>Kill<b>k</b></span><span class="val" id="ko">0.0620</span><input id="ks" type="range" min="0.045" max="0.070" step="0.0001" value="0.0620"></label>
+    <div class="map">
+      <canvas id="map" tabindex="0" role="group" aria-label="Parameter map. Horizontal axis is the kill rate k, vertical axis is the feed rate f. Click, drag or use the arrow keys to travel between behaviours."></canvas>
+      <p class="mapcap"><span>k →</span><span>click to travel</span><span>f ↑</span></p>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="h-tool">
+    <h2 id="h-tool">Brush &amp; tempo</h2>
+    <div class="seg" role="group" aria-label="Tool">
+      <button type="button" data-t="paint" aria-pressed="true">Seed</button>
+      <button type="button" data-t="erase" aria-pressed="false">Erase</button>
+    </div>
+    <div class="two">
+      <label class="sl"><span>Size</span><span class="val" id="bo">5</span><input id="bs" type="range" min="2" max="16" step="1" value="5"></label>
+      <label class="sl"><span>Tempo</span><span class="val" id="to">10</span><input id="ts" type="range" min="1" max="12" step="1" value="10"></label>
+    </div>
+  </section>
+
+  <div class="acts">
+    <button class="act main" id="pp" type="button">Pause</button>
+    <button class="act" id="rs" type="button">Reset</button>
+    <button class="act" id="at" type="button" aria-pressed="false" title="Vary f and k across the whole reef (A)">Atlas</button>
+  </div>
+  <p class="tech" id="tech">A+2B→3B · Da 1 · Db 0.5 · 320×200 · 10 steps/frame</p>
+</aside>
+<button class="unfold" id="unfold" type="button" hidden>Controls</button>
+
+<script>
+(function () {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const pad = (n, d) => n.toFixed(d);
+  const mqReduce = matchMedia('(prefers-reduced-motion: reduce)');
+  let reduce = mqReduce.matches;
+  try { mqReduce.addEventListener('change', e => { reduce = e.matches; }); } catch (e) { /* older engines */ }
+
+  const stage = $('#stage'), glc = $('#gl'), c2 = $('#c2d'), fxc = $('#fx');
+  const ring = $('#ring'), probe = $('#probe'), hint = $('#hint');
+
+  /* ================= presets (Gray–Scott feed f / kill k) ================= */
+  const PRESETS = {
+    coral:   { f: 0.0545, k: 0.0620, seeds: 60,  note: 'Brain-coral labyrinths that branch and fold — the classic reef.' },
+    mitosis: { f: 0.0367, k: 0.0649, seeds: 45,  note: 'Spots swell, pinch and divide until the water is full of cells.' },
+    worms:   { f: 0.0780, k: 0.0610, seeds: 150, note: 'Restless rings and crawling worms that never quite settle.' },
+    mazes:   { f: 0.0290, k: 0.0570, seeds: 70,  note: 'Fine fingerprint stripes that wander, split and refuse to close.' },
+    spots:   { f: 0.0300, k: 0.0620, seeds: 70,  note: 'Patient, evenly spaced dots settling into a hexagonal lattice.' }
+  };
+  const ORDER = ['coral', 'mitosis', 'worms', 'mazes', 'spots'];
+  const MAP = { k0: 0.045, k1: 0.070, f0: 0.010, f1: 0.090 };
+  const ATL = { k0: 0.052, k1: 0.068, f0: 0.020, f1: 0.080 }; /* atlas window: f falls top to bottom, k grows left to right */
+
+  /* ================= the simulation: typed arrays with a wrapped ghost ring ================= */
+  let W = 320, H = 200, S = 322, N = 0;
+  let A, B, A2, B2, PF, PK, NF, NK, TEX;
+  let stepCount = 0, atlas = false;
+  const cur = { f: PRESETS.coral.f, k: PRESETS.coral.k }, tgt = { f: cur.f, k: cur.k };
+
+  function pickDims(aspect) {
+    const cells = 64000;
+    const h = Math.round(Math.sqrt(cells / aspect) / 2) * 2;
+    return [clamp(Math.round(h * aspect), 120, 560), clamp(h, 110, 560)];
+  }
+  function wrapG(X) {
+    const s = S;
+    for (let y = 1; y <= H; y++) { const r = y * s; X[r] = X[r + W]; X[r + W + 1] = X[r + 1]; }
+    X.copyWithin(0, H * s, H * s + s);
+    X.copyWithin((H + 1) * s, s, 2 * s);
+  }
+  function makeGrid(w, h) {
+    W = w; H = h; S = W + 2; N = S * (H + 2);
+    A = new Float32Array(N); B = new Float32Array(N); A2 = new Float32Array(N); B2 = new Float32Array(N);
+    PF = new Float32Array(N); PK = new Float32Array(N); NF = new Float32Array(N); NK = new Float32Array(N);
+    TEX = new Float32Array(W * H * 4);
+    const two = Math.PI * 2, ph = [];
+    for (let j = 0; j < 6; j++) ph.push(Math.random() * two);
+    /* smooth, tileable noise: the reef never has one uniform temperament */
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const u = x / W, v = y / H, i = (y + 1) * S + x + 1;
+      NF[i] = 0.5 * Math.sin(two * (u + 2 * v) + ph[0]) + 0.3 * Math.sin(two * (2 * u - v) + ph[1]) + 0.2 * Math.sin(two * (3 * u + v) + ph[2]);
+      NK[i] = 0.5 * Math.sin(two * (2 * u + v) + ph[3]) + 0.3 * Math.sin(two * (u - 2 * v) + ph[4]) + 0.2 * Math.sin(two * (u + 3 * v) + ph[5]);
+    }
+    A.fill(1); B.fill(0);
+    setParams();
+  }
+  const FV = 0.0009, KV = 0.00028;
+  function setParams() {
+    if (atlas) {
+      for (let y = 0; y < H; y++) {
+        const ff = lerp(ATL.f1, ATL.f0, (y + 0.5) / H);
+        let i = (y + 1) * S + 1;
+        for (let x = 0; x < W; x++, i++) { PF[i] = ff; PK[i] = lerp(ATL.k0, ATL.k1, (x + 0.5) / W); }
+      }
+    } else {
+      const f = cur.f, k = cur.k;
+      for (let y = 0; y < H; y++) {
+        let i = (y + 1) * S + 1;
+        for (let x = 0; x < W; x++, i++) { PF[i] = f + NF[i] * FV; PK[i] = k + NK[i] * KV; }
+      }
+    }
+  }
+
+  /* one Gray–Scott step: A' = A + Da∇²A − AB² + f(1−A);  B' = B + Db∇²B + AB² − (k+f)B
+     Laplacian weights: centre −1, edges 0.2, corners 0.05;  Da = 1.0, Db = 0.5 */
+  function step() {
+    const s = S, a0 = A, b0 = B, a1 = A2, b1 = B2, pf = PF, pk = PK;
+    for (let y = 1; y <= H; y++) {
+      let i = y * s + 1;
+      for (let x = 1; x <= W; x++, i++) {
+        const a = a0[i], b = b0[i], f = pf[i], k = pk[i];
+        const la = 0.2 * (a0[i - 1] + a0[i + 1] + a0[i - s] + a0[i + s]) + 0.05 * (a0[i - s - 1] + a0[i - s + 1] + a0[i + s - 1] + a0[i + s + 1]) - a;
+        const lb = 0.2 * (b0[i - 1] + b0[i + 1] + b0[i - s] + b0[i + s]) + 0.05 * (b0[i - s - 1] + b0[i - s + 1] + b0[i + s - 1] + b0[i + s + 1]) - b;
+        const r = a * b * b;
+        const na = a + la - r + f * (1 - a), nb = b + 0.5 * lb + r - (k + f) * b;
+        a1[i] = na < 0 ? 0 : na > 1 ? 1 : na;
+        b1[i] = nb < 0 ? 0 : nb > 1 ? 1 : nb;
+      }
+    }
+    wrapG(a1); wrapG(b1);
+    A = a1; A2 = a0; B = b1; B2 = b0;
+    stepCount++;
+  }
+
+  /* brushes: soft-edged discs that wrap around the torus */
+  function stamp(cx, cy, r, mode) {
+    const x0 = Math.floor(cx - r - 2), x1 = Math.ceil(cx + r + 2), y0 = Math.floor(cy - r - 2), y1 = Math.ceil(cy + r + 2);
+    for (let y = y0; y <= y1; y++) {
+      const yi = ((y % H) + H) % H;
+      for (let x = x0; x <= x1; x++) {
+        const w = clamp((r + 0.75 - Math.hypot(x + 0.5 - cx, y + 0.5 - cy)) / 1.5, 0, 1);
+        if (w <= 0) continue;
+        const i = (yi + 1) * S + (((x % W) + W) % W) + 1;
+        if (mode > 0) { const v = w * 0.8; if (v > B[i]) B[i] = v; A[i] = Math.min(A[i], 1 - 0.5 * w); }
+        else { B[i] *= 1 - w; A[i] += (1 - A[i]) * w; }
+      }
+    }
+    wrapG(A); wrapG(B);
+  }
+  function seedField(n) { /* golden-angle phyllotaxis: growth fronts meet in pleasing places */
+    A.fill(1); B.fill(0);
+    const ga = Math.PI * (3 - Math.sqrt(5));
+    for (let j = 0; j < n; j++) {
+      const rr = Math.sqrt((j + 0.5) / n), th = j * ga + 0.6;
+      stamp(W * 0.5 + rr * Math.cos(th) * W * 0.5 + (Math.random() - 0.5) * 6, H * 0.5 + rr * Math.sin(th) * H * 0.5 + (Math.random() - 0.5) * 6, 2 + Math.random() * 1.5, 1);
+    }
+  }
+  function sprinkle(n) { for (let j = 0; j < n; j++) stamp(Math.random() * W, Math.random() * H, 2 + Math.random() * 1.6, 1); }
+
+  /* the field as a texture: B, dB/dx, dB/dy, A  (W x H texels; the GPU wraps it with REPEAT) */
+  function buildTex() {
+    const s = S, T = TEX;
+    let o = 0;
+    for (let y = 1; y <= H; y++) {
+      let i = y * s + 1;
+      for (let x = 1; x <= W; x++, i++, o += 4) {
+        T[o] = B[i]; T[o + 1] = (B[i + 1] - B[i - 1]) * 0.5; T[o + 2] = (B[i + s] - B[i - s]) * 0.5; T[o + 3] = A[i];
+      }
+    }
+  }
+
+  /* ================= rendering: WebGL2 emboss shader, with a 2D-canvas fallback ================= */
+  let cw = 1, ch = 1, dpr = 1, cwCss = 1, chCss = 1, scaleCss = 1, renderScale = 1;
+  const light = { x: 0, y: 0, tx: 0, ty: 0, idle: 0 };
+  const VS = '#version 300 es\nvoid main(){ vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)); gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0); }';
+  const FS = `#version 300 es
+precision highp float;
+precision highp sampler2D;
+uniform sampler2D uT;
+uniform vec2 uRes, uGrid, uTexSize, uLight;
+uniform float uScale, uTime, uCaus, uBump;
+out vec4 outColor;
+const vec3 C0 = vec3(0.0235, 0.1882, 0.2275);
+const vec3 C1 = vec3(0.0902, 0.6353, 0.6353);
+const vec3 C2 = vec3(1.0, 0.7098, 0.5647);
+const vec3 C3 = vec3(1.0, 0.4353, 0.3490);
+const vec3 C4 = vec3(1.0, 0.9451, 0.8706);
+vec3 ramp(float t){
+  t = clamp(t, 0.0, 1.0);
+  vec3 c = mix(C0, C1, smoothstep(0.00, 0.26, t));
+  c = mix(c, C2, smoothstep(0.26, 0.56, t));
+  c = mix(c, C3, smoothstep(0.56, 0.82, t));
+  return mix(c, C4, smoothstep(0.82, 1.00, t));
+}
+vec4 samp(vec2 p){ /* cubic B-spline through four linear taps: smooth, no grid artefacts */
+  vec2 x = p - 0.5;
+  vec2 i = floor(x);
+  vec2 f = x - i;
+  vec2 f2 = f * f, f3 = f2 * f;
+  vec2 w0 = (1.0 - f) * (1.0 - f) * (1.0 - f) / 6.0;
+  vec2 w1 = (3.0 * f3 - 6.0 * f2 + 4.0) / 6.0;
+  vec2 w2 = (-3.0 * f3 + 3.0 * f2 + 3.0 * f + 1.0) / 6.0;
+  vec2 w3 = f3 / 6.0;
+  vec2 g0 = w0 + w1, g1 = w2 + w3;
+  vec2 t0 = (i - 1.0 + w1 / g0 + 0.5) / uTexSize;
+  vec2 t1 = (i + 1.0 + w3 / g1 + 0.5) / uTexSize;
+  return g0.y * (g0.x * texture(uT, vec2(t0.x, t0.y)) + g1.x * texture(uT, vec2(t1.x, t0.y)))
+       + g1.y * (g0.x * texture(uT, vec2(t0.x, t1.y)) + g1.x * texture(uT, vec2(t1.x, t1.y)));
+}
+float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float caustic(vec2 uv, float t){
+  vec2 p = mod(uv * 6.28318530718, 6.28318530718) - 250.0;
+  vec2 i = p; float c = 1.0; const float inten = 0.005;
+  for (int n = 0; n < 4; n++){
+    float tt = t * (1.0 - 3.5 / float(n + 1));
+    i = p + vec2(cos(tt - i.x) + sin(tt + i.y), sin(tt - i.y) + cos(tt + i.x));
+    c += 1.0 / length(vec2(p.x / (sin(i.x + tt) / inten), p.y / (cos(i.y + tt) / inten)));
+  }
+  c /= 4.0; c = 1.17 - pow(c, 1.4);
+  return pow(abs(c), 8.0);
+}
+void main(){
+  vec2 q = (gl_FragCoord.xy - uRes * 0.5) / uScale;
+  vec2 p = vec2(q.x + uGrid.x * 0.5, uGrid.y * 0.5 - q.y);
+  vec4 t = samp(p);
+  float b = t.r;
+  vec3 n = normalize(vec3(-t.g * uBump, t.b * uBump, 1.0));
+  vec3 L = normalize(vec3(uLight, uRes.y * 0.5) - vec3(gl_FragCoord.xy, 0.0));
+  float dif = max(dot(n, L), 0.0);
+  vec3 h = normalize(L + vec3(0.0, 0.0, 1.0));
+  float spec = pow(max(dot(n, h), 0.0), 90.0);
+  float body = smoothstep(0.03, 0.18, b);
+  vec3 col = ramp(b / 0.40);
+  col *= 0.5 + 0.9 * dif;
+  col += vec3(1.0, 0.93, 0.82) * spec * (0.1 + 0.5 * body);
+  float fl = 1.0 - smoothstep(0.0, 0.10, b);
+  vec2 so = vec2(L.x, -L.y) * 1.0;
+  float occ = max(texture(uT, (p + so * 3.0) / uTexSize).r, texture(uT, (p + so * 7.0) / uTexSize).r);
+  col *= 1.0 - 0.42 * smoothstep(0.04, 0.28, occ) * (1.0 - body);
+  if (fl > 0.01) {
+    float cs = caustic(p / uGrid * 2.0, uTime * 0.45 + 23.0);
+    col += vec3(0.11, 0.62, 0.60) * cs * fl * uCaus * 0.3;
+  }
+  col += (hash(gl_FragCoord.xy + fract(uTime * 7.0)) - 0.5) * 0.03;
+  outColor = vec4(col, 1.0);
+}`;
+  let R = null, ctx2 = null, off = null, offCtx = null, img = null;
+  const LUT = new Uint8ClampedArray(256 * 3);
+  (function () {
+    const C = [[6, 48, 58], [23, 162, 162], [255, 181, 144], [255, 111, 89], [255, 241, 222]];
+    const ss = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+    for (let j = 0; j < 256; j++) {
+      const t = j / 255;
+      let c = mix(C[0], C[1], ss(0, 0.26, t)); c = mix(c, C[2], ss(0.26, 0.56, t)); c = mix(c, C[3], ss(0.56, 0.82, t)); c = mix(c, C[4], ss(0.82, 1, t));
+      LUT[j * 3] = c[0]; LUT[j * 3 + 1] = c[1]; LUT[j * 3 + 2] = c[2];
+    }
+  })();
+
+  function initGL() {
+    let gl = null;
+    try { gl = glc.getContext('webgl2', { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' }); } catch (e) { gl = null; }
+    if (!gl) return null;
+    try {
+      const mk = (type, src) => {
+        const sh = gl.createShader(type); gl.shaderSource(sh, src); gl.compileShader(sh);
+        if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+        return sh;
+      };
+      const pr = gl.createProgram();
+      gl.attachShader(pr, mk(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, mk(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr);
+      if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+      gl.useProgram(pr);
+      const tex = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+      const U = {};
+      ['uT', 'uRes', 'uGrid', 'uTexSize', 'uLight', 'uScale', 'uTime', 'uCaus', 'uBump'].forEach(n => { U[n] = gl.getUniformLocation(pr, n); });
+      gl.uniform1i(U.uT, 0);
+      glc.addEventListener('webglcontextlost', e => { e.preventDefault(); useFallback(); });
+      return { gl: gl, tex: tex, U: U, w: 0, h: 0 };
+    } catch (err) {
+      console.warn('WebGL2 setup failed, falling back to the 2D renderer:', err && err.message ? err.message : err);
+      return null;
+    }
+  }
+  function useFallback() {
+    R = null; glc.hidden = true; c2.hidden = false;
+    if (!ctx2) ctx2 = c2.getContext('2d', { alpha: false });
+    resizeCanvas(true);
+  }
+  function drawGL(time) {
+    const gl = R.gl, U = R.U;
+    gl.bindTexture(gl.TEXTURE_2D, R.tex);
+    if (R.w !== W || R.h !== H) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, W, H, 0, gl.RGBA, gl.FLOAT, TEX); R.w = W; R.h = H; }
+    else gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, W, H, gl.RGBA, gl.FLOAT, TEX);
+    gl.viewport(0, 0, cw, ch);
+    gl.uniform2f(U.uRes, cw, ch); gl.uniform2f(U.uGrid, W, H); gl.uniform2f(U.uTexSize, W, H);
+    gl.uniform2f(U.uLight, light.x * dpr, (chCss - light.y) * dpr);
+    gl.uniform1f(U.uScale, Math.max(cw / W, ch / H)); gl.uniform1f(U.uTime, time);
+    gl.uniform1f(U.uCaus, reduce ? 0.55 : 1.0); gl.uniform1f(U.uBump, 13.0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  function draw2D() {
+    if (!off || off.width !== W || off.height !== H) { off = document.createElement('canvas'); off.width = W; off.height = H; offCtx = off.getContext('2d'); img = offCtx.createImageData(W, H); }
+    const d = img.data, T = TEX;
+    let lx = (light.x - cwCss * 0.5) / cwCss * 1.6, ly = -(light.y - chCss * 0.5) / chCss * 1.6, lz = 0.8;
+    const ll = Math.hypot(lx, ly, lz); lx /= ll; ly /= ll; lz /= ll;
+    let hx = lx, hy = ly, hz = lz + 1; const hl = Math.hypot(hx, hy, hz); hx /= hl; hy /= hl; hz /= hl;
+    let p = 0;
+    let o = 0;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++, o += 4) {
+        const b = T[o];
+        const nx = -T[o + 1] * 13, ny = T[o + 2] * 13, il = 1 / Math.sqrt(nx * nx + ny * ny + 1);
+        const dif = Math.max(0, (nx * lx + ny * ly + lz) * il);
+        const sp = Math.pow(Math.max(0, (nx * hx + ny * hy + hz) * il), 60) * (0.2 + 0.6 * clamp((b - 0.03) / 0.15, 0, 1)) * 255 * 0.9;
+        const j = clamp(Math.round(b / 0.40 * 255), 0, 255) * 3, sh = 0.5 + 0.9 * dif;
+        d[p] = LUT[j] * sh + sp; d[p + 1] = LUT[j + 1] * sh + sp * 0.93; d[p + 2] = LUT[j + 2] * sh + sp * 0.82; d[p + 3] = 255; p += 4;
+      }
+    }
+    offCtx.putImageData(img, 0, 0);
+    ctx2.imageSmoothingEnabled = true; ctx2.imageSmoothingQuality = 'high';
+    const sc = Math.max(cw / W, ch / H);
+    ctx2.drawImage(off, 0, 0, W, H, (cw - W * sc) / 2, (ch - H * sc) / 2, W * sc, H * sc);
+  }
+  function resizeCanvas(force) {
+    cwCss = Math.max(1, window.innerWidth); chCss = Math.max(1, window.innerHeight);
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5) * renderScale;
+    cw = Math.round(cwCss * dpr); ch = Math.round(chCss * dpr);
+    const target = R ? glc : c2;
+    if (force || target.width !== cw || target.height !== ch) { target.width = cw; target.height = ch; }
+    if (fxc.width !== cw || fxc.height !== ch) { fxc.width = cw; fxc.height = ch; }
+    scaleCss = Math.max(cwCss / W, chCss / H);
+  }
+
+  /* ================= state, UI references ================= */
+  let paused = false, intro = true, introStart = 0, tempo = 10, tool = 'paint', brush = 5, activePreset = 'coral';
+  let time = 0, last = 0, frameMs = 16, stepMs = 0.85, tweenRate = 3.2, dirty = true, raf = 0, introT = 0, ready = false;
+  const mouse = { x: 0, y: 0, in: false, down: false, erase: false, type: 'mouse' };
+  const chips = Array.from(document.querySelectorAll('.chip'));
+  const desc = $('#desc'), fs = $('#fs'), ks = $('#ks'), fo = $('#fo'), ko = $('#ko'), bs = $('#bs'), bo = $('#bo'), ts = $('#ts'), to = $('#to');
+  const segs = Array.from(document.querySelectorAll('.seg button'));
+  const pp = $('#pp'), rs = $('#rs'), at = $('#at'), stat = $('#stat'), statTxt = $('#statTxt'), stepN = $('#stepN'), tech = $('#tech');
+  const panel = $('#panel'), foldBtn = $('#fold'), unfoldBtn = $('#unfold'), mapC = $('#map');
+
+  function preroll(ms, cap) {
+    const t0 = performance.now(); let c = 0;
+    while (c < cap && performance.now() - t0 < ms) { step(); c++; }
+    dirty = true;
+  }
+  function stepBatch() {
+    let budget, n;
+    if (intro) {
+      budget = clamp(frameMs * 0.55, 12, 40); n = 90;
+      if (stepCount - introStart > 1800 || time - introT > 7) intro = false;
+    } else { budget = 12; n = reduce ? Math.min(tempo, 2) : tempo; }
+    const t0 = performance.now(); let done = 0;
+    while (done < n) {
+      step(); done++;
+      if (done >= 2 && performance.now() - t0 > budget) break;
+    }
+    stepMs = lerp(stepMs, (performance.now() - t0) / done, 0.1);
+    dirty = true;
+  }
+
+  /* ================= parameters: presets, sliders, the f/k map ================= */
+  function setFill(inp) { inp.style.setProperty('--p', ((inp.value - inp.min) / (inp.max - inp.min) * 100) + '%'); }
+  function unpressChips() { activePreset = null; chips.forEach(c => c.setAttribute('aria-pressed', 'false')); }
+  const capEl = $('#cap'), capN = $('#capN'), capV = $('#capV');
+  function showCaption(name, sub) {
+    if (reduce) return;
+    capN.textContent = name; capV.textContent = sub;
+    capEl.classList.remove('show'); void capEl.offsetWidth; capEl.classList.add('show');
+  }
+  function growFresh(n) { /* clear the water and let a fresh reef grow from seeds, in time-lapse */
+    A.fill(1); B.fill(0); seedField(n);
+    intro = true; introStart = stepCount; introT = time; dirty = true;
+  }
+  function selectPreset(id, quiet) {
+    const P = PRESETS[id]; if (!P) return;
+    if (atlas) setAtlas(false, true);
+    activePreset = id; tgt.f = P.f; tgt.k = P.k; tweenRate = 9;
+    chips.forEach(c => c.setAttribute('aria-pressed', String(c.dataset.p === id)));
+    desc.textContent = P.note;
+    if (!quiet) { growFresh(P.seeds); showCaption(id.charAt(0).toUpperCase() + id.slice(1), 'f ' + pad(P.f, 4) + ' · k ' + pad(P.k, 4)); }
+  }
+  function tween(dt) {
+    const df = tgt.f - cur.f, dk = tgt.k - cur.k;
+    if (Math.abs(df) < 1e-7 && Math.abs(dk) < 1e-7) return;
+    const a = 1 - Math.exp(-dt * tweenRate);
+    cur.f += df * a; cur.k += dk * a;
+    if (Math.abs(tgt.f - cur.f) < 3e-6) cur.f = tgt.f;
+    if (Math.abs(tgt.k - cur.k) < 3e-6) cur.k = tgt.k;
+    if (!atlas) setParams();
+    syncUI();
+  }
+  function syncUI() {
+    fs.value = cur.f; ks.value = cur.k;
+    fo.textContent = pad(cur.f, 4); ko.textContent = pad(cur.k, 4);
+    setFill(fs); setFill(ks); drawMap();
+  }
+  function setFromSliders() {
+    cur.f = tgt.f = parseFloat(fs.value); cur.k = tgt.k = parseFloat(ks.value);
+    unpressChips(); desc.textContent = 'Your own recipe — every hair of f and k changes the animal.';
+    if (!atlas) setParams(); syncUI();
+  }
+  fs.addEventListener('input', setFromSliders); ks.addEventListener('input', setFromSliders);
+  chips.forEach(c => c.addEventListener('click', () => selectPreset(c.dataset.p)));
+
+  /* the map: x = k, y = f. Colour bands follow the saddle-node curve k = √f/2 − f */
+  let mctx = null, mbg = null, mW = 10, mH = 10, mD = 1;
+  const ssm = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  const mixc = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  function zone(k, f) {
+    const d = k - (Math.sqrt(f) / 2 - f);
+    const solid = 1 - ssm(-0.011, -0.003, d), lab = ssm(-0.010, -0.003, d) * (1 - ssm(0.0015, 0.0035, d));
+    const spot = ssm(0.0015, 0.0035, d) * (1 - ssm(0.0072, 0.0105, d)), dead = ssm(0.0072, 0.0105, d);
+    const labC = mixc([255, 181, 144], [255, 111, 89], ssm(0.03, 0.075, f));
+    const w = solid + lab + spot + dead || 1;
+    const c = [0, 0, 0], L = [[11, 78, 92], labC, [23, 162, 162], [6, 48, 58]], ws = [solid, lab, spot, dead];
+    for (let j = 0; j < 4; j++) for (let q = 0; q < 3; q++) c[q] += L[j][q] * ws[j] / w;
+    return c;
+  }
+  const kx = k => (k - MAP.k0) / (MAP.k1 - MAP.k0) * mW, fy = f => (1 - (f - MAP.f0) / (MAP.f1 - MAP.f0)) * mH;
+  function mapSetup() {
+    const r = mapC.getBoundingClientRect();
+    mD = Math.min(window.devicePixelRatio || 1, 2); mW = Math.max(60, Math.round(r.width)); mH = Math.max(60, Math.round(r.height));
+    mapC.width = Math.round(mW * mD); mapC.height = Math.round(mH * mD);
+    mctx = mapC.getContext('2d');
+    mbg = document.createElement('canvas'); mbg.width = mapC.width; mbg.height = mapC.height;
+    const g = mbg.getContext('2d'); g.setTransform(mD, 0, 0, mD, 0, 0);
+    for (let y = 0; y < mH; y += 2) for (let x = 0; x < mW; x += 2) {
+      const c = zone(MAP.k0 + (x + 1) / mW * (MAP.k1 - MAP.k0), MAP.f1 - (y + 1) / mH * (MAP.f1 - MAP.f0));
+      g.fillStyle = 'rgb(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ')'; g.fillRect(x, y, 2, 2);
+    }
+    g.strokeStyle = 'rgba(255,241,222,.75)'; g.lineWidth = 1; g.setLineDash([2, 3]); g.beginPath();
+    for (let y = 0; y <= mH; y += 2) {
+      const f = MAP.f1 - y / mH * (MAP.f1 - MAP.f0), x = kx(Math.sqrt(f) / 2 - f);
+      if (y === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke(); g.setLineDash([]);
+    g.font = '700 9px ui-monospace,Menlo,Consolas,monospace'; g.lineJoin = 'round'; g.lineWidth = 3; g.textAlign = 'left';
+    const lab = (t, x, y, al) => { g.textAlign = al || 'left'; g.strokeStyle = 'rgba(4,34,42,.85)'; g.strokeText(t, x, y); g.fillStyle = '#fff1de'; g.fillText(t, x, y); };
+    lab('solid', 8, mH - 9); lab('still water', mW - 8, 13, 'right'); lab('labyrinths · worms', kx(0.0602), fy(0.0815), 'right'); lab('spots', kx(0.0658), fy(0.0705));
+    drawMap();
+  }
+  function drawMap() {
+    if (!mctx) return;
+    mctx.setTransform(1, 0, 0, 1, 0, 0); mctx.drawImage(mbg, 0, 0); mctx.setTransform(mD, 0, 0, mD, 0, 0);
+    if (atlas) {
+      mctx.strokeStyle = 'rgba(255,241,222,.95)'; mctx.lineWidth = 1.5; mctx.setLineDash([4, 3]);
+      mctx.strokeRect(kx(ATL.k0), fy(ATL.f1), kx(ATL.k1) - kx(ATL.k0), fy(ATL.f0) - fy(ATL.f1)); mctx.setLineDash([]);
+    }
+    mctx.font = '700 9.5px ui-monospace,Menlo,Consolas,monospace'; mctx.textAlign = 'center'; mctx.textBaseline = 'middle';
+    ORDER.forEach((id, j) => {
+      const x = kx(PRESETS[id].k), y = fy(PRESETS[id].f);
+      mctx.fillStyle = 'rgba(255,241,222,.95)'; mctx.beginPath(); mctx.arc(x, y, 6.5, 0, 6.283); mctx.fill();
+      mctx.fillStyle = '#06303a'; mctx.fillText(String(j + 1), x, y + 0.5);
+    });
+    if (!atlas) {
+      const x = kx(cur.k), y = fy(cur.f);
+      mctx.strokeStyle = 'rgba(255,241,222,.55)'; mctx.lineWidth = 1; mctx.beginPath(); mctx.moveTo(x, 0); mctx.lineTo(x, mH); mctx.moveTo(0, y); mctx.lineTo(mW, y); mctx.stroke();
+      mctx.strokeStyle = '#ff6f59'; mctx.lineWidth = 3; mctx.beginPath(); mctx.arc(x, y, 9.5, 0, 6.283); mctx.stroke();
+      mctx.strokeStyle = '#fff1de'; mctx.lineWidth = 1.2; mctx.beginPath(); mctx.arc(x, y, 12, 0, 6.283); mctx.stroke();
+    }
+  }
+  function mapPick(e) {
+    if (atlas) setAtlas(false);
+    const r = mapC.getBoundingClientRect();
+    tgt.k = clamp(MAP.k0 + (e.clientX - r.left) / r.width * (MAP.k1 - MAP.k0), MAP.k0, MAP.k1);
+    tgt.f = clamp(MAP.f1 - (e.clientY - r.top) / r.height * (MAP.f1 - MAP.f0), MAP.f0, MAP.f1);
+    tweenRate = 14; unpressChips(); desc.textContent = 'Travelling the map — the reef reshapes itself as you cross the boundaries.';
+  }
+  let mapDown = false;
+  mapC.addEventListener('pointerdown', e => { mapDown = true; mapC.setPointerCapture(e.pointerId); mapPick(e); });
+  mapC.addEventListener('pointermove', e => { if (mapDown) mapPick(e); });
+  mapC.addEventListener('pointerup', () => { mapDown = false; });
+  mapC.addEventListener('pointercancel', () => { mapDown = false; });
+  mapC.addEventListener('keydown', e => {
+    const st = e.shiftKey ? 5 : 1; let hit = true;
+    if (e.key === 'ArrowLeft') tgt.k -= 0.0004 * st; else if (e.key === 'ArrowRight') tgt.k += 0.0004 * st;
+    else if (e.key === 'ArrowUp') tgt.f += 0.001 * st; else if (e.key === 'ArrowDown') tgt.f -= 0.001 * st; else hit = false;
+    if (hit) { e.preventDefault(); if (atlas) setAtlas(false); tgt.k = clamp(tgt.k, MAP.k0, MAP.k1); tgt.f = clamp(tgt.f, MAP.f0, MAP.f1); tweenRate = 10; unpressChips(); }
+  });
+
+  /* ================= tools ================= */
+  function setTool(t) { tool = t; segs.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.t === t))); ring.classList.toggle('erase', t === 'erase'); }
+  segs.forEach(b => b.addEventListener('click', () => setTool(b.dataset.t)));
+  function techText() { tech.textContent = 'A+2B→3B · Da 1 · Db 0.5 · ' + W + '×' + H + ' · ' + tempo + ' steps/frame'; }
+  function setBrush(v) { brush = clamp(Math.round(v), 2, 16); bs.value = brush; bo.textContent = brush; setFill(bs); ringSize(); }
+  bs.addEventListener('input', () => setBrush(+bs.value));
+  ts.addEventListener('input', () => { tempo = +ts.value; to.textContent = tempo; setFill(ts); techText(); });
+  function setPaused(p) {
+    paused = p; pp.textContent = p ? 'Play' : 'Pause';
+    stat.classList.toggle('paused', p); statTxt.textContent = p ? 'paused' : 'growing';
+  }
+  pp.addEventListener('click', () => setPaused(!paused));
+  function resetReef() {
+    growFresh(PRESETS[activePreset || 'coral'].seeds + (activePreset ? 0 : 60));
+    stepCount = 0; introStart = 0;
+    preroll(reduce ? 700 : 200, 900);
+  }
+  rs.addEventListener('click', resetReef);
+  function setAtlas(on, quiet) {
+    if (on === atlas) return;
+    atlas = on; at.setAttribute('aria-pressed', String(on)); fs.disabled = ks.disabled = on;
+    setParams();
+    if (on) {
+      A.fill(1); B.fill(0); sprinkle(320); intro = true; introStart = stepCount; introT = time; unpressChips();
+      desc.textContent = 'Atlas: feed rises up the page, kill grows to the right — every behaviour at once. Hover to read f and k.';
+    } else probe.classList.remove('on');
+    dirty = true; drawMap();
+    if (on) showCaption('Atlas', 'f 0.020 – 0.080 · k 0.052 – 0.068');
+  }
+  at.addEventListener('click', () => setAtlas(!atlas));
+
+  function foldPanel(off) {
+    panel.classList.toggle('off', off); unfoldBtn.hidden = !off; foldBtn.setAttribute('aria-expanded', String(!off));
+    (off ? unfoldBtn : foldBtn).focus({ preventScroll: true });
+  }
+  foldBtn.addEventListener('click', () => foldPanel(true));
+  unfoldBtn.addEventListener('click', () => foldPanel(false));
+
+  /* ================= painting on the reef ================= */
+  const fctx = fxc.getContext('2d'), bub = [];
+  function spawnBubbles(x, y, n) {
+    if (reduce) return;
+    for (let j = 0; j < n && bub.length < 110; j++) {
+      bub.push({ x: x + (Math.random() - 0.5) * brush * scaleCss * 1.3, y: y + (Math.random() - 0.5) * brush * scaleCss * 1.3,
+        r: 2 + Math.random() * 5, vy: 22 + Math.random() * 46, ph: Math.random() * 6.28, t: 0, life: 1.5 + Math.random() * 1.7 });
+    }
+  }
+  function drawBubbles(dt) {
+    fctx.setTransform(1, 0, 0, 1, 0, 0); fctx.clearRect(0, 0, fxc.width, fxc.height);
+    if (!bub.length) return;
+    fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (let i = bub.length - 1; i >= 0; i--) {
+      const b = bub[i]; b.t += dt;
+      if (b.t > b.life) { bub.splice(i, 1); continue; }
+      b.y -= b.vy * dt;
+      const x = b.x + Math.sin(b.t * 3 + b.ph) * 6, a = Math.min(1, b.t * 6) * (1 - b.t / b.life);
+      fctx.globalAlpha = a * 0.85; fctx.strokeStyle = '#fff1de'; fctx.lineWidth = 1.4; fctx.beginPath(); fctx.arc(x, b.y, b.r, 0, 6.283); fctx.stroke();
+      fctx.globalAlpha = a * 0.55; fctx.fillStyle = '#fff1de'; fctx.beginPath(); fctx.arc(x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.26, 0, 6.283); fctx.fill();
+    }
+    fctx.globalAlpha = 1;
+  }
+  const cellOf = (x, y) => [(x - cwCss / 2) / scaleCss + W / 2, (y - chCss / 2) / scaleCss + H / 2];
+  let lastCell = null;
+  function paintAt(x, y, erase) {
+    const c = cellOf(x, y);
+    if (lastCell) {
+      const dx = c[0] - lastCell[0], dy = c[1] - lastCell[1], dist = Math.hypot(dx, dy), n = Math.max(1, Math.ceil(dist / Math.max(1.5, brush * 0.5)));
+      for (let j = 1; j <= n; j++) stamp(lastCell[0] + dx * j / n, lastCell[1] + dy * j / n, brush, erase ? -1 : 1);
+    } else stamp(c[0], c[1], brush, erase ? -1 : 1);
+    lastCell = c; dirty = true;
+    if (!erase) spawnBubbles(x, y, Math.random() < 0.6 ? 1 : 0);
+  }
+  function ringSize() {
+    const d = Math.max(14, brush * 2 * scaleCss);
+    ring.style.width = d + 'px'; ring.style.height = d + 'px'; ring.style.margin = (-d / 2) + 'px 0 0 ' + (-d / 2) + 'px';
+  }
+  function moveRing(x, y) { ring.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)'; }
+  function probeAt(x, y) {
+    if (!atlas) { probe.classList.remove('on'); return; }
+    const c = cellOf(x, y), u = clamp(c[0] / W, 0, 1), v = clamp(c[1] / H, 0, 1);
+    probe.textContent = 'f ' + pad(lerp(ATL.f1, ATL.f0, v), 4) + ' · k ' + pad(lerp(ATL.k0, ATL.k1, u), 4);
+    probe.style.transform = 'translate(' + (x + 16).toFixed(0) + 'px,' + (y + 18).toFixed(0) + 'px)'; probe.classList.add('on');
+  }
+  stage.addEventListener('pointerdown', e => {
+    if (e.button > 2) return;
+    mouse.down = true; mouse.erase = tool === 'erase' || e.shiftKey || e.button === 2; mouse.type = e.pointerType;
+    try { stage.setPointerCapture(e.pointerId); } catch (err) { /* not fatal */ }
+    lastCell = null; mouse.x = e.clientX; mouse.y = e.clientY; mouse.in = true;
+    ring.classList.toggle('erase', mouse.erase || tool === 'erase'); ring.classList.add('down');
+    if (e.pointerType !== 'mouse') ring.classList.remove('on');
+    paintAt(e.clientX, e.clientY, mouse.erase); hint.classList.add('gone'); e.preventDefault();
+  });
+  stage.addEventListener('pointermove', e => {
+    if (e.clientX < 3 && e.clientY < 3 && !mouse.in) return; /* ignore the synthetic move at the corner */
+    mouse.x = e.clientX; mouse.y = e.clientY; mouse.in = true; mouse.type = e.pointerType;
+    if (e.pointerType === 'mouse') { ring.classList.add('on'); moveRing(e.clientX, e.clientY); probeAt(e.clientX, e.clientY); ring.classList.toggle('erase', tool === 'erase' || e.shiftKey || mouse.erase); }
+    if (mouse.down) paintAt(e.clientX, e.clientY, mouse.erase);
+  });
+  const endPaint = e => { mouse.down = false; mouse.erase = false; lastCell = null; ring.classList.remove('down'); ring.classList.toggle('erase', tool === 'erase'); if (e && e.pointerType && e.pointerType !== 'mouse') { mouse.in = false; } };
+  stage.addEventListener('pointerup', endPaint); stage.addEventListener('pointercancel', endPaint);
+  stage.addEventListener('pointerleave', () => { if (!mouse.down) { mouse.in = false; ring.classList.remove('on'); probe.classList.remove('on'); } });
+  stage.addEventListener('contextmenu', e => e.preventDefault());
+
+  /* keyboard: canvas focus gives a virtual brush */
+  const kb = { x: 0.5, y: 0.5 };
+  glc.addEventListener('focus', () => { mouse.in = true; mouse.x = kb.x * cwCss; mouse.y = kb.y * chCss; ring.classList.add('on'); moveRing(mouse.x, mouse.y); });
+  glc.addEventListener('blur', () => { mouse.in = false; ring.classList.remove('on'); });
+  addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target, tag = t && t.tagName, k = e.key;
+    if (t === glc && k.indexOf('Arrow') === 0) {
+      e.preventDefault(); const st = e.shiftKey ? 0.1 : 0.03;
+      kb.x = clamp(kb.x + (k === 'ArrowRight' ? st : k === 'ArrowLeft' ? -st : 0), 0, 1); kb.y = clamp(kb.y + (k === 'ArrowDown' ? st : k === 'ArrowUp' ? -st : 0), 0, 1);
+      mouse.x = kb.x * cwCss; mouse.y = kb.y * chCss; moveRing(mouse.x, mouse.y); probeAt(mouse.x, mouse.y); return;
+    }
+    if (t === glc && (k === 'Enter' || k === 'Backspace' || k === 'Delete')) {
+      e.preventDefault(); lastCell = null; paintAt(kb.x * cwCss, kb.y * chCss, k !== 'Enter' || tool === 'erase'); lastCell = null; hint.classList.add('gone'); return;
+    }
+    if (k >= '1' && k <= '5') { selectPreset(ORDER[+k - 1]); return; }
+    if (k === ' ' && tag !== 'BUTTON' && t !== mapC) { e.preventDefault(); setPaused(!paused); return; }
+    if (tag === 'INPUT') return;
+    if (k === 'r' || k === 'R') resetReef();
+    else if (k === 'e' || k === 'E') setTool(tool === 'erase' ? 'paint' : 'erase');
+    else if (k === '[') setBrush(brush - 1);
+    else if (k === ']') setBrush(brush + 1);
+    else if (k === 'h' || k === 'H') foldPanel(!panel.classList.contains('off'));
+    else if (k === 'a' || k === 'A') setAtlas(!atlas);
+    else if (k === 'p' || k === 'P') setPaused(!paused);
+  });
+
+  /* ================= frame loop ================= */
+  function updateLight(dt) {
+    if (reduce) { light.tx = cwCss * 0.3; light.ty = chCss * 0.28; }
+    else if (mouse.in) { light.tx = mouse.x; light.ty = mouse.y; }
+    else { const a = time * 0.16; light.tx = cwCss * (0.5 + 0.32 * Math.cos(a)); light.ty = chCss * (0.42 + 0.26 * Math.sin(a * 0.8)); }
+    const k = 1 - Math.exp(-dt * 4); light.x += (light.tx - light.x) * k; light.y += (light.ty - light.y) * k;
+  }
+  let uiT = 0, ambT = 0, slow = 0, scaleT = 0;
+  function uiTick(dt) {
+    uiT += dt; ambT += dt;
+    if (ambT > 0.55 && !reduce && !paused) { /* tiny bubbles drift up from living coral */
+      ambT = 0;
+      for (let tries = 0; tries < 6; tries++) {
+        const x = Math.random() * W | 0, y = Math.random() * H | 0;
+        if (B[(y + 1) * S + x + 1] > 0.25) { const px = (x + 0.5 - W / 2) * scaleCss + cwCss / 2, py = (y + 0.5 - H / 2) * scaleCss + chCss / 2; if (px > 0 && py > 0 && px < cwCss && py < chCss) bub.push({ x: px, y: py, r: 1.5 + Math.random() * 3, vy: 14 + Math.random() * 22, ph: Math.random() * 6.28, t: 0, life: 2.4 + Math.random() * 1.6 }); break; }
+      }
+    }
+    if (uiT < 0.4) return;
+    uiT = 0;
+    stepN.textContent = 'step ' + stepCount.toLocaleString('en-US');
+    let sum = 0, c = 0; for (let i = S + 1; i < N - S; i += 37) { sum += B[i]; c++; }
+    if (!paused) statTxt.textContent = sum / c < 0.002 ? 'quiet water — seed it' : (intro ? 'growing · time-lapse' : 'growing');
+  }
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    const dtms = Math.min(50, now - last || 16); last = now;
+    frameMs = lerp(frameMs, dtms, 0.1);
+    if (dtms > 45) slow++; else if (dtms < 28) slow = 0;
+    if (slow >= 5 && renderScale > 0.66 && now - scaleT > 800) { renderScale = Math.max(0.66, renderScale * 0.86); scaleT = now; slow = 0; resizeCanvas(true); ringSize(); }
+    const dt = dtms / 1000; time += dt;
+    tween(dt);
+    if (!paused) stepBatch();
+    updateLight(dt);
+    if (dirty) { buildTex(); dirty = false; }
+    if (R) drawGL(time); else draw2D();
+    if (!ready) { ready = true; stage.classList.add('ready'); }
+    drawBubbles(dt);
+    uiTick(dt);
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelAnimationFrame(raf); raf = 0; } else if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } });
+
+  let rt = 0;
+  addEventListener('resize', () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => {
+      resizeCanvas(false);
+      if (Math.abs((cwCss / chCss) / (W / H) - 1) > 0.32) {
+        const d = pickDims(cwCss / chCss); makeGrid(d[0], d[1]); if (R) R.w = 0;
+        growFresh(PRESETS[activePreset || 'coral'].seeds + (activePreset ? 0 : 60)); stepCount = 0; introStart = 0; preroll(300, 900); resizeCanvas(false); techText();
+      }
+      ringSize(); mapSetup(); dirty = true;
+    }, 140);
+  });
+
+  /* ================= go ================= */
+  R = initGL();
+  if (!R) { glc.hidden = true; c2.hidden = false; ctx2 = c2.getContext('2d', { alpha: false }); }
+  resizeCanvas(true);
+  const d0 = pickDims(cwCss / chCss); makeGrid(d0[0], d0[1]);
+  resizeCanvas(true);
+  seedField(PRESETS.coral.seeds + 80);
+  light.x = light.tx = cwCss * 0.3; light.y = light.ty = chCss * 0.3;
+  selectPreset('coral', true);
+  setFill(bs); setFill(ts); ringSize(); techText(); mapSetup(); syncUI();
+  setTimeout(() => hint.classList.add('gone'), 10000);
+  setTimeout(() => { /* let the panel paint first, then grow the reef and start the clock */
+    preroll(reduce ? 1400 : 900, reduce ? 2200 : 1300);
+    raf = requestAnimationFrame(t => { last = t; frame(t); });
+  }, 40);
+})();
+</script>
+</body>
+</html>

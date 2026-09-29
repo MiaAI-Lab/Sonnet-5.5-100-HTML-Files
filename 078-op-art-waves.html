@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="mono">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f3ee">
+<title>Vibration No. 4 — An Op Art Study</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f5f3ee; --fg:#0a0a0a; --dim:rgba(10,10,10,.56); --hair:rgba(10,10,10,.24); --acc:#e8391d;
+  --sans:"Helvetica Neue",Helvetica,Arial,"Nimbus Sans","Liberation Sans",sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --gut:clamp(12px,2vw,24px);
+}
+html[data-theme="riley"]{--bg:#f2ead8;--fg:#131a3a;--dim:rgba(19,26,58,.62);--hair:rgba(19,26,58,.26);--acc:#e8391d}
+html[data-theme="acid"]{color-scheme:dark;--bg:#000;--fg:#b6ff00;--dim:rgba(182,255,0,.64);--hair:rgba(182,255,0,.3);--acc:#b6ff00}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--bg);color:var(--fg)}
+body{height:100vh;height:100dvh;overflow:hidden;font-family:var(--sans);font-size:11px;line-height:1.35;-webkit-font-smoothing:antialiased;transition:background-color .7s cubic-bezier(.2,.8,.2,1),color .7s;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+
+/* ---------- the two line fields ---------- */
+.stage{position:fixed;inset:0;overflow:hidden;touch-action:none;cursor:none;transition:opacity .2s ease-out}
+.stage.swap{opacity:0}
+.stage canvas{position:absolute;display:block}
+#cA{left:0;top:0;width:100%;height:100%}
+#cB{left:-8%;top:-8%;width:116%;height:116%;transform-origin:50% 50%;will-change:transform;mix-blend-mode:multiply}
+.cursor{position:fixed;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;border:1px solid #fff;border-radius:50%;mix-blend-mode:difference;pointer-events:none;z-index:5;opacity:0;transition:opacity .4s,width .25s,height .25s,margin .25s;will-change:transform}
+.cursor.on{opacity:1}
+.cursor.press{width:22px;height:22px;margin:-11px 0 0 -11px}
+@media (hover:none){.stage{cursor:auto}.cursor{display:none}}
+
+/* ---------- museum-label plates ---------- */
+.plate{position:fixed;z-index:3;background:var(--bg);color:var(--fg);border:1px solid var(--fg);padding:8px 11px 9px;transition:background-color .7s,color .7s,border-color .7s}
+.plate b{display:block;font-weight:700;font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+.plate span{display:block;margin-top:3px;color:var(--dim);font-size:9.5px;letter-spacing:.06em}
+.title{left:var(--gut);top:var(--gut)}
+.caption{left:var(--gut);bottom:var(--gut);font-variant-numeric:tabular-nums}
+.caption b{font-size:10px;letter-spacing:.14em}
+.caption em{font-style:normal;color:var(--acc)}
+html[data-theme="mono"] .caption em{color:inherit}
+
+/* ---------- controls ---------- */
+.panel{position:fixed;right:var(--gut);bottom:var(--gut);z-index:4;width:276px;background:var(--bg);color:var(--fg);border:1px solid var(--fg);padding:12px 14px 10px;display:grid;gap:9px;transition:background-color .7s,color .7s,border-color .7s}
+.row{display:grid;grid-template-columns:74px 1fr;align-items:center;gap:8px}
+.lab{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip,.pill{font:inherit;font-size:10px;letter-spacing:.04em;line-height:1;padding:6px 8px;border:1px solid var(--hair);background:transparent;color:var(--fg);cursor:pointer;transition:background-color .2s,color .2s,border-color .2s}
+.chip:hover,.pill:hover{border-color:var(--fg)}
+.chip[aria-pressed="true"],.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chip:focus-visible,.pill:focus-visible,.sl input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.sl{display:grid;grid-template-columns:74px 1fr 40px;align-items:center;gap:8px}
+.sl output{font-family:var(--mono);font-size:10px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+.sl input{-webkit-appearance:none;appearance:none;width:100%;height:22px;margin:0;background:transparent;cursor:pointer;touch-action:pan-y}
+.sl input::-webkit-slider-runnable-track{height:1px;background:var(--fg)}
+.sl input::-moz-range-track{height:1px;background:var(--fg)}
+.sl input::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;margin-top:-5px;border-radius:0;background:var(--fg);border:0}
+.sl input::-moz-range-thumb{width:11px;height:11px;border-radius:0;background:var(--fg);border:0}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:2px}
+.tools .hint{font-size:9px;letter-spacing:.08em;color:var(--dim)}
+.toggle{display:none;position:fixed;right:var(--gut);bottom:var(--gut);z-index:5}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media (max-width:820px){
+  .toggle{display:block;background:var(--bg);color:var(--fg);border:1px solid var(--fg);padding:11px 14px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;min-height:40px}
+  .panel{left:var(--gut);right:var(--gut);width:auto;bottom:calc(var(--gut) + 50px);display:none}
+  .panel.open{display:grid}
+  .caption{right:calc(var(--gut) + 116px);bottom:var(--gut)}
+  .tools .hint{display:none}
+  .chip{padding:9px 10px}
+}
+@media (max-width:820px) and (max-height:760px){.title span{display:none}}
+@media (prefers-reduced-motion:reduce){.stage,body,.plate,.panel{transition:none}}
+</style>
+</head>
+<body>
+<div class="stage" id="stage" role="img" aria-label="Optical art: hundreds of fine lines warped by moving sine waves and a bulge that follows your pointer, overlaid with a second rotating field that creates moire bands.">
+  <canvas id="cA" aria-hidden="true"></canvas>
+  <canvas id="cB" aria-hidden="true"></canvas>
+</div>
+<div class="cursor" id="cursor" aria-hidden="true"></div>
+
+<header class="plate title">
+  <b>Vibration</b>
+  <span>Optical study after the 1960s &middot; original work</span>
+</header>
+<p class="plate caption" id="caption"><b>Vibration No. 4 &mdash; <em id="cap-n">1,024 lines</em></b><span id="cap-s">Waves &middot; Monochrome</span></p>
+
+<button class="toggle" id="toggle" type="button" aria-expanded="false" aria-controls="panel">Controls</button>
+<aside class="panel" id="panel" aria-label="Controls">
+  <div class="row"><span class="lab" id="l-mode">Pattern</span>
+    <div class="chips" role="group" aria-labelledby="l-mode">
+      <button class="chip" type="button" data-mode="0" aria-pressed="true">Waves</button>
+      <button class="chip" type="button" data-mode="1" aria-pressed="false">Checker Warp</button>
+      <button class="chip" type="button" data-mode="2" aria-pressed="false">Concentric Eyes</button>
+    </div></div>
+  <div class="row"><span class="lab" id="l-col">Colour</span>
+    <div class="chips" role="group" aria-labelledby="l-col">
+      <button class="chip" type="button" data-theme="mono" aria-pressed="true">Monochrome</button>
+      <button class="chip" type="button" data-theme="riley" aria-pressed="false">Riley</button>
+      <button class="chip" type="button" data-theme="acid" aria-pressed="false">Acid</button>
+    </div></div>
+  <div class="sl"><label class="lab" for="s-freq">Frequency</label><input id="s-freq" type="range" min="0" max="1000" value="813"><output id="o-freq" for="s-freq">474</output></div>
+  <div class="sl"><label class="lab" for="s-amp">Amplitude</label><input id="s-amp" type="range" min="0" max="2000" value="1000"><output id="o-amp" for="s-amp">1.00</output></div>
+  <div class="sl"><label class="lab" for="s-speed">Speed</label><input id="s-speed" type="range" min="0" max="3000" value="1000"><output id="o-speed" for="s-speed">1.0&times;</output></div>
+  <div class="sl"><label class="lab" for="s-thick">Thickness</label><input id="s-thick" type="range" min="300" max="3000" value="680"><output id="o-thick" for="s-thick">0.7</output></div>
+  <div class="tools"><button class="pill" id="b-pause" type="button" aria-pressed="false">Pause</button><span class="hint">Move &middot; wheel &middot; click &middot; space</span></div>
+</aside>
+<p class="sr" id="live" aria-live="polite"></p>
+
+<script>
+(function () {
+'use strict';
+/* ============ helpers, palette, state ============ */
+const $ = (s) => document.querySelector(s);
+const TAU = Math.PI * 2, DEG = Math.PI / 180;
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const THEMES = {
+  mono:  { label: 'Monochrome', bg: '#f5f3ee', c: ['#0a0a0a', '#0a0a0a'], dens: 1,    tk: 1 },
+  riley: { label: 'Riley',      bg: '#f2ead8', c: ['#1738c8', '#e8391d'], dens: 0.56, tk: 1.75 },
+  acid:  { label: 'Acid',       bg: '#000000', c: ['#b6ff00', '#b6ff00'], dens: 0.62, tk: 1.55 }
+};
+const MODES = ['Waves', 'Checker Warp', 'Concentric Eyes'];
+const S = { mode: 0, theme: 'mono', freq: 0.813, amp: 1, speed: REDUCED ? 0.25 : 1, thick: 0.68, paused: false };
+const cA = $('#cA'), cB = $('#cB'), stage = $('#stage');
+// software canvases: thousands of thin anti-aliased segments rasterise faster on the CPU than through GPU path tessellation
+const gA = cA.getContext('2d', { willReadFrequently: true }), gB = cB.getContext('2d', { willReadFrequently: true });
+let W = 0, H = 0, DPR = 1, MX = 0, MY = 0, WB = 0, HB = 0, small = false;
+let phase = 0, clock = 0, born = 0, dirty = true, lastFrame = 0, lastRot = -99;
+const ptr = { x: 0, y: 0, tx: 0, ty: 0, active: 0, seen: 0, energy: 0, down: false };
+const view = { cx: 0, cy: 0, amp: 0.6 };        // eased bulge centre and swell
+
+/* ============ per-frame tables (allocated once) ============ */
+const MAXS = 300, MAXN = 240;
+const xs = new Float32Array(MAXS), ex = new Float32Array(MAXS), yy = new Float32Array(MAXS);
+const s1 = new Float32Array(MAXS), c1 = new Float32Array(MAXS), s2 = new Float32Array(MAXS), c2 = new Float32Array(MAXS), s3 = new Float32Array(MAXS), c3 = new Float32Array(MAXS);
+const cosA = new Float32Array(MAXN + 1), sinA = new Float32Array(MAXN + 1);
+for (let i = 0; i <= MAXN; i++) { cosA[i] = Math.cos(i / MAXN * TAU); sinA[i] = Math.sin(i / MAXN * TAU); }
+let cornerX = new Float32Array(1), cornerY = new Float32Array(1);
+
+/* ============ geometry & derived numbers ============ */
+function rowsFor() { return Math.round(lerp(100, small ? 340 : 560, S.freq) * THEMES[S.theme].dens); }
+function cellRows() { return Math.round(lerp(6, small ? 38 : 42, S.freq)); }
+function layout() {
+  DPR = Math.min(1.5, window.devicePixelRatio || 1);
+  W = window.innerWidth; H = window.innerHeight; small = W < 720 || H < 520;
+  MX = Math.round(W * 0.08); MY = Math.round(H * 0.08); WB = W + 2 * MX; HB = H + 2 * MY;
+  cA.width = Math.round(W * DPR); cA.height = Math.round(H * DPR);
+  cB.width = Math.round(WB * DPR); cB.height = Math.round(HB * DPR);
+  dirty = true;
+}
+const unit = () => clamp(Math.min(W, H) / 800, 0.5, 1.35);
+
+/* ============ pattern 1: horizontal lines pushed around by three travelling sines and a lens-like bulge ============ */
+function drawWaves(g, w, h, ox, oy, lay, env) {
+  const th = THEMES[S.theme], rows = rowsFor(), sp = H / rows, u = unit();
+  const nSeg = small ? clamp(Math.ceil(w / 9), 50, 100) : clamp(Math.ceil(w / 11), 90, 190);
+  const fw = 0.8 + 0.55 * S.freq, sh = lay ? 1.037 : 1, ph = phase, off = lay ? 0.5 : 0;
+  const k1x = TAU / 430 * fw * sh, k1y = TAU / 610 * fw, k2x = -TAU / 280 * fw, k2y = TAU / 250 * fw * sh, k3x = TAU / 170 * fw, k3y = -TAU / 720 * fw;
+  const A1 = 26 * u * S.amp * env, A2 = 17 * u * S.amp * env, A3 = 9 * u * S.amp * env;
+  const p1 = ph * 0.62 + lay * 1.3, p2 = -ph * 0.41 + lay * 0.7, p3 = ph * 0.33 + lay * 2.1;
+  const sig = 0.27 * H, inv = 1 / (2 * sig * sig), bAmp = 0.9 * view.amp * S.amp * env * (0.78 + 0.22 * Math.sin(ph * 0.5 + lay));
+  const cx = view.cx, cy = view.cy;
+  for (let k = 0; k <= nSeg; k++) {
+    const x = k / nSeg * w, xv = x - ox; xs[k] = x;
+    const a1 = k1x * xv, a2 = k2x * xv, a3 = k3x * xv;
+    s1[k] = Math.sin(a1); c1[k] = Math.cos(a1); s2[k] = Math.sin(a2); c2[k] = Math.cos(a2); s3[k] = Math.sin(a3); c3[k] = Math.cos(a3);
+    ex[k] = Math.exp(-(xv - cx) * (xv - cx) * inv);
+  }
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const opaque = S.theme === 'mono', ink = opaque && lay ? th.bg : th.c[0];
+  if (opaque) { g.fillStyle = lay ? th.c[0] : th.bg; g.fillRect(0, 0, w, h); } else g.clearRect(0, 0, w, h);
+  g.lineWidth = S.thick * th.tk * (lay ? 0.9 : 1); g.lineJoin = 'round'; g.lineCap = 'butt';
+  const two = th.c[0] !== th.c[1], nRows = Math.ceil(h / sp) + 2;
+  for (let pass = 0; pass < (two ? 2 : 1); pass++) {
+    g.beginPath();
+    for (let r = -1; r < nRows; r++) {
+      if (two && ((r + lay + 1000) & 1) !== pass) continue;
+      const y0 = (r + off) * sp, yv = y0 - oy;
+      const b1 = k1y * yv + p1, sb1 = Math.sin(b1), cb1 = Math.cos(b1);
+      const b2 = k2y * yv + p2, sb2 = Math.sin(b2), cb2 = Math.cos(b2);
+      const b3 = k3y * yv + p3, sb3 = Math.sin(b3), cb3 = Math.cos(b3);
+      const dy = yv - cy, bl = bAmp * dy * Math.exp(-dy * dy * inv);
+      for (let k = 0; k <= nSeg; k++) {
+        yy[k] = y0 + A1 * (s1[k] * cb1 + c1[k] * sb1) + A2 * (s2[k] * cb2 + c2[k] * sb2) + A3 * (s3[k] * cb3 + c3[k] * sb3) + bl * ex[k];
+      }
+      g.moveTo(xs[0], yy[0]);                       // midpoint-smoothed quadratic chain: no visible kinks between segments
+      for (let k = 1; k < nSeg; k++) g.quadraticCurveTo(xs[k], yy[k], (xs[k] + xs[k + 1]) * 0.5, (yy[k] + yy[k + 1]) * 0.5);
+      g.lineTo(xs[nSeg], yy[nSeg]);
+    }
+    g.strokeStyle = two ? th.c[pass] : ink; g.stroke();
+  }
+}
+
+/* ============ pattern 2: a checkerboard whose corners ride a sine field ============ */
+function drawChecker(g, w, h, ox, oy, lay, env) {
+  const th = THEMES[S.theme], rowsC = cellRows(), cs = H / rowsC, u = unit();
+  const nx = Math.ceil(w / cs) + 1, ny = Math.ceil(h / cs) + 1, need = (nx + 1) * (ny + 1);
+  if (cornerX.length < need) { cornerX = new Float32Array(need); cornerY = new Float32Array(need); }
+  const ph = phase, A = 15 * u * S.amp * env * (1 + cs / 60), sig = 0.3 * H, inv = 1 / (2 * sig * sig), bAmp = 0.55 * view.amp * S.amp * env * (0.8 + 0.2 * Math.sin(ph * 0.5 + lay));
+  const cx = view.cx, cy = view.cy, sh = lay ? 1.05 : 1, fw = 0.8 + 0.5 * S.freq;
+  for (let j = 0; j <= ny; j++) {
+    for (let i = 0; i <= nx; i++) {
+      const x = i * cs, y = j * cs, xv = x - ox, yv = y - oy, id = j * (nx + 1) + i;
+      const dxv = xv - cx, dyv = yv - cy, gs = Math.exp(-(dxv * dxv + dyv * dyv) * inv) * bAmp;
+      cornerX[id] = x + A * (0.9 * Math.sin(0.0105 * fw * yv + ph * 0.7 + lay) + 0.55 * Math.sin(0.0068 * fw * sh * (xv + yv) - ph * 0.5)) + dxv * gs;
+      cornerY[id] = y + A * (0.9 * Math.sin(0.0118 * fw * xv - ph * 0.6 + lay * 2) + 0.55 * Math.sin(0.0061 * fw * (xv - yv * sh) + ph * 0.4)) + dyv * gs;
+    }
+  }
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // layer A paints paper + ink cells; layer B is the inverse (difference blend gives an XNOR moire); Riley uses multiply on cream
+  let bgc, fgc;
+  if (!lay) { bgc = th.bg; fgc = th.c[0]; }
+  else if (S.theme === 'riley') { bgc = null; fgc = th.c[1]; }
+  else { bgc = th.c[0]; fgc = th.bg; }
+  g.clearRect(0, 0, w, h);
+  if (bgc) { g.fillStyle = bgc; g.fillRect(0, 0, w, h); }
+  g.fillStyle = fgc; g.beginPath();
+  for (let j = 0; j < ny; j++) {
+    for (let i = 0; i < nx; i++) {
+      if (((i + j + lay) & 1) === 0) continue;
+      const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 2, d = a + nx + 1;
+      g.moveTo(cornerX[a], cornerY[a]); g.lineTo(cornerX[b], cornerY[b]); g.lineTo(cornerX[c], cornerY[c]); g.lineTo(cornerX[d], cornerY[d]); g.closePath();
+    }
+  }
+  g.fill();
+}
+
+/* ============ pattern 3: concentric rings from two offset centres ("eyes") ============ */
+function drawEyes(g, w, h, ox, oy, lay, env) {
+  const th = THEMES[S.theme], rows = rowsFor(), sp = clamp(H / rows * 2.6, 4.2, 18), u = unit(), ph = phase;
+  const rMax = Math.hypot(w, h) * 0.85, nRing = Math.ceil(rMax / sp) + 1;
+  const sepA = (0.11 + 0.05 * Math.sin(ph * 0.31)) * Math.min(W, H) * S.amp * env * 0.9;
+  const ang = ph * 0.13 + view.cx * 0.0006;
+  const ccx = view.cx * 0.55 + W * 0.5 * 0.45, ccy = view.cy * 0.55 + H * 0.5 * 0.45;
+  const cx = ccx + (lay ? 1 : -1) * Math.cos(ang) * sepA + ox, cy = ccy + (lay ? 1 : -1) * Math.sin(ang) * sepA * 0.6 + oy;
+  const drift = (ph * 0.9 * (lay ? 1 : -0.8)) % 1, wob = 0.012 * S.amp * env, two = th.c[0] !== th.c[1];
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const opaque = S.theme === 'mono', ink = opaque && lay ? th.bg : th.c[0];
+  if (opaque) { g.fillStyle = lay ? th.c[0] : th.bg; g.fillRect(0, 0, w, h); } else g.clearRect(0, 0, w, h);
+  g.lineWidth = S.thick * th.tk * 1.6 * (lay ? 0.92 : 1);
+  for (let pass = 0; pass < (two ? 2 : 1); pass++) {
+    g.beginPath();
+    for (let k = 1; k < nRing; k++) {
+      if (two && ((k + lay) & 1) !== pass) continue;
+      const r = (k + drift) * sp;
+      if (r < 2) continue;
+      const nn = clamp(Math.round(r / 3.2), 36, MAXN), st = MAXN / nn;
+      for (let j = 0; j <= nn; j++) {
+        const idx = Math.min(MAXN, Math.round(j * st)), t = idx / MAXN * TAU;
+        const rr = r * (1 + wob * Math.sin(3 * t + ph * 0.8 + k * 0.03) + wob * 0.6 * Math.sin(5 * t - ph * 0.5));
+        const x = cx + rr * cosA[idx], y = cy + rr * sinA[idx];
+        if (j === 0) g.moveTo(x, y); else g.lineTo(x, y);
+      }
+    }
+    g.strokeStyle = two ? th.c[pass] : ink; g.stroke();
+  }
+}
+
+/* ============ theme, caption, controls ============ */
+const ui = {
+  capN: $('#cap-n'), capS: $('#cap-s'), live: $('#live'), panel: $('#panel'), toggle: $('#toggle'), cursor: $('#cursor'), pause: $('#b-pause'),
+  sl: { freq: $('#s-freq'), amp: $('#s-amp'), speed: $('#s-speed'), thick: $('#s-thick') },
+  out: { freq: $('#o-freq'), amp: $('#o-amp'), speed: $('#o-speed'), thick: $('#o-thick') },
+  modes: Array.from(document.querySelectorAll('.chip[data-mode]')), themes: Array.from(document.querySelectorAll('.chip[data-theme]'))
+};
+const nf = (n) => Math.round(n).toLocaleString('en-US');
+function blendFor() { return S.theme === 'riley' ? 'multiply' : 'difference'; }
+function countText() {
+  const rows = rowsFor();
+  if (S.mode === 0) return nf(rows + Math.ceil(rows * (H + 2 * MY) / H)) + ' lines';
+  if (S.mode === 1) { const rc = cellRows(); return nf(rc * Math.ceil(W / (H / rc)) + Math.ceil(rc * (H + 2 * MY) / H) * Math.ceil((W + 2 * MX) / (H / rc))) + ' cells'; }
+  { const sp = clamp(H / rows * 2.6, 4.2, 18); return nf(Math.ceil(Math.hypot(W, H) * 0.85 / sp) + Math.ceil(Math.hypot(W + 2 * MX, H + 2 * MY) * 0.85 / sp)) + ' rings'; }
+}
+function syncUI() {
+  ui.modes.forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.mode === S.mode)));
+  ui.themes.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.theme === S.theme)));
+  ui.out.freq.textContent = String(S.mode === 1 ? cellRows() : rowsFor());
+  ui.out.amp.textContent = S.amp.toFixed(2);
+  ui.out.speed.textContent = S.speed.toFixed(1) + '×';
+  ui.out.thick.textContent = S.thick.toFixed(1);
+  ui.capN.textContent = countText();
+  ui.capS.textContent = MODES[S.mode] + ' · ' + THEMES[S.theme].label + (S.paused ? ' · paused' : '');
+  ui.pause.setAttribute('aria-pressed', String(S.paused)); ui.pause.textContent = S.paused ? 'Resume' : 'Pause';
+  dirty = true;
+}
+function syncSliders() {
+  ui.sl.freq.value = String(Math.round(S.freq * 1000)); ui.sl.amp.value = String(Math.round(S.amp * 1000));
+  ui.sl.speed.value = String(Math.round(S.speed * 1000)); ui.sl.thick.value = String(Math.round(S.thick * 1000));
+}
+function applyTheme() {
+  document.documentElement.dataset.theme = S.theme;
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', THEMES[S.theme].bg);
+  cB.style.mixBlendMode = blendFor();
+}
+let swapT = 0;
+function swap(fn, say) {
+  const run = () => { fn(); applyTheme(); syncUI(); ui.live.textContent = say(); requestAnimationFrame(() => stage.classList.remove('swap')); };
+  if (REDUCED) { run(); return; }
+  stage.classList.add('swap'); clearTimeout(swapT); swapT = setTimeout(run, 200);
+}
+const setMode = (m) => swap(() => { S.mode = (m + 3) % 3; }, () => 'Pattern: ' + MODES[S.mode]);
+const setTheme = (t) => swap(() => { S.theme = t; }, () => 'Colour: ' + THEMES[S.theme].label);
+const nextTheme = () => { const k = Object.keys(THEMES); setTheme(k[(k.indexOf(S.theme) + 1) % k.length]); };
+function togglePause() { S.paused = !S.paused; syncUI(); ui.live.textContent = S.paused ? 'Paused' : 'Running'; }
+function resetControls() { S.freq = 0.813; S.amp = 1; S.speed = REDUCED ? 0.25 : 1; S.thick = 0.68; syncSliders(); syncUI(); }
+
+ui.modes.forEach((b) => b.addEventListener('click', () => setMode(+b.dataset.mode)));
+ui.themes.forEach((b) => b.addEventListener('click', () => setTheme(b.dataset.theme)));
+ui.pause.addEventListener('click', togglePause);
+ui.toggle.addEventListener('click', () => { const o = ui.panel.classList.toggle('open'); ui.toggle.setAttribute('aria-expanded', String(o)); ui.toggle.textContent = o ? 'Close' : 'Controls'; });
+ui.sl.freq.addEventListener('input', () => { S.freq = ui.sl.freq.value / 1000; syncUI(); });
+ui.sl.amp.addEventListener('input', () => { S.amp = ui.sl.amp.value / 1000; syncUI(); });
+ui.sl.speed.addEventListener('input', () => { S.speed = ui.sl.speed.value / 1000; syncUI(); });
+ui.sl.thick.addEventListener('input', () => { S.thick = ui.sl.thick.value / 1000; syncUI(); });
+
+/* ============ pointer: bulge centre, swell, pinch, click-to-cycle ============ */
+const touches = new Map(); let pinch0 = 0, pinchF0 = 0, pinched = false, down0 = null;
+function seePointer(e) {
+  const now = performance.now(), dx = e.clientX - ptr.tx, dy = e.clientY - ptr.ty, dt = Math.max(8, now - ptr.seen);
+  if (!ptr.init) { ptr.x = ptr.tx = e.clientX; ptr.y = ptr.ty = e.clientY; ptr.init = true; } else { ptr.tx = e.clientX; ptr.ty = e.clientY; }
+  ptr.energy = Math.min(1, ptr.energy + Math.hypot(dx, dy) / dt / 2600);
+  ptr.seen = now;
+}
+stage.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') ui.cursor.classList.add('on'); });
+stage.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') ui.cursor.classList.remove('on'); });
+stage.addEventListener('pointerdown', (e) => {
+  touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  try { stage.setPointerCapture(e.pointerId); } catch (_) { /* optional */ }
+  seePointer(e); ptr.down = true; ui.cursor.classList.add('press');
+  if (touches.size === 1) { down0 = { x: e.clientX, y: e.clientY, t: performance.now() }; pinched = false; }
+  else if (touches.size === 2) { const a = Array.from(touches.values()); pinch0 = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); pinchF0 = S.freq; pinched = true; }
+});
+stage.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'mouse') ui.cursor.classList.add('on');
+  if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (touches.size === 2 && pinch0 > 10) {
+    const a = Array.from(touches.values()), d = Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
+    S.freq = clamp(pinchF0 + (d / pinch0 - 1) * 0.9, 0, 1); syncSliders(); syncUI();
+  } else seePointer(e);
+});
+function endPointer(e) {
+  const had = touches.delete(e.pointerId);
+  if (touches.size === 0) { ptr.down = false; ui.cursor.classList.remove('press'); }
+  if (had && e.type === 'pointerup' && down0 && !pinched && touches.size === 0) {
+    if (Math.hypot(e.clientX - down0.x, e.clientY - down0.y) < 9 && performance.now() - down0.t < 420) setMode(S.mode + 1);
+  }
+  if (touches.size === 0) down0 = null;
+}
+stage.addEventListener('pointerup', endPointer); stage.addEventListener('pointercancel', endPointer);
+window.addEventListener('wheel', (e) => {
+  if (e.target.closest && e.target.closest('.panel')) return;
+  e.preventDefault();
+  let d = e.deltaY; if (e.deltaMode === 1) d *= 32;
+  S.freq = clamp(S.freq - d * (e.ctrlKey ? 0.006 : 0.0007), 0, 1); syncSliders(); syncUI();
+}, { passive: false });
+window.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const tag = e.target && e.target.tagName, k = e.key;
+  if (k === ' ' || k === 'Spacebar') { if (tag === 'BUTTON' || tag === 'INPUT') return; e.preventDefault(); togglePause(); }
+  else if (tag === 'INPUT') return;
+  else if (k === 'm' || k === 'M') setMode(S.mode + 1);
+  else if (k === 'c' || k === 'C') nextTheme();
+  else if (k === 'r' || k === 'R') resetControls();
+});
+
+/* ============ frame loop ============ */
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden) { lastFrame = 0; return; }
+  const dt = Math.min(0.05, lastFrame ? (now - lastFrame) / 1000 : 0.016); lastFrame = now; clock += dt;
+  const k = (r) => 1 - Math.exp(-dt * r);
+  ptr.active += ((now - ptr.seen < 4500 && ptr.init ? 1 : 0) - ptr.active) * k(2.2);
+  ptr.x += (ptr.tx - ptr.x) * k(9); ptr.y += (ptr.ty - ptr.y) * k(9); ptr.energy *= Math.exp(-dt * 1.6);
+  const ax = W * (0.5 + 0.3 * Math.sin(clock * 0.21)), ay = H * (0.5 + 0.26 * Math.sin(clock * 0.17 + 1.1));
+  const px = view.cx, py = view.cy, pa = view.amp;
+  view.cx += (lerp(ax, ptr.x, ptr.active) - view.cx) * k(4.5); view.cy += (lerp(ay, ptr.y, ptr.active) - view.cy) * k(4.5);
+  view.amp += (0.66 + 0.7 * ptr.energy + (ptr.down ? 0.5 : 0) + 0.12 * ptr.active - view.amp) * k(3.2);
+  if (!S.paused) phase += dt * S.speed;
+  ui.cursor.style.transform = 'translate(' + ptr.x.toFixed(1) + 'px,' + ptr.y.toFixed(1) + 'px)';
+  const moving = Math.abs(view.cx - px) + Math.abs(view.cy - py) + Math.abs(view.amp - pa) * 50 > 0.05;
+  if (S.paused && !moving && !dirty && clock - born > 3) return;
+  const env = REDUCED ? 1 : 1 - Math.pow(1 - clamp((clock - born) / 2.4, 0, 1), 3);
+  const fn = S.mode === 0 ? drawWaves : S.mode === 1 ? drawChecker : drawEyes;
+  fn(gA, W, H, 0, 0, 0, env); fn(gB, WB, HB, MX, MY, 1, env);
+  const rot = REDUCED ? 1.5 : 1.55 + 1.25 * Math.sin(phase * 0.11) + 0.35 * Math.sin(phase * 0.29 + 1);
+  if (Math.abs(rot - lastRot) > 0.0004) { cB.style.transform = 'rotate(' + rot.toFixed(4) + 'deg)'; lastRot = rot; }
+  dirty = false;
+}
+
+/* ============ boot ============ */
+layout(); applyTheme(); syncSliders(); syncUI();
+window.addEventListener('resize', () => { layout(); syncUI(); });
+document.addEventListener('visibilitychange', () => { lastFrame = 0; });
+view.cx = W * 0.5; view.cy = H * 0.5;
+requestAnimationFrame((t) => { born = clock; lastFrame = t; requestAnimationFrame(frame); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+==================== PROMPT ====================
+Build "Sky Clock", a panoramic landscape whose sky, light and life follow the time of day (real local time by default, plus a 24-hour scrubber). SVG/canvas landscape: a lake valley with layered mountains, a pine ridge, a small village with houses and a jetty, a boat, reeds. The sky gradient is keyed by hour with smooth interpolation: 04:00 pre-dawn indigo #1b2350, 06:00 sunrise coral/gold (#ffb37a to #f7d6a0 with blue above), 12:00 clear azure (#5aa9e6 to #cfe9ff), 17:30 golden hour (#ffcf8a to #ff9d6b), 19:30 dusk magenta/violet (#c2568a to #4a3a7d), 22:00 night navy #0b1030 with stars. Sun and moon travel arcs (moon with today's approximate phase), stars fade in and twinkle with a Milky Way band at night, clouds drift and take on light (under-lit pink at dawn), sun rays, lake reflections with ripples, village windows lighting at dusk, birds by day, bats at dusk, fireflies at night, mist over the lake at dawn. A large time readout in a thin serif ("17:42") with a phrase for the moment ("Golden hour", "Blue hour", "Deep night"); a scrubber shaped as an arc dial or slider to drag through 24 hours with instant scene updates; an "Auto" button to resume real time and a "Time-lapse" button that runs a whole day in ~20 s. Show approximate sunrise/sunset times for the user's date (standard solar formula at 45°N). Palette dynamic. Mobile-friendly.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Sky Clock — A Day Over the Lake
+
+==================== DESCRIPTION ====================
+A full-viewport canvas painting of a lake valley whose whole atmosphere is a function of the clock. Three procedurally generated mountain ridges, a pine ridge, a small lakeside village with a church spire, a wooden jetty, a rowing boat and swaying reeds sit beneath a sky gradient interpolated between hour-keyed palettes (pre-dawn indigo, coral sunrise, azure noon, golden hour, magenta dusk, navy night). The sun and moon follow arcs computed from a 45 degree north solar formula and today's real moon age, with a phase-correct moon disc. Stars, a Milky Way band, drifting under-lit clouds, sun rays, birds, bats, fireflies, dawn mist and a rippling mirrored lake reflection complete the scene. A large thin-serif time readout with an italic phrase, sunrise/sunset/daylight figures, and an arc-dial scrubber keyed to the sky's colours drive it.
+
+==================== TECHNIQUES ====================
+- Hour-keyed 3-stop sky gradients (top, mid, horizon, cloud tint) interpolated with smoothstep, with time remapped so real sunrise and sunset land on the 06:00 and 19:00 keys
+- Standard solar declination / hour-angle formula at 45 N for sunrise, sunset, altitude and azimuth; moon position from synodic age
+- Phase-correct moon disc with terminator ellipse, earthshine and maria
+- Scene rendered to an offscreen canvas, then mirrored into the lake in 2px strips with sine ripple displacement for a shimmering reflection
+- Fbm-noise mountain ridges with atmospheric haze tinted by the current horizon colour; instanced pine triangles
+- Layered radial-gradient clouds with shade, body and highlight passes tinted by the time of day
+- Additive rays, horizon glow, sun and moon glitter columns and ripple rings on the water
+- Windows and lanterns light up by night factor; birds by day, bats at dusk, fireflies at night, dawn mist banks
+- SVG arc-dial scrubber with colour-keyed gradient stroke, pointer capture and keyboard support
+- Auto, manual and 20-second time-lapse modes; canvas scaled by devicePixelRatio (capped) with resize handling
+
+==================== INTERACTION ====================
+By default the scene follows the visitor's real local time. Drag or tap the arc dial (or focus it and use arrow keys, PageUp/PageDown, Home/End) to jump to any minute of the day; the sky, light and life update instantly. "Auto - now" returns to real time; "Time-lapse" runs a full day in about 20 seconds and loops until toggled off. Adding #t=17.7 to the URL opens a specific hour. Animation pauses when the tab is hidden; with prefers-reduced-motion clouds, mist, birds and ripples slow down and the colon stops blinking.

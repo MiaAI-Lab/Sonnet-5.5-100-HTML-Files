@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOISE FLOOR — issue #3 · a cut-and-paste punk zine</title>
+<script>document.documentElement.className='js';</script>
+<style>
+/* ==========================================================
+   NOISE FLOOR #3 — photocopied, cut, pasted, slightly damp
+   ========================================================== */
+:root{
+  --paper:#eeeae0;--paper-hi:#f7f4ea;--ink:#0d0d0d;--news:#d8d3c5;--kraft:#cdb98c;--tape:216,196,143;
+  --orange:#ff5f1f;--green:#b8ff2c;--desk:#131211;
+  --imp:Impact,Haettenschweiler,"Franklin Gothic Heavy","Nimbus Sans Narrow","Arial Narrow","Arial Black",sans-serif;
+  --blk:"Arial Black","Arial Bold",Gadget,"Helvetica Neue","Nimbus Sans",Helvetica,Arial,sans-serif;
+  --mono:"Courier New",Courier,"Nimbus Mono PS","Liberation Mono",monospace;
+  --serif:Georgia,"Times New Roman","Nimbus Roman","Liberation Serif",serif;
+  --slab:Rockwell,"Rockwell Nova","Roboto Slab","Bookman Old Style","URW Bookman",Bookman,Georgia,serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{background:var(--desk);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;min-height:100dvh;background:radial-gradient(90% 60% at 50% 0,#211f1b 0,var(--desk) 72%);color:var(--paper);font-family:var(--serif);-webkit-font-smoothing:antialiased}
+body.dragging,body.dragging *{cursor:grabbing!important}
+::selection{background:var(--orange);color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.grain{position:fixed;left:-320px;top:-320px;right:-320px;bottom:-320px;z-index:9000;pointer-events:none;background-image:var(--grain);background-size:320px 320px;will-change:transform;animation:boil .9s steps(1) infinite}
+@keyframes boil{0%{transform:translate(0,0)}20%{transform:translate(-90px,40px)}40%{transform:translate(60px,-70px)}60%{transform:translate(-30px,-120px)}80%{transform:translate(110px,90px)}}
+
+/* ---------- desk chrome ---------- */
+.bar{position:sticky;top:0;z-index:8000;display:flex;align-items:center;justify-content:space-between;gap:18px;height:42px;padding:0 clamp(10px,2vw,26px);background:rgba(13,12,11,.94);border-bottom:1px solid #2c2926;color:#b9b3a4;font:700 11.5px/1 var(--mono);letter-spacing:.09em;text-transform:uppercase}
+.bar .brand{font:700 20px/1 var(--imp);font-synthesis:none;letter-spacing:.07em;color:var(--paper);padding:6px 10px 4px;background:var(--ink);border:1px solid #3a3733;rotate:-1.5deg;white-space:nowrap}
+.bar-hint{flex:1;min-width:0;text-align:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.bar-hint em{font-style:normal;color:var(--green)}
+.bar nav{display:flex;gap:6px}
+.bar nav a{display:grid;place-items:center;width:30px;height:30px;border:1px solid #3a3733;color:var(--paper);text-decoration:none;font:700 13px/1 var(--mono)}
+.bar nav a:hover{background:var(--orange);color:var(--ink);border-color:var(--orange)}
+a:focus-visible,button:focus-visible{outline:3px dashed var(--orange);outline-offset:3px}
+
+.zine{overflow-x:clip;padding-top:12px}
+.page{padding:0 clamp(8px,1.6vw,24px) clamp(22px,3vw,40px)}
+.board{position:relative;width:min(100%,1392px);margin:0 auto;background:var(--paper);overflow:clip;color:var(--ink);box-shadow:0 34px 60px -24px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.03)}
+.board::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:
+  linear-gradient(90deg,rgba(0,0,0,.55) 0,rgba(0,0,0,0) 6px),linear-gradient(270deg,rgba(0,0,0,.36) 0,rgba(0,0,0,0) 5px),
+  linear-gradient(180deg,rgba(0,0,0,.22) 0,rgba(0,0,0,0) 4px),linear-gradient(0deg,rgba(0,0,0,.5) 0,rgba(0,0,0,0) 9px),
+  radial-gradient(120% 95% at 50% 40%,rgba(0,0,0,0) 62%,rgba(70,50,20,.11) 100%)}
+.b1{aspect-ratio:1320/800}.b2{aspect-ratio:1320/1000}.b3{aspect-ratio:1320/1040}.b4{aspect-ratio:1320/970}
+.probe{position:absolute;left:0;top:0;width:var(--u);height:1px;visibility:hidden;pointer-events:none}
+.row,.grp{display:contents}
+
+/* ---------- the piece: everything that can be dragged ---------- */
+.piece{position:absolute;left:calc(var(--x,0)*var(--u));top:calc(var(--y,0)*var(--u));width:calc(var(--w,100)*var(--u));z-index:var(--z,1);
+  --dx:0;--dy:0;--dr:0;--jit:0;--sc:1;
+  translate:calc(var(--dx)*var(--u)) calc(var(--dy)*var(--u));
+  rotate:calc((var(--r,0) + var(--dr) + var(--jit))*1deg);
+  scale:var(--sc);
+  filter:drop-shadow(2px 4px 3px rgba(0,0,0,.4));
+  transition:rotate .34s var(--spring),scale .24s var(--ease),filter .24s var(--ease);
+  cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.piece img,.piece canvas{-webkit-user-drag:none}
+.piece.fit{width:max-content}
+.piece.held{--sc:1.04;cursor:grabbing;filter:drop-shadow(8px 20px 12px rgba(0,0,0,.42))}
+.piece:focus-visible{outline:calc(3*var(--u)) dashed var(--orange);outline-offset:calc(7*var(--u))}
+.gluing .piece{transition:translate .95s cubic-bezier(.3,1.45,.5,1),rotate .95s cubic-bezier(.3,1.45,.5,1),scale .3s var(--ease),filter .3s}
+.hh{height:calc(var(--h,100)*var(--u))}
+
+/* reveal: pages get slapped down as you scroll to them */
+.js .page:not(.in) .piece{opacity:0}
+.js .page.in .piece{animation:slap .5s var(--ease) backwards;animation-delay:min(calc(var(--i,0)*20ms),460ms)}
+@keyframes slap{from{opacity:0;scale:1.3;translate:0 -60px;rotate:calc((var(--r,0) + 14)*1deg);filter:drop-shadow(12px 26px 14px rgba(0,0,0,.42))}}
+
+/* ---------- paper, tape, ink ---------- */
+.sheet{position:relative;background:var(--paper-hi);color:var(--ink);padding:calc(16*var(--u))}
+.sheet.news{background:var(--news)}
+.sheet.black{background:var(--ink);color:var(--paper-hi)}
+.sheet.kraft{background:var(--kraft)}
+.sheet.orange{background:var(--orange)}
+.sheet.green{background:var(--green)}
+.dots{background-image:radial-gradient(circle,rgba(13,13,13,.34) 0 calc(1.3*var(--u)),transparent calc(1.8*var(--u)));background-size:calc(5*var(--u)) calc(5*var(--u))}
+.imp{font-family:var(--imp);font-weight:700;font-synthesis:none;text-transform:uppercase}
+.tape{position:absolute;left:var(--tx,0);top:var(--ty,0);width:calc(var(--tw,110)*var(--u));height:calc(30*var(--u));rotate:calc(var(--tr,0)*1deg);z-index:4;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.34) 0,rgba(255,255,255,0) 38%,rgba(70,45,10,.09) 100%),
+  repeating-linear-gradient(90deg,rgba(90,60,10,.07) 0 calc(2*var(--u)),rgba(255,255,255,.08) calc(2*var(--u)) calc(5*var(--u))),rgba(var(--tape),.86);
+  clip-path:polygon(0 0,2.6% 12%,0 25%,2.6% 37%,0 50%,2.6% 62%,0 75%,2.6% 88%,0 100%,100% 100%,97.4% 88%,100% 75%,97.4% 62%,100% 50%,97.4% 37%,100% 25%,97.4% 12%,100% 0)}
+.cut1{clip-path:polygon(0 2%,97% 0,100% 96%,3% 100%)}
+.cut2{clip-path:polygon(2% 0,100% 3%,98% 100%,0 96%)}
+.cut3{clip-path:polygon(0 0,100% 2%,96% 99%,2% 100%,0 62%,2% 30%)}
+.cut4{clip-path:polygon(3% 1%,99% 0,100% 97%,1% 100%,0 42%)}
+.cut5{clip-path:polygon(0 3%,50% 0,100% 2%,99% 98%,48% 100%,1% 96%)}
+
+.piece.ink{filter:none;mix-blend-mode:multiply;pointer-events:none}
+.piece.ink.grab{pointer-events:auto}
+.ink-o{background-color:var(--orange)}
+.ink-g{background-color:var(--green)}
+.ink-o,.ink-g{background-image:repeating-linear-gradient(97deg,rgba(255,255,255,.12) 0 calc(2*var(--u)),transparent calc(2*var(--u)) calc(11*var(--u)))}
+.reg{position:absolute;left:calc(12*var(--u));top:calc(12*var(--u));width:calc(34*var(--u));height:calc(34*var(--u));border:calc(2.2*var(--u)) solid var(--ink);border-radius:50%;pointer-events:auto;cursor:grab;
+  background:linear-gradient(var(--ink),var(--ink)) center/calc(2.2*var(--u)) 140% no-repeat,linear-gradient(var(--ink),var(--ink)) center/140% calc(2.2*var(--u)) no-repeat}
+.piece.sun{filter:none;mix-blend-mode:multiply;pointer-events:none}
+.ht{width:100%;aspect-ratio:1;border-radius:50%;position:relative;overflow:hidden;background:#fff;pointer-events:auto}
+.ht::before{content:"";position:absolute;inset:-8%;
+  background:radial-gradient(circle at center,#6e6e6e 0,#fff 62%) 0 0/calc(13*var(--u)) calc(13*var(--u)),linear-gradient(315deg,#454545 0,#a6a6a6 46%,#fff 100%);
+  background-blend-mode:multiply;filter:contrast(48);rotate:14deg}
+
+/* ---------- ransom-note letters ---------- */
+.letter .sheet{height:calc(var(--h)*var(--u));padding:0;display:grid;place-items:center;font-size:calc(var(--fs)*var(--u));line-height:1;overflow:hidden}
+.l-serif{font-family:var(--serif);font-weight:700}
+.l-serif2{font-family:var(--serif);font-weight:700;font-style:italic;background:var(--kraft)!important}
+.l-black{font-family:var(--blk);font-weight:900;background:var(--ink)!important;color:var(--paper-hi)}
+.l-black2{font-family:var(--blk);font-weight:900;background-image:radial-gradient(circle,rgba(13,13,13,.28) 0 calc(1.4*var(--u)),transparent calc(1.9*var(--u)));background-size:calc(6*var(--u)) calc(6*var(--u))}
+.l-mono{font-family:var(--mono);font-weight:700;background:var(--kraft)!important}
+.l-out{font-family:var(--blk);font-weight:900;background:var(--green)!important;color:transparent;-webkit-text-stroke:calc(4.5*var(--u)) var(--ink)}
+.l-out2{font-family:var(--blk);font-weight:900;color:transparent;-webkit-text-stroke:calc(4.5*var(--u)) var(--ink)}
+.l-slab{font-family:var(--slab);font-weight:800;background:var(--news)!important;background-image:radial-gradient(circle,rgba(13,13,13,.3) 0 calc(1.3*var(--u)),transparent calc(1.8*var(--u)));background-size:calc(5*var(--u)) calc(5*var(--u))}
+.l-imp{font-family:var(--imp);font-weight:700;font-synthesis:none;background:var(--ink)!important;color:var(--paper-hi)}
+.l-orange{font-family:var(--mono);font-weight:700;background:var(--orange)!important}
+
+/* ---------- cover furniture ---------- */
+.dymo{display:inline-block;background:#121212;color:#f2efe6;font:700 calc(28*var(--u))/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;padding:calc(11*var(--u)) calc(22*var(--u));border-radius:calc(4*var(--u));text-shadow:0 calc(1.2*var(--u)) 0 rgba(255,255,255,.4),0 calc(-1.2*var(--u)) 0 rgba(0,0,0,.7);box-shadow:inset 0 0 0 calc(1.5*var(--u)) #3a3a3a,inset 0 calc(3*var(--u)) 0 rgba(255,255,255,.07)}
+.strip{font:700 calc(13.5*var(--u))/1.35 var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:calc(9*var(--u)) calc(16*var(--u))}
+.tag h2{margin:0 0 calc(8*var(--u));font-size:calc(44*var(--u));line-height:.94;letter-spacing:.004em}
+.tag p{margin:0 0 calc(8*var(--u));font:400 calc(14.6*var(--u))/1.4 var(--mono)}
+.tag .toc{margin:calc(12*var(--u)) 0 0;padding-top:calc(9*var(--u));border-top:calc(2.5*var(--u)) solid var(--ink);font-size:calc(12.5*var(--u));letter-spacing:.03em;text-transform:uppercase}
+.tag .toc b{background:var(--ink);color:var(--paper-hi);padding:0 .4em;margin-right:.2em}
+.photo{padding:calc(9*var(--u))}
+.xerox{display:block;width:100%;height:auto;aspect-ratio:4/5;image-rendering:pixelated;background:var(--paper-hi)}
+.cap{font-size:calc(11.5*var(--u));line-height:1.4}
+.clip{padding:calc(13*var(--u)) calc(14*var(--u))}
+.clip h3{margin:0;font:700 calc(21*var(--u))/1.02 var(--serif);text-transform:uppercase;letter-spacing:-.01em;border-bottom:calc(2*var(--u)) solid var(--ink);padding-bottom:calc(5*var(--u))}
+.clip .sub{margin:calc(5*var(--u)) 0;font:italic 400 calc(12.5*var(--u))/1.25 var(--serif)}
+.clip p:last-child{margin:0;font:400 calc(10.5*var(--u))/1.35 var(--serif);text-align:justify;hyphens:auto}
+.coupon{border:calc(3*var(--u)) dashed var(--ink);background:var(--paper-hi);padding:calc(14*var(--u)) calc(16*var(--u)) calc(14*var(--u)) calc(46*var(--u));position:relative;display:grid;gap:calc(3*var(--u))}
+.coupon svg{position:absolute;left:calc(9*var(--u));top:calc(12*var(--u));width:calc(30*var(--u));height:auto}
+.coupon b{font:700 calc(21*var(--u))/1 var(--imp);font-synthesis:none;text-transform:uppercase;letter-spacing:.03em}
+.coupon span{font:400 calc(11.5*var(--u))/1.3 var(--mono)}
+.folio{display:block;background:var(--ink);color:var(--paper-hi);font:700 calc(14*var(--u))/1 var(--mono);letter-spacing:.2em;padding:calc(8*var(--u)) calc(14*var(--u))}
+.folio.lt{background:var(--paper-hi);color:var(--ink)}
+
+/* stickers & doodles */
+.deco{pointer-events:none}
+.deco svg{display:block;width:100%;height:auto;overflow:visible}
+.deco svg *{pointer-events:auto}
+.deco svg text{pointer-events:none}
+.imp-t{font-family:var(--imp);font-weight:700;font-synthesis:none}
+.mono-t{font-family:var(--mono);font-weight:700}
+.doodle{fill:none;stroke:var(--ink);stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
+.doodle .body{filter:url(#wobble)}
+.doodle .hit{stroke:transparent;stroke-width:30;pointer-events:stroke;filter:none}
+.doodle .halo{stroke:var(--paper-hi);stroke-width:13}
+.deco:hover svg.wig{animation:wig .5s ease-in-out}
+@keyframes wig{25%{rotate:-5deg}50%{rotate:4deg}75%{rotate:-2deg}}
+.note-t{font:700 calc(25*var(--u))/1 var(--imp);font-synthesis:none;text-transform:uppercase;letter-spacing:.03em}
+.note-t.mn{font:italic 700 calc(15*var(--u))/1.25 var(--mono);text-transform:none;letter-spacing:0}
+.hl{position:relative;display:inline-block;padding:0 .3em}
+.hl::before{content:"";position:absolute;inset:8% -2% 4%;background:var(--orange);mix-blend-mode:multiply;z-index:-1;rotate:-1.5deg}
+
+/* ---------- gigs ---------- */
+.fold{position:absolute;left:0;right:0;top:calc(766*var(--u));height:calc(30*var(--u));z-index:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,0) 34%,rgba(255,255,255,.7) 58%,rgba(255,255,255,0));}
+.fold::before{content:"";position:absolute;left:0;right:0;top:calc(10*var(--u));border-top:calc(2.5*var(--u)) dashed rgba(13,13,13,.75)}
+.fold span{position:absolute;left:50%;top:calc(2*var(--u));translate:-50% 0;white-space:nowrap;background:var(--paper);padding:0 calc(14*var(--u));font:700 calc(12*var(--u))/1 var(--mono);letter-spacing:.3em}
+.gh{padding:calc(20*var(--u)) calc(26*var(--u)) calc(16*var(--u))}
+.gh .imp{margin:0;font-size:calc(156*var(--u));line-height:.82;letter-spacing:.01em}
+.toner{padding:calc(14*var(--u)) calc(18*var(--u))}
+.toner b{display:block;font:700 calc(38*var(--u))/1 var(--imp);font-synthesis:none;letter-spacing:.05em;color:var(--orange)}
+.toner span{display:block;margin-top:calc(6*var(--u));font:400 calc(12.6*var(--u))/1.4 var(--mono);letter-spacing:.03em;text-transform:uppercase}
+.gh-sub{margin:calc(12*var(--u)) 0 0;font:700 calc(24*var(--u))/1.1 var(--mono);letter-spacing:.06em;color:var(--paper-hi)}
+.gh-note{margin:calc(8*var(--u)) 0 0;font:400 calc(13*var(--u))/1.3 var(--mono);letter-spacing:.05em;text-transform:uppercase;opacity:.85}
+.gig .sheet{display:grid;grid-template-columns:auto 1fr;column-gap:calc(16*var(--u));align-items:center;padding:calc(16*var(--u)) calc(18*var(--u)) calc(14*var(--u)) calc(16*var(--u))}
+.g-date{text-align:center}
+.g-date b{display:block;font-family:var(--imp);font-weight:700;font-synthesis:none;font-size:calc(82*var(--u));line-height:.86}
+.g-date span{display:block;margin-top:calc(6*var(--u));padding-top:calc(5*var(--u));border-top:calc(3*var(--u)) solid currentColor;font:700 calc(15*var(--u))/1 var(--mono);letter-spacing:.26em;text-indent:.26em}
+.g-info h3{margin:0;font:900 calc(var(--hs,31)*var(--u))/.94 var(--blk);letter-spacing:-.03em;text-transform:uppercase;overflow-wrap:anywhere}
+.g-with{margin:calc(6*var(--u)) 0 0;font:italic 700 calc(16.5*var(--u))/1.15 var(--serif)}
+.g-venue{margin:calc(9*var(--u)) 0 0;font:700 calc(11.8*var(--u))/1.35 var(--mono);letter-spacing:.05em;text-transform:uppercase}
+.g-price{grid-column:1/-1;margin:calc(12*var(--u)) 0 0;padding-top:calc(8*var(--u));border-top:calc(2*var(--u)) dashed currentColor;font:700 calc(13.5*var(--u))/1 var(--mono);letter-spacing:.1em;text-align:right;text-transform:uppercase}
+.stamp{border:calc(5*var(--u)) solid var(--orange);color:var(--orange);font:700 calc(46*var(--u))/1 var(--imp);font-synthesis:none;letter-spacing:.04em;padding:calc(6*var(--u)) calc(18*var(--u)) calc(4*var(--u));text-transform:uppercase;text-align:center;border-radius:calc(6*var(--u))}
+.stamp small{display:block;font:700 calc(11*var(--u))/1.2 var(--mono);letter-spacing:.14em}
+.ad{border:calc(3*var(--u)) solid var(--ink);padding:calc(14*var(--u)) calc(18*var(--u))}
+.ad h3{margin:0;font:700 calc(46*var(--u))/.95 var(--imp);font-synthesis:none;text-transform:uppercase}
+.ad p{margin:calc(8*var(--u)) 0 0;font:400 calc(14.5*var(--u))/1.4 var(--mono)}
+.cls{padding:calc(14*var(--u)) calc(16*var(--u))}
+.cls h3{margin:0 0 calc(8*var(--u));font:700 calc(15*var(--u))/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;border-bottom:calc(2*var(--u)) solid var(--ink);padding-bottom:calc(6*var(--u))}
+.cls p{margin:0 0 calc(9*var(--u));font:400 calc(12.8*var(--u))/1.35 var(--serif)}
+.cls p b{font-family:var(--blk);font-size:.86em;letter-spacing:.04em}
+
+/* ---------- interview ---------- */
+.h-lung{padding:calc(6*var(--u)) calc(22*var(--u)) calc(2*var(--u));white-space:nowrap}
+.h-lung .imp{margin:0;font-size:calc(150*var(--u));line-height:.9;letter-spacing:.005em}
+.h-sub{padding:calc(12*var(--u)) calc(20*var(--u))}
+.h-sub p{margin:0;font:italic 800 calc(31*var(--u))/1.08 var(--serif);letter-spacing:-.01em}
+.qa{padding:calc(24*var(--u)) calc(26*var(--u)) calc(10*var(--u));columns:2;column-gap:calc(30*var(--u));column-rule:calc(2*var(--u)) dashed rgba(13,13,13,.4);font:400 calc(15.6*var(--u))/1.42 var(--mono)}
+.qa p{margin:0 0 calc(9*var(--u));break-inside:avoid}
+.qa .q{font-weight:900;text-transform:uppercase;letter-spacing:.03em;margin-top:calc(4*var(--u))}
+.qa .a b{background:var(--green);padding:0 .3em;mix-blend-mode:multiply}
+.pq{padding:calc(20*var(--u)) calc(22*var(--u))}
+.pq p{margin:0;font:700 calc(43*var(--u))/.98 var(--imp);font-synthesis:none;text-transform:uppercase;letter-spacing:.01em}
+.pq.sr-i p{font:italic 800 calc(31*var(--u))/1.06 var(--serif);text-transform:none}
+.pq cite{display:block;margin-top:calc(10*var(--u));font:700 calc(12*var(--u))/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;font-style:normal;opacity:.8}
+.disc{padding:calc(14*var(--u)) calc(16*var(--u))}
+.disc h3{margin:0 0 calc(7*var(--u));font:700 calc(13*var(--u))/1 var(--mono);letter-spacing:.22em;text-transform:uppercase}
+.disc ul{list-style:none;margin:0;padding:0}
+.disc li{font:400 calc(13*var(--u))/1.4 var(--mono);border-top:calc(1.5*var(--u)) dotted rgba(13,13,13,.7);padding:calc(4*var(--u)) 0}
+.disc li b{font-weight:900}
+
+/* ---------- DIY ---------- */
+.note{padding:calc(20*var(--u)) calc(24*var(--u)) calc(20*var(--u)) calc(78*var(--u));
+  background:linear-gradient(90deg,transparent calc(60*var(--u)),rgba(255,95,31,.75) calc(60*var(--u)) calc(62.5*var(--u)),transparent calc(62.5*var(--u))),repeating-linear-gradient(180deg,transparent 0 calc(33*var(--u)),rgba(13,13,13,.17) calc(33*var(--u)) calc(34.5*var(--u)));background-color:#f6f3ea}
+.note::before{content:"";position:absolute;left:calc(8*var(--u));top:calc(8*var(--u));bottom:calc(8*var(--u));width:calc(34*var(--u));background:radial-gradient(circle at 50% 50%,#1c1a17 0 calc(6.5*var(--u)),rgba(0,0,0,.28) calc(7.5*var(--u)),transparent calc(10*var(--u))) 0 0/calc(34*var(--u)) calc(68*var(--u)) repeat-y}
+.note h3{margin:0 0 calc(8*var(--u));font:700 calc(41*var(--u))/1 var(--imp);font-synthesis:none;text-transform:uppercase;letter-spacing:.02em}
+.note ol{margin:0;padding:0;list-style:none;counter-reset:t}
+.note li{counter-increment:t;position:relative;margin:0 0 calc(3.5*var(--u));padding-left:calc(2*var(--u));font:700 calc(15.2*var(--u))/calc(33.8*var(--u)) var(--mono);letter-spacing:.005em;text-transform:uppercase}
+.note li::before{content:counter(t);display:inline-grid;place-items:center;width:calc(28*var(--u));height:calc(28*var(--u));margin-right:calc(9*var(--u));border-radius:50%;background:var(--ink);color:var(--paper-hi);font:700 calc(15*var(--u))/1 var(--imp);vertical-align:calc(-2*var(--u))}
+.note li s{text-decoration-thickness:calc(3*var(--u));text-decoration-color:var(--orange)}
+.chords{padding:calc(14*var(--u)) calc(18*var(--u)) calc(16*var(--u))}
+.chords svg{display:block;width:100%;height:auto}
+.chords svg text{font-family:var(--imp);font-weight:700;font-size:20px}
+.chords p{margin:calc(10*var(--u)) 0 0;font:700 calc(15*var(--u))/1.35 var(--mono);text-transform:uppercase;letter-spacing:.02em}
+.back{padding:calc(22*var(--u)) calc(26*var(--u))}
+.back h3{margin:0 0 calc(10*var(--u));font:700 calc(52*var(--u))/.92 var(--imp);font-synthesis:none;text-transform:uppercase;color:var(--green)}
+.setlist{padding:calc(16*var(--u)) calc(20*var(--u)) calc(18*var(--u));background-image:repeating-linear-gradient(180deg,transparent 0 calc(27*var(--u)),rgba(13,13,13,.13) calc(27*var(--u)) calc(28.4*var(--u)));background-color:var(--paper-hi)}
+.setlist h3{margin:0 0 calc(8*var(--u));font:700 calc(15*var(--u))/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;border-bottom:calc(3*var(--u)) solid var(--ink);padding-bottom:calc(7*var(--u))}
+.setlist ol{margin:0;padding:0 0 0 calc(24*var(--u));font:italic 700 calc(18.5*var(--u))/calc(28*var(--u)) var(--mono);text-transform:uppercase;letter-spacing:.01em}
+.setlist li::marker{font-weight:900;color:var(--orange)}
+.setlist s{text-decoration-thickness:calc(3*var(--u));text-decoration-color:var(--ink)}
+.back p{margin:0 0 calc(9*var(--u));font:400 calc(15*var(--u))/1.42 var(--mono)}
+.back p b{color:var(--orange)}
+
+/* ---------- Re-glue ---------- */
+.reglue{display:flex;align-items:center;gap:8px;height:34px;padding:0 13px 0 8px;border:2px solid var(--ink);background:var(--orange);color:var(--ink);cursor:pointer;rotate:-2deg;box-shadow:3px 3px 0 #000;transition:rotate .25s var(--spring),translate .2s var(--ease),box-shadow .2s var(--ease),background .3s;text-align:left;white-space:nowrap;flex:none}
+.reglue svg{width:21px;height:21px;flex:none}
+.reglue b{display:block;font:700 17px/1 var(--imp);font-synthesis:none;letter-spacing:.08em;text-transform:uppercase}
+.reglue small{display:block;margin-top:2px;font:700 8.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.reglue:hover{rotate:0deg;translate:0 -1px;box-shadow:4px 5px 0 #000}
+.reglue:active{translate:2px 2px;box-shadow:1px 1px 0 #000}
+.reglue.idle{background:var(--green)}
+.reglue.shake{animation:nope .4s}
+@keyframes nope{20%{translate:-5px 0}40%{translate:5px 0}60%{translate:-3px 0}80%{translate:2px 0}}
+
+/* ---------- small screens: the collage becomes a stack ---------- */
+@media (max-width:860px){
+  .bar-hint{display:none}
+  .page{padding:0 8px 24px}
+  .board{aspect-ratio:auto!important;--u:1px;display:flex;flex-direction:column;align-items:center;padding:30px 14px 46px}
+  .row,.grp{display:flex;position:relative;width:100%}
+  .row{flex-wrap:wrap;justify-content:center;gap:7px;margin-bottom:8px}
+  .grp{flex-direction:column;align-items:center}
+  .piece{position:relative;left:var(--mo,0);top:auto;width:var(--pw,100%);max-width:470px;margin:var(--mt,12px) 0 0}
+  .piece.fit{width:max-content}
+  .letter{width:calc((100% - 28px)/5)!important;margin:0!important;left:0}
+  .letter .sheet{height:auto;aspect-ratio:4/5;font-size:calc(var(--fs)*.34px)}
+  .hide-m{display:none!important}
+  .deco{height:0!important;width:100%!important;margin:0!important;rotate:0deg;left:0}
+  .deco>svg,.deco>div{position:absolute;top:var(--my,-30px);right:var(--mr,6px);width:calc(var(--dw,110)*1px);rotate:calc(var(--r,0)*1deg)}
+  .piece.pin{position:absolute;left:calc(var(--pl)*1px);right:calc(var(--pr)*1px);top:calc(var(--pt,0)*1px);width:calc(var(--dw,100)*1px)!important;height:auto!important;margin:0!important;rotate:calc(var(--r,0)*1deg)}
+  .pin.deco>svg{position:static;width:100%;rotate:0deg}
+  .row.r3 .letter{width:calc((100% - 20px)/3)!important}
+  .row.r3 .letter .sheet{font-size:calc(var(--fs)*.4px)}
+  .piece.ink{position:absolute;left:var(--il,0);top:var(--it,0);width:var(--iw,100%);height:var(--ih,100%);margin:0;rotate:calc(var(--r,0)*1deg)}
+  .piece.annot{position:absolute;left:var(--al,8%);top:var(--at,6%);margin:0}
+  .fold{position:relative;top:auto;width:100%;height:30px;margin-top:14px}
+  .qa,.disc ul{columns:1}
+  .qa{columns:1}
+  .gh .imp{font-size:110px}
+  .gh-sub{font-size:16px}
+  .h-lung{white-space:normal}.h-lung .imp{font-size:76px}
+  .h-sub p{font-size:24px}
+  .pq p{font-size:34px}
+  .pq.sr-i p{font-size:25px}
+  .g-date b{font-size:64px}
+  .ad h3{font-size:40px}
+  .back h3{font-size:44px}
+  .bar{gap:8px;padding:0 8px}
+  .bar .brand{font-size:15px;padding:5px 7px 3px}
+  .bar nav{gap:4px}.bar nav a{width:27px;height:27px}
+  .reglue{height:30px;padding:0 9px 0 6px;gap:6px}.reglue b{font-size:15px}.reglue svg{width:18px;height:18px}
+}
+@media (prefers-reduced-motion:reduce){
+  .grain{animation:none}
+  .js .page:not(.in) .piece{opacity:1}
+  .js .page.in .piece{animation:none}
+  .piece,.reglue,.gluing .piece{transition-duration:.01ms!important}
+  .deco:hover svg.wig{animation:none}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="wobble" x="-8%" y="-8%" width="116%" height="116%">
+      <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5"/>
+    </filter>
+  </defs>
+</svg>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="bar">
+  <b class="brand">NOISE FLOOR</b>
+  <p class="bar-hint" style="margin:0"><em>Drag anything.</em> Double-click turns it 15&deg;. On a phone: press &amp; hold, then drag. Arrow keys nudge, R rotates.</p>
+  <button class="reglue" id="reglue" type="button" aria-describedby="status">
+    <svg viewBox="0 0 34 34" aria-hidden="true"><g fill="none" stroke="#0d0d0d" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round"><rect x="11" y="15" width="12" height="17" rx="2" fill="#f7f4ea"/><rect x="9" y="6" width="16" height="9" rx="2" fill="#b8ff2c"/><path d="M13 6 V2 M21 6 V2"/></g></svg>
+    <span><b>Re-glue</b><small id="gluecount">all stuck</small></span>
+  </button>
+  <nav aria-label="Zine pages"><a href="#p1" aria-label="Page 1, cover">1</a><a href="#p2" aria-label="Page 2, gigs">2</a><a href="#p3" aria-label="Page 3, interview">3</a><a href="#p4" aria-label="Page 4, do it yourself">4</a></nav>
+</header>
+
+<main class="zine" id="zine">
+
+<!-- =================================================== PAGE 1: COVER -->
+<section class="page" id="p1" aria-labelledby="t1">
+<div class="board b1">
+<span class="probe" aria-hidden="true"></span>
+<h1 class="sr" id="t1">NOISE FLOOR, issue number 3: a cut-and-paste punk fanzine</h1>
+
+<div class="piece deco sun hide-m" style="--x:930;--y:400;--w:560;--z:1"><div class="ht"></div></div>
+
+<div class="row">
+  <div class="piece letter" style="--x:58;--y:52;--w:152;--r:-4;--z:8" aria-hidden="true"><div class="sheet cut1 l-serif" style="--h:198;--fs:182">N</div></div>
+  <div class="piece letter" style="--x:214;--y:40;--w:146;--r:3;--z:9" aria-hidden="true"><div class="sheet cut2 l-black" style="--h:182;--fs:150">O</div></div>
+  <div class="piece letter" style="--x:356;--y:60;--w:96;--r:-2;--z:8" aria-hidden="true"><div class="sheet cut3 l-mono" style="--h:202;--fs:196">I</div></div>
+  <div class="piece letter" style="--x:446;--y:34;--w:150;--r:5;--z:10" aria-hidden="true"><div class="sheet cut4 l-out" style="--h:188;--fs:178">S</div></div>
+  <div class="piece letter" style="--x:598;--y:62;--w:138;--r:-3;--z:9" aria-hidden="true"><div class="sheet cut5 l-slab" style="--h:194;--fs:176">E</div></div>
+</div>
+<div class="row">
+  <div class="piece letter" style="--x:66;--y:256;--w:134;--r:2;--z:9" aria-hidden="true"><div class="sheet cut2 l-imp" style="--h:192;--fs:208">F</div></div>
+  <div class="piece letter" style="--x:206;--y:270;--w:122;--r:-5;--z:10" aria-hidden="true"><div class="sheet cut1 l-serif2" style="--h:180;--fs:172">L</div></div>
+  <div class="piece letter" style="--x:328;--y:250;--w:152;--r:4;--z:8" aria-hidden="true"><div class="sheet cut3 l-out2" style="--h:172;--fs:184">O</div></div>
+  <div class="piece letter" style="--x:484;--y:264;--w:142;--r:-2;--z:11" aria-hidden="true"><div class="sheet cut5 l-orange" style="--h:190;--fs:176">O</div></div>
+  <div class="piece letter" style="--x:624;--y:248;--w:150;--r:3;--z:9" aria-hidden="true"><div class="sheet cut4 l-black2" style="--h:194;--fs:176">R</div></div>
+  <div class="piece ink ink-o torn hh" data-tear="tblr" data-amp="8" data-step="12" style="--x:34;--y:246;--w:562;--h:236;--r:-2.5;--z:22;--il:-4%;--it:-2%;--iw:66%;--ih:104%" aria-hidden="true"><span class="reg"></span></div>
+</div>
+
+<div class="piece fit" style="--x:70;--y:472;--r:-3;--z:14;--mt:14px" data-name="Label: issue number three"><div class="dymo">ISSUE #3</div></div>
+<div class="piece" style="--x:392;--y:498;--w:262;--r:2;--z:13;--pw:92%;--mo:6px" data-name="Strip: autumn 2026, two pounds or swap"><div class="sheet news torn strip dots" data-tear="tb" data-amp="3" data-step="8">AUTUMN 2026 &middot; &pound;2 OR SWAP</div></div>
+
+<div class="grp">
+  <div class="piece" style="--x:822;--y:34;--w:414;--r:3;--z:6;--pw:88%;--mt:22px" data-name="Xeroxed photo of a guitarist mid-scream. Move the pointer over it to swing the stage light">
+    <div class="sheet torn photo" data-tear="tblr" data-amp="5" data-step="9"><canvas class="xerox" id="cvGuitar" width="200" height="250" role="img" aria-label="Dithered black and white photocopy of a punk guitarist under a spotlight">Photocopy of a guitarist</canvas></div>
+    <span class="tape" style="--tx:-7%;--ty:-3%;--tr:-36;--tw:130" aria-hidden="true"></span>
+    <span class="tape" style="--tx:79%;--ty:95%;--tr:-34;--tw:130" aria-hidden="true"></span>
+  </div>
+  <div class="piece deco hide-m" style="--x:982;--y:64;--w:80;--z:26" aria-hidden="true">
+    <svg class="doodle" viewBox="0 0 78 90"><g class="body"><g class="halo"><path d="M4 10 C 36 -2, 66 22, 52 66"/><path d="M34 54 L 52 72 L 68 50"/></g><path d="M4 10 C 36 -2, 66 22, 52 66"/><path d="M34 54 L 52 72 L 68 50"/></g><path class="hit" d="M4 10 C 36 -2, 66 22, 52 66"/></svg>
+  </div>
+  <div class="piece fit annot" style="--x:858;--y:62;--r:-6;--z:27;--al:6%;--at:5%" data-name="Scribbled note: this idiot"><span class="note-t"><span class="hl">this idiot</span></span></div>
+  <div class="piece ink ink-g torn hh" data-tear="tblr" data-amp="7" data-step="11" style="--x:786;--y:388;--w:386;--h:170;--r:2;--z:21;--il:-6%;--it:52%;--iw:70%;--ih:40%" aria-hidden="true"><span class="reg"></span></div>
+  <div class="piece" style="--x:990;--y:588;--w:292;--r:-1.6;--z:10;--pw:82%;--mo:24px;--mt:-6px" data-name="Photo caption"><div class="sheet news torn strip cap" data-tear="tb" data-amp="3" data-step="8">FIG.1 &mdash; LUNG FISH AT THE SUMP, 11.09. PHOTO: SOMEONE&rsquo;S PHONE. NOBODY REMEMBERS WHOSE.</div></div>
+  <div class="piece deco pin" style="--x:1096;--y:8;--w:200;--r:12;--z:30;--dw:90;--pt:-16;--pr:-8" aria-hidden="true">
+    <svg class="wig" viewBox="-104 -104 208 208"><polygon data-burst="18,100,80" transform="translate(6 7)" fill="#0d0d0d"/><polygon data-burst="18,100,80" fill="#b8ff2c" stroke="#0d0d0d" stroke-width="4" stroke-linejoin="round"/><text class="mono-t" y="-28" text-anchor="middle" font-size="24" letter-spacing="5">ISSUE</text><text class="imp-t" y="56" text-anchor="middle" font-size="118">#3</text></svg>
+  </div>
+  <div class="piece deco pin" style="--x:548;--y:592;--w:158;--r:-12;--z:30;--dw:82;--pt:372;--pl:-6" aria-hidden="true">
+    <svg class="wig" viewBox="-80 -80 160 160"><defs><path id="ring1" d="M-58,0a58,58 0 1,1 116,0a58,58 0 1,1 -116,0"/></defs><circle r="76" fill="#f7f4ea" stroke="#0d0d0d" stroke-width="5"/><circle r="47" fill="#0d0d0d"/><text class="mono-t" font-size="13" letter-spacing="2"><textPath href="#ring1" textLength="350">DO IT YOURSELF * DO IT YOURSELF *</textPath></text><text class="imp-t" y="20" text-anchor="middle" font-size="60" fill="#f7f4ea">DIY</text></svg>
+  </div>
+</div>
+
+<div class="piece" style="--x:78;--y:540;--w:470;--r:-1.2;--z:9;--pw:96%;--mt:26px" data-name="Cover blurb: gigs, gossip, three-chord theology">
+  <div class="sheet torn tag" data-tear="tblr" data-amp="6" data-step="10">
+    <h2 class="imp">Gigs. Gossip. Three-chord theology.</h2>
+    <p>Cut, pasted and photocopied on a kitchen floor by people who should be asleep. Free if you ask nicely, &pound;2 if you don&rsquo;t. Swap it for a tape and we&rsquo;ll call it even.</p>
+    <p class="toc"><b>P.2</b> Gigs &nbsp;<b>P.3</b> Lung Fish talk &nbsp;<b>P.4</b> Do it yourself</p>
+  </div>
+  <span class="tape" style="--tx:-4%;--ty:-6%;--tr:-38;--tw:120" aria-hidden="true"></span>
+  <span class="tape" style="--tx:84%;--ty:90%;--tr:-30;--tw:120" aria-hidden="true"></span>
+</div>
+
+<div class="piece deco hide-m" style="--x:1168;--y:316;--w:150;--r:8;--z:30" aria-hidden="true">
+  <svg class="wig" viewBox="-100 -100 200 200"><polygon data-burst="5,98,44" transform="translate(6 7)" fill="#0d0d0d"/><polygon data-burst="5,98,44" fill="#ff5f1f" stroke="#0d0d0d" stroke-width="4" stroke-linejoin="round"/><text class="imp-t" y="4" text-anchor="middle" font-size="34">ALL</text><text class="imp-t" y="38" text-anchor="middle" font-size="34">AGES</text></svg>
+</div>
+
+<div class="piece" style="--x:706;--y:600;--w:284;--r:-2.4;--z:11;--pw:80%;--mo:-18px" data-name="Newspaper clipping: pit injuries up 300 percent">
+  <div class="sheet news clip torn" data-tear="tblr" data-amp="4" data-step="7">
+    <h3>Pit injuries up 300%</h3>
+    <p class="sub">Local physio: &ldquo;It was worth it,&rdquo; patients agree</p>
+    <p>Paramedics at last Saturday&rsquo;s all-dayer logged three bruised ribs, one lost shoe and a bass guitar in an unexpected place. &ldquo;Everybody was very polite about it,&rdquo; said one steward, adjusting an earplug.</p>
+  </div>
+  <span class="tape" style="--tx:74%;--ty:-10%;--tr:24;--tw:86" aria-hidden="true"></span>
+</div>
+<div class="piece" style="--x:1012;--y:690;--w:268;--r:2;--z:12;--pw:88%;--mo:12px" data-name="Coupon: one free earplug">
+  <div class="coupon"><svg viewBox="0 0 30 30" aria-hidden="true"><g fill="none" stroke="#0d0d0d" stroke-width="2.4" stroke-linecap="round"><circle cx="8" cy="22" r="4"/><circle cx="22" cy="22" r="4"/><path d="M10.5 19 L 24 4 M19.5 19 L 6 4"/></g></svg><b>One (1) free earplug</b><span>Redeem at any gig. Stocks are 2 (two).</span></div>
+</div>
+<div class="piece fit" style="--x:64;--y:12;--r:-2;--z:14;--mt:16px" data-name="Page number"><span class="folio">P.1 / 4</span></div>
+</div>
+</section>
+
+<!-- =================================================== PAGE 2: GIGS -->
+<section class="page" id="p2" aria-labelledby="t2">
+<div class="board b2">
+<span class="probe" aria-hidden="true"></span>
+<h2 class="sr" id="t2">Page 2: gigs, October 2026</h2>
+
+<div class="grp">
+  <div class="piece" style="--x:50;--y:30;--w:806;--r:-1.3;--z:5;--mt:0" data-name="Header: Gigs, where to get your ears ruined">
+    <div class="sheet black torn gh" data-tear="tblr" data-amp="6" data-step="10">
+      <p class="imp">Gigs</p>
+      <p class="gh-sub">WHERE TO GET YOUR EARS RUINED</p>
+      <p class="gh-note">Oct 2026 &middot; all doors 8pm unless we forget &middot; earplugs at the bar</p>
+    </div>
+    <span class="tape" style="--tx:90%;--ty:-8%;--tr:24;--tw:120" aria-hidden="true"></span>
+  </div>
+  <div class="piece ink ink-g torn hh" data-tear="tb" data-amp="4" data-step="9" style="--x:34;--y:184;--w:840;--h:42;--r:-1.3;--z:24;--il:-3%;--it:52%;--iw:106%;--ih:19%" aria-hidden="true"></div>
+  <div class="piece deco pin" style="--x:1100;--y:10;--w:190;--r:-10;--z:30;--dw:92;--pt:52;--pr:-4" aria-hidden="true">
+    <svg class="wig" viewBox="-104 -104 208 208"><polygon data-burst="14,100,72" transform="translate(6 7)" fill="#0d0d0d"/><polygon data-burst="14,100,72" fill="#ff5f1f" stroke="#0d0d0d" stroke-width="4" stroke-linejoin="round"/><text class="imp-t" y="18" text-anchor="middle" font-size="55" transform="rotate(-6)">LOUD!</text></svg>
+  </div>
+  <div class="piece deco pin" style="--x:896;--y:14;--w:150;--r:7;--z:29;--dw:84;--pt:-30;--pr:14" aria-hidden="true">
+    <svg class="wig" viewBox="-80 -80 160 160"><defs><path id="ring2" d="M-58,0a58,58 0 1,1 116,0a58,58 0 1,1 -116,0"/></defs><circle r="76" fill="#0d0d0d" stroke="#f7f4ea" stroke-width="5"/><circle r="76" fill="none" stroke="#0d0d0d" stroke-width="3" transform="scale(1.04)"/><text class="mono-t" font-size="13" letter-spacing="2" fill="#f7f4ea"><textPath href="#ring2" textLength="350">NO SELLOUTS * NO SELLOUTS * NO SELLOUTS</textPath></text><text class="imp-t" y="14" text-anchor="middle" font-size="42" fill="#b8ff2c">NO</text><text class="imp-t" y="44" text-anchor="middle" font-size="28" fill="#f7f4ea">GODS</text></svg>
+  </div>
+  <div class="piece deco pin hide-m" style="--x:906;--y:170;--w:118;--r:-6;--z:28" aria-hidden="true">
+    <svg class="doodle wig" viewBox="0 0 140 120"><g class="body"><path d="M62 8 C 96 6, 116 30, 114 62 C 112 94, 86 114, 58 112 C 28 110, 8 88, 10 58 C 12 28, 34 10, 68 12"/><path d="M32 42 L 50 60 M50 42 L 32 60 M70 42 L 88 60 M88 42 L 70 60"/><path d="M34 88 C 42 76, 50 98, 60 84 S 78 78, 88 90"/><path d="M122 34 C 130 44, 130 56, 122 66 M128 24 C 140 40, 140 60, 128 76"/></g><path class="hit" d="M62 8 C 96 6, 116 30, 114 62 C 112 94, 86 114, 58 112 C 28 110, 8 88, 10 58 C 12 28, 34 10, 68 12"/></svg>
+  </div>
+  <div class="piece fit hide-m" style="--x:1046;--y:222;--r:5;--z:29" data-name="Scribbled note: wear earplugs"><span class="note-t"><span class="hl">wear earplugs!!</span></span></div>
+</div>
+
+<div class="piece gig" style="--x:62;--y:286;--w:388;--r:-2;--z:4" data-name="Gig: Thursday 8 October, Lung Fish and Dog Dentist at The Sump">
+  <div class="sheet kraft torn" data-tear="tblr" data-amp="4" data-step="8">
+    <div class="g-date"><b>08.10</b><span>THU</span></div>
+    <div class="g-info"><h3>Lung Fish</h3><p class="g-with">+ Dog Dentist</p><p class="g-venue">The Sump &middot; cellar bar &middot; doors 8</p></div>
+    <p class="g-price">&pound;5 / PWYC</p>
+  </div>
+  <span class="tape" style="--tx:34%;--ty:-8%;--tr:4;--tw:110" aria-hidden="true"></span>
+</div>
+<div class="grp">
+  <div class="piece gig" style="--x:474;--y:272;--w:388;--r:1.6;--z:5" data-name="Gig: Saturday 10 October, Scrap Metal Sisters single launch at Unit 9">
+    <div class="sheet torn" data-tear="tblr" data-amp="4" data-step="8">
+      <div class="g-date"><b>10.10</b><span>SAT</span></div>
+      <div class="g-info" style="--hs:24"><h3>Scrap Metal Sisters</h3><p class="g-with">single launch + Wet Cement</p><p class="g-venue">Unit 9 &middot; old tannery &middot; doors 7:30</p></div>
+      <p class="g-price">&pound;6 &middot; no one turned away</p>
+    </div>
+    <span class="tape" style="--tx:88%;--ty:-11%;--tr:30;--tw:110" aria-hidden="true"></span>
+  </div>
+  <div class="piece ink ink-o torn hh grab" data-tear="tblr" data-amp="5" data-step="10" style="--x:478;--y:284;--w:148;--h:98;--r:-5;--z:23;--il:1%;--it:6%;--iw:36%;--ih:38%" aria-hidden="true"><span class="reg" style="left:auto;right:calc(8*var(--u));top:calc(8*var(--u))"></span></div>
+</div>
+<div class="piece gig" style="--x:892;--y:294;--w:376;--r:-1.2;--z:4" data-name="Gig: Sunday 18 October, all-dayer at St Jude's Hall">
+  <div class="sheet news dots torn" data-tear="tblr" data-amp="4" data-step="8">
+    <div class="g-date"><b>18.10</b><span>SUN</span></div>
+    <div class="g-info" style="--hs:29"><h3>All-dayer</h3><p class="g-with">11 bands, 1 toilet</p><p class="g-venue">St. Jude&rsquo;s Hall &middot; noon &rsquo;til late</p></div>
+    <p class="g-price">&pound;8 &middot; bring cake</p>
+  </div>
+  <span class="tape" style="--tx:-4%;--ty:88%;--tr:28;--tw:110" aria-hidden="true"></span>
+</div>
+<div class="piece gig" style="--x:78;--y:534;--w:386;--r:1.4;--z:6" data-name="Gig: Tuesday 20 October, open mic of doom at Sudz and Duds laundrette">
+  <div class="sheet torn" data-tear="tblr" data-amp="4" data-step="8">
+    <div class="g-date"><b>20.10</b><span>TUE</span></div>
+    <div class="g-info" style="--hs:25"><h3>Open mic of doom</h3><p class="g-with">sign up on a napkin</p><p class="g-venue">Sudz &amp; Duds laundrette &middot; 7pm</p></div>
+    <p class="g-price">free &middot; bring quarters</p>
+  </div>
+  <span class="tape" style="--tx:38%;--ty:-8%;--tr:-3;--tw:110" aria-hidden="true"></span>
+</div>
+<div class="piece gig" style="--x:492;--y:518;--w:386;--r:-2.2;--z:4" data-name="Gig: Friday 23 October, Pigeon Bomb, The Damp Squibs and Cheap Hymns at The Boiler Room">
+  <div class="sheet green torn" data-tear="tblr" data-amp="4" data-step="8">
+    <div class="g-date"><b>23.10</b><span>FRI</span></div>
+    <div class="g-info" style="--hs:30"><h3>Pigeon Bomb</h3><p class="g-with">+ The Damp Squibs + Cheap Hymns</p><p class="g-venue">The Boiler Room &middot; doors 8</p></div>
+    <p class="g-price">&pound;5 at the door</p>
+  </div>
+</div>
+<div class="piece gig" style="--x:908;--y:546;--w:366;--r:2;--z:6" data-name="Gig: Saturday 31 October, Noise Ball at The Sump">
+  <div class="sheet black torn" data-tear="tblr" data-amp="4" data-step="8">
+    <div class="g-date"><b>31.10</b><span>SAT</span></div>
+    <div class="g-info" style="--hs:30"><h3>Noise Ball</h3><p class="g-with">costumes mandatory. Kettle Fire headline</p><p class="g-venue">The Sump &middot; late, loud, licensed (just)</p></div>
+    <p class="g-price">&pound;7 / PWYC</p>
+  </div>
+  <span class="tape" style="--tx:40%;--ty:-8%;--tr:-3;--tw:120" aria-hidden="true"></span>
+</div>
+
+<div class="piece ink grab hide-m" style="--x:1062;--y:392;--w:206;--r:-13;--z:25" aria-hidden="true"><div class="stamp">Sold out*<small>*there are 40 seats</small></div></div>
+
+<div class="fold" aria-hidden="true"><span>&#9986; FOLD HERE (OR DON&rsquo;T)</span></div>
+
+<div class="piece" style="--x:56;--y:806;--w:520;--r:-1;--z:6;--pw:96%" data-name="Ad: bands wanted">
+  <div class="sheet ad" style="background:var(--paper-hi)">
+    <h3>Bands wanted</h3>
+    <p>Drummer with a van. Bassist with patience. Anyone with a garage and a tolerant landlord. Call the number scratched into the brick behind The Sump.</p>
+  </div>
+  <span class="tape" style="--tx:-7%;--ty:-16%;--tr:-38;--tw:100" aria-hidden="true"></span>
+</div>
+<div class="piece" style="--x:610;--y:810;--w:350;--r:1.4;--z:7;--pw:94%;--mo:8px" data-name="Classifieds">
+  <div class="sheet news cls torn dots" data-tear="tblr" data-amp="4" data-step="8">
+    <h3>Classifieds</h3>
+    <p><b>FOUND:</b> one tambourine, no owner, several regrets. Ask at the bar.</p>
+    <p><b>FOR SALE:</b> bass amp, green. One careful owner (he was not careful).</p>
+    <p><b>LOST:</b> singer&rsquo;s voice. Last seen Saturday. Reward: tea.</p>
+  </div>
+</div>
+
+<div class="piece" style="--x:990;--y:818;--w:268;--r:-2.2;--z:8;--pw:80%;--mo:10px" data-name="Label: toner low">
+  <div class="sheet black torn toner" data-tear="tblr" data-amp="3" data-step="7"><b>TONER LOW</b><span>Please feed the copier pennies. It has feelings. They are mostly grey.</span></div>
+  <span class="tape" style="--tx:84%;--ty:-14%;--tr:34;--tw:90" aria-hidden="true"></span>
+</div>
+
+<div class="piece fit" style="--x:1206;--y:952;--r:-2;--z:14;--mt:16px" data-name="Page number"><span class="folio">P.2 / 4</span></div>
+</div>
+</section>
+
+<!-- =================================================== PAGE 3: INTERVIEW -->
+<section class="page" id="p3" aria-labelledby="t3">
+<div class="board b3">
+<span class="probe" aria-hidden="true"></span>
+<h2 class="sr" id="t3">Page 3: interview with Lung Fish</h2>
+
+<div class="grp">
+<div class="piece" style="--x:62;--y:64;--w:384;--r:-3;--z:6;--pw:88%;--mt:0" data-name="Xeroxed photo of the Lung Fish singer, mouth open, microphone in hand. Move the pointer over it to swing the light">
+  <div class="sheet torn photo" data-tear="tblr" data-amp="5" data-step="9"><canvas class="xerox" id="cvSinger" width="200" height="250" role="img" aria-label="Dithered black and white photocopy of a singer screaming into a microphone">Photocopy of a singer</canvas></div>
+  <span class="tape" style="--tx:38%;--ty:-6%;--tr:-4;--tw:140" aria-hidden="true"></span>
+  <span class="tape" style="--tx:-9%;--ty:92%;--tr:38;--tw:120" aria-hidden="true"></span>
+</div>
+<div class="piece" style="--x:96;--y:588;--w:330;--r:1.4;--z:10;--pw:88%;--mo:6px;--mt:-4px" data-name="Photo caption">
+  <div class="sheet news torn strip cap" data-tear="tb" data-amp="3" data-step="8">FIG.2 &mdash; REV, MID-SCREAM. HIS GOOD SIDE, APPARENTLY.</div>
+</div>
+<div class="piece deco pin" style="--x:290;--y:6;--w:172;--r:14;--z:30;--dw:92;--pt:-18;--pr:-6" aria-hidden="true">
+  <svg class="wig" viewBox="-104 -104 208 208"><polygon data-burst="16,100,76" transform="translate(6 7)" fill="#0d0d0d"/><polygon data-burst="16,100,76" fill="#b8ff2c" stroke="#0d0d0d" stroke-width="4" stroke-linejoin="round"/><text class="imp-t" y="-4" text-anchor="middle" font-size="46">EXCLU-</text><text class="imp-t" y="44" text-anchor="middle" font-size="46">SIVE!</text></svg>
+</div>
+</div>
+
+<div class="piece" style="--x:476;--y:34;--w:700;--r:-1.5;--z:8;--pw:100%;--mt:16px" data-name="Headline: Lung Fish">
+  <div class="sheet torn h-lung" data-tear="tblr" data-amp="5" data-step="9"><p class="imp">Lung Fish</p></div>
+</div>
+<div class="piece" style="--x:498;--y:196;--w:620;--r:1.1;--z:9;--pw:96%;--mo:8px;--mt:-4px" data-name="Subhead: loud, damp and slightly improving">
+  <div class="sheet orange torn h-sub" data-tear="tblr" data-amp="4" data-step="9"><p>Loud, damp &amp; (slightly) improving</p></div>
+</div>
+<div class="piece" style="--x:530;--y:268;--w:470;--r:-.8;--z:10;--pw:90%;--mt:6px" data-name="Byline">
+  <div class="sheet news torn strip" data-tear="tb" data-amp="3" data-step="8" style="text-transform:none;letter-spacing:.02em">an interview by Dee, conducted in a car park behind The Sump at 1 a.m., over chips.</div>
+</div>
+
+<div class="piece" style="--x:476;--y:332;--w:770;--r:.5;--z:7;--pw:100%;--mt:14px" data-name="Interview with Lung Fish">
+  <div class="sheet torn qa" data-tear="tblr" data-amp="5" data-step="9">
+    <p class="q">Q. How did Lung Fish start?</p>
+    <p class="a"><b>MARGO:</b> We met at a bus stop. A burnt-out one. Nobody hurt, the bus was late anyway. Dev had a bass with two strings and a lot of opinions.</p>
+    <p class="a"><b>DEV:</b> Three strings. I&rsquo;ve been busy.</p>
+    <p class="q">Q. How do you write a song?</p>
+    <p class="a"><b>MARGO:</b> Rev shouts a word, Kit hits something, I find the note that hurts most. That&rsquo;s a song. Usually ninety seconds. We&rsquo;re not monsters.</p>
+    <p class="q">Q. Why a zine, in this economy?</p>
+    <p class="a"><b>DEV:</b> Nobody can algorithm a staple.</p>
+    <p class="q">Q. Best gig ever?</p>
+    <p class="a"><b>KIT:</b> The laundrette. Tuesday, nine people, one asleep. The dryer kept perfect time. We asked it to join the band.</p>
+    <p class="q">Q. Worst?</p>
+    <p class="a"><b>MARGO:</b> A wedding. Not ours.</p>
+    <p class="q">Q. Advice for new bands?</p>
+    <p class="a"><b>MARGO:</b> Play the wrong notes with total confidence.</p>
+    <p class="a"><b>REV:</b> And learn where the fuse box is.</p>
+  </div>
+  <span class="tape" style="--tx:-2%;--ty:-2%;--tr:-28;--tw:110" aria-hidden="true"></span>
+  <span class="tape" style="--tx:90%;--ty:97%;--tr:-30;--tw:110" aria-hidden="true"></span>
+</div>
+
+<div class="grp">
+  <div class="piece" style="--x:52;--y:656;--w:400;--r:-2.2;--z:8;--pw:96%;--mt:20px" data-name="Pull quote: nobody can algorithm a staple">
+    <div class="sheet black torn pq" data-tear="tblr" data-amp="5" data-step="9"><p style="color:var(--green)">&ldquo;Nobody can algorithm a staple.&rdquo;</p><cite>&mdash; Dev, bass (three strings)</cite></div>
+    <span class="tape" style="--tx:-6%;--ty:-8%;--tr:-35;--tw:110" aria-hidden="true"></span>
+  </div>
+</div>
+<div class="grp">
+  <div class="piece" style="--x:88;--y:858;--w:350;--r:1.8;--z:7;--pw:88%;--mo:-8px;--mt:18px" data-name="Pull quote: play the wrong notes with total confidence">
+    <div class="sheet torn pq sr-i" data-tear="tblr" data-amp="5" data-step="9"><p>&ldquo;Play the wrong notes with total confidence.&rdquo;</p><cite>&mdash; Margo, guitar, voice</cite></div>
+    <span class="tape" style="--tx:80%;--ty:-8%;--tr:30;--tw:100" aria-hidden="true"></span>
+  </div>
+  <div class="piece ink ink-o torn hh" data-tear="tblr" data-amp="6" data-step="10" style="--x:56;--y:840;--w:410;--h:168;--r:1.4;--z:24;--il:-3%;--it:-6%;--iw:100%;--ih:112%" aria-hidden="true"><span class="reg" style="left:auto;right:calc(12*var(--u))"></span></div>
+</div>
+
+<div class="piece deco sun hide-m" style="--x:930;--y:780;--w:560;--z:1"><div class="ht"></div></div>
+
+<div class="piece" style="--x:496;--y:722;--w:336;--r:-1.6;--z:9;--pw:92%;--mo:-4px" data-name="Set list, scribbled on the back of a flyer">
+  <div class="sheet torn setlist" data-tear="tblr" data-amp="5" data-step="9">
+    <h3>Set list &middot; The Sump</h3>
+    <ol><li>Damp Squib</li><li>Bus Stop (Burnt Out)</li><li>Wet Cement</li><li>The Dryer Kept Time</li><li><s>Love Song</s> Fuse Box Blues</li><li>[the one we forgot]</li></ol>
+  </div>
+  <span class="tape" style="--tx:40%;--ty:-6%;--tr:2;--tw:110" aria-hidden="true"></span>
+</div>
+
+<div class="piece" style="--x:876;--y:730;--w:276;--r:-2.4;--z:9;--pw:84%;--mo:16px" data-name="Lung Fish discography">
+  <div class="sheet kraft disc torn" data-tear="tblr" data-amp="4" data-step="8">
+    <h3>Discography</h3>
+    <ul><li><b>Damp Squib EP</b> &mdash; 2024, cassette, recorded in a wardrobe</li><li><b>Wet Cement</b> &mdash; 2025, cassette, still smells</li><li><b>Live at the Laundrette</b> &mdash; 2026, one copy, it&rsquo;s in the dryer</li></ul>
+  </div>
+</div>
+
+<div class="piece deco hide-m" style="--x:560;--y:950;--w:130;--r:-4;--z:26" aria-hidden="true">
+  <svg class="doodle" viewBox="0 0 120 40"><g class="body"><path d="M6 20 C 20 4, 30 4, 40 20 S 60 36, 70 20 S 90 4, 100 20 S 112 32, 116 22"/></g><path class="hit" d="M6 20 C 20 4, 30 4, 40 20 S 60 36, 70 20 S 90 4, 100 20 S 112 32, 116 22"/></svg>
+</div>
+<div class="piece deco" style="--x:1170;--y:880;--w:112;--r:9;--z:29;--dw:84;--my:-16px;--mr:14px" aria-hidden="true">
+  <svg class="wig" viewBox="-60 -70 120 140"><g stroke="#0d0d0d" stroke-width="4" stroke-linejoin="round"><path d="M-46 -6 C -50 -52, -24 -66, 0 -66 C 24 -66, 50 -52, 46 -6 C 45 10, 34 20, 26 26 L 26 46 L -26 46 L -26 26 C -34 20, -45 10, -46 -6 Z" fill="#f7f4ea"/><ellipse cx="-19" cy="-6" rx="13" ry="15" fill="#0d0d0d"/><ellipse cx="19" cy="-6" rx="13" ry="15" fill="#0d0d0d"/><path d="M0 8 L -6 22 L 6 22 Z" fill="#0d0d0d"/><path d="M-20 34 V 46 M-10 34 V 46 M0 34 V 46 M10 34 V 46 M20 34 V 46" fill="none" stroke-width="3"/></g></svg>
+</div>
+<div class="piece fit" style="--x:1206;--y:994;--r:-2;--z:14;--mt:16px" data-name="Page number"><span class="folio">P.3 / 4</span></div>
+</div>
+</section>
+
+<!-- =================================================== PAGE 4: DIY -->
+<section class="page" id="p4" aria-labelledby="t4">
+<div class="board b4">
+<span class="probe" aria-hidden="true"></span>
+<h2 class="sr" id="t4">Page 4: how to do it yourself</h2>
+
+<div class="row r3">
+  <div class="piece letter" style="--x:56;--y:44;--w:206;--r:-3;--z:8" aria-hidden="true"><div class="sheet cut1 l-imp" style="--h:262;--fs:290">D</div></div>
+  <div class="piece letter" style="--x:250;--y:64;--w:120;--r:4;--z:9" aria-hidden="true"><div class="sheet cut3 l-serif" style="--h:236;--fs:238">I</div></div>
+  <div class="piece letter" style="--x:372;--y:38;--w:214;--r:-2;--z:10" aria-hidden="true"><div class="sheet cut5 l-out" style="--h:270;--fs:274">Y</div></div>
+</div>
+<div class="piece" style="--x:60;--y:330;--w:560;--r:-.8;--z:11;--pw:96%;--mt:12px" data-name="Subhead: how to start a band, or a zine, or a mess">
+  <div class="sheet kraft torn strip" data-tear="tb" data-amp="3" data-step="8" style="font-size:calc(17*var(--u))">how to start a band (or a zine, or a mess)</div>
+</div>
+
+<div class="piece" style="--x:56;--y:392;--w:600;--r:.7;--z:7;--pw:100%;--mt:14px" data-name="Notebook page: eight tips for doing it yourself">
+  <div class="sheet torn note" data-tear="tblr" data-amp="5" data-step="9">
+    <h3>Eight rules for idiots</h3>
+    <ol>
+      <li>Learn three chords. That&rsquo;s the curriculum.</li>
+      <li>No amp? Buy a cheap one. Blame the room.</li>
+      <li>Book your own gigs: church halls, laundrettes, garages, roofs. Ask nicely. Then ask anyway.</li>
+      <li>Split the door money equally. Write it down. Pin it up.</li>
+      <li>The photocopier is an instrument. Learn its moods.</li>
+      <li>Staple, don&rsquo;t glue. Glue has opinions.</li>
+      <li>If it sounds bad, do it louder. If it still sounds bad, call it a genre.</li>
+      <li>Leave the venue cleaner than you found it, so they let you back.</li>
+    </ol>
+  </div>
+  <span class="tape" style="--tx:44%;--ty:-3%;--tr:3;--tw:130" aria-hidden="true"></span>
+</div>
+
+<div class="piece" style="--x:706;--y:52;--w:544;--r:1.2;--z:6;--pw:100%;--mt:20px" data-name="Chord diagrams: this is a chord, this is another, this is a third, now form a band">
+  <div class="sheet torn chords" data-tear="tblr" data-amp="5" data-step="9">
+    <svg viewBox="0 0 400 150" role="img" aria-label="Three guitar chord diagrams: E, A and D">
+      <g fill="none" stroke="#0d0d0d" stroke-width="2" stroke-linecap="round">
+        <g transform="translate(8 34)"><path d="M10 0V80M26 0V80M42 0V80M58 0V80M74 0V80M90 0V80M10 20H90M10 40H90M10 60H90M10 80H90" stroke-width="1.6"/><path d="M8 0H92" stroke-width="5"/><circle cx="10" cy="-10" r="4"/><circle cx="74" cy="-10" r="4"/><circle cx="90" cy="-10" r="4"/><g fill="#0d0d0d" stroke="none"><circle cx="26" cy="30" r="7"/><circle cx="42" cy="30" r="7"/><circle cx="58" cy="10" r="7"/></g></g>
+        <g transform="translate(148 34)"><path d="M10 0V80M26 0V80M42 0V80M58 0V80M74 0V80M90 0V80M10 20H90M10 40H90M10 60H90M10 80H90" stroke-width="1.6"/><path d="M8 0H92" stroke-width="5"/><path d="M6 -14L14 -6M14 -14L6 -6" stroke-width="2.4"/><circle cx="26" cy="-10" r="4"/><circle cx="90" cy="-10" r="4"/><g fill="#0d0d0d" stroke="none"><circle cx="42" cy="30" r="7"/><circle cx="58" cy="30" r="7"/><circle cx="74" cy="30" r="7"/></g></g>
+        <g transform="translate(288 34)"><path d="M10 0V80M26 0V80M42 0V80M58 0V80M74 0V80M90 0V80M10 20H90M10 40H90M10 60H90M10 80H90" stroke-width="1.6"/><path d="M8 0H92" stroke-width="5"/><path d="M6 -14L14 -6M14 -14L6 -6M22 -14L30 -6M30 -14L22 -6" stroke-width="2.4"/><circle cx="42" cy="-10" r="4"/><g fill="#0d0d0d" stroke="none"><circle cx="58" cy="30" r="7"/><circle cx="74" cy="50" r="7"/><circle cx="90" cy="30" r="7"/></g></g>
+      </g>
+      <g fill="#0d0d0d"><text x="58" y="26" text-anchor="middle">E</text><text x="198" y="26" text-anchor="middle">A</text><text x="338" y="26" text-anchor="middle">D</text></g>
+    </svg>
+    <p>This is a chord. This is another. This is a third. Now form a band.</p>
+  </div>
+  <span class="tape" style="--tx:-5%;--ty:-4%;--tr:-34;--tw:120" aria-hidden="true"></span>
+</div>
+
+<div class="piece" style="--x:738;--y:406;--w:470;--r:-1.4;--z:8;--pw:100%;--mt:22px" data-name="Back cover: next issue when the toner arrives">
+  <div class="sheet black torn back" data-tear="tblr" data-amp="6" data-step="10">
+    <h3>Next issue:<br>when the toner<br>arrives</h3>
+    <p>Send gigs, gossip and grudges to <b>NOISE FLOOR</b>, c/o the brick behind The Sump (left of the bins). No emails. We do not have a computer, only opinions.</p>
+    <p>This zine is free to copy. Copy it. Give it away. Leave it on the bus. <b>Especially</b> leave it on the bus.</p>
+  </div>
+  <span class="tape" style="--tx:84%;--ty:-6%;--tr:30;--tw:110" aria-hidden="true"></span>
+</div>
+
+<div class="piece" style="--x:772;--y:778;--w:430;--r:1.6;--z:9;--pw:94%;--mo:6px" data-name="Coupon: cut along the dotted line and start something">
+  <div class="coupon"><svg viewBox="0 0 30 30" aria-hidden="true"><g fill="none" stroke="#0d0d0d" stroke-width="2.4" stroke-linecap="round"><circle cx="8" cy="22" r="4"/><circle cx="22" cy="22" r="4"/><path d="M10.5 19 L 24 4 M19.5 19 L 6 4"/></g></svg><b>Cut along the dotted line</b><span>Redeem for one (1) band, one (1) zine or one (1) very loud afternoon. No cash value. Infinite street value.</span></div>
+</div>
+
+<div class="piece ink ink-g torn hh grab" data-tear="tblr" data-amp="5" data-step="10" style="--x:40;--y:376;--w:640;--h:64;--r:-.8;--z:23;--il:-3%;--it:-2%;--iw:104%;--ih:60px" aria-hidden="true"><span class="reg" style="left:auto;right:calc(12*var(--u))"></span></div>
+
+<div class="piece deco pin" style="--x:1142;--y:322;--w:158;--r:12;--z:30;--dw:84;--pt:2;--pr:-6" aria-hidden="true">
+  <svg class="wig" viewBox="-80 -80 160 160"><defs><path id="ring3" d="M-58,0a58,58 0 1,1 116,0a58,58 0 1,1 -116,0"/></defs><circle r="76" fill="#0d0d0d" stroke="#f7f4ea" stroke-width="4"/><circle r="47" fill="#ff5f1f"/><text class="mono-t" font-size="13" letter-spacing="2" fill="#f7f4ea"><textPath href="#ring3" textLength="350">COPY THIS ZINE * COPY THIS ZINE * COPY</textPath></text><text class="imp-t" y="0" text-anchor="middle" font-size="40" fill="#0d0d0d">FREE</text><text class="imp-t" y="26" text-anchor="middle" font-size="21" fill="#0d0d0d" letter-spacing="1">TO COPY</text></svg>
+</div>
+<div class="piece deco pin" style="--x:548;--y:250;--w:168;--r:-9;--z:29;--dw:96;--pt:150;--pl:-10" aria-hidden="true">
+  <svg class="wig" viewBox="-100 -100 200 200"><polygon data-burst="14,98,68" transform="translate(6 7)" fill="#0d0d0d"/><polygon data-burst="14,98,68" fill="#ff5f1f" stroke="#0d0d0d" stroke-width="4" stroke-linejoin="round"/><text class="imp-t" y="-8" text-anchor="middle" font-size="25">DON&rsquo;T ASK</text><text class="imp-t" y="22" text-anchor="middle" font-size="25">PERMISSION</text></svg>
+</div>
+<div class="piece deco hide-m" style="--x:618;--y:70;--w:74;--z:27;--r:-4" aria-hidden="true">
+  <svg class="doodle" viewBox="0 0 110 110"><g class="body"><path d="M55 96 C 10 66, 8 30, 32 22 C 46 18, 54 28, 55 36 C 58 26, 68 18, 80 22 C 104 30, 100 66, 55 96 Z"/><path d="M84 20 L 100 64 M 96 52 C 108 60, 104 76, 90 74 C 82 72, 84 62, 92 62"/></g><path class="hit" d="M55 96 C 10 66, 8 30, 32 22 C 46 18, 54 28, 55 36 C 58 26, 68 18, 80 22 C 104 30, 100 66, 55 96 Z"/></svg>
+</div>
+<div class="piece deco hide-m" style="--x:846;--y:308;--w:56;--z:27;--r:0" aria-hidden="true">
+  <svg class="doodle" viewBox="0 0 60 80"><g class="body"><path d="M32 76 C 22 56, 38 38, 26 10"/><path d="M8 26 L 26 8 L 44 24"/></g><path class="hit" d="M32 76 C 22 56, 38 38, 26 10"/></svg>
+</div>
+<div class="piece fit hide-m" style="--x:910;--y:346;--r:-4;--z:29" data-name="Scribbled note: start here"><span class="note-t"><span class="hl">start here</span></span></div>
+<div class="piece" style="--x:772;--y:908;--w:430;--r:-.9;--z:10;--pw:92%;--mo:-6px" data-name="End note">
+  <div class="sheet news torn strip" data-tear="tb" data-amp="3" data-step="8" style="text-align:center">that&rsquo;s the end. go and start something loud.</div>
+</div>
+<div class="piece fit" style="--x:1214;--y:924;--r:-2;--z:14;--mt:16px" data-name="Page number"><span class="folio">P.4 / 4</span></div>
+</div>
+</section>
+
+</main>
+
+<p class="sr" id="status" role="status" aria-live="polite"></p>
+
+<script>
+(function(){
+'use strict';
+var d=document,root=d.documentElement,reduce=false,flowMQ=null;
+try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+try{flowMQ=matchMedia('(max-width: 860px)')}catch(e){}
+/* container-query sizing on wide screens: one design unit = 1/1320 of the board width */
+(function(){var st=d.createElement('style');st.textContent='@media (min-width:861px){.board{container-type:inline-size;--u:calc(100cqw / 1320)}}';d.head.appendChild(st)})();
+function rng(s){s=(s>>>0)||1;return function(){s=(Math.imul(s,1664525)+1013904223)>>>0;return s/4294967296}}
+function $$(s,c){return Array.prototype.slice.call((c||d).querySelectorAll(s))}
+
+/* ---------- 1. toner-grain tile (dark specks, dropouts, dust, hairs) ---------- */
+(function(){
+  try{
+    var S=320,c=d.createElement('canvas');c.width=c.height=S;
+    var g=c.getContext('2d'),id=g.createImageData(S,S),a=id.data,r=rng(7),i,o,v;
+    for(i=0;i<S*S;i++){
+      v=r();o=i*4;
+      if(v<.05){a[o]=13;a[o+1]=13;a[o+2]=13;a[o+3]=(16+r()*34)|0}
+      else if(v>.988){a[o]=245;a[o+1]=241;a[o+2]=230;a[o+3]=(40+r()*44)|0}
+    }
+    g.putImageData(id,0,0);
+    g.fillStyle='rgba(13,13,13,.5)';
+    for(i=0;i<44;i++){g.beginPath();g.arc(r()*S,r()*S,.6+r()*1.5,0,6.283);g.fill()}
+    g.strokeStyle='rgba(13,13,13,.17)';g.lineWidth=.8;
+    for(i=0;i<5;i++){var x=r()*S,y=r()*S;g.beginPath();g.moveTo(x,y);g.bezierCurveTo(x+r()*30-15,y+r()*30,x+r()*40-20,y+30+r()*30,x+r()*50-25,y+40+r()*40);g.stroke()}
+    root.style.setProperty('--grain','url('+c.toDataURL('image/png')+')');
+  }catch(e){}
+})();
+
+/* ---------- 2. burst / star polygons ---------- */
+$$('[data-burst]').forEach(function(el){
+  var a=el.getAttribute('data-burst').split(','),n=+a[0],R=+a[1],r=+a[2],pts=[],rr=rng(n*31+R);
+  for(var i=0;i<n*2;i++){
+    var ang=i*Math.PI/n-Math.PI/2,rad=(i%2?r:R)*(.95+rr()*.1);
+    pts.push((Math.cos(ang)*rad).toFixed(1)+','+(Math.sin(ang)*rad).toFixed(1));
+  }
+  el.setAttribute('points',pts.join(' '));
+});
+
+/* ---------- 3. torn paper edges (jagged clip-path polygons) ---------- */
+function unitPx(el){var b=el.closest('.board'),p=b&&b.querySelector('.probe');return p?(p.getBoundingClientRect().width||1):1}
+function tornPoly(w,h,amp,step,sides,r){
+  var p=[],k=function(x,y){p.push((x/w*100).toFixed(2)+'% '+(y/h*100).toFixed(2)+'%')};
+  var A=function(s){return sides.indexOf(s)>-1?amp:amp*.1};
+  var x=0,y=0,j;
+  while(x<w){j=r();k(x,r()*A('t')*(j>.93?2.3:1));x+=step*(.5+r())}
+  k(w,r()*A('t'));
+  while(y<h){j=r();k(w-r()*A('r')*(j>.93?2.3:1),y);y+=step*(.5+r())}
+  k(w-r()*A('r'),h);
+  x=w;while(x>0){j=r();k(x,h-r()*A('b')*(j>.93?2.3:1));x-=step*(.5+r())}
+  k(0,h-r()*A('b'));
+  y=h;while(y>0){j=r();k(r()*A('l')*(j>.93?2.3:1),y);y-=step*(.5+r())}
+  return 'polygon('+p.join(',')+')';
+}
+var torn=$$('.torn');
+function tear(el,i){
+  var w=el.offsetWidth,h=el.offsetHeight;if(!w||!h)return;
+  var u=unitPx(el),amp=(+el.getAttribute('data-amp')||6)*u,step=(+el.getAttribute('data-step')||9)*u;
+  el.style.clipPath=tornPoly(w,h,amp,step,el.getAttribute('data-tear')||'tblr',rng(i*977+13));
+}
+torn.forEach(function(el,i){el._ti=i;tear(el,i)});
+if('ResizeObserver' in window){
+  var ro=new ResizeObserver(function(es){es.forEach(function(e){tear(e.target,e.target._ti)})});
+  torn.forEach(function(el){ro.observe(el)});
+}
+
+/* ---------- 4. the xerox: ordered-dither "photos" drawn from shapes ---------- */
+var B8=[0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21];
+function sceneGuitar(g,W,H,L){
+  var X=function(v){return v*W},Y=function(v){return v*H},gr,i,S=H;
+  function circ(x,y,r){g.beginPath();g.arc(X(x),Y(y),r*S,0,6.2832)}
+  function limb(a,b,c,w){g.lineWidth=w*S;g.beginPath();g.moveTo(X(a[0]),Y(a[1]));g.lineTo(X(b[0]),Y(b[1]));if(c)g.lineTo(X(c[0]),Y(c[1]));g.stroke()}
+  function beam(x0,x1,t0,t1,a){var b=g.createLinearGradient(0,0,0,Y(.96));b.addColorStop(0,'rgba(255,255,255,'+a+')');b.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=b;g.beginPath();g.moveTo(X(x0),0);g.lineTo(X(x1),0);g.lineTo(X(t1),Y(.96));g.lineTo(X(t0),Y(.96));g.closePath();g.fill()}
+  g.lineCap='round';g.lineJoin='round';
+  gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#6a6a6a');gr.addColorStop(1,'#1b1b1b');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  gr=g.createRadialGradient(X(L),Y(.44),0,X(L),Y(.44),S*.68);
+  gr.addColorStop(0,'#ffffff');gr.addColorStop(.3,'#cdcdcd');gr.addColorStop(.62,'#575757');gr.addColorStop(1,'rgba(30,30,30,0)');
+  g.fillStyle=gr;g.fillRect(0,0,W,H);
+  beam(.03,.15,L-.46,L-.04,.5);beam(.85,.97,L+.04,L+.46,.5);beam(.42,.58,L-.22,L+.22,.3);
+  // haze
+  for(i=0;i<5;i++){gr=g.createRadialGradient(X(.1+i*.2),Y(.56+(i%2)*.1),0,X(.1+i*.2),Y(.56+(i%2)*.1),S*.2);gr.addColorStop(0,'rgba(255,255,255,.16)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,W,H)}
+  // lamps
+  [[.09,.05],[.91,.05]].forEach(function(p){gr=g.createRadialGradient(X(p[0]),Y(p[1]),0,X(p[0]),Y(p[1]),S*.09);gr.addColorStop(0,'#fff');gr.addColorStop(.4,'rgba(255,255,255,.7)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,W,S*.2);g.fillStyle='#fff';circ(p[0],p[1],.02);g.fill()});
+  // amp stack, left
+  g.fillStyle='#101010';g.fillRect(X(-.02),Y(.6),X(.2),Y(.4));
+  g.strokeStyle='#777';g.lineWidth=S*.008;circ(.08,.72,.07);g.stroke();circ(.08,.72,.045);g.stroke();
+  circ(.08,.72,.02);g.fillStyle='#888';g.fill();
+  // floor pool behind the legs
+  gr=g.createRadialGradient(X(L),Y(.9),0,X(L),Y(.9),S*.44);gr.addColorStop(0,'rgba(255,255,255,.8)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,Y(.5),W,H);
+  // performer
+  g.save();g.translate(X(.5),Y(.98));g.scale(1.1,1.1);g.translate(-X(.5),-Y(.98));
+  g.fillStyle='#090909';g.strokeStyle='#090909';
+  limb([.475,.62],[.375,.77],[.30,.93],.06);limb([.55,.62],[.65,.76],[.73,.93],.06);
+  g.beginPath();g.moveTo(X(.23),Y(.925));g.lineTo(X(.34),Y(.915));g.lineTo(X(.345),Y(.965));g.lineTo(X(.22),Y(.968));g.closePath();g.fill();
+  g.beginPath();g.moveTo(X(.68),Y(.925));g.lineTo(X(.79),Y(.915));g.lineTo(X(.80),Y(.965));g.lineTo(X(.66),Y(.968));g.closePath();g.fill();
+  g.beginPath();g.moveTo(X(.40),Y(.405));g.quadraticCurveTo(X(.49),Y(.37),X(.60),Y(.39));g.lineTo(X(.575),Y(.645));g.lineTo(X(.455),Y(.645));g.closePath();g.fill();
+  limb([.495,.375],[.495,.335],null,.045);
+  circ(.495,.295,.058);g.fill();
+  for(i=0;i<9;i++){
+    var an=-Math.PI*(.06+.88*i/8),a0=an-.19,a1=an+.19,tip=.118+((i*5)%3)*.014;
+    g.beginPath();g.moveTo(X(.495)+Math.cos(a0)*.05*S,Y(.295)+Math.sin(a0)*.05*S);
+    g.lineTo(X(.495)+Math.cos(an)*tip*S,Y(.295)+Math.sin(an)*tip*S);
+    g.lineTo(X(.495)+Math.cos(a1)*.05*S,Y(.295)+Math.sin(a1)*.05*S);g.closePath();g.fill();
+  }
+  // rim light on the head, open mouth
+  g.strokeStyle='#d4d4d4';g.lineWidth=Math.max(1,S*.008);g.beginPath();g.arc(X(.495),Y(.295),S*.058,-1.2,.15);g.stroke();
+  g.fillStyle='#c8c8c8';g.beginPath();g.ellipse(X(.505),Y(.318),S*.017,S*.024,0,0,6.283);g.fill();
+  g.fillStyle='#090909';g.strokeStyle='#090909';
+  limb([.43,.42],[.34,.505],[.255,.495],.046);
+  limb([.575,.405],[.675,.325],[.72,.215],.046);
+  circ(.722,.2,.03);g.fill();
+  g.strokeStyle='#cfcfcf';g.lineWidth=Math.max(1,S*.006);g.beginPath();g.moveTo(X(.585),Y(.395));g.lineTo(X(.672),Y(.31));g.lineTo(X(.715),Y(.2));g.stroke();
+  // guitar: black body, white rim light, pale pickguard
+  g.save();g.translate(X(.535),Y(.628));g.rotate(.4);
+  var shapes=function(paint){
+    g.beginPath();g.ellipse(.025*S,.032*S,.135*S,.098*S,0,0,6.283);paint();
+    g.beginPath();g.ellipse(-.07*S,-.02*S,.105*S,.08*S,0,0,6.283);paint();
+    g.beginPath();g.rect(-.40*S,-.02*S,.32*S,.04*S);paint();
+    g.beginPath();g.moveTo(-.40*S,-.028*S);g.lineTo(-.475*S,-.036*S);g.lineTo(-.48*S,.024*S);g.lineTo(-.40*S,.026*S);g.closePath();paint();
+    g.beginPath();g.moveTo(-.11*S,-.085*S);g.lineTo(-.15*S,-.13*S);g.lineTo(-.06*S,-.09*S);g.closePath();paint();
+  };
+  g.strokeStyle='#f2f2f2';g.lineWidth=S*.016;shapes(function(){g.stroke()});
+  g.fillStyle='#0a0a0a';shapes(function(){g.fill()});
+  g.fillRect(-.09*S,-.05*S,.14*S,.11*S);
+  g.fillStyle='#cfcfcf';for(i=0;i<9;i++)g.fillRect((-.39+i*.036)*S,-.02*S,.005*S,.04*S);
+  g.fillStyle='#d9d9d9';g.beginPath();g.ellipse(-.005*S,.024*S,.082*S,.05*S,0,0,6.283);g.fill();
+  g.fillStyle='#0a0a0a';g.fillRect(-.075*S,-.004*S,.014*S,.05*S);g.fillRect(-.035*S,.004*S,.014*S,.05*S);g.fillRect(.005*S,.012*S,.014*S,.05*S);
+  g.fillStyle='#e6e6e6';[.03,.055,.08].forEach(function(k){g.beginPath();g.arc(k*S,.082*S,.009*S,0,6.283);g.fill()});
+  g.strokeStyle='#fff';g.lineWidth=Math.max(1,S*.0035);g.beginPath();g.moveTo(-.4*S,-.006*S);g.lineTo(.02*S,.02*S);g.moveTo(-.4*S,.006*S);g.lineTo(.02*S,.036*S);g.stroke();
+  g.restore();
+  // strap
+  g.strokeStyle='#8a8a8a';g.lineWidth=S*.016;g.beginPath();g.moveTo(X(.45),Y(.41));g.lineTo(X(.62),Y(.7));g.stroke();
+  // sweat / rim light
+  g.strokeStyle='#bdbdbd';g.lineWidth=Math.max(1,S*.006);g.beginPath();g.moveTo(X(.585),Y(.395));g.lineTo(X(.607),Y(.6));g.stroke();
+  g.beginPath();g.moveTo(X(.475),Y(.64));g.lineTo(X(.385),Y(.775));g.stroke();
+  g.restore();
+  // crowd
+  g.fillStyle='#060606';g.strokeStyle='#060606';
+  [.04,.15,.27,.4,.53,.66,.79,.91,1].forEach(function(cx,k){circ(cx,.985+((k*37)%5)*.008,.052+((k*13)%3)*.007);g.fill()});
+  limb([.15,1.02],[.13,.9],null,.03);limb([.79,1.02],[.815,.88],null,.03);limb([.4,1.02],[.43,.93],null,.03);
+  circ(.13,.885,.02);g.fill();circ(.815,.865,.02);g.fill();
+  gr=g.createLinearGradient(0,Y(.84),0,H);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.5)');g.fillStyle=gr;g.fillRect(0,Y(.84),W,H);
+  gr=g.createRadialGradient(W/2,H*.48,S*.38,W/2,H*.5,S*.86);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.62)');g.fillStyle=gr;g.fillRect(0,0,W,H);
+}
+function sceneSinger(g,W,H,L){
+  var X=function(v){return v*W},Y=function(v){return v*H},gr,i,S=H,dir=L>.5?1:-1;
+  g.lineCap='round';g.lineJoin='round';
+  gr=g.createLinearGradient(0,0,W,0);gr.addColorStop(dir>0?0:1,'#151515');gr.addColorStop(dir>0?1:0,'#9a9a9a');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  gr=g.createRadialGradient(X(L),Y(.02),0,X(L),Y(.02),S*.95);gr.addColorStop(0,'rgba(255,255,255,.95)');gr.addColorStop(.38,'rgba(220,220,220,.5)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,W,H);
+  // jacket + neck
+  g.fillStyle='#0a0a0a';g.beginPath();g.moveTo(X(-.05),H);g.quadraticCurveTo(X(.0),Y(.78),X(.3),Y(.73));g.lineTo(X(.7),Y(.73));g.quadraticCurveTo(X(1),Y(.78),X(1.05),H);g.closePath();g.fill();
+  gr=g.createLinearGradient(X(.32),0,X(.68),0);gr.addColorStop(dir>0?0:1,'#222');gr.addColorStop(dir>0?1:0,'#cfcfcf');g.fillStyle=gr;
+  g.beginPath();g.moveTo(X(.37),Y(.56));g.lineTo(X(.63),Y(.56));g.lineTo(X(.66),Y(.76));g.lineTo(X(.34),Y(.76));g.closePath();g.fill();
+  g.fillStyle='#0a0a0a';g.beginPath();g.moveTo(X(.3),Y(.73));g.lineTo(X(.5),Y(.9));g.lineTo(X(.7),Y(.73));g.lineTo(X(.62),Y(.72));g.lineTo(X(.5),Y(.8));g.lineTo(X(.38),Y(.72));g.closePath();g.fill();
+  g.strokeStyle='#bdbdbd';g.lineWidth=S*.006;g.beginPath();g.moveTo(X(.3),Y(.73));g.lineTo(X(.5),Y(.9));g.lineTo(X(.7),Y(.73));g.stroke();
+  // head
+  g.save();g.translate(X(.5),Y(.4));
+  gr=g.createLinearGradient(-W*.2,0,W*.2,0);gr.addColorStop(dir>0?0:1,'#1c1c1c');gr.addColorStop(dir>0?.4:.6,'#666');gr.addColorStop(dir>0?.78:.22,'#dcdcdc');gr.addColorStop(dir>0?1:0,'#f6f6f6');
+  g.fillStyle=gr;g.beginPath();g.ellipse(0,0,W*.2,H*.235,0,0,6.283);g.fill();
+  // hair
+  g.fillStyle='#070707';g.beginPath();g.ellipse(0,-H*.135,W*.215,H*.115,0,Math.PI,Math.PI*2);g.fill();
+  for(i=0;i<11;i++){var t=-Math.PI*(.02+.96*i/10),bx=Math.cos(t)*W*.19,by=Math.sin(t)*H*.19,tp=H*(.3+((i*7)%4)*.03);
+    g.beginPath();g.moveTo(bx-W*.03,by+H*.02);g.lineTo(Math.cos(t)*W*.24,-tp*Math.abs(Math.sin(t))*.85-H*.06);g.lineTo(bx+W*.03,by+H*.02);g.closePath();g.fill()}
+  // brows, eyes
+  g.strokeStyle='#070707';g.lineWidth=S*.026;g.beginPath();g.moveTo(-W*.15,-H*.085);g.lineTo(-W*.03,-H*.05);g.moveTo(W*.15,-H*.085);g.lineTo(W*.03,-H*.05);g.stroke();
+  g.fillStyle='#050505';g.beginPath();g.ellipse(-W*.085,-H*.02,W*.05,H*.016,.22,0,6.283);g.fill();g.beginPath();g.ellipse(W*.085,-H*.02,W*.05,H*.016,-.22,0,6.283);g.fill();
+  // nose + cheek shadow
+  g.fillStyle='rgba(0,0,0,.45)';g.beginPath();g.moveTo(-W*.01,-H*.01);g.lineTo(W*.045,H*.07);g.lineTo(-W*.03,H*.075);g.closePath();g.fill();
+  // mouth
+  g.fillStyle='#040404';g.beginPath();g.moveTo(-W*.11,H*.11);g.quadraticCurveTo(0,H*.085,W*.11,H*.11);g.quadraticCurveTo(W*.09,H*.23,0,H*.235);g.quadraticCurveTo(-W*.09,H*.23,-W*.11,H*.11);g.fill();
+  g.fillStyle='#f2f2f2';g.fillRect(-W*.085,H*.1,W*.17,H*.02);
+  g.fillStyle='#8a8a8a';g.beginPath();g.ellipse(0,H*.2,W*.055,H*.026,0,0,6.283);g.fill();
+  g.restore();
+  // microphone
+  g.strokeStyle='#2a2a2a';g.lineWidth=S*.05;g.beginPath();g.moveTo(X(.66),Y(.66));g.lineTo(X(.86),Y(1.0));g.stroke();
+  g.strokeStyle='#8a8a8a';g.lineWidth=S*.008;g.beginPath();g.moveTo(X(.645),Y(.68));g.lineTo(X(.84),Y(1.0));g.stroke();
+  g.fillStyle='#0c0c0c';g.beginPath();g.arc(X(.62),Y(.6),S*.085,0,6.283);g.fill();
+  g.fillStyle='#b9b9b9';for(i=0;i<26;i++){var ax=X(.62)+Math.cos(i*2.4)*S*(.012+.05*Math.sqrt(i/26)),ay=Y(.6)+Math.sin(i*2.4)*S*(.012+.05*Math.sqrt(i/26));g.beginPath();g.arc(ax,ay,S*.007,0,6.283);g.fill()}
+  gr=g.createRadialGradient(W/2,H*.46,S*.3,W/2,H*.5,S*.85);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.75)');g.fillStyle=gr;g.fillRect(0,0,W,H);
+}
+function Xerox(cv,scene,seed,l0){
+  if(!cv||!cv.getContext)return null;
+  var W=0,H=0,src=d.createElement('canvas'),sg=src.getContext('2d',{willReadFrequently:true}),og=cv.getContext('2d'),
+      img=null,u32=null,noise=null,speck=null,streak=null,light=l0||.5,queued=false,PAPER=0xFFE8F1F4,INK=0xFF0D0D0D;
+  function size(){
+    var cw=cv.clientWidth||300,w=Math.max(96,Math.round(cw/2)),h=Math.round(w*1.25);
+    if(w===W)return;
+    W=w;H=h;cv.width=W;cv.height=H;src.width=W;src.height=H;
+    img=og.createImageData(W,H);u32=new Uint32Array(img.data.buffer);
+    var r=rng(seed),i;noise=new Float32Array(W*H);speck=new Uint8Array(W*H);streak=new Float32Array(W);
+    for(i=0;i<noise.length;i++){noise[i]=(r()-.5)*.1;var q=r();speck[i]=q<.004?1:(q>.9965?2:0)}
+    for(i=0;i<4;i++){var sx=(r()*W)|0;streak[sx]=.16;if(sx+1<W)streak[sx+1]=.07}
+    draw();
+  }
+  function draw(){
+    queued=false;if(!W)return;
+    scene(sg,W,H,light);
+    var s=sg.getImageData(0,0,W,H).data,x,y,i=0,p=0,by,lum,v,t,sp;
+    for(y=0;y<H;y++){
+      by=(y&7)<<3;
+      for(x=0;x<W;x++,i++,p+=4){
+        lum=(s[p]*.299+s[p+1]*.587+s[p+2]*.114)/255;
+        v=(lum-.5)*1.34+.53+noise[i]-streak[x];
+        t=(B8[by+(x&7)]+.5)/64;
+        sp=speck[i];
+        u32[i]=sp===1?INK:(sp===2?PAPER:(v>t?PAPER:INK));
+      }
+    }
+    og.putImageData(img,0,0);
+  }
+  cv.addEventListener('pointermove',function(e){
+    if(e.pointerType==='touch'||e.buttons)return;
+    var b=cv.getBoundingClientRect();light=Math.max(.16,Math.min(.84,(e.clientX-b.left)/b.width));
+    if(!queued){queued=true;requestAnimationFrame(draw)}
+  },{passive:true});
+  if('ResizeObserver' in window)new ResizeObserver(size).observe(cv);
+  size();
+  return {draw:draw};
+}
+try{new Xerox(d.getElementById('cvGuitar'),sceneGuitar,5,.5);new Xerox(d.getElementById('cvSinger'),sceneSinger,9,.72)}catch(e){if(window.console)console.warn('xerox failed',e)}
+
+/* ---------- 5. dragging: pick up, jitter, lift, double-tap = 15 degrees ---------- */
+var zine=d.getElementById('zine'),pieces=$$('.piece'),zTop=300,drag=null,lastTap={t:0,el:null,x:0,y:0};
+var glueBtn=d.getElementById('reglue'),glueCount=d.getElementById('gluecount'),statusEl=d.getElementById('status');
+$$('.board').forEach(function(b){$$('.piece',b).forEach(function(p,i){p.style.setProperty('--i',i)})});
+pieces.forEach(function(p){
+  p._dx=0;p._dy=0;p._dr=0;
+  var n=p.getAttribute('data-name');
+  if(n){p.setAttribute('role','group');p.setAttribute('aria-label',n);p.setAttribute('tabindex','0')}
+});
+function setVars(p){p.style.setProperty('--dx',p._dx.toFixed(2));p.style.setProperty('--dy',p._dy.toFixed(2));p.style.setProperty('--dr',p._dr.toFixed(2))}
+function loose(p){return Math.abs(p._dx)>.5||Math.abs(p._dy)>.5||Math.abs(p._dr)>.5}
+function countLoose(){
+  var n=0;pieces.forEach(function(p){if(loose(p))n++});
+  glueCount.textContent=n?(n+' loose'):'all stuck';glueBtn.classList.toggle('idle',!n);return n;
+}
+function lift(p){
+  p.classList.add('held');d.body.classList.add('dragging');
+  drag.jit=(Math.random()<.5?-1:1)*(1.6+Math.random()*2.6);
+  p.style.setProperty('--jit',drag.jit.toFixed(2));
+  try{if(drag.touch&&navigator.vibrate)navigator.vibrate(8)}catch(e){}
+}
+function cancelDrag(){if(!drag)return;clearTimeout(drag.timer);if(drag.ready){drag.p.classList.remove('held');d.body.classList.remove('dragging');drag.p.style.setProperty('--jit','0')}drag=null}
+zine.addEventListener('pointerdown',function(e){
+  if(drag)return;
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  var p=e.target.closest&&e.target.closest('.piece');if(!p)return;
+  var touch=e.pointerType==='touch';
+  drag={p:p,id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:p._dx,oy:p._dy,u:unitPx(p),ready:false,moved:false,touch:touch,timer:0,jit:0};
+  p.style.zIndex=++zTop;
+  if(touch){drag.timer=setTimeout(function(){if(drag&&drag.p===p&&!drag.ready){drag.ready=true;lift(p)}},190)}
+  try{p.setPointerCapture(e.pointerId)}catch(err){}
+},{passive:true});
+zine.addEventListener('pointermove',function(e){
+  if(!drag||e.pointerId!==drag.id)return;
+  var dx=e.clientX-drag.sx,dy=e.clientY-drag.sy;
+  if(!drag.ready){
+    var dist=Math.hypot(dx,dy);
+    if(drag.touch){if(dist>9)cancelDrag();return}
+    if(dist<3)return;
+    drag.ready=true;lift(drag.p);
+  }
+  drag.moved=true;
+  var p=drag.p,b=p.closest('.board'),u=drag.u,nx=drag.ox+dx/u,ny=drag.oy+dy/u;
+  var bw=b.clientWidth/u,bh=b.clientHeight/u,ol=p.offsetLeft/u,ot=p.offsetTop/u,pw=p.offsetWidth/u,ph=p.offsetHeight/u,m=Math.min(60,pw*.6,ph*.6);
+  nx=Math.max(-(ol+pw-m),Math.min(bw-ol-m,nx));ny=Math.max(-(ot+ph-m),Math.min(bh-ot-m,ny));
+  p._dx=nx;p._dy=ny;setVars(p);
+},{passive:true});
+function release(e){
+  if(!drag||e.pointerId!==drag.id)return;
+  var p=drag.p,dg=drag;clearTimeout(dg.timer);drag=null;
+  if(dg.ready){
+    p.classList.remove('held');d.body.classList.remove('dragging');
+    p._dr+=dg.jit*.5;p.style.setProperty('--jit','0');setVars(p);
+  }else if(!dg.moved&&e.type==='pointerup'){
+    var now=performance.now();
+    if(lastTap.el===p&&now-lastTap.t<340&&Math.hypot(e.clientX-lastTap.x,e.clientY-lastTap.y)<28){p._dr+=15;setVars(p);lastTap.t=0}
+    else lastTap={t:now,el:p,x:e.clientX,y:e.clientY};
+  }
+  countLoose();
+}
+zine.addEventListener('pointerup',release);
+zine.addEventListener('pointercancel',release);
+zine.addEventListener('touchmove',function(e){if(drag&&drag.ready&&e.cancelable)e.preventDefault()},{passive:false});
+zine.addEventListener('contextmenu',function(e){if(drag&&drag.touch)e.preventDefault()});
+zine.addEventListener('dragstart',function(e){e.preventDefault()});
+zine.addEventListener('keydown',function(e){
+  var p=e.target;if(!p||!p.classList||!p.classList.contains('piece'))return;
+  var k=e.key,st=e.shiftKey?40:10,used=true;
+  if(k==='ArrowLeft')p._dx-=st;else if(k==='ArrowRight')p._dx+=st;else if(k==='ArrowUp')p._dy-=st;else if(k==='ArrowDown')p._dy+=st;
+  else if(k==='r'||k==='R'||k==='Enter'){p._dr+=(e.shiftKey?-15:15)}
+  else if(k==='Escape'){p._dx=0;p._dy=0;p._dr=0}
+  else used=false;
+  if(used){e.preventDefault();p.style.zIndex=++zTop;setVars(p);countLoose()}
+});
+
+/* ---------- 6. re-glue: everything springs back to where it was pasted ---------- */
+function reglue(instant){
+  var n=countLoose();
+  if(!n&&!instant){glueBtn.classList.remove('shake');void glueBtn.offsetWidth;glueBtn.classList.add('shake');statusEl.textContent='Everything is already glued down.';return}
+  var boards=$$('.board');
+  if(instant||reduce){pieces.forEach(function(p){p._dx=p._dy=p._dr=0;setVars(p);p.style.zIndex=''});countLoose();return}
+  boards.forEach(function(b){b.classList.add('gluing')});
+  pieces.forEach(function(p,i){p.style.transitionDelay=((i%40)*16)+'ms';p._dx=0;p._dy=0;p._dr=0;setVars(p)});
+  statusEl.textContent=n+' pieces re-glued.';countLoose();
+  setTimeout(function(){
+    boards.forEach(function(b){b.classList.remove('gluing')});
+    pieces.forEach(function(p){p.style.transitionDelay='';p.style.zIndex=''});zTop=300;
+  },1750);
+}
+glueBtn.addEventListener('click',function(){reglue(false)});
+if(flowMQ){var onFlow=function(){reglue(true)};if(flowMQ.addEventListener)flowMQ.addEventListener('change',onFlow);else if(flowMQ.addListener)flowMQ.addListener(onFlow)}
+
+/* ---------- 7. slap each page down as it scrolls into view ---------- */
+var pages=$$('.page');
+if('IntersectionObserver' in window&&!reduce){
+  var io=new IntersectionObserver(function(es){es.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target)}})},{threshold:.06,rootMargin:'0px 0px -6% 0px'});
+  pages.forEach(function(p,i){if(i===0)requestAnimationFrame(function(){p.classList.add('in')});else io.observe(p)});
+}else pages.forEach(function(p){p.classList.add('in')});
+$$('.bar nav a').forEach(function(a){a.addEventListener('click',function(e){
+  var t=d.querySelector(a.getAttribute('href'));if(!t)return;e.preventDefault();
+  t.scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+})});
+})();
+</script>
+</body>
+</html>

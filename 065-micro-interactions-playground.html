@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Little Delights — Twelve Microinteractions</title>
+<meta name="description" content="A curated playground of twelve handcrafted microinteractions: gooey toggles, heart bursts, elastic sliders, odometers and more.">
+<style>
+:root{
+  --peach:#ffe5d9;--lilac:#e6dcff;--mint:#d6f5e3;--butter:#fff3c4;--sky:#d9ecff;
+  --ink:#2d1f3d;--hot:#ff5c8a;--hot-deep:#dc3b6d;--paper:#fff8f3;
+  --fg:#2d1f3d;
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  --soft:cubic-bezier(.2,.8,.2,1);
+  --font:ui-rounded,"SF Pro Rounded","Hiragino Maru Gothic ProN","Arial Rounded MT Bold","Varela Round",Nunito,"URW Gothic","Trebuchet MS",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;min-height:100vh;min-height:100dvh;background:var(--paper);color:var(--ink);font-family:var(--font);line-height:1.4;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:disabled{cursor:default}
+:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
+.sr{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.defs{position:absolute;width:0;height:0;overflow:hidden}
+
+/* ---------- backdrop ---------- */
+.bg{position:fixed;inset:0;z-index:-1;pointer-events:none;background:
+  radial-gradient(60vmax 40vmax at 6% -8%,var(--peach),transparent 62%),
+  radial-gradient(55vmax 40vmax at 100% 2%,var(--lilac),transparent 60%),
+  radial-gradient(64vmax 46vmax at 50% 112%,var(--mint),transparent 62%),
+  radial-gradient(38vmax 30vmax at -4% 72%,var(--butter),transparent 60%),
+  radial-gradient(38vmax 30vmax at 104% 66%,var(--sky),transparent 60%),
+  var(--paper)}
+.bg::after{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(45,31,61,.10) 1.2px,transparent 1.5px);background-size:26px 26px;-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.2));mask-image:linear-gradient(180deg,rgba(0,0,0,.9),rgba(0,0,0,.2))}
+.wrap{width:min(1240px,100% - 32px);margin:0 auto;padding-bottom:56px;position:relative}
+
+/* ---------- hero ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px 32px;align-items:end;padding:clamp(28px,6.5vw,76px) 0 clamp(22px,4vw,44px);position:relative}
+.eyebrow{margin:0 0 14px;display:inline-flex;align-items:center;gap:10px;padding:7px 14px 7px 10px;border-radius:999px;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(45,31,61,.07);font-size:13px;font-weight:700;letter-spacing:.04em}
+.eyebrow i{display:block;width:10px;height:10px;border-radius:50%;background:var(--hot);animation:beat 2.4s var(--spring) infinite}
+@keyframes beat{0%,60%,100%{transform:scale(1)}20%{transform:scale(1.5)}40%{transform:scale(.9)}}
+h1{margin:0;font-size:clamp(54px,10.2vw,128px);line-height:.94;font-weight:900;font-synthesis:none;letter-spacing:-.01em}
+h1 .w1,h1 .w2{display:inline-block}
+h1 .w2{position:relative;color:var(--hot);text-shadow:0 .045em 0 rgba(45,31,61,.92)}
+h1 .w2 span{display:inline-block;transition:transform .5s var(--spring);animation:rise .9s var(--spring) backwards;animation-delay:calc(var(--i)*55ms + 200ms)}
+h1 .w2 span:hover{transform:translateY(-.14em) rotate(-7deg)}
+h1 .w1{animation:rise .9s var(--spring) backwards}
+@keyframes rise{from{transform:translateY(.55em) scale(.9);opacity:0}}
+.squig{display:block;width:min(46%,380px);margin:.1em 0 0 .1em;overflow:visible}
+.squig path{fill:none;stroke:var(--hot);stroke-width:5;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1.3s var(--soft) .9s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.lede{margin:clamp(14px,2vw,22px) 0 0;max-width:34em;font-size:clamp(16px,1.6vw,19px);font-weight:500;opacity:.82}
+.meter{justify-self:end;display:flex;flex-direction:column;gap:10px;padding:16px 18px 15px;border-radius:26px;background:rgba(255,255,255,.72);box-shadow:0 0 0 1px rgba(45,31,61,.07),0 14px 30px -18px rgba(45,31,61,.4);min-width:208px}
+.meter-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:13px;font-weight:700;letter-spacing:.03em}
+.meter-top b{font-size:28px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.pips{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.pip{width:100%;aspect-ratio:1;border-radius:50%;background:rgba(45,31,61,.11);transition:background .3s,transform .5s var(--spring)}
+.pip.on{background:var(--hot);transform:scale(1.12)}
+.meter small{font-size:12px;opacity:.7;font-weight:600}
+.hero.done h1 .w2{animation:party 1.1s var(--spring) 3}
+@keyframes party{0%,100%{transform:none}30%{transform:translateY(-.12em) rotate(-3deg)}60%{transform:translateY(.02em) rotate(2deg)}}
+.stickers{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.stk{position:absolute;display:block;animation:bob 7s ease-in-out infinite}
+.stk.s1{right:26%;top:14%;width:34px;height:34px;background:var(--butter);clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);animation-delay:-2s}
+.stk.s2{right:12%;top:8%;width:22px;height:22px;border-radius:50%;background:var(--mint);box-shadow:0 0 0 5px rgba(255,255,255,.7)}
+.stk.s3{right:36%;top:66%;width:46px;height:14px;border-radius:14px;background:var(--lilac);transform:rotate(-16deg);animation-delay:-4s}
+@keyframes bob{0%,100%{translate:0 0}50%{translate:0 -10px}}
+
+/* ---------- board ---------- */
+.board{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.tile{--tone:var(--peach);position:relative;display:flex;flex-direction:column;min-width:0;padding:20px 22px 22px;border-radius:30px;background:var(--tone);color:var(--fg);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 0 0 1px rgba(45,31,61,.055),0 14px 30px -20px rgba(45,31,61,.45);
+  transition:transform .55s var(--spring),box-shadow .4s var(--soft),background .7s var(--soft),color .7s var(--soft)}
+.tile[data-tone="peach"]{--tone:var(--peach)}
+.tile[data-tone="lilac"]{--tone:var(--lilac)}
+.tile[data-tone="mint"]{--tone:var(--mint)}
+.tile[data-tone="butter"]{--tone:var(--butter)}
+.tile[data-tone="sky"]{--tone:var(--sky)}
+@media (hover:hover){.tile:hover{transform:translateY(-5px) rotate(-.25deg);box-shadow:inset 0 1px 0 rgba(255,255,255,.75),0 0 0 1px rgba(45,31,61,.07),0 26px 44px -22px rgba(45,31,61,.5)}}
+.th{display:flex;align-items:center;gap:10px;min-height:34px}
+.chip{flex:none;display:grid;place-items:center;min-width:28px;height:24px;padding:0 8px;border-radius:12px;background:var(--fg);color:var(--tone);font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.04em;transition:background .7s,color .7s}
+.th h2{margin:0;font-size:18px;line-height:1.15;font-weight:800;letter-spacing:-.015em}
+.replay{margin-left:auto;flex:none;width:34px;height:34px;padding:0;border-radius:50%;border:0;background:rgba(255,255,255,.62);display:grid;place-items:center;transition:transform .6s var(--spring),background .2s}
+.replay:hover{background:#fff;transform:rotate(-220deg)}
+.replay:active{transform:rotate(-220deg) scale(.88)}
+.replay svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.desc{margin:5px 0 0;font-size:14px;line-height:1.35;font-weight:500;opacity:.78}
+.stage{position:relative;flex:1;min-height:0;margin-top:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
+.hint{margin:0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.55;text-align:center}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+@media (min-width:600px){
+  .board{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:96px;grid-auto-flow:dense;gap:16px}
+  .tile{grid-row:span var(--s,3)}
+}
+@media (min-width:960px){
+  .board{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .tile[data-col="1"]{grid-column:1}
+  .tile[data-col="2"]{grid-column:2}
+  .tile[data-col="3"]{grid-column:3}
+}
+@media (max-width:759px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  h1{font-size:clamp(54px,17vw,110px)}
+  .meter{justify-self:start;width:100%;min-width:0;padding:14px 16px 13px;gap:8px}
+  .pips{grid-template-columns:repeat(12,1fr);gap:5px}
+  .squig{width:62%}
+  .stk.s1,.stk.s3{display:none}
+  .stk.s2{right:6%;top:6%}
+}
+
+/* ---------- fx layer (confetti / particles) ---------- */
+#fx{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}
+.bit{position:fixed;left:0;top:0;pointer-events:none;will-change:transform,opacity}
+.bit-d{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c)}
+.bit-l{width:4px;height:12px;margin:-6px 0 0 -2px;border-radius:3px;background:var(--c)}
+.bit-r{width:7px;height:11px;margin:-5.5px 0 0 -3.5px;border-radius:2px;background:var(--c)}
+.bit-t{width:11px;height:10px;margin:-5px 0 0 -5.5px;background:var(--c);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.bit-h{width:15px;height:15px;margin:-7.5px 0 0 -7.5px;color:var(--c)}
+.bit-h svg{display:block;width:100%;height:100%;fill:currentColor}
+
+footer{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;align-items:center;padding-top:18px;padding-bottom:44px;border-top:2px dotted rgba(45,31,61,.18);font-size:13px;font-weight:600;opacity:.8}
+footer.wrap{width:min(1240px,100% - 32px)}
+footer span:last-child{font-family:var(--mono);font-size:12px;letter-spacing:.02em}
+
+/* ===== 01 gooey toggle ===== */
+.goo{position:relative;width:176px;padding:0;border:0;background:none;border-radius:40px;line-height:0;transition:transform .35s var(--spring)}
+.goo:active{transform:scale(.95)}
+.goo svg{display:block;width:100%;height:auto;overflow:visible}
+.goo .trk{fill:rgba(45,31,61,.15);transition:fill .5s var(--soft)}
+.goo[aria-checked="true"] .trk{fill:var(--hot)}
+.goo .blob{transition-property:transform;transition-timing-function:cubic-bezier(.3,1.38,.5,1)}
+.goo .b1{transition-duration:.6s;transition-delay:.1s}
+.goo .b2{transition-duration:.52s;transition-delay:.05s}
+.goo .b3{transition-duration:.44s;transition-delay:0s}
+.goo[aria-checked="true"] .blob{transform:translateX(68px)}
+.goo[aria-checked="false"] .b1{transition-duration:.44s;transition-delay:0s}
+.goo[aria-checked="false"] .b3{transition-duration:.6s;transition-delay:.1s}
+.goo .lbl{font-family:var(--font);font-size:13px;font-weight:800;letter-spacing:.1em;fill:var(--fg);opacity:.5;transition:opacity .3s .15s}
+.goo .lbl.on{opacity:0}
+.goo[aria-checked="true"] .lbl.on{opacity:.85}
+.goo[aria-checked="true"] .lbl.off{opacity:0}
+
+/* ===== 02 heart ===== */
+.heart{position:relative;width:104px;height:104px;padding:0;border-radius:50%;border:0;background:rgba(255,255,255,.8);box-shadow:0 12px 24px -12px rgba(45,31,61,.4),inset 0 -3px 0 rgba(45,31,61,.06);display:grid;place-items:center;transition:transform .3s var(--spring)}
+.heart:active{transform:scale(.9)}
+.heart svg{width:52px;height:52px;overflow:visible}
+.heart .hp{fill:transparent;stroke:var(--fg);stroke-width:1.7;stroke-linejoin:round;transition:fill .25s,stroke .25s}
+.heart[aria-pressed="true"] .hp{fill:var(--hot);stroke:var(--hot)}
+.heart .ring{position:absolute;inset:0;border-radius:50%;border:3px solid var(--hot);opacity:0;pointer-events:none}
+
+/* ===== 03 ripple ===== */
+.riprow{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap}
+.rip{--p:0;position:relative;overflow:hidden;min-width:168px;height:60px;padding:0 30px;border:0;border-radius:999px;background:var(--hot);color:var(--ink);font-weight:800;font-size:19px;letter-spacing:.01em;
+  box-shadow:0 calc(7px - var(--p)*5px) 0 var(--hot-deep),0 16px 26px -12px rgba(255,92,138,.7);
+  transform:translateY(calc(var(--p)*5px)) scale(calc(1 - var(--p)*.06));user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.rip .layer{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.rip .wave{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.9) 0,rgba(255,255,255,.55) 40%,rgba(255,255,255,0) 68%);transform:translate(-50%,-50%) scale(0);will-change:transform,opacity}
+.rip .rl{position:relative}
+.boops{font-family:var(--mono);font-size:13px;font-weight:700;opacity:.7;min-width:5.6em}
+
+/* ===== 04 hamburger ===== */
+.fan{position:relative;width:72px;height:72px;margin:24px 66px 22px 0;flex:none}
+.burger{position:relative;z-index:2;width:72px;height:72px;padding:0;border:0;border-radius:24px;background:rgba(255,255,255,.85);box-shadow:0 12px 22px -12px rgba(45,31,61,.45);transition:background .4s var(--soft),border-radius .55s var(--spring),transform .3s var(--spring)}
+.burger:active{transform:scale(.92)}
+.burger .l{position:absolute;left:17px;width:38px;height:4.5px;border-radius:4px;background:var(--ink);transition:transform .6s cubic-bezier(.34,1.7,.5,1),opacity .2s,background .3s}
+.burger .l1{top:22px}.burger .l2{top:34px}.burger .l3{top:46px}
+.fan.open .burger{background:var(--ink);border-radius:50%}
+.fan.open .l{background:#fff8f0}
+.fan.open .l1{transform:translateY(12px) rotate(45deg)}
+.fan.open .l2{transform:scaleX(0);opacity:0}
+.fan.open .l3{transform:translateY(-12px) rotate(-45deg)}
+.sats{list-style:none;margin:0;padding:0;position:absolute;left:15px;top:15px;width:42px;height:42px}
+.sats li{position:absolute;inset:0}
+.sat{position:absolute;inset:0;width:42px;height:42px;padding:0;border:0;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 8px 14px -8px rgba(45,31,61,.5);
+  transform:translate(0,0) scale(.2);opacity:0;visibility:hidden;transition:transform .35s var(--soft),opacity .2s,visibility 0s .35s,background .2s}
+.sat svg{width:19px;height:19px;fill:var(--ink)}
+.sat:hover{background:var(--hot)}
+.fan.open .sat{transform:translate(var(--x),var(--y)) scale(1);opacity:1;visibility:visible;transition:transform .6s cubic-bezier(.34,1.6,.5,1) calc(var(--i)*70ms + 60ms),opacity .2s calc(var(--i)*70ms),visibility 0s,background .2s}
+
+/* ===== 05 magnetic ===== */
+.mag-area{position:relative;width:100%;flex:1;min-height:184px;display:grid;place-items:center;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.mag-field{position:absolute;left:50%;top:50%;width:156px;height:156px;margin:-78px 0 0 -78px;border-radius:50%;border:2px dashed rgba(45,31,61,.24);pointer-events:none;transition:border-color .3s,background .3s,transform .6s var(--spring)}
+.mag-area.near .mag-field{border-color:var(--hot);background:rgba(255,92,138,.08);transform:scale(1.07)}
+.mag{position:relative;height:54px;padding:0 26px;border:0;border-radius:999px;background:var(--ink);color:#fff8f0;font-weight:800;font-size:16px;letter-spacing:.01em;box-shadow:0 14px 22px -12px rgba(45,31,61,.7);will-change:transform}
+.mag .ml{display:block;will-change:transform}
+.mag-read{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:11px;font-weight:700;opacity:.55;letter-spacing:.04em}
+
+/* ===== 06 elastic slider ===== */
+.slider{position:relative;width:100%;max-width:340px}
+.slider svg{display:block;width:100%;height:auto;overflow:visible;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+.slider svg.drag{cursor:grabbing}
+.slider .sr-range{position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;pointer-events:none;margin:0}
+.slider .el-track{fill:none;stroke:rgba(45,31,61,.18);stroke-linecap:round}
+.slider .el-fill{fill:none;stroke:var(--hot);stroke-linecap:round}
+.slider .thumb-ring{fill:none;stroke:var(--fg);stroke-width:2.5;opacity:0;transition:opacity .2s}
+.slider .sr-range:focus-visible ~ svg .thumb-ring{opacity:1}
+.slider .th-body{fill:#fff}
+.slider .grip{stroke:var(--hot);stroke-width:2.4;stroke-linecap:round}
+.slider .bub-t{font-family:var(--font);font-size:14px;font-weight:800;fill:var(--ink);text-anchor:middle;font-variant-numeric:tabular-nums}
+.slider .bub-r{fill:#fff;filter:drop-shadow(0 3px 4px rgba(45,31,61,.18))}
+.slider .ends{font-family:var(--font);font-size:12px;font-weight:800;fill:var(--fg);opacity:.5;text-anchor:middle}
+
+/* ===== 07 checkbox ===== */
+.todos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;width:100%;max-width:300px}
+.todo{position:relative;display:flex;align-items:center;gap:14px;padding:6px 8px;border-radius:16px;cursor:pointer;transition:background .2s}
+.todo:hover{background:rgba(255,255,255,.5)}
+.todo input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+.cb{position:relative;flex:none;width:30px;height:30px;border-radius:10px;border:2.5px solid var(--fg);background:rgba(255,255,255,.6);display:grid;place-items:center;transition:background .25s,border-color .25s}
+.cb svg{width:20px;height:20px;overflow:visible}
+.cb path{fill:none;stroke:var(--ink);stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:24;stroke-dashoffset:24}
+.todo input:checked + .cb{background:var(--hot);border-color:var(--hot);animation:boxpop .55s var(--soft)}
+.todo input:checked + .cb path{stroke-dashoffset:0;transition:stroke-dashoffset .38s cubic-bezier(.6,0,.2,1) .12s}
+.todo input:focus-visible + .cb{outline:3px solid var(--fg);outline-offset:3px}
+@keyframes boxpop{0%{transform:scale(1)}30%{transform:scale(.8)}62%{transform:scale(1.16)}100%{transform:scale(1)}}
+.tt{position:relative;font-size:16px;font-weight:700;transition:opacity .3s .1s}
+.tt::after{content:"";position:absolute;left:-3px;right:-3px;top:54%;height:2.5px;border-radius:2px;background:var(--fg);transform:scaleX(0);transform-origin:left center;transition:transform .42s cubic-bezier(.6,0,.2,1) .18s}
+.todo input:checked ~ .tt{opacity:.5}
+.todo input:checked ~ .tt::after{transform:scaleX(1)}
+
+/* ===== 08 pull to refresh ===== */
+.phone{position:relative;width:200px;height:236px;border-radius:28px;background:#fffaf5;box-shadow:0 0 0 6px var(--ink),0 18px 30px -14px rgba(45,31,61,.55);overflow:hidden;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none;outline-offset:8px}
+.phone.grab{cursor:grabbing}
+.phone::before{content:"";position:absolute;left:50%;top:6px;width:44px;height:7px;margin-left:-22px;border-radius:5px;background:var(--ink);opacity:.9;z-index:4}
+.phone .rl-bg{position:absolute;left:0;right:0;top:0;height:170px;background:linear-gradient(180deg,#f0e7ff,#fffaf5);z-index:0}
+.drop{position:absolute;left:0;top:0;width:200px;height:170px;z-index:1;overflow:visible;pointer-events:none}
+.feed{--pull:0px;position:relative;z-index:2;list-style:none;margin:0;padding:22px 12px 12px;height:100%;background:#fffaf5;border-radius:28px 28px 0 0;box-shadow:0 -8px 16px -8px rgba(45,31,61,.16);will-change:transform}
+.feed li{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1.5px dashed rgba(45,31,61,.12)}
+.feed li:last-child{border-bottom:0}
+.av{flex:none;width:32px;height:32px;border-radius:50%;background:var(--c,#e6dcff);box-shadow:inset 0 -3px 0 rgba(45,31,61,.1)}
+.feed b{display:block;font-size:12.5px;line-height:1.2;font-weight:800}
+.feed small{display:block;font-size:11px;line-height:1.2;opacity:.62;font-weight:600}
+.feed li.fresh{animation:slidein .7s var(--spring)}
+@keyframes slidein{from{transform:translateY(-30px);opacity:0}}
+.ptr-cap{margin:0;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;opacity:.7;min-height:1.4em;text-align:center}
+.drop .neck,.drop .anchor,.drop .dot{fill:var(--hot)}
+.drop .spinA{fill:none;stroke:#fff;stroke-width:2.8;stroke-linecap:round;stroke-dasharray:24 40;transform-box:fill-box;transform-origin:center;animation:spin .8s linear infinite}
+.drop .chk{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:20;stroke-dashoffset:20}
+.drop .chk.show{stroke-dashoffset:0;transition:stroke-dashoffset .4s ease .05s}
+.drop .arr{fill:none;stroke:#fff;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .35s var(--spring);transform-box:fill-box;transform-origin:center}
+.drop .arr.up{transform:rotate(180deg)}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== 09 liquid tabs ===== */
+.tabs{position:relative;display:grid;grid-template-columns:repeat(4,1fr);width:100%;max-width:320px;padding:7px;border-radius:28px;background:rgba(255,255,255,.7);box-shadow:inset 0 2px 0 rgba(255,255,255,.8),0 12px 22px -14px rgba(45,31,61,.4)}
+.pill{position:absolute;top:7px;bottom:7px;left:0;width:60px;border-radius:22px;background:var(--hot);box-shadow:0 10px 16px -8px rgba(255,92,138,.85),inset 0 -3px 0 rgba(0,0,0,.08);will-change:left,width,transform;pointer-events:none}
+.tab{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 8px;border:0;background:none;border-radius:22px;font-size:11px;font-weight:800;letter-spacing:.02em;color:var(--ink);opacity:.62;transition:opacity .3s,transform .4s var(--spring)}
+.tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .4s var(--spring)}
+.tab[aria-selected="true"]{opacity:1}
+.tab[aria-selected="true"] svg{transform:translateY(-1px) scale(1.08)}
+.tab:active{transform:scale(.92)}
+.tab:focus-visible{outline:3px solid var(--ink);outline-offset:-3px}
+.tabcap{margin:0;font-size:13px;font-weight:700;opacity:.75;text-align:center;min-height:1.4em}
+
+/* ===== 10 password eye ===== */
+.pwbox{width:100%;max-width:310px;display:flex;flex-direction:column;gap:8px}
+.pwlabel{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.65}
+.pw{display:flex;align-items:stretch;gap:8px;padding:6px;border-radius:24px;background:rgba(255,255,255,.78);box-shadow:inset 0 2px 5px rgba(45,31,61,.1),0 0 0 2px transparent;transition:box-shadow .25s}
+.pw:focus-within{box-shadow:inset 0 2px 5px rgba(45,31,61,.1),0 0 0 3px var(--hot)}
+.pw input{flex:1;min-width:0;width:100%;border:0;background:none;padding:0 8px 0 12px;font:inherit;font-size:19px;font-weight:700;letter-spacing:.06em;color:var(--ink);outline:none}
+.pw input::placeholder{color:rgba(45,31,61,.4);font-weight:600;letter-spacing:.02em}
+.eyebtn{flex:none;width:66px;height:50px;padding:0;border:0;border-radius:18px;background:#fff;box-shadow:0 6px 12px -8px rgba(45,31,61,.6);display:grid;place-items:center;transition:transform .3s var(--spring),background .3s}
+.eyebtn:active{transform:scale(.9)}
+.eyebtn.shut{background:var(--lilac)}
+.eye{width:46px;height:31px;overflow:visible}
+.eye .eye-open{transform-box:view-box;transform-origin:24px 16px;transition:transform .42s cubic-bezier(.5,-.5,.3,1.5)}
+.eye .iris{transition:transform .14s ease-out}
+.eyebtn.shut .eye-open,.eyebtn.blink .eye-open{transform:scaleY(.06)}
+.eye .eye-shut{opacity:0;transition:opacity .2s}
+.eyebtn.shut .eye-shut{opacity:1;transition:opacity .25s .18s}
+.eye .eye-shut path{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round}
+.pwmsg{margin:0;font-size:13px;font-weight:700;opacity:.72;min-height:1.4em}
+
+/* ===== 11 odometer ===== */
+.likebtn{display:inline-flex;align-items:center;gap:14px;padding:10px 26px 10px 18px;border:0;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 12px 22px -14px rgba(45,31,61,.55),inset 0 -3px 0 rgba(45,31,61,.06);transition:transform .3s var(--spring)}
+.likebtn:active{transform:scale(.94)}
+.likebtn .lh{width:32px;height:32px;flex:none;overflow:visible}
+.likebtn .lh path{fill:transparent;stroke:var(--fg);stroke-width:1.9;stroke-linejoin:round;transition:fill .25s,stroke .25s}
+.likebtn[aria-pressed="true"] .lh path{fill:var(--hot);stroke:var(--hot)}
+.odo{display:inline-flex;align-items:center;font-size:44px;line-height:1;font-weight:900;font-synthesis:none;letter-spacing:-.02em;font-variant-numeric:tabular-nums;height:1.3em}
+.dcol{position:relative;display:inline-block;width:.62em;height:1.3em;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 15%,#000 85%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 15%,#000 85%,transparent 100%)}
+.dstrip{display:block;position:absolute;left:0;top:0;width:100%;transition:transform .85s cubic-bezier(.3,1.38,.4,1);will-change:transform}
+.dstrip.snap{transition:none}
+.dstrip i{display:flex;align-items:center;justify-content:center;height:1.3em;line-height:1;font-style:normal}
+.dsep{display:inline-block;width:.32em;text-align:center;opacity:.6}
+.odo-note{margin:0;font-size:12px;font-weight:700;opacity:.6}
+
+/* ===== 12 day / night ===== */
+.tile.night{--tone:#2b2160;--fg:#f4ecff}
+.tile.night .replay{background:rgba(255,255,255,.14)}
+.dn{position:relative;width:204px;height:94px;padding:0;border:0;border-radius:47px;overflow:hidden;background:#8fd3ff;
+  box-shadow:inset 0 5px 12px rgba(0,0,0,.2),0 0 0 5px rgba(255,255,255,.7),0 16px 26px -14px rgba(45,31,61,.55);transition:box-shadow .6s,transform .35s var(--spring)}
+.tile.night .dn{box-shadow:inset 0 5px 12px rgba(0,0,0,.4),0 0 0 5px rgba(255,255,255,.18),0 16px 30px -12px rgba(0,0,0,.6)}
+.dn:active{transform:scale(.97)}
+.dn:focus-visible{outline:3px solid var(--fg);outline-offset:6px}
+.dn .sky{position:absolute;inset:0;transition:opacity .8s var(--soft)}
+.dn .sky.day{background:linear-gradient(180deg,#7cc8ff 0%,#bfe6ff 70%,#e6f5ff 100%)}
+.dn .sky.night{background:linear-gradient(180deg,#141042 0%,#2f2670 65%,#52428f 100%);opacity:0}
+.dn[aria-checked="true"] .sky.night{opacity:1}
+.dn[aria-checked="true"] .sky.day{opacity:0}
+.dn .stars{position:absolute;inset:0;width:100%;height:100%}
+.dn .star{fill:#fff8d8;transform-box:fill-box;transform-origin:center;transform:scale(0);opacity:0;transition:transform .5s var(--spring),opacity .4s}
+.dn[aria-checked="true"] .star{transform:scale(1);opacity:1;transition-delay:calc(var(--i)*70ms + 250ms);animation:twinkle 2.6s ease-in-out infinite;animation-delay:calc(var(--i)*380ms)}
+@keyframes twinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.62)}}
+.dn .cloud{position:absolute;display:block;transition:transform .9s var(--spring),opacity .6s}
+.dn .cloud svg{display:block;width:100%;height:auto}
+.dn .cloud.c1{right:12px;bottom:-5px;width:84px}
+.dn .cloud.c2{right:74px;bottom:-16px;width:62px;opacity:.8}
+.dn .cloud.c3{right:-6px;bottom:24px;width:46px;opacity:.7}
+.dn[aria-checked="true"] .cloud.c1{transform:translate(-26px,48px)}
+.dn[aria-checked="true"] .cloud.c2{transform:translate(-40px,46px);opacity:0}
+.dn[aria-checked="true"] .cloud.c3{transform:translate(40px,-20px);opacity:0}
+.dn .cloud.c1 svg{animation:drift 7s ease-in-out infinite}
+.dn .cloud.c2 svg{animation:drift 9s ease-in-out -3s infinite}
+@keyframes drift{0%,100%{transform:translateX(0)}50%{transform:translateX(7px)}}
+.dn .knob{position:absolute;left:9px;top:9px;width:76px;height:76px;transition:transform .85s cubic-bezier(.5,1.35,.4,1)}
+.dn[aria-checked="true"] .knob{transform:translateX(110px) rotate(360deg)}
+.dn .sun,.dn .moon{position:absolute;inset:0;border-radius:50%;transition:opacity .45s .12s}
+.dn .sun{background:radial-gradient(circle at 34% 30%,#fff6b8 0,#ffd75a 45%,#ffb52e 100%);box-shadow:0 0 0 11px rgba(255,236,150,.32),0 0 0 24px rgba(255,236,150,.18),0 0 0 40px rgba(255,236,150,.1),0 0 28px 10px rgba(255,214,90,.55)}
+.dn .moon{opacity:0;background:radial-gradient(circle at 34% 30%,#fffef6 0,#efe9d8 55%,#cfc7b4 100%);box-shadow:0 0 0 10px rgba(255,255,255,.08),0 0 0 22px rgba(255,255,255,.05),0 0 26px 6px rgba(220,215,255,.35)}
+.dn[aria-checked="true"] .sun{opacity:0}
+.dn[aria-checked="true"] .moon{opacity:1}
+.dn .cr{position:absolute;border-radius:50%;background:#d6cebb;box-shadow:inset 2px 3px 4px rgba(90,80,60,.28)}
+.dn .cr.a{left:44%;top:14%;width:26%;height:26%}
+.dn .cr.b{left:16%;top:44%;width:20%;height:20%}
+.dn .cr.c{left:52%;top:58%;width:15%;height:15%}
+.dn .cr.d{left:30%;top:16%;width:10%;height:10%}
+.dncap{margin:8px 0 0;font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;opacity:.75;min-height:1.4em}
+
+/* ---------- small screens ---------- */
+@media (max-width:599px){
+  .tile{padding:18px 18px 20px}
+  .stage{min-height:150px}
+  .stage.tall{min-height:290px}
+  .board{gap:14px}
+}
+@media (max-width:380px){
+  .rip{min-width:150px;padding:0 22px}
+  .odo{font-size:36px}
+  .likebtn{padding:10px 20px 10px 14px;gap:10px}
+}
+
+/* ---------- reduced motion ---------- */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
+  .eyebrow i,.stk,.dn .cloud svg{animation:none!important}
+  .squig path{stroke-dashoffset:0}
+  .dn .star{animation:none!important}
+}
+</style>
+</head>
+<body>
+<svg class="defs" width="0" height="0" aria-hidden="true">
+  <defs>
+    <filter id="goo" filterUnits="userSpaceOnUse" x="-10" y="-10" width="152" height="90" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="5.5" result="b"/>
+      <feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -10"/>
+    </filter>
+    <filter id="goo2" filterUnits="userSpaceOnUse" x="-40" y="-60" width="280" height="290" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4.6" result="b"/>
+      <feColorMatrix in="b" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9"/>
+    </filter>
+  </defs>
+</svg>
+<div class="bg" aria-hidden="true"></div>
+<div id="fx" aria-hidden="true"></div>
+
+<main class="wrap">
+  <header class="hero" id="hero">
+    <div class="stickers" aria-hidden="true"><span class="stk s1"></span><span class="stk s2"></span><span class="stk s3"></span></div>
+    <div>
+      <p class="eyebrow"><i></i>A curated playground of tiny things</p>
+      <h1><span class="sr">Little Delights</span><span class="w1" aria-hidden="true">Little</span> <span class="w2" aria-hidden="true"><span style="--i:0">D</span><span style="--i:1">e</span><span style="--i:2">l</span><span style="--i:3">i</span><span style="--i:4">g</span><span style="--i:5">h</span><span style="--i:6">t</span><span style="--i:7">s</span></span></h1>
+      <svg class="squig" viewBox="0 0 300 14" aria-hidden="true"><path pathLength="1" d="M4 8Q22 -2 40 8T76 8T112 8T148 8T184 8T220 8T256 8T294 8"/></svg>
+      <p class="lede">Twelve handcrafted microinteractions, each built to feel like something you could almost touch. Poke, drag, press and hold: everything here answers back.</p>
+    </div>
+    <aside class="meter" aria-label="Discovery progress">
+      <div class="meter-top"><span>Discovered</span><b><span id="found">0</span>/12</b></div>
+      <div class="pips" id="pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+      <small id="foundMsg" aria-live="polite">Try a tile to light its dot.</small>
+    </aside>
+  </header>
+
+  <section class="board" aria-label="Twelve microinteractions">
+
+    <!-- 01 -->
+    <article class="tile" data-tone="peach" data-col="1" style="--s:3">
+      <div class="th"><span class="chip">01</span><h2>Gooey toggle</h2></div>
+      <p class="desc">The knob stretches like warm liquid on its way across.</p>
+      <div class="stage">
+        <button class="goo" id="gooBtn" type="button" role="switch" aria-checked="false" aria-label="Gooey toggle">
+          <svg viewBox="0 0 132 68" aria-hidden="true">
+            <rect class="trk" x="2" y="4" width="128" height="60" rx="30"/>
+            <text class="lbl off" x="86" y="39" text-anchor="middle">OFF</text>
+            <text class="lbl on" x="46" y="39" text-anchor="middle">ON</text>
+            <g filter="url(#goo)" transform="translate(0 3.5)" fill="#2d1f3d" opacity=".22">
+              <circle class="blob b1" cx="32" cy="34" r="23"/><circle class="blob b2" cx="32" cy="34" r="17"/><circle class="blob b3" cx="32" cy="34" r="23"/>
+            </g>
+            <g filter="url(#goo)" fill="#ffffff">
+              <circle class="blob b1" cx="32" cy="34" r="23"/><circle class="blob b2" cx="32" cy="34" r="17"/><circle class="blob b3" cx="32" cy="34" r="23"/>
+            </g>
+          </svg>
+        </button>
+        <p class="hint" id="gooState">Off · tap to wake it</p>
+      </div>
+    </article>
+
+    <!-- 02 -->
+    <article class="tile" data-tone="lilac" data-col="2" style="--s:3">
+      <div class="th"><span class="chip">02</span><h2>Heart burst</h2><button class="replay" id="rpHeart" type="button" aria-label="Replay heart burst"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button></div>
+      <p class="desc">A like that pops into particles and a ring.</p>
+      <div class="stage">
+        <button class="heart" id="heart" type="button" aria-pressed="false" aria-label="Like">
+          <span class="ring" id="heartRing"></span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path class="hp" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        </button>
+        <p class="hint">Tap the heart</p>
+      </div>
+    </article>
+
+    <!-- 03 -->
+    <article class="tile" data-tone="mint" data-col="3" style="--s:2">
+      <div class="th"><span class="chip">03</span><h2>Ripple button</h2></div>
+      <p class="desc">Springy press, ripple from your fingertip.</p>
+      <div class="stage">
+        <div class="riprow">
+          <button class="rip" id="rip" type="button"><span class="layer" id="ripLayer"></span><span class="rl">Press me</span></button>
+          <span class="boops mono" id="boops">0 boops</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 04 -->
+    <article class="tile" data-tone="butter" data-col="1" style="--s:3">
+      <div class="th"><span class="chip">04</span><h2>Menu morph</h2></div>
+      <p class="desc">Three bars fold into a cross while the menu fans out.</p>
+      <div class="stage">
+        <div class="fan" id="fan">
+          <button class="burger" id="burger" type="button" aria-expanded="false" aria-controls="fanMenu" aria-label="Open menu"><span class="l l1"></span><span class="l l2"></span><span class="l l3"></span></button>
+          <ul class="sats" id="fanMenu">
+            <li><button class="sat" type="button" style="--i:0;--x:52px;--y:-58px" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.2 12 4l8 7.2V20h-5.4v-5.6H9.4V20H4z"/></svg></button></li>
+            <li><button class="sat" type="button" style="--i:1;--x:80px;--y:0px" aria-label="Play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z"/></svg></button></li>
+            <li><button class="sat" type="button" style="--i:2;--x:52px;--y:58px" aria-label="Favourites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button></li>
+          </ul>
+        </div>
+        <p class="hint" id="fanHint">Tap the bars</p>
+      </div>
+    </article>
+
+    <!-- 05 -->
+    <article class="tile" data-tone="sky" data-col="2" style="--s:3">
+      <div class="th"><span class="chip">05</span><h2>Magnetic button</h2></div>
+      <p class="desc">It leans toward you as you approach.</p>
+      <div class="stage">
+        <div class="mag-area" id="magArea">
+          <span class="mag-field" aria-hidden="true"></span>
+          <button class="mag" id="mag" type="button"><span class="ml" id="magLabel">Come closer</span></button>
+          <span class="mag-read mono" id="magRead" aria-hidden="true">pull 0.00</span>
+        </div>
+      </div>
+    </article>
+
+    <!-- 06 -->
+    <article class="tile" data-tone="peach" data-col="3" style="--s:4">
+      <div class="th"><span class="chip">06</span><h2>Elastic slider</h2></div>
+      <p class="desc">A rubber-band track that bends under your thumb, then wobbles back.</p>
+      <div class="stage">
+        <div class="slider" id="slider">
+          <input class="sr-range" id="elRange" type="range" min="0" max="100" step="1" value="42" aria-label="Elastic slider value">
+          <svg id="elSvg" viewBox="0 0 300 200" aria-hidden="true">
+            <line x1="28" y1="108" x2="272" y2="108" stroke="#2d1f3d" stroke-opacity=".28" stroke-width="2.4" stroke-dasharray=".1 9" stroke-linecap="round"/>
+            <text class="ends" x="28" y="150">0</text>
+            <text class="ends" x="272" y="150">100</text>
+            <path class="el-track" id="elTrack" d="M28 108Q150 108 272 108" stroke-width="8"/>
+            <path class="el-fill" id="elFill" d="M28 108Q80 108 130 108" stroke-width="8"/>
+            <circle cx="28" cy="108" r="4" fill="#2d1f3d" opacity=".35"/>
+            <circle cx="272" cy="108" r="4" fill="#2d1f3d" opacity=".35"/>
+            <g id="elThumb">
+              <rect class="bub-r" id="elBubR" x="-25" y="-62" width="50" height="28" rx="14"/>
+              <text class="bub-t" id="elVal" x="0" y="-43">42</text>
+              <circle class="thumb-ring" r="23"/>
+              <circle r="15" cy="4" fill="rgba(45,31,61,.22)"/>
+              <circle class="th-body" r="15"/>
+              <path class="grip" d="M-4-5V5M0-5V5M4-5V5"/>
+            </g>
+          </svg>
+        </div>
+        <p class="hint">Drag it · pull up or down · let go</p>
+      </div>
+    </article>
+
+    <!-- 07 -->
+    <article class="tile" data-tone="mint" data-col="1" style="--s:3">
+      <div class="th"><span class="chip">07</span><h2>Tick &amp; confetti</h2><button class="replay" id="rpTick" type="button" aria-label="Replay the checklist"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button></div>
+      <p class="desc">The tick draws itself, the line strikes through, confetti pops.</p>
+      <div class="stage">
+        <ul class="todos" id="todos">
+          <li><label class="todo"><input type="checkbox"><span class="cb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.6l4.6 4.6L19.2 7.4"/></svg></span><span class="tt">Water the ferns</span></label></li>
+          <li><label class="todo"><input type="checkbox"><span class="cb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.6l4.6 4.6L19.2 7.4"/></svg></span><span class="tt">Call someone lovely</span></label></li>
+          <li><label class="todo"><input type="checkbox"><span class="cb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.6l4.6 4.6L19.2 7.4"/></svg></span><span class="tt">Do nothing, gracefully</span></label></li>
+        </ul>
+      </div>
+    </article>
+
+    <!-- 08 -->
+    <article class="tile" data-tone="lilac" data-col="2" style="--s:4">
+      <div class="th"><span class="chip">08</span><h2>Pull to refresh</h2><button class="replay" id="rpPull" type="button" aria-label="Refresh the feed (replay pull to refresh)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button></div>
+      <p class="desc">Drag the feed down: the drop stretches, then snaps.</p>
+      <div class="stage">
+        <div class="phone" id="ptr" role="group" aria-label="Sample feed. Drag down to refresh.">
+          <span class="rl-bg"></span>
+          <svg class="drop" viewBox="0 0 200 170" aria-hidden="true">
+            <g id="dropGoo" filter="url(#goo2)">
+              <circle class="anchor" id="anchor" cx="100" cy="-14" r="0"/>
+              <circle class="neck" cx="100" cy="0" r="0"/><circle class="neck" cx="100" cy="0" r="0"/><circle class="neck" cx="100" cy="0" r="0"/><circle class="neck" cx="100" cy="0" r="0"/><circle class="neck" cx="100" cy="0" r="0"/>
+              <circle class="dot" id="dropC" cx="100" cy="-20" r="16"/>
+            </g>
+            <g id="dropIco" transform="translate(100 -20)">
+              <path class="arr" id="dArrow" d="M0-6V6M-5 1L0 6L5 1"/>
+              <circle class="spinA" id="dSpin" r="7" style="display:none"/>
+              <path class="chk" id="dCheck" d="M-6 0L-2 4L6-4"/>
+            </g>
+          </svg>
+          <ul class="feed" id="feed">
+            <li><span class="av" style="--c:#d6f5e3"></span><span><b>Mint just joined</b><small>a tiny moment ago</small></span></li>
+            <li><span class="av" style="--c:#fff3c4"></span><span><b>Pip found a clover</b><small>four leaves, obviously</small></span></li>
+            <li><span class="av" style="--c:#ffe5d9"></span><span><b>Juno baked a moon</b><small>round, warm, gone</small></span></li>
+            <li><span class="av" style="--c:#d9ecff"></span><span><b>Odie learned to hum</b><small>the neighbours know</small></span></li>
+          </ul>
+        </div>
+        <p class="ptr-cap" id="ptrCap" aria-live="polite">Pull down</p>
+      </div>
+    </article>
+
+    <!-- 09 -->
+    <article class="tile" data-tone="butter" data-col="3" style="--s:3">
+      <div class="th"><span class="chip">09</span><h2>Liquid tabs</h2></div>
+      <p class="desc">The pill stretches toward the next tab, then squishes home.</p>
+      <div class="stage">
+        <div class="tabs" id="tabs" role="tablist" aria-label="Liquid tab bar">
+          <span class="pill" id="pill" aria-hidden="true"></span>
+          <button class="tab" role="tab" id="tab0" type="button" aria-selected="true" aria-controls="tabcap" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5V19a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1z"/></svg><span>Home</span></button>
+          <button class="tab" role="tab" id="tab1" type="button" aria-selected="false" aria-controls="tabcap" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.2-4.2"/></svg><span>Explore</span></button>
+          <button class="tab" role="tab" id="tab2" type="button" aria-selected="false" aria-controls="tabcap" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.4 10.9 19.4C6.2 15.2 3.4 12.6 3.4 9.4 3.4 6.9 5.4 5 7.8 5c1.6 0 3.2.8 4.2 2.1C13 5.8 14.6 5 16.2 5c2.4 0 4.4 1.9 4.4 4.4 0 3.2-2.8 5.8-7.5 10z"/></svg><span>Saved</span></button>
+          <button class="tab" role="tab" id="tab3" type="button" aria-selected="false" aria-controls="tabcap" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.6 20c.8-4 3.6-6 7.4-6s6.6 2 7.4 6"/></svg><span>Me</span></button>
+        </div>
+        <div class="tabcap" id="tabcap" role="tabpanel" aria-labelledby="tab0" aria-live="polite">Home: where every day starts.</div>
+      </div>
+    </article>
+
+    <!-- 10 -->
+    <article class="tile" data-tone="sky" data-col="1" style="--s:3">
+      <div class="th"><span class="chip">10</span><h2>Watchful eye</h2></div>
+      <p class="desc">It follows your cursor, and shuts when you hide the password.</p>
+      <div class="stage">
+        <div class="pwbox">
+          <label class="pwlabel" for="pw">Secret password</label>
+          <div class="pw">
+            <input id="pw" type="text" value="moonlight" autocomplete="off" spellcheck="false" autocapitalize="off">
+            <button class="eyebtn" id="eyeBtn" type="button" aria-pressed="true" aria-label="Show password">
+              <svg class="eye" id="eyeSvg" viewBox="0 0 48 32" aria-hidden="true">
+                <defs>
+                  <clipPath id="eyeClip"><path d="M3 16C10 5.6 38 5.6 45 16C38 26.4 10 26.4 3 16Z"/></clipPath>
+                  <radialGradient id="irisG" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#b48cf0"/><stop offset=".55" stop-color="#6b4ba8"/><stop offset="1" stop-color="#3a2a5e"/></radialGradient>
+                </defs>
+                <g class="eye-open">
+                  <path d="M3 16C10 5.6 38 5.6 45 16C38 26.4 10 26.4 3 16Z" fill="#fffdf9"/>
+                  <g clip-path="url(#eyeClip)">
+                    <g class="iris" id="iris">
+                      <circle cx="24" cy="16" r="9.2" fill="url(#irisG)"/>
+                      <circle cx="24" cy="16" r="4.4" fill="#1c1026"/>
+                      <circle cx="20.8" cy="12.6" r="2.1" fill="#fff"/>
+                      <circle cx="26.8" cy="18.8" r="1" fill="#fff" opacity=".7"/>
+                    </g>
+                    <path d="M0 0H48V15C40 7 8 7 0 15Z" fill="#2d1f3d" opacity=".1"/>
+                  </g>
+                  <path d="M3 16C10 5.6 38 5.6 45 16" fill="none" stroke="#2d1f3d" stroke-width="2.4" stroke-linecap="round"/>
+                  <path d="M3 16C10 26.4 38 26.4 45 16" fill="none" stroke="#2d1f3d" stroke-width="1.5" stroke-linecap="round" opacity=".6"/>
+                </g>
+                <g class="eye-shut">
+                  <path d="M4 14.4Q24 27 44 14.4"/>
+                  <path d="M11.6 19.2 9.4 23.6"/><path d="M17.8 22.2 16.6 27"/><path d="M24 23.2V28.2"/><path d="M30.2 22.2 31.4 27"/><path d="M36.4 19.2 38.6 23.6"/>
+                </g>
+              </svg>
+            </button>
+          </div>
+          <p class="pwmsg" id="pwMsg" aria-live="polite">The eye is watching. Click it to hide.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- 11 -->
+    <article class="tile" data-tone="peach" data-col="2" style="--s:2">
+      <div class="th"><span class="chip">11</span><h2>Odometer likes</h2><button class="replay" id="rpOdo" type="button" aria-label="Roll the counter forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button></div>
+      <p class="desc">Digits roll like a mechanical counter.</p>
+      <div class="stage">
+        <button class="likebtn" id="likeBtn" type="button" aria-pressed="false" aria-label="Like">
+          <svg class="lh" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          <span class="odo" id="odo" aria-hidden="true"></span>
+        </button>
+        <span class="sr" id="odoLive" aria-live="polite">1,284 likes</span>
+      </div>
+    </article>
+
+    <!-- 12 -->
+    <article class="tile" id="tile12" data-tone="sky" data-col="3" style="--s:3">
+      <div class="th"><span class="chip">12</span><h2>Day &amp; night</h2></div>
+      <p class="desc">The sun rolls into a moon; stars arrive and clouds leave.</p>
+      <div class="stage">
+        <button class="dn" id="dn" type="button" role="switch" aria-checked="false" aria-label="Night mode">
+          <span class="sky day"></span><span class="sky night"></span>
+          <svg class="stars" viewBox="0 0 204 94" aria-hidden="true">
+            <g transform="translate(22 22)"><path class="star" style="--i:0" d="M0-6L1.6-1.6 6 0 1.6 1.6 0 6-1.6 1.6-6 0-1.6-1.6Z"/></g>
+            <g transform="translate(52 62)"><path class="star" style="--i:1" d="M0-4L1.1-1.1 4 0 1.1 1.1 0 4-1.1 1.1-4 0-1.1-1.1Z"/></g>
+            <g transform="translate(78 24)"><path class="star" style="--i:2" d="M0-5L1.4-1.4 5 0 1.4 1.4 0 5-1.4 1.4-5 0-1.4-1.4Z"/></g>
+            <g transform="translate(30 76)"><path class="star" style="--i:3" d="M0-3L.9-.9 3 0 .9.9 0 3-.9.9-3 0-.9-.9Z"/></g>
+            <g transform="translate(96 58)"><path class="star" style="--i:4" d="M0-6L1.6-1.6 6 0 1.6 1.6 0 6-1.6 1.6-6 0-1.6-1.6Z"/></g>
+            <g transform="translate(60 38)"><path class="star" style="--i:5" d="M0-3L.9-.9 3 0 .9.9 0 3-.9.9-3 0-.9-.9Z"/></g>
+            <g transform="translate(104 20)"><path class="star" style="--i:6" d="M0-4L1.1-1.1 4 0 1.1 1.1 0 4-1.1 1.1-4 0-1.1-1.1Z"/></g>
+          </svg>
+          <span class="cloud c3"><svg viewBox="0 0 90 44" aria-hidden="true"><g fill="#ffffff"><circle cx="24" cy="29" r="14"/><circle cx="46" cy="21" r="19"/><circle cx="68" cy="29" r="13"/><rect x="20" y="28" width="52" height="16" rx="8"/></g></svg></span>
+          <span class="cloud c2"><svg viewBox="0 0 90 44" aria-hidden="true"><g fill="#ffffff"><circle cx="24" cy="29" r="14"/><circle cx="46" cy="21" r="19"/><circle cx="68" cy="29" r="13"/><rect x="20" y="28" width="52" height="16" rx="8"/></g></svg></span>
+          <span class="cloud c1"><svg viewBox="0 0 90 44" aria-hidden="true"><g fill="#ffffff"><circle cx="24" cy="29" r="14"/><circle cx="46" cy="21" r="19"/><circle cx="68" cy="29" r="13"/><rect x="20" y="28" width="52" height="16" rx="8"/></g></svg></span>
+          <span class="knob"><span class="sun"></span><span class="moon"><i class="cr a"></i><i class="cr b"></i><i class="cr c"></i><i class="cr d"></i></span></span>
+        </button>
+        <p class="dncap" id="dnCap" aria-live="polite">Good morning</p>
+      </div>
+    </article>
+
+  </section>
+</main>
+<footer class="wrap">
+  <span>Handmade with springs, goo filters and a suspicious amount of overshoot.</span>
+  <span>12 tiles · 0 dependencies · keyboard friendly</span>
+</footer>
+<script>
+(function () {
+'use strict';
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.prototype.slice.call((r || document).querySelectorAll(s));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[(Math.random() * arr.length) | 0];
+
+let reduce = false;
+try {
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  reduce = mq.matches;
+  const onq = e => { reduce = e.matches; };
+  if (mq.addEventListener) mq.addEventListener('change', onq); else if (mq.addListener) mq.addListener(onq);
+} catch (e) { /* matchMedia unavailable */ }
+
+/* ---------- tiny spring engine (one shared rAF loop, sleeps when idle) ---------- */
+const springs = new Set();
+let rafId = 0, lastT = 0;
+class Spring {
+  constructor(value, k, c, onUpdate) { this.v = value; this.t = value; this.x = 0; this.k = k; this.c = c; this.cb = onUpdate; }
+  to(t) { this.t = t; wake(this); return this; }
+  set(v) { this.v = v; this.t = v; this.x = 0; if (this.cb) this.cb(v, this); return this; }
+  kick(vel) { this.x += vel; wake(this); return this; }
+}
+function wake(s) {
+  springs.add(s);
+  if (!rafId && !document.hidden) { lastT = performance.now(); rafId = requestAnimationFrame(tick); }
+}
+function tick(now) {
+  rafId = 0;
+  const dt = Math.min(0.033, Math.max(0.001, (now - lastT) / 1000));
+  lastT = now;
+  const n = Math.ceil(dt / 0.008), h = dt / n;
+  springs.forEach(s => {
+    const c = reduce ? 2 * Math.sqrt(s.k) : s.c;
+    for (let i = 0; i < n; i++) { s.x += (-s.k * (s.v - s.t) - c * s.x) * h; s.v += s.x * h; }
+    if (Math.abs(s.v - s.t) < 0.0006 && Math.abs(s.x) < 0.004) { s.v = s.t; s.x = 0; springs.delete(s); }
+    if (s.cb) s.cb(s.v, s);
+  });
+  if (springs.size && !document.hidden) rafId = requestAnimationFrame(tick);
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && springs.size && !rafId) { lastT = performance.now(); rafId = requestAnimationFrame(tick); }
+});
+
+/* ---------- particles / confetti layer ---------- */
+const fx = $('#fx');
+const HEART_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+const PAL = ['#ff5c8a', '#ffb3c7', '#ffd166', '#b7a1f5', '#7fd6a8', '#8ec5ff'];
+function bit(kind, x, y, dx, dy, o) {
+  o = o || {};
+  const el = document.createElement('span');
+  el.className = 'bit bit-' + kind;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.style.setProperty('--c', o.color || pick(PAL));
+  if (kind === 'h') el.innerHTML = HEART_SVG;
+  fx.appendChild(el);
+  if (!el.animate) { setTimeout(() => el.remove(), 60); return; }
+  const rot = o.rot != null ? o.rot : rand(-260, 260);
+  const fixed = o.align != null;
+  const dur = (o.dur || rand(650, 1100)) * (reduce ? .5 : 1);
+  const rise = o.rise || 0, fall = o.fall || 0;
+  const a = el.animate([
+    { transform: 'translate(0px,0px) rotate(' + (fixed ? o.align : 0) + 'deg) scale(' + (o.s0 != null ? o.s0 : .4) + ')', opacity: 1 },
+    { transform: 'translate(' + dx * .62 + 'px,' + (dy * .62 - rise) + 'px) rotate(' + (fixed ? o.align : rot * .5) + 'deg) scale(1)', opacity: 1, offset: .45 },
+    { transform: 'translate(' + dx + 'px,' + (dy + fall) + 'px) rotate(' + (fixed ? o.align : rot) + 'deg) scale(' + (o.s1 != null ? o.s1 : .7) + ')', opacity: 0 }
+  ], { duration: dur, easing: 'cubic-bezier(.15,.7,.3,1)', fill: 'forwards' });
+  a.onfinish = () => el.remove();
+}
+function confetti(x, y, n, o) {
+  o = o || {};
+  const kinds = ['r', 'd', 't', 'r'];
+  const count = reduce ? Math.ceil(n / 2) : n;
+  for (let i = 0; i < count; i++) {
+    const a = -Math.PI / 2 + rand(-1, 1) * (o.spread || 1.15);
+    const d = rand(o.min || 40, o.max || 100);
+    bit(pick(kinds), x, y, Math.cos(a) * d, Math.sin(a) * d, { rise: rand(10, 36), fall: rand(50, 100), dur: rand(800, 1300), s0: .5, s1: .8 });
+  }
+}
+function heartBurst(x, y) {
+  const n = reduce ? 8 : 18;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 + rand(-.1, .1);
+    const d = rand(58, 98) * (i % 2 ? 1 : .8);
+    const kind = i % 4 === 0 ? 'h' : (i % 2 ? 'l' : 'd');
+    bit(kind, x, y, Math.cos(a) * d, Math.sin(a) * d, { align: kind === 'l' ? a * 180 / Math.PI + 90 : null, rot: rand(-60, 60), dur: rand(600, 950), fall: rand(8, 26), s0: .3, s1: .3 });
+  }
+}
+
+/* ---------- discovery meter ---------- */
+const found = new Set();
+const pips = $$('.pip'), foundEl = $('#found'), foundMsg = $('#foundMsg'), hero = $('#hero');
+function discover(n) {
+  if (found.has(n)) return;
+  found.add(n);
+  if (pips[n - 1]) pips[n - 1].classList.add('on');
+  foundEl.textContent = String(found.size);
+  if (found.size === 12) {
+    foundMsg.textContent = 'All twelve found. You are officially delighted.';
+    hero.classList.add('done');
+    const r = $('.meter').getBoundingClientRect();
+    confetti(r.left + r.width / 2, r.top + 30, 70, { spread: 1.8, min: 90, max: 280 });
+  } else {
+    foundMsg.textContent = found.size + ' of 12 · keep poking.';
+  }
+}
+function onReplay(id, fn) { const b = $(id); if (b) b.addEventListener('click', fn); }
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/* ===== 01 · gooey toggle ===== */
+(function () {
+  const goo = $('#gooBtn'), state = $('#gooState');
+  goo.addEventListener('click', () => {
+    const on = goo.getAttribute('aria-checked') !== 'true';
+    goo.setAttribute('aria-checked', String(on));
+    state.textContent = on ? 'On · feeling gooey' : 'Off · tap to wake it';
+    discover(1);
+  });
+})();
+
+/* ===== 02 · heart burst ===== */
+(function () {
+  const heart = $('#heart'), ring = $('#heartRing'), svg = heart.querySelector('svg');
+  function setHeart(on, quiet) {
+    heart.setAttribute('aria-pressed', String(on));
+    if (!svg.animate) return;
+    if (on) {
+      svg.animate([{ transform: 'scale(1)' }, { transform: 'scale(.55)', offset: .22 }, { transform: 'scale(1.42)', offset: .55 }, { transform: 'scale(.9)', offset: .78 }, { transform: 'scale(1)' }], { duration: reduce ? 120 : 640, easing: 'cubic-bezier(.3,.7,.3,1)' });
+      if (!reduce) ring.animate([{ transform: 'scale(.55)', opacity: .95, borderWidth: '7px' }, { transform: 'scale(1.95)', opacity: 0, borderWidth: '1px' }], { duration: 620, easing: 'cubic-bezier(.15,.7,.3,1)' });
+      if (!quiet) { const r = heart.getBoundingClientRect(); heartBurst(r.left + r.width / 2, r.top + r.height / 2); }
+    } else {
+      svg.animate([{ transform: 'scale(1)' }, { transform: 'scale(.7)', offset: .4 }, { transform: 'scale(1)' }], { duration: reduce ? 80 : 340, easing: 'ease-out' });
+    }
+  }
+  heart.addEventListener('click', () => {
+    const on = heart.getAttribute('aria-pressed') !== 'true';
+    setHeart(on);
+    if (on) discover(2);
+  });
+  onReplay('#rpHeart', async () => {
+    if (heart.getAttribute('aria-pressed') === 'true') { setHeart(false); await sleep(380); }
+    setHeart(true); discover(2);
+  });
+})();
+
+/* ===== 03 · ripple button with spring scale ===== */
+(function () {
+  const rip = $('#rip'), layer = $('#ripLayer'), boops = $('#boops');
+  let n = 0;
+  const press = new Spring(0, 330, 13, v => rip.style.setProperty('--p', v.toFixed(3)));
+  function wave(x, y) {
+    const w = rip.offsetWidth, h = rip.offsetHeight;
+    const size = Math.hypot(Math.max(x, w - x), Math.max(y, h - y)) * 2;
+    const el = document.createElement('span');
+    el.className = 'wave';
+    el.style.cssText = 'left:' + x + 'px;top:' + y + 'px;width:' + size + 'px;height:' + size + 'px';
+    layer.appendChild(el);
+    if (!el.animate) { setTimeout(() => el.remove(), 300); return; }
+    const a = el.animate([{ transform: 'translate(-50%,-50%) scale(0)', opacity: .9 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 0 }], { duration: reduce ? 250 : 760, easing: 'cubic-bezier(.2,.7,.25,1)' });
+    a.onfinish = () => el.remove();
+  }
+  function down(x, y) { press.to(1); wave(x, y); }
+  rip.addEventListener('pointerdown', e => {
+    if (e.button > 0) return;
+    const r = rip.getBoundingClientRect();
+    down(e.clientX - r.left, e.clientY - r.top);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => rip.addEventListener(t, () => press.to(0)));
+  rip.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) down(rip.offsetWidth / 2, rip.offsetHeight / 2); });
+  rip.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') press.to(0); });
+  rip.addEventListener('blur', () => press.to(0));
+  rip.addEventListener('click', () => { n++; boops.textContent = n + (n === 1 ? ' boop' : ' boops'); discover(3); });
+})();
+
+/* ===== 04 · hamburger morph + fan ===== */
+(function () {
+  const fan = $('#fan'), burger = $('#burger'), fanHint = $('#fanHint');
+  function setFan(open) {
+    fan.classList.toggle('open', open);
+    fanHint.textContent = open ? 'Pick one' : 'Tap the bars';
+    burger.setAttribute('aria-expanded', String(open));
+    burger.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  }
+  burger.addEventListener('click', () => { setFan(!fan.classList.contains('open')); discover(4); });
+  $$('.sat', fan).forEach(b => b.addEventListener('click', () => {
+    const r = b.getBoundingClientRect();
+    confetti(r.left + r.width / 2, r.top + r.height / 2, 9, { spread: 2.6, min: 22, max: 56 });
+    setFan(false); burger.focus();
+  }));
+  fan.addEventListener('keydown', e => { if (e.key === 'Escape' && fan.classList.contains('open')) { setFan(false); burger.focus(); } });
+})();
+
+/* ===== 05 · magnetic button ===== */
+(function () {
+  const area = $('#magArea'), btn = $('#mag'), label = $('#magLabel'), read = $('#magRead');
+  const R = 118;
+  const sx = new Spring(0, 170, 11, apply), sy = new Spring(0, 170, 11, apply);
+  function apply() {
+    const x = sx.v, y = sy.v;
+    btn.style.transform = 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px)';
+    label.style.transform = 'translate(' + (x * .55).toFixed(2) + 'px,' + (y * .55).toFixed(2) + 'px)';
+    read.textContent = 'pull ' + (Math.hypot(x, y) / 24).toFixed(2);
+  }
+  function release() { sx.to(0); sy.to(0); area.classList.remove('near'); }
+  function lean(cx, cy) {
+    const r = area.getBoundingClientRect();
+    const dx = cx - (r.left + r.width / 2), dy = cy - (r.top + r.height / 2), d = Math.hypot(dx, dy);
+    if (d >= R) { release(); return; }
+    const k = .42 * Math.pow(1 - d / R, .55);
+    let ox = dx * k, oy = dy * k;
+    const m = Math.hypot(ox, oy);
+    if (m > 26) { ox *= 26 / m; oy *= 26 / m; }
+    sx.to(ox); sy.to(oy);
+    area.classList.add('near');
+    discover(5);
+  }
+  area.addEventListener('pointermove', e => lean(e.clientX, e.clientY));
+  area.addEventListener('pointerdown', e => lean(e.clientX, e.clientY));
+  area.addEventListener('pointerleave', release);
+  area.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') release(); });
+  area.addEventListener('pointercancel', release);
+  btn.addEventListener('focus', () => {
+    let kb = false;
+    try { kb = btn.matches(':focus-visible'); } catch (_) { kb = false; }
+    if (kb) { sx.to(-9); sy.to(-6); setTimeout(release, 280); }
+  });
+  let t = 0;
+  btn.addEventListener('click', () => {
+    label.textContent = 'Gotcha!';
+    clearTimeout(t);
+    t = setTimeout(() => { label.textContent = 'Come closer'; }, 1100);
+    discover(5);
+  });
+  apply();
+})();
+
+/* ===== 06 · elastic slider (SVG quadratic curve) ===== */
+(function () {
+  const svg = $('#elSvg'), inp = $('#elRange'), track = $('#elTrack'), fill = $('#elFill');
+  const thumb = $('#elThumb'), valEl = $('#elVal');
+  const X0 = 28, X1 = 272, Y0 = 108;
+  let v = .42, dragging = false;
+  const vx = new Spring(v, 640, 42, render);
+  const bend = new Spring(0, 200, 8.6, render);
+  const grow = new Spring(0, 300, 17, render);
+  function render() {
+    const p = X0 + vx.v * (X1 - X0);
+    let t;
+    if (p <= X0 + .01) t = 0; else if (p >= X1 - .01) t = 1; else t = 1 / (1 + Math.sqrt((X1 - p) / (p - X0)));
+    const reach = clamp(4 * t * (1 - t), .18, 1);
+    const cy = Y0 + (bend.v * 2) / (.4 + .6 * reach);
+    const ty = Y0 + 2 * t * (1 - t) * (cy - Y0);
+    track.setAttribute('d', 'M' + X0 + ' ' + Y0 + 'Q' + p.toFixed(2) + ' ' + cy.toFixed(2) + ' ' + X1 + ' ' + Y0);
+    const qx = X0 + (p - X0) * t, qy = Y0 + (cy - Y0) * t;
+    fill.setAttribute('d', 'M' + X0 + ' ' + Y0 + 'Q' + qx.toFixed(2) + ' ' + qy.toFixed(2) + ' ' + p.toFixed(2) + ' ' + ty.toFixed(2));
+    const sw = (8 - Math.min(3.2, Math.abs(bend.v) * .07)).toFixed(2);
+    track.setAttribute('stroke-width', sw);
+    fill.setAttribute('stroke-width', sw);
+    thumb.setAttribute('transform', 'translate(' + p.toFixed(2) + ' ' + ty.toFixed(2) + ') scale(' + (1 + .14 * grow.v).toFixed(3) + ')');
+  }
+  function upd(e) {
+    const r = svg.getBoundingClientRect();
+    const k = 300 / r.width;
+    const x = (e.clientX - r.left) * k, y = (e.clientY - r.top) * k;
+    v = clamp((x - X0) / (X1 - X0), 0, 1);
+    vx.to(v);
+    inp.value = String(Math.round(v * 100));
+    valEl.textContent = inp.value;
+    bend.to(clamp((y - Y0) * .75, -52, 52));
+  }
+  function end() {
+    if (!dragging) return;
+    dragging = false;
+    svg.classList.remove('drag');
+    grow.to(0);
+    bend.to(0);
+  }
+  svg.addEventListener('pointerdown', e => {
+    if (e.button > 0) return;
+    dragging = true;
+    svg.classList.add('drag');
+    try { svg.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+    grow.to(1);
+    upd(e);
+    discover(6);
+  });
+  svg.addEventListener('pointermove', e => { if (dragging) upd(e); });
+  svg.addEventListener('pointerup', end);
+  svg.addEventListener('pointercancel', end);
+  svg.addEventListener('lostpointercapture', end);
+  inp.addEventListener('input', () => {
+    const nv = Number(inp.value) / 100;
+    const dir = nv > v ? 1 : -1;
+    v = nv;
+    vx.to(v);
+    valEl.textContent = inp.value;
+    bend.kick(dir * 140);
+    discover(6);
+  });
+  render();
+})();
+
+/* ===== 07 · checkbox tick + confetti ===== */
+(function () {
+  const inputs = $$('#todos input');
+  function pop(inp) {
+    const r = inp.nextElementSibling.getBoundingClientRect();
+    confetti(r.left + r.width / 2, r.top + r.height / 2, 12, { spread: 1.5, min: 34, max: 88 });
+  }
+  inputs.forEach(inp => inp.addEventListener('change', () => { if (inp.checked) { pop(inp); discover(7); } }));
+  onReplay('#rpTick', async () => {
+    inputs.forEach(i => { i.checked = false; });
+    await sleep(520);
+    for (const i of inputs) { i.checked = true; pop(i); await sleep(560); }
+    discover(7);
+  });
+})();
+
+/* ===== 08 · pull to refresh (stretch, then snap) ===== */
+(function () {
+  const phone = $('#ptr'), feed = $('#feed'), cap = $('#ptrCap');
+  const anchor = $('#anchor'), dropC = $('#dropC'), ico = $('#dropIco');
+  const necks = $$('.neck', $('#dropGoo'));
+  const arrow = $('#dArrow'), spinA = $('#dSpin'), chk = $('#dCheck');
+  const TH = 70, REST = 64;
+  let state = 'idle', dragging = false, startY = 0, armed = false, auto = false, count = 0;
+  const pullS = new Spring(0, 210, 16, render);
+  const neckS = new Spring(1, 420, 30, render);
+  const POSTS = [
+    ['Rue', 'wrote a haiku', '#fff3c4'], ['Ivo', 'adopted a fern', '#d6f5e3'],
+    ['Nell', 'folded a crane', '#ffe5d9'], ['Bo', 'nailed the nap', '#d9ecff'],
+    ['Tamsin', 'named a cloud', '#e6dcff'], ['Kip', 'found a pebble', '#fff3c4']
+  ];
+  function render() {
+    const pull = Math.max(0, pullS.v);
+    feed.style.transform = 'translateY(' + pull.toFixed(2) + 'px)';
+    const cy = -20 + pull * .98;
+    const r = 16 - Math.min(pull, 120) * .028;
+    const aR = clamp(pull * .45, 0, 22);
+    anchor.setAttribute('r', aR.toFixed(2));
+    const stretch = clamp((cy - 20) / 78, 0, 1.4);
+    const nk = clamp(1.25 - stretch, 0, 1) * clamp(neckS.v, 0, 1);
+    const thin = Math.min(1, stretch * 1.3);
+    for (let i = 0; i < necks.length; i++) {
+      const t = (i + 1) / (necks.length + 1);
+      const rr = lerp(aR * .7, r * .85, t) * nk * (1 - .6 * Math.sin(Math.PI * t) * thin);
+      necks[i].setAttribute('cy', lerp(-14, cy, t).toFixed(2));
+      necks[i].setAttribute('r', Math.max(0, rr).toFixed(2));
+    }
+    dropC.setAttribute('cy', cy.toFixed(2));
+    dropC.setAttribute('r', r.toFixed(2));
+    ico.setAttribute('transform', 'translate(100 ' + cy.toFixed(2) + ')');
+    ico.style.opacity = pull > 6 ? '1' : '0';
+  }
+  function icon(mode) {
+    arrow.style.display = mode === 'arrow' ? '' : 'none';
+    spinA.style.display = mode === 'spin' ? '' : 'none';
+    chk.classList.toggle('show', mode === 'check');
+  }
+  function say(t) { cap.textContent = t; }
+  function reset() {
+    state = 'idle'; icon('arrow'); arrow.classList.remove('up'); say('Pull down'); neckS.set(1); armed = false;
+  }
+  function finish() {
+    count++;
+    const p = POSTS[(count - 1) % POSTS.length];
+    const li = document.createElement('li');
+    li.className = 'fresh';
+    li.innerHTML = '<span class="av"></span><span><b></b><small></small></span>';
+    li.firstChild.style.setProperty('--c', p[2]);
+    li.querySelector('b').textContent = p[0] + ' ' + p[1];
+    li.querySelector('small').textContent = 'just now · fresh #' + count;
+    feed.insertBefore(li, feed.firstChild);
+    while (feed.children.length > 4) feed.removeChild(feed.lastChild);
+    state = 'done'; icon('check'); say('Updated just now');
+    discover(8);
+    setTimeout(() => { pullS.to(0); setTimeout(reset, 520); }, 850);
+  }
+  function refresh() {
+    state = 'refreshing'; icon('spin'); say('Refreshing…');
+    neckS.to(0);
+    pullS.to(REST);
+    setTimeout(finish, reduce ? 500 : 1500);
+  }
+  phone.addEventListener('pointerdown', e => {
+    if (e.button > 0 || state === 'refreshing' || state === 'done' || auto) return;
+    dragging = true; startY = e.clientY; armed = false; state = 'pulling';
+    try { phone.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+    phone.classList.add('grab');
+    neckS.set(1); icon('arrow'); arrow.classList.remove('up'); say('Pull down');
+  });
+  phone.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const dy = Math.max(0, e.clientY - startY);
+    pullS.set(150 * (1 - Math.exp(-dy * .0072)));
+    const a = pullS.v >= TH;
+    if (a !== armed) { armed = a; arrow.classList.toggle('up', a); say(a ? 'Release to refresh' : 'Pull down'); }
+  });
+  function up() {
+    if (!dragging) return;
+    dragging = false;
+    phone.classList.remove('grab');
+    if (pullS.v >= TH) refresh(); else { pullS.to(0); reset(); }
+  }
+  phone.addEventListener('pointerup', up);
+  phone.addEventListener('pointercancel', up);
+  phone.addEventListener('lostpointercapture', up);
+  function autoPull() {
+    if (state !== 'idle' || auto || dragging) return;
+    auto = true; state = 'pulling'; armed = false;
+    icon('arrow'); neckS.set(1); say('Pull down');
+    const t0 = performance.now(), dur = reduce ? 200 : 900, to = 104;
+    (function step(now) {
+      const k = clamp((now - t0) / dur, 0, 1);
+      pullS.set(to * (1 - Math.pow(1 - k, 3)));
+      const a = pullS.v >= TH;
+      if (a !== armed) { armed = a; arrow.classList.toggle('up', a); if (a) say('Release to refresh'); }
+      if (k < 1) requestAnimationFrame(step);
+      else setTimeout(() => { auto = false; refresh(); }, 240);
+    })(t0);
+  }
+  onReplay('#rpPull', autoPull);
+  icon('arrow');
+  render();
+})();
+
+/* ===== 09 · liquid tab bar ===== */
+(function () {
+  const bar = $('#tabs'), pill = $('#pill'), cap = $('#tabcap');
+  const tabs = $$('[role="tab"]', bar);
+  const TXT = ['Home: where every day starts.', 'Explore: a map with no edges.', 'Saved: little things worth keeping.', 'Me: hello, you.'];
+  let cur = 0;
+  const L = new Spring(0, 260, 20, paint), R = new Spring(0, 260, 20, paint);
+  function paint() {
+    const w = Math.max(0, R.v - L.v);
+    const base = tabs[cur].offsetWidth || 1;
+    const st = clamp((w - base) / base, 0, 1.3);
+    pill.style.left = L.v.toFixed(2) + 'px';
+    pill.style.width = w.toFixed(2) + 'px';
+    pill.style.transform = 'scale(1,' + (1 - st * .17).toFixed(3) + ')';
+  }
+  function edges(i) { const t = tabs[i]; return [t.offsetLeft, t.offsetLeft + t.offsetWidth]; }
+  function select(i, focus) {
+    if (i !== cur) {
+      const e = edges(i);
+      if (i > cur) { R.k = 320; R.c = 21; L.k = 130; L.c = 14; } else { L.k = 320; L.c = 21; R.k = 130; R.c = 14; }
+      L.to(e[0]); R.to(e[1]);
+      cur = i;
+      discover(9);
+    }
+    tabs.forEach((t, j) => { t.setAttribute('aria-selected', String(j === i)); t.tabIndex = j === i ? 0 : -1; });
+    cap.textContent = TXT[i];
+    cap.setAttribute('aria-labelledby', tabs[i].id);
+    if (focus) tabs[i].focus();
+  }
+  tabs.forEach((t, i) => t.addEventListener('click', () => select(i)));
+  bar.addEventListener('keydown', e => {
+    const n = tabs.length;
+    let i = cur;
+    if (e.key === 'ArrowRight') i = (cur + 1) % n;
+    else if (e.key === 'ArrowLeft') i = (cur + n - 1) % n;
+    else if (e.key === 'Home') i = 0;
+    else if (e.key === 'End') i = n - 1;
+    else return;
+    e.preventDefault();
+    select(i, true);
+  });
+  function snap() { const e = edges(cur); L.set(e[0]); R.set(e[1]); }
+  window.addEventListener('resize', snap);
+  snap();
+})();
+
+/* ===== 10 · watchful eye ===== */
+(function () {
+  const pw = $('#pw'), btn = $('#eyeBtn'), eye = $('#eyeSvg'), iris = $('#iris'), msg = $('#pwMsg');
+  let visible = true, lastMove = 0, pend = false, px = 0, py = 0;
+  function look(x, y) {
+    const r = eye.getBoundingClientRect();
+    const dx = x - (r.left + r.width / 2), dy = y - (r.top + r.height / 2);
+    const d = Math.hypot(dx, dy) || 1;
+    const k = Math.min(1, d / 150);
+    iris.style.transform = 'translate(' + (dx / d * 9.2 * k).toFixed(2) + 'px,' + (dy / d * 4.4 * k).toFixed(2) + 'px)';
+  }
+  window.addEventListener('pointermove', e => {
+    lastMove = performance.now(); px = e.clientX; py = e.clientY;
+    if (!visible || pend) return;
+    pend = true;
+    requestAnimationFrame(() => { pend = false; look(px, py); });
+  }, { passive: true });
+  function setVisible(v) {
+    visible = v;
+    pw.type = v ? 'text' : 'password';
+    btn.setAttribute('aria-pressed', String(v));
+    btn.classList.toggle('shut', !v);
+    msg.textContent = v ? 'The eye is watching. Click it to hide.' : 'Eyes shut. Nobody is peeking.';
+    if (v && px) look(px, py);
+  }
+  btn.addEventListener('click', () => { setVisible(!visible); discover(10); });
+  setInterval(() => {
+    if (!visible || document.hidden) return;
+    btn.classList.add('blink');
+    setTimeout(() => btn.classList.remove('blink'), 150);
+  }, 3600);
+  setInterval(() => {
+    if (!visible || document.hidden || performance.now() - lastMove < 3500) return;
+    iris.style.transform = 'translate(' + rand(-9, 9).toFixed(1) + 'px,' + rand(-3.4, 3.4).toFixed(1) + 'px)';
+  }, 1700);
+})();
+
+/* ===== 11 · odometer likes ===== */
+(function () {
+  const host = $('#odo'), live = $('#odoLive'), btn = $('#likeBtn'), lh = btn.querySelector('svg');
+  let value = 1284, liked = false, cols = [], digits = 0;
+  const fmt = n => n.toLocaleString('en-US');
+  function place(o, delay) {
+    o.strip.style.transitionDelay = (delay || 0) + 'ms';
+    o.strip.style.transform = 'translateY(' + (-o.pos * 1.3).toFixed(2) + 'em)';
+  }
+  function snap(o) {
+    o.strip.classList.add('snap');
+    place(o, 0);
+    void o.strip.offsetHeight;
+    o.strip.classList.remove('snap');
+  }
+  function normalise(o) {
+    if (o.pos >= 8 && o.pos <= 21) return;
+    o.pos = 10 + (((o.pos % 10) + 10) % 10);
+    snap(o);
+  }
+  function build(str) {
+    host.textContent = '';
+    cols = [];
+    for (const ch of str) {
+      if (ch >= '0' && ch <= '9') {
+        const col = document.createElement('span');
+        col.className = 'dcol';
+        const strip = document.createElement('span');
+        strip.className = 'dstrip';
+        for (let i = 0; i < 30; i++) { const s = document.createElement('i'); s.textContent = String(i % 10); strip.appendChild(s); }
+        col.appendChild(strip);
+        host.appendChild(col);
+        const o = { strip, pos: 10 + Number(ch) };
+        snap(o);
+        strip.addEventListener('transitionend', ev => { if (ev.propertyName === 'transform') normalise(o); });
+        cols.push(o);
+      } else {
+        const c = document.createElement('span');
+        c.className = 'dsep';
+        c.textContent = ch;
+        host.appendChild(c);
+      }
+    }
+    digits = cols.length;
+  }
+  function set(nv, dir) {
+    const s = fmt(nv), ds = s.replace(/\D/g, '');
+    if (ds.length !== digits) { value = nv; build(s); live.textContent = s + ' likes'; return; }
+    const up = dir != null ? dir > 0 : nv >= value;
+    for (let i = 0; i < cols.length; i++) {
+      const o = cols[i], dn = Number(ds[i]), dold = ((o.pos % 10) + 10) % 10;
+      const delta = up ? (dn - dold + 10) % 10 : -((dold - dn + 10) % 10);
+      if (delta !== 0) { o.pos += delta; place(o, reduce ? 0 : (cols.length - 1 - i) * 60); }
+    }
+    value = nv;
+    live.textContent = s + ' likes';
+  }
+  function setLiked(on) {
+    liked = on;
+    btn.setAttribute('aria-pressed', String(on));
+    set(value + (on ? 1 : -1), on ? 1 : -1);
+    if (lh.animate) lh.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.5)', offset: .4 }, { transform: 'scale(.92)', offset: .7 }, { transform: 'scale(1)' }], { duration: reduce ? 100 : 480, easing: 'cubic-bezier(.3,.7,.3,1)' });
+    if (on && !reduce) {
+      const r = lh.getBoundingClientRect();
+      for (let i = 0; i < 5; i++) bit('h', r.left + r.width / 2, r.top + r.height / 2, rand(-50, 50), rand(-96, -44), { dur: rand(700, 1000), s0: .4, s1: 1, rot: rand(-40, 40) });
+    }
+  }
+  btn.addEventListener('click', () => { setLiked(!liked); discover(11); });
+  onReplay('#rpOdo', () => { set(value + 17 + ((Math.random() * 80) | 0), 1); discover(11); });
+  build(fmt(value));
+})();
+
+/* ===== 12 · day / night switch ===== */
+(function () {
+  const dn = $('#dn'), tile = $('#tile12'), cap = $('#dnCap');
+  dn.addEventListener('click', () => {
+    const night = dn.getAttribute('aria-checked') !== 'true';
+    dn.setAttribute('aria-checked', String(night));
+    tile.classList.toggle('night', night);
+    cap.textContent = night ? 'Sweet dreams' : 'Good morning';
+    discover(12);
+  });
+})();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en" data-pal="alhambra">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Girih — the geometry of order</title>
+<meta name="description" content="An animated Islamic geometric pattern built as if by compass and straightedge: circles, star bands woven over and under, glazed tiles, rosettes that turn and breathe.">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --bg:#0b1633; --gold:#d4af37; --pale:#d9c27a; --ink:#f5efdc;
+  --c0:#1fa8a6; --c1:#1c3f94; --c2:#f5efdc; --c3:#c8553d; --c4:#d4af37;
+  --band:#f5efdc; --edge:#d4af37; --gem:rgba(255,255,255,.17); --orn:#1c3f94; --glow:255,236,170;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif;
+  --geo:"Avenir Next",Avenir,"Century Gothic","URW Gothic","Trebuchet MS",system-ui,sans-serif;
+  --bw:8px; --bi:5px;
+  --ease:cubic-bezier(.3,.1,.2,1);
+}
+html[data-pal="marrakech"]{--bg:#1d1114;--c0:#c8553d;--c1:#e0a12b;--c2:#f6ecd2;--c3:#7c2f22;--c4:#dcae5a;--band:#f6ecd2;--edge:#b8842a;--pale:#e8c99a;--gem:rgba(255,246,220,.22);--orn:#7c2f22;--glow:255,214,150}
+html[data-pal="nocturne"]{--bg:#0a0d26;--c0:#343a92;--c1:#1d2260;--c2:#cfd6e8;--c3:#d6799a;--c4:#9aa7cf;--band:#e3e8f4;--edge:#b3bddb;--pale:#c9d0ea;--gem:rgba(220,228,255,.17);--orn:#1d2260;--glow:214,224,255}
+*{box-sizing:border-box}
+html{background:var(--bg);transition:background-color 1s}
+body{margin:0;min-height:100vh;min-height:100dvh;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--serif);
+  -webkit-font-smoothing:antialiased;transition:background-color 1s;overscroll-behavior:none}
+button{font:inherit;color:inherit}
+
+/* ============ BACKGROUND + STAGES ============ */
+.bg{position:fixed;inset:0;z-index:0;background:radial-gradient(90% 80% at 50% 45%,rgba(255,255,255,.055),transparent 62%),var(--bg);transition:background-color 1s}
+.bg svg{position:absolute;inset:0;width:100%;height:100%}
+.stage{position:fixed;inset:0;overflow:hidden}
+#stageF{z-index:1;pointer-events:none}
+#stage{z-index:3;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#stage.drag{cursor:grabbing}
+#stage.hot{cursor:pointer}
+.pan{position:absolute;left:50%;top:50%;width:0;height:0;will-change:transform}
+.pan svg{position:absolute;display:block;overflow:visible;pointer-events:none}
+#fx{position:fixed;inset:0;width:100%;height:100%;z-index:3;pointer-events:none}
+.glaze{position:fixed;inset:0;z-index:4;pointer-events:none;
+  background:radial-gradient(55% 50% at 32% 26%,rgba(255,244,214,.16),transparent 65%),radial-gradient(80% 70% at 80% 92%,rgba(4,8,40,.34),transparent 70%),linear-gradient(rgba(14,24,72,.08),rgba(14,24,72,.08))}
+.vig{position:fixed;inset:0;z-index:5;pointer-events:none;background:radial-gradient(115% 100% at 50% 48%,transparent 38%,rgba(4,8,26,.55) 66%,rgba(4,8,26,.94) 100%)}
+
+/* ============ SVG PATTERN LAYERS (static) ============ */
+#wFill .f0{fill:var(--c0);stroke:var(--c0)}
+#wFill .f1{fill:var(--c1);stroke:var(--c1)}
+#wFill .f2{fill:var(--c2);stroke:var(--c2)}
+#wFill .f3{fill:var(--c3);stroke:var(--c3)}
+#wFill .f4{fill:var(--c4);stroke:var(--c4)}
+#wFill .f0,#wFill .f1,#wFill .f2,#wFill .f3,#wFill .f4{stroke-width:1px;stroke-linejoin:round;transition:fill .9s,stroke .9s}
+#wFill .gm{fill:var(--gem);stroke:var(--pale);stroke-opacity:.55;stroke-width:.7px;stroke-linejoin:round;transition:fill .9s}
+#world .bo{fill:none;stroke:var(--edge);stroke-width:var(--bw);stroke-linejoin:miter;stroke-miterlimit:5;transition:stroke .9s}
+#world .bf{fill:none;stroke:var(--band);stroke-width:var(--bi);stroke-linejoin:miter;stroke-miterlimit:5;transition:stroke .9s}
+#world .oo{fill:none;stroke:var(--edge);stroke-width:var(--bw);stroke-linecap:butt;transition:stroke .9s}
+#world .of{fill:none;stroke:var(--band);stroke-width:var(--bi);stroke-linecap:butt;transition:stroke .9s}
+/* ============ FRAME + CAPTION ============ */
+.frame{position:fixed;inset:0;z-index:6;width:100%;height:100%;pointer-events:none}
+.cap{position:fixed;left:0;right:0;top:calc(clamp(9px,2.1vw,20px) + 14px);z-index:7;text-align:center;padding:0 16px;pointer-events:none}
+.capin{display:inline-block;max-width:calc(100vw - 56px);padding:11px 28px 12px;border-radius:18px;background:rgba(7,12,34,.84);border:1px solid rgba(217,194,122,.34);box-shadow:0 10px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.07)}
+.cap h1{margin:0;font:italic 500 clamp(16px,1.9vw,24px)/1.2 var(--serif);letter-spacing:.14em;color:rgba(245,239,220,.92);text-shadow:0 1px 14px rgba(0,0,0,.7)}
+.cap h1 b{font-weight:400;font-style:normal;color:var(--pale);margin:0 .5em}
+.cap p{margin:6px 0 0;font:600 10px/1.4 var(--geo);letter-spacing:.3em;text-transform:uppercase;color:rgba(217,194,122,.9);min-height:14px}
+.cap .hint{margin:5px 0 0;font:11px/1.3 var(--geo);letter-spacing:.1em;text-transform:none;color:rgba(245,239,220,.62);min-height:0;transition:opacity .8s}
+
+/* ============ CONTROLS ============ */
+.ctrl{position:fixed;left:50%;bottom:clamp(26px,4.4vw,44px);transform:translateX(-50%);z-index:8;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 10px;
+  width:max-content;max-width:calc(100vw - 28px);padding:8px;border-radius:99px;background:rgba(8,13,34,.88);border:1px solid rgba(217,194,122,.34);
+  box-shadow:0 14px 40px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)}
+.seg{display:flex;gap:2px;padding:3px;border-radius:99px;background:rgba(255,255,255,.05)}
+.seg button{appearance:none;border:0;cursor:pointer;height:38px;min-width:52px;padding:0 12px;border-radius:99px;background:transparent;color:rgba(245,239,220,.8);
+  font:600 12px/1 var(--geo);letter-spacing:.06em;transition:background .3s,color .3s}
+.seg button span{font-size:9px;letter-spacing:.16em;text-transform:uppercase;opacity:.65;margin-left:4px}
+.seg button:hover{color:#fff;background:rgba(255,255,255,.08)}
+.seg button[aria-pressed="true"]{background:var(--pale);color:#141a34}
+.pill{appearance:none;cursor:pointer;height:44px;display:inline-flex;align-items:center;gap:9px;padding:0 18px;border-radius:99px;border:1px solid rgba(217,194,122,.5);background:transparent;
+  color:var(--ink);font:600 11px/1 var(--geo);letter-spacing:.16em;text-transform:uppercase;transition:background .3s,transform .3s var(--ease)}
+.pill:hover{background:rgba(217,194,122,.16);transform:translateY(-1px)}
+.pill svg{width:18px;height:18px;flex:none}
+.sw{display:inline-flex}
+.sw u{display:block;width:12px;height:12px;border-radius:50%;margin-left:-4px;border:1.5px solid #10173a;text-decoration:none}
+.sw u:first-child{margin-left:0}
+.sw u:nth-child(1){background:var(--c0)}.sw u:nth-child(2){background:var(--c3)}.sw u:nth-child(3){background:var(--c4)}
+.seg button:focus-visible,.pill:focus-visible{outline:2px solid #fff3cf;outline-offset:2px}
+
+@media (max-width:640px){
+  .ctrl{border-radius:26px;bottom:22px;gap:8px}
+  .seg button{min-width:46px;padding:0 9px}
+  .seg button span{display:none}
+  .pill{padding:0 14px}
+  .cap .hint{display:none}
+  .capin{padding:9px 18px 10px}
+  .cap p{letter-spacing:.2em;font-size:9px}
+}
+@media (prefers-reduced-motion:reduce){
+  .pill:hover{transform:none}
+}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+  <svg preserveAspectRatio="none">
+    <defs>
+      <pattern id="zel" width="76" height="76" patternUnits="userSpaceOnUse">
+        <g fill="none" stroke="#d9c27a" stroke-opacity=".075" stroke-width="1">
+          <path d="M38 8 L45 24 L61 15 L52 31 L68 38 L52 45 L61 61 L45 52 L38 68 L31 52 L15 61 L24 45 L8 38 L24 31 L15 15 L31 24 Z"/>
+          <path d="M0 0 L10 0 L0 10 Z M76 0 L66 0 L76 10 Z M0 76 L10 76 L0 66 Z M76 76 L66 76 L76 66 Z"/>
+          <rect x=".5" y=".5" width="75" height="75"/>
+          <circle cx="38" cy="38" r="5"/>
+        </g>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#zel)"/>
+  </svg>
+</div>
+
+<div class="stage" id="stageF" aria-hidden="true"><div class="pan"><svg id="wFill" focusable="false"></svg></div></div>
+<div class="stage" id="stage">
+  <div class="pan">
+    <svg id="world" role="img" aria-label="An interlaced girih pattern of star bands and glazed tiles" focusable="false"></svg>
+  </div>
+</div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="glaze" aria-hidden="true"></div>
+<div class="vig" aria-hidden="true"></div>
+<svg class="frame" id="frame" aria-hidden="true" focusable="false"></svg>
+
+<header class="cap"><div class="capin">
+  <h1>Girih<b>&middot;</b>the geometry of order</h1>
+  <p id="status">Compass &amp; straightedge</p>
+  <p class="hint" id="hint">Hover a rosette &middot; click to unveil its construction &middot; drag to pan</p>
+</div></header>
+
+<nav class="ctrl" aria-label="Pattern controls">
+  <div class="seg" role="group" aria-label="Pattern family" id="seg">
+    <button type="button" data-n="6" aria-pressed="false">6<span>fold</span></button>
+    <button type="button" data-n="8" aria-pressed="true">8<span>fold</span></button>
+    <button type="button" data-n="10" aria-pressed="false">10<span>fold</span></button>
+    <button type="button" data-n="12" aria-pressed="false">12<span>fold</span></button>
+  </div>
+  <button type="button" class="pill" id="bCon" aria-label="Construct: replay the compass-and-straightedge animation">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5 8 20.5M12 3.5 16 20.5M7 14h10"/></svg>
+    Construct
+  </button>
+  <button type="button" class="pill" id="bPal" aria-label="Cycle colour palette">
+    <i class="sw" aria-hidden="true"><u></u><u></u><u></u></i>
+    <span id="palName">Alhambra</span>
+  </button>
+</nav>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+var root=document.documentElement,stage=$('#stage'),stageF=$('#stageF'),pans=[].slice.call(document.querySelectorAll('.pan')),
+    wFill=$('#wFill'),world=$('#world'),fx=$('#fx'),cx2=fx.getContext('2d'),statusEl=$('#status'),hint=$('#hint');
+var W=innerWidth,H=innerHeight,DPR=1;
+var PI=Math.PI,TAU=PI*2,D2R=PI/180;
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function f1(v){return Math.round(v*10)/10}
+function easeOut(u){return 1-Math.pow(1-u,3)}
+
+/* ---------------- pattern families ---------------- */
+var FAM={
+  6:{N:3,gam:[.3,.3,.3],base:64,th:45,star:2,name:'Six-fold',sub:'hexagram lattice'},
+  8:{N:4,gam:[.5,.5,.5,.5],base:60,th:38,star:3,name:'Eight-fold',sub:'star and cross'},
+  10:{N:5,gam:[.2,.2,.2,.2,.2],base:58,th:30,star:3,name:'Ten-fold',sub:'Penrose girih'},
+  12:{N:6,gam:[.5,.5,.5,.5,.5,.5],base:50,th:26,star:5,name:'Twelve-fold',sub:'dodecagonal rosettes'}
+};
+var fam=8,palIdx=0,PALS=[['alhambra','Alhambra'],['marrakech','Marrakech'],['nocturne','Nocturne']];
+var STARC=[1,1],KITEC={3:0,4:3,5:4,6:2,7:3,8:4};
+var COL={orn:'#1c3f94',pale:'#d9c27a',c2:'#f5efdc',glow:'255,236,170'};
+function readColors(){var cs=getComputedStyle(root);COL.orn=cs.getPropertyValue('--orn').trim()||COL.orn;COL.pale=cs.getPropertyValue('--pale').trim()||COL.pale;COL.c2=cs.getPropertyValue('--c2').trim()||COL.c2;COL.glow=cs.getPropertyValue('--glow').trim()||COL.glow}
+
+/* ---------------- geometry: de Bruijn multigrid -> rhombus tiling -> polygons in contact ----------------
+   Every rhombus is decorated with rays leaving its edge midpoints at one contact angle; rays from
+   neighbouring edges meet at the star points. Bipartite vertex parity decides which strand goes over. */
+function buildTiles(N,s,Rpx,gam){
+  var M=(N%2)?N:2*N,E=[],k,j;
+  for(k=0;k<N;k++)E.push([Math.cos(2*PI*k/M),Math.sin(2*PI*k/M)]);
+  var R=Rpx/s/(N/2),A=Math.ceil(R+2),out=[];
+  for(j=0;j<N;j++)for(k=j+1;k<N;k++){
+    var det=E[j][0]*E[k][1]-E[j][1]*E[k][0];
+    for(var a=-A;a<=A;a++)for(var b=-A;b<=A;b++){
+      var ra=a-gam[j],rb=b-gam[k];
+      var px=(ra*E[k][1]-rb*E[j][1])/det,py=(E[j][0]*rb-E[k][0]*ra)/det;
+      if(px*px+py*py>R*R)continue;
+      var K=new Array(N),m;
+      for(m=0;m<N;m++)K[m]=Math.ceil(px*E[m][0]+py*E[m][1]+gam[m]);
+      K[j]=a;K[k]=b;
+      var corners=[[0,0],[1,0],[1,1],[0,1]],vs=[],keys=[],par=[];
+      for(var c=0;c<4;c++){
+        var Kj=a+corners[c][0],Kk=b+corners[c][1],x=0,y=0,sum=0,key=[];
+        for(m=0;m<N;m++){var q=(m===j)?Kj:(m===k)?Kk:K[m];x+=q*E[m][0];y+=q*E[m][1];sum+=q;key.push(q)}
+        vs.push([x*s,y*s]);keys.push(key.join(','));par.push(((sum%2)+2)%2);
+      }
+      var ar=0;for(var i=0;i<4;i++){var p=vs[i],q2=vs[(i+1)%4];ar+=p[0]*q2[1]-q2[0]*p[1]}
+      if(ar<0){vs=[vs[0],vs[3],vs[2],vs[1]];keys=[keys[0],keys[3],keys[2],keys[1]];par=[par[0],par[3],par[2],par[1]]}
+      var d0=[vs[1][0]-vs[0][0],vs[1][1]-vs[0][1]],d1=[vs[3][0]-vs[0][0],vs[3][1]-vs[0][1]];
+      var ang=Math.acos(clamp((d0[0]*d1[0]+d0[1]*d1[1])/(Math.hypot(d0[0],d0[1])*Math.hypot(d1[0],d1[1])),-1,1))/D2R;
+      out.push({p:vs,keys:keys,par:par,type:N===3?(j*N+k):Math.round(Math.min(ang,180-ang)/5)*5});
+    }
+  }
+  return out;
+}
+function hankin(P,th){
+  var n=P.length,mid=[],X=[],G=[],F=[],i,c=Math.cos(th),sn=Math.sin(th);
+  for(i=0;i<n;i++){var p=P[i],q=P[(i+1)%n];mid.push([(p[0]+q[0])/2,(p[1]+q[1])/2])}
+  for(i=0;i<n;i++){
+    var v=P[i],vp=P[(i-1+n)%n],vn=P[(i+1)%n],mA=mid[(i-1+n)%n],mB=mid[i];
+    var d1=[v[0]-vp[0],v[1]-vp[1]],l1=Math.hypot(d1[0],d1[1]);d1=[d1[0]/l1,d1[1]/l1];
+    var f=[d1[0]*c-d1[1]*sn,d1[0]*sn+d1[1]*c];
+    var d2=[v[0]-vn[0],v[1]-vn[1]],l2=Math.hypot(d2[0],d2[1]);d2=[d2[0]/l2,d2[1]/l2];
+    var g=[d2[0]*c+d2[1]*sn,-d2[0]*sn+d2[1]*c];
+    var det=-f[0]*g[1]+f[1]*g[0],rx=mB[0]-mA[0],ry=mB[1]-mA[1];
+    var t=(-rx*g[1]+ry*g[0])/det;
+    X.push([mA[0]+t*f[0],mA[1]+t*f[1]]);G.push(g);F.push(f);
+  }
+  return {mid:mid,X:X,G:G,F:F};
+}
+/* unit star tables (tip at the top) so ornaments need one sin/cos per frame */
+var ST={};
+function starTable(n){var t=ST[n];if(t)return t;t={c:[],s:[]};for(var i=0;i<2*n;i++){var a=-PI/2+i*PI/n;t.c.push(Math.cos(a));t.s.push(Math.sin(a))}return(ST[n]=t)}
+
+/* ---------------- state ---------------- */
+var S={s:60,R:1200,tiles:0,rosettes:[],verts:[],px:0,py:0,vx:0,vy:0,drag:false,maxPan:300,
+  hover:null,gx:0,gy:0,glow:0,t:0,last:0,moved:0,tick:0,reveals:[],intro:null};
+function scaleFor(){return clamp(Math.min(W,H)/820,.62,1.18)}
+
+function generate(){
+  var F=FAM[fam],s=F.base*scaleFor(),Rv=Math.hypot(W,H)/2,R=Rv+250;
+  S.s=s;S.R=R;
+  var tiles=buildTiles(F.N,s,R,F.gam),th=F.th*D2R;
+  var vmap={},verts=[];
+  tiles.forEach(function(T){T.ids=T.keys.map(function(k,i){var id=vmap[k];if(id===undefined){id=verts.length;vmap[k]=id;verts.push({x:T.p[i][0],y:T.p[i][1],par:T.par[i],deg:0,xs:[],dir:null})}return id})});
+  var typeSet={};tiles.forEach(function(T){typeSet[T.type]=1});
+  var types=Object.keys(typeSet).map(Number).sort(function(a,b){return a-b}),tclass={};
+  types.forEach(function(t,i){tclass[t]=i%2});
+  var bwPx=s*.135,fills=['','','','',''],gems='',bands='',overs='',i;
+  tiles.forEach(function(T){
+    var P=T.p,n=P.length,h=hankin(P,th),cx=0,cy=0;
+    for(i=0;i<n;i++){cx+=P[i][0];cy+=P[i][1]}cx/=n;cy/=n;
+    var sd='',gd='';
+    for(i=0;i<n;i++){
+      var mp=h.mid[(i-1+n)%n],X=h.X[i],mn=h.mid[i],v=P[i],vtx=verts[T.ids[i]];
+      bands+='M'+f1(mp[0])+' '+f1(mp[1])+'L'+f1(X[0])+' '+f1(X[1])+'L'+f1(mn[0])+' '+f1(mn[1]);
+      sd+=(i?'L':'M')+f1(mp[0])+' '+f1(mp[1])+'L'+f1(X[0])+' '+f1(X[1]);
+      gd+=(i?'L':'M')+f1(cx+(mp[0]-cx)*.52)+' '+f1(cy+(mp[1]-cy)*.52)+'L'+f1(cx+(X[0]-cx)*.5)+' '+f1(cy+(X[1]-cy)*.5);
+      vtx.deg++;vtx.xs.push(Math.hypot(X[0]-v[0],X[1]-v[1]));
+      if(!vtx.dir){var nx=P[(i+1)%n];vtx.dir=Math.atan2(nx[1]-v[1],nx[0]-v[0])}
+      if(T.par[i]===0){ /* edge runs even -> odd: this tile owns the over-strand piece */
+        var g=h.G[i],fo=h.F[(i+1)%n],sinp=Math.abs(g[0]*fo[1]-g[1]*fo[0])+.05;
+        var hl=Math.min(.42*s,.5*bwPx/sinp+.42*bwPx);
+        overs+='M'+f1(mn[0]-g[0]*hl)+' '+f1(mn[1]-g[1]*hl)+'L'+f1(mn[0]+g[0]*hl)+' '+f1(mn[1]+g[1]*hl);
+      }
+    }
+    fills[STARC[tclass[T.type]]]+=sd+'Z';gems+=gd+'Z';
+    T.h=h;
+  });
+  tiles.forEach(function(T){
+    var P=T.p,n=P.length,h=T.h;
+    for(var k=0;k<n;k++){
+      var v=P[k],mp=h.mid[(k-1+n)%n],X=h.X[k],mn=h.mid[k],dg=verts[T.ids[k]].deg;
+      fills[KITEC[dg]===undefined?[0,3,4][dg%3]:KITEC[dg]]+='M'+f1(v[0])+' '+f1(v[1])+'L'+f1(mp[0])+' '+f1(mp[1])+'L'+f1(X[0])+' '+f1(X[1])+'L'+f1(mn[0])+' '+f1(mn[1])+'Z';
+    }
+  });
+  /* rosettes: high-valence vertices carry a small turning ornament (drawn on the canvas) */
+  var ros=[],lim=R-3*s;
+  verts.forEach(function(v){
+    if(v.deg<5||Math.hypot(v.x,v.y)>lim)return;
+    var xm=Infinity;v.xs.forEach(function(d){if(d<xm)xm=d});
+    var tip=s*.5-bwPx*.6,val=xm-bwPx*.6,ro=Math.max(s*.1,tip*.86),ri=Math.max(s*.05,Math.min(val*.8,ro*.84));
+    ros.push({x:v.x,y:v.y,n:v.deg,ro:ro,ri:ri,ph:(v.dir/D2R)+90,ang:0,boost:0,dirn:(v.deg%2?1:-1),ph2:Math.random()*360});
+    starTable(v.deg);
+  });
+  S.rosettes=ros;S.verts=verts;S.tiles=tiles.length;
+  var fh='';fills.forEach(function(d,k){if(d)fh+='<path class="f'+k+'" d="'+d+'"/>'});
+  wFill.innerHTML=fh+'<path class="gm" d="'+gems+'"/>';
+  world.innerHTML='<path class="bo" d="'+bands+'"/><path class="bf" d="'+bands+'"/><path class="oo" d="'+overs+'"/><path class="of" d="'+overs+'"/>';
+  [wFill,world].forEach(function(el){el.setAttribute('width',2*R);el.setAttribute('height',2*R);el.setAttribute('viewBox',(-R)+' '+(-R)+' '+(2*R)+' '+(2*R));el.style.left=(-R)+'px';el.style.top=(-R)+'px'});
+  root.style.setProperty('--bw',f1(s*.135)+'px');root.style.setProperty('--bi',f1(s*.086)+'px');
+  S.maxPan=Math.max(80,R-Rv-24);
+  S.hover=null;S.reveals=[];
+}
+
+/* ---------------- compass & straightedge primitives (canvas) ---------------- */
+function ringPrims(n,cx,cy){
+  var s=S.s,Rr=s*(.95+n*.115),kstar=n===6?2:n===8?3:n===10?3:5,i,P=[],pts=[];
+  for(i=0;i<n;i++){var a=-PI/2+i*TAU/n;pts.push([cx+Math.cos(a)*Rr,cy+Math.sin(a)*Rr])}
+  P.push({k:'c',x:cx,y:cy,r:Rr,d:0});
+  P.push({k:'l',x1:cx-Rr*1.12,y1:cy,x2:cx+Rr*1.12,y2:cy,d:.3},{k:'l',x1:cx,y1:cy-Rr*1.12,x2:cx,y2:cy+Rr*1.12,d:.4});
+  pts.forEach(function(p,k){P.push({k:'d',x:p[0],y:p[1],r:Math.max(2.2,s*.045),d:.55+k*.05})});
+  pts.forEach(function(p,k){P.push({k:'c',x:p[0],y:p[1],r:Rr,d:.7+k*.07,a:.55})});
+  P.push({k:'p',pts:pts.concat([pts[0]]),d:1.15});
+  for(i=0;i<n;i++){var b=pts[(i+kstar)%n];P.push({k:'l',x1:pts[i][0],y1:pts[i][1],x2:b[0],y2:b[1],d:1.3+i*.02})}
+  pts.forEach(function(p,k){P.push({k:'l',x1:cx,y1:cy,x2:p[0],y2:p[1],d:.9+k*.03,a:.7})});
+  P.push({k:'c',x:cx,y:cy,r:Rr*Math.cos(PI/n),d:1.2},{k:'c',x:cx,y:cy,r:Rr*.5,d:1.35,a:.7});
+  return P;
+}
+function drawPrims(c,P,t,ox,oy,alpha){
+  c.lineCap='round';c.lineWidth=.95;c.strokeStyle=COL.pale;c.fillStyle=COL.pale;
+  for(var i=0;i<P.length;i++){
+    var p=P[i],u=clamp((t-p.d)/1.25,0,1);if(u<=0)continue;
+    var e=easeOut(u);c.globalAlpha=alpha*(p.a||.88);
+    if(p.k==='c'){c.beginPath();c.arc(ox+p.x,oy+p.y,p.r,-PI/2,-PI/2+TAU*e);c.stroke()}
+    else if(p.k==='l'){c.beginPath();c.moveTo(ox+p.x1,oy+p.y1);c.lineTo(ox+p.x1+(p.x2-p.x1)*e,oy+p.y1+(p.y2-p.y1)*e);c.stroke()}
+    else if(p.k==='p'){
+      var L=0,q=p.pts,j;for(j=1;j<q.length;j++)L+=Math.hypot(q[j][0]-q[j-1][0],q[j][1]-q[j-1][1]);
+      var run=L*e;c.beginPath();c.moveTo(ox+q[0][0],oy+q[0][1]);
+      for(j=1;j<q.length&&run>0;j++){var sl=Math.hypot(q[j][0]-q[j-1][0],q[j][1]-q[j-1][1]),f=Math.min(1,run/sl);c.lineTo(ox+q[j-1][0]+(q[j][0]-q[j-1][0])*f,oy+q[j-1][1]+(q[j][1]-q[j-1][1])*f);run-=sl}
+      c.stroke();
+    }else{
+      var pu=clamp((t-p.d)/.5,0,1),sc=pu<1?1.5*Math.sin(pu*PI/2)*(1.05-.05*pu):1;c.globalAlpha=alpha*Math.min(1,pu*1.6);
+      c.beginPath();c.arc(ox+p.x,oy+p.y,p.r*Math.min(1.25,sc),0,TAU);c.fill();
+    }
+  }
+  c.globalAlpha=1;
+}
+
+/* ---------------- intro timeline (script-driven so canvas and masks stay in step) ---------------- */
+var timers=[];
+function say(t,txt){timers.push(setTimeout(function(){statusEl.textContent=txt},t*1000))}
+function finalStatus(){return FAM[fam].name+' · '+FAM[fam].sub+' · '+S.tiles.toLocaleString('en-US')+' tiles'}
+function ringSeq(){var o=[fam];[8,12,10,6].forEach(function(n){if(o.indexOf(n)<0&&o.length<3)o.push(n)});return o}
+function setMask(el,r,fe){var g='radial-gradient(circle at 50% 50%,#000 '+Math.round(r-fe)+'px,transparent '+Math.round(r)+'px)';el.style.webkitMaskImage=g;el.style.maskImage=g}
+function clearMask(el){el.style.webkitMaskImage='';el.style.maskImage=''}
+function endIntro(){S.intro=null;clearMask(stage);clearMask(stageF);statusEl.textContent=finalStatus();hint.style.opacity=1}
+function play(kind){
+  timers.forEach(clearTimeout);timers=[];
+  hint.style.opacity=0;
+  if(reduce){endIntro();return}
+  var seq=kind==='full'?ringSeq():[fam],per=1.3,i,groups=[];
+  for(i=0;i<seq.length;i++)groups.push({t0:i*per,P:ringPrims(seq[i],0,0)});
+  var tB=seq.length*per+.1,tF=tB+1.5;
+  S.intro={t0:performance.now(),groups:groups,tB:tB,tF:tF,end:tF+3.9};
+  setMask(stage,0,170);setMask(stageF,0,190);
+  for(i=0;i<seq.length;i++)say(i*per,'Compass & straightedge · a ring of '+seq[i]+' points');
+  say(tB,'The star bands begin to weave · over, under, over');
+  say(tF+.4,'Glazing the tiles');
+}
+function wipeR(t,t0,dur,mx){var u=clamp((t-t0)/dur,0,1);return u*u*(3-2*u)*mx}
+
+/* ---------------- click: reveal the compass lines behind a rosette ---------------- */
+function reveal(x,y){
+  S.reveals.push({t0:performance.now(),P:ringPrims(fam,x,y)});if(S.reveals.length>4)S.reveals.shift();
+  statusEl.textContent='The compass lines behind the star · a ring of '+fam+' points';
+  clearTimeout(reveal.t);reveal.t=setTimeout(function(){if(!S.intro)statusEl.textContent=finalStatus()},5200);
+}
+
+/* ---------------- scalloped ornamental border ---------------- */
+function drawFrame(){
+  var w=W,h=H,m=Math.min(w,h),ins=Math.max(9,m*.021),r=Math.max(8,m*.02),C=r*1.7,fr=$('#frame');
+  var nx=Math.max(3,Math.round((w-2*ins-2*C)/(2*r))),rx=(w-2*ins-2*C)/(2*nx);
+  var ny=Math.max(2,Math.round((h-2*ins-2*C)/(2*r))),ry=(h-2*ins-2*C)/(2*ny);
+  var d='M'+f1(ins+C)+' '+f1(ins),i,dots='';
+  for(i=1;i<=nx;i++){d+='A'+f1(rx)+' '+f1(rx)+' 0 0 0 '+f1(ins+C+2*rx*i)+' '+f1(ins);dots+='<circle cx="'+f1(ins+C+2*rx*i)+'" cy="'+f1(ins)+'" r="1.7"/>'}
+  d+='A'+f1(C)+' '+f1(C)+' 0 0 0 '+f1(w-ins)+' '+f1(ins+C);
+  for(i=1;i<=ny;i++){d+='A'+f1(ry)+' '+f1(ry)+' 0 0 0 '+f1(w-ins)+' '+f1(ins+C+2*ry*i);dots+='<circle cx="'+f1(w-ins)+'" cy="'+f1(ins+C+2*ry*i)+'" r="1.7"/>'}
+  d+='A'+f1(C)+' '+f1(C)+' 0 0 0 '+f1(w-ins-C)+' '+f1(h-ins);
+  for(i=1;i<=nx;i++){d+='A'+f1(rx)+' '+f1(rx)+' 0 0 0 '+f1(w-ins-C-2*rx*i)+' '+f1(h-ins);dots+='<circle cx="'+f1(w-ins-C-2*rx*i)+'" cy="'+f1(h-ins)+'" r="1.7"/>'}
+  d+='A'+f1(C)+' '+f1(C)+' 0 0 0 '+f1(ins)+' '+f1(h-ins-C);
+  for(i=1;i<=ny;i++){d+='A'+f1(ry)+' '+f1(ry)+' 0 0 0 '+f1(ins)+' '+f1(h-ins-C-2*ry*i);dots+='<circle cx="'+f1(ins)+'" cy="'+f1(h-ins-C-2*ry*i)+'" r="1.7"/>'}
+  d+='A'+f1(C)+' '+f1(C)+' 0 0 0 '+f1(ins+C)+' '+f1(ins)+'Z';
+  fr.setAttribute('viewBox','0 0 '+w+' '+h);
+  fr.innerHTML='<path fill="#070c22" fill-opacity=".95" fill-rule="evenodd" d="M0 0H'+w+'V'+h+'H0Z'+d+'"/>'+
+    '<path d="'+d+'" fill="none" stroke="#d9c27a" stroke-opacity=".9" stroke-width="1.3"/>'+
+    '<rect x="'+f1(ins*.42)+'" y="'+f1(ins*.42)+'" width="'+f1(w-ins*.84)+'" height="'+f1(h-ins*.84)+'" rx="'+f1(ins*.5)+'" fill="none" stroke="#d9c27a" stroke-opacity=".38" stroke-width=".8"/>'+
+    '<g fill="#d9c27a" fill-opacity=".95">'+dots+'</g>';
+}
+function sizeCanvas(){DPR=Math.min(2,window.devicePixelRatio||1);fx.width=Math.round(W*DPR);fx.height=Math.round(H*DPR)}
+
+/* ---------------- interaction: hover, click, drag with inertia ---------------- */
+var ptr={id:null,x:0,y:0,t:0};
+function worldXY(cx,cy){return [cx-W/2-S.px,cy-H/2-S.py]}
+function nearestRosette(x,y,rad){var best=null,bd=rad*rad,rs=S.rosettes;for(var i=0;i<rs.length;i++){var r=rs[i],dx=r.x-x,dy=r.y-y,dd=dx*dx+dy*dy;if(dd<bd){bd=dd;best=r}}return best}
+function nearestVertex(x,y){var best=null,bd=1e12,vs=S.verts;for(var i=0;i<vs.length;i++){var v=vs[i],dx=v.x-x,dy=v.y-y,dd=dx*dx+dy*dy;if(dd<bd&&v.deg>=3){bd=dd;best=v}}return best}
+stage.addEventListener('pointerdown',function(e){
+  if(e.button>0)return;
+  ptr.id=e.pointerId;ptr.x=e.clientX;ptr.y=e.clientY;ptr.t=performance.now();S.moved=0;S.drag=true;S.vx=S.vy=0;
+  try{stage.setPointerCapture(e.pointerId)}catch(_){}
+  stage.classList.add('drag');
+});
+stage.addEventListener('pointermove',function(e){
+  if(S.drag&&e.pointerId===ptr.id){
+    var now=performance.now(),dx=e.clientX-ptr.x,dy=e.clientY-ptr.y,dt=Math.max(.008,(now-ptr.t)/1000);ptr.x=e.clientX;ptr.y=e.clientY;ptr.t=now;S.moved+=Math.abs(dx)+Math.abs(dy);
+    var d=Math.hypot(S.px,S.py),k=d>S.maxPan?Math.max(.15,1-(d-S.maxPan)/220):1;
+    S.px+=dx*k;S.py+=dy*k;S.vx=S.vx*.55+(dx*k/dt)*.45;S.vy=S.vy*.55+(dy*k/dt)*.45;
+  }else if(e.pointerType!=='touch'){
+    var w=worldXY(e.clientX,e.clientY),r=nearestRosette(w[0],w[1],S.s*.62);
+    S.hover=r;stage.classList.toggle('hot',!!r);
+    if(r){S.gx=r.x;S.gy=r.y}
+  }
+});
+function up(e){
+  if(!S.drag||e.pointerId!==ptr.id)return;
+  S.drag=false;stage.classList.remove('drag');
+  if(performance.now()-ptr.t>90){S.vx*=.3;S.vy*=.3}
+  var sp=Math.hypot(S.vx,S.vy);if(sp>2600){S.vx*=2600/sp;S.vy*=2600/sp}
+  if(reduce){S.vx=S.vy=0}
+  if(S.moved<7&&e.type==='pointerup'){
+    var w=worldXY(e.clientX,e.clientY),r=nearestRosette(w[0],w[1],S.s*1.1),tgt=r||nearestVertex(w[0],w[1]);
+    if(tgt){reveal(tgt.x,tgt.y);if(r){r.boost=Math.max(r.boost,420);S.hover=r;S.gx=r.x;S.gy=r.y;if(e.pointerType==='touch')setTimeout(function(){if(S.hover===r)S.hover=null},1400)}}
+  }
+}
+stage.addEventListener('pointerup',up);stage.addEventListener('pointercancel',up);
+stage.addEventListener('pointerleave',function(){if(!S.drag){S.hover=null;stage.classList.remove('hot')}});
+window.addEventListener('keydown',function(e){
+  var k=e.key,a=260;
+  if(k==='ArrowLeft'){S.vx+=a;e.preventDefault()}else if(k==='ArrowRight'){S.vx-=a;e.preventDefault()}
+  else if(k==='ArrowUp'){S.vy+=a;e.preventDefault()}else if(k==='ArrowDown'){S.vy-=a;e.preventDefault()}
+  else if(k==='c'||k==='C')construct();
+  else if(k==='p'||k==='P')cyclePal();
+  else if(k==='1')setFam(6);else if(k==='2')setFam(8);else if(k==='3')setFam(10);else if(k==='4')setFam(12);
+});
+
+/* ---------------- controls ---------------- */
+function setSeg(){[].forEach.call(document.querySelectorAll('#seg button'),function(b){b.setAttribute('aria-pressed',+b.dataset.n===fam?'true':'false')})}
+function resetPan(){S.px=S.py=S.vx=S.vy=0;applyPan()}
+function setFam(n){if(n===fam&&S.tiles)return;fam=n;setSeg();resetPan();generate();play('short')}
+function construct(){resetPan();generate();play('full')}
+function cyclePal(){palIdx=(palIdx+1)%PALS.length;root.setAttribute('data-pal',PALS[palIdx][0]);$('#palName').textContent=PALS[palIdx][1];readColors()}
+$('#seg').addEventListener('click',function(e){var b=e.target.closest('button');if(b)setFam(+b.dataset.n)});
+$('#bCon').addEventListener('click',construct);
+$('#bPal').addEventListener('click',cyclePal);
+
+/* ---------------- frame loop ---------------- */
+function applyPan(){var t='translate3d('+S.px.toFixed(1)+'px,'+S.py.toFixed(1)+'px,0)';for(var i=0;i<pans.length;i++)pans[i].style.transform=t}
+function drawStar(c,sx,sy,n,ro,ri,rot,k){
+  var tb=starTable(n),ca=Math.cos(rot),sa=Math.sin(rot),i,m=2*n;
+  c.beginPath();
+  for(i=0;i<m;i++){var rad=((i&1)?ri:ro)*k,bx=tb.c[i]*rad,by=tb.s[i]*rad,x=sx+bx*ca-by*sa,y=sy+bx*sa+by*ca;if(i)c.lineTo(x,y);else c.moveTo(x,y)}
+  c.closePath();
+}
+function frame(now){
+  requestAnimationFrame(frame);
+  if(document.hidden){S.last=now;return}
+  var dt=Math.min(.05,(now-(S.last||now))/1000);S.last=now;S.t+=dt;
+  var moving=S.drag;
+  if(!S.drag){
+    var sp=Math.hypot(S.vx,S.vy),d=Math.hypot(S.px,S.py);
+    if(sp>.5||d>S.maxPan){
+      moving=true;S.px+=S.vx*dt;S.py+=S.vy*dt;var fr=Math.exp(-3.1*dt);S.vx*=fr;S.vy*=fr;
+      d=Math.hypot(S.px,S.py);
+      if(d>S.maxPan){var ex=(d-S.maxPan)/d,pull=1-Math.exp(-7*dt);S.px-=S.px*ex*pull;S.py-=S.py*ex*pull;S.vx*=.9;S.vy*=.9}
+    }
+  }
+  if(moving)applyPan();
+  /* intro clock: masks + canvas */
+  var it=S.intro,t=0;
+  if(it){
+    t=(now-it.t0)/1000;
+    setMask(stage,wipeR(t,it.tB,3.3,1120),170);setMask(stageF,wipeR(t,it.tF,3.5,1180),190);
+    if(t>it.end){endIntro();it=null}
+  }
+  var target=S.hover?1:0;S.glow+=(target-S.glow)*Math.min(1,dt*(target?7:2.6));
+  S.tick++;
+  var busy=it||moving||S.glow>.02||S.reveals.length||(S.hover!==null);
+  if(!busy&&(S.tick&1))return;
+  /* draw the canvas layer */
+  var c=cx2;c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,W,H);
+  var ox=W/2+S.px,oy=H/2+S.py,i;
+  if(it){
+    for(i=0;i<it.groups.length;i++){
+      var g=it.groups[i],gt=t-g.t0;if(gt<0||gt>1.9)continue;
+      var ga=gt<.23?gt/.23:gt<1.37?1:1-(gt-1.37)/.53;
+      drawPrims(c,g.P,gt,ox,oy,ga);
+    }
+    c.lineWidth=1.3;c.strokeStyle=COL.pale;
+    var wb=clamp((t-it.tB)/3.3,0,1),wf=clamp((t-it.tF)/3.5,0,1);
+    if(wb>0&&wb<1){c.globalAlpha=.8*(1-wb*wb);c.beginPath();c.arc(ox,oy,Math.max(1,wipeR(t,it.tB,3.3,1120)-70),0,TAU);c.stroke()}
+    if(wf>0&&wf<1){c.globalAlpha=.6*(1-wf*wf);c.beginPath();c.arc(ox,oy,Math.max(1,wipeR(t,it.tF,3.5,1180)-80),0,TAU);c.stroke()}
+    c.globalAlpha=1;
+  }
+  /* rosettes: slow spin + breathing; the hovered one spins up and glows */
+  var rs=S.rosettes,hw=W/2+80,hh=H/2+80,rb=it?wipeR(t,it.tB,3.3,1120):1e5,dtA=busy?dt:dt*2;
+  if(S.hover)S.hover.boost+=(520-S.hover.boost)*Math.min(1,dt*5);
+  c.lineJoin='round';c.lineWidth=.9;
+  for(i=0;i<rs.length;i++){
+    var r=rs[i],sx=r.x+S.px,sy=r.y+S.py;
+    if(r.boost>1&&r!==S.hover)r.boost*=Math.exp(-1.7*dtA);else if(r!==S.hover)r.boost=0;
+    if(sx<-hw||sx>hw||sy<-hh||sy>hh)continue;
+    var ra=1;
+    if(it){ra=clamp((rb-Math.hypot(r.x,r.y))/150,0,1);if(ra<=0)continue}
+    r.ang+=(reduce?0:(7+(r.n%3)*2.5)*r.dirn+r.boost*r.dirn)*dtA;
+    var br=reduce?1:1+.055*Math.sin(S.t*.85+r.ph*.05)+r.boost*.0004,px=sx+W/2,py=sy+H/2;
+    c.globalAlpha=ra;
+    drawStar(c,px,py,r.n,r.ro,r.ri,(r.ph+r.ang)*D2R,br);
+    c.fillStyle=COL.orn;c.fill();c.strokeStyle=COL.pale;c.stroke();
+    if(r.n>=7){drawStar(c,px,py,r.n,r.ri*.85,r.ri*.42,(r.ph2-r.ang*1.7)*D2R,2-br);c.globalAlpha=ra*.9;c.fillStyle=COL.c2;c.fill()}
+    c.globalAlpha=ra;c.fillStyle=COL.pale;c.beginPath();c.arc(px,py,Math.max(1.4,S.s*.03),0,TAU);c.fill();
+  }
+  c.globalAlpha=1;
+  /* hover glow */
+  if(S.glow>.02){
+    var gx=S.gx+ox,gy=S.gy+oy,gr=S.s*1.5,gg=c.createRadialGradient(gx,gy,0,gx,gy,gr);
+    gg.addColorStop(0,'rgba('+COL.glow+','+(.9*S.glow).toFixed(3)+')');gg.addColorStop(.4,'rgba('+COL.glow+','+(.32*S.glow).toFixed(3)+')');gg.addColorStop(1,'rgba('+COL.glow+',0)');
+    c.fillStyle=gg;c.fillRect(gx-gr,gy-gr,gr*2,gr*2);
+  }
+  /* click reveals */
+  for(i=S.reveals.length-1;i>=0;i--){
+    var rv=S.reveals[i],age=(now-rv.t0)/1000;
+    if(age>6.9){S.reveals.splice(i,1);continue}
+    drawPrims(c,rv.P,age,ox,oy,age<5.1?1:1-(age-5.1)/1.8);
+  }
+}
+
+/* ---------------- resize ---------------- */
+var rz=0;
+window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(function(){
+  W=innerWidth;H=innerHeight;drawFrame();sizeCanvas();
+  if(Math.hypot(W,H)/2+230>S.R){generate();if(S.intro)endIntro()}
+  else S.maxPan=Math.max(80,S.R-Math.hypot(W,H)/2-24);
+},160)});
+
+/* ---------------- go ---------------- */
+readColors();drawFrame();sizeCanvas();generate();applyPan();setSeg();
+play('full');
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

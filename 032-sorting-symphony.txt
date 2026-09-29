@@ -1,0 +1,25 @@
+==================== PROMPT ====================
+Design "Sortscape", an elegant sorting-algorithm visualiser that looks like generative art. Two views: "Spectrum" (bars of graded hues) and "Halo" (a circular wheel of ~200 slender wedges that is shuffled and then sorted until the wheel becomes a perfect gradient). Algorithms: Bubble, Insertion, Selection, Quick, Merge, Heap, Shell and Radix (LSD), each implemented as a generator yielding operations so playback can pause, step and change speed; highlight compares/swaps/writes with light halos and small counters (comparisons, swaps, elapsed). Sound (opt-in, default off): each comparison plays a short sine/triangle tone mapped to the value, quantised to a pentatonic scale, with volume ducking. Palette: soft pastel canvas #f4f1ec with muted ink #2a2a35 and a curated gradient of hues (coral, apricot, sage, teal, periwinkle, lilac) rather than raw rainbow. UI: a slim bottom console with algorithm chips, a speed slider, a size slider (32–512), "Shuffle" with pattern options (random, reversed, nearly sorted, few unique) and a big satisfying Play pill. Finale: a sweep of light passes across and the wheel gently breathes. Typography: a light geometric sans with mono numerals and generous whitespace.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Sortscape
+
+==================== DESCRIPTION ====================
+A pastel paper canvas on which sorting algorithms become generative art. By default a wheel of 200 slender wedges, coloured along a curated coral, apricot, sage, teal, periwinkle and lilac ramp, starts as a perfect gradient, dissolves into confetti and is then sorted by one of eight algorithms until the gradient returns. A Spectrum view shows the same data as rounded bars with soft reflections. Compares, swaps and writes bloom as small light halos (white with an ink ring, coral, teal), while live mono counters track comparisons, swaps, writes and elapsed time. At the end a band of light sweeps across and the wheel breathes. A frosted slim console holds algorithm chips, speed and size sliders, shuffle patterns, Step and a large Play pill. Until the visitor touches anything, the piece plays itself, cycling through algorithms.
+
+==================== TECHNIQUES ====================
+- Eight algorithms written as generators yielding packed integer operations (compare, swap, write, mark): bubble, insertion, selection, quicksort (iterative, random pivot), bottom-up merge, heap, Shell with Ciura gaps, LSD radix
+- A runner that spends an ops-per-second budget per frame, so play, pause, single-step and logarithmic speed all work
+- 512-step colour lookup built by interpolating six curated hues in OKLab for clean gradients
+- Canvas Halo view of trapezoid wedges with growth-in animation, hairline guide ring with ticks, and a sweep highlight; Spectrum view of rounded bars with reflection
+- Rank-matched morph so every item glides to its new position on shuffle
+- Decaying glow arrays give compare, swap and write halos without per-frame allocation
+- Shuffle patterns: random, reversed, nearly sorted, few unique values
+- Opt-in WebAudio: sine for compares, triangle for writes, values quantised to a pentatonic scale, voice limiting, throttling and gain ducking, plus a finale arpeggio
+- Frosted-glass console, geometric light sans with mono tabular numerals, responsive chip row that scrolls on phones
+- Attract mode that shuffles and plays the next algorithm until the first user input
+
+==================== INTERACTION ====================
+Pick an algorithm chip (or keys 1 to 8), press Play (or Space) to run it, Pause to stop, and Step (or the right arrow) to advance one operation. The speed slider runs from 2 to 20,000 operations per second; the size slider sets 32 to 512 items. Shuffle (or S) re-scrambles with the chosen pattern using a gliding morph. The view toggle (or V) switches Spectrum and Halo; the speaker (or M) enables sound, off by default. When a sort ends, light sweeps across and the wheel breathes; pressing Play again reshuffles. With prefers-reduced-motion the intro morph, rotation and growth animation are skipped.

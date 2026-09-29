@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2d2350">
+<meta name="description" content="Golden Swell — a real-time WebGL ocean at sunset. Scrub the sun from golden light through blue hour to a moonlit sea, and click the water to send a swell toward the horizon.">
+<title>Golden Swell — a WebGL ocean at sunset</title>
+<style>
+/* ============================================================
+   GOLDEN SWELL — tokens
+   ============================================================ */
+:root{
+  --apricot:#ffb36b; --rose:#e6708f; --violet:#2d2350; --deep:#0b0a1e;
+  --cream:#fff3e2; --ink:#20122f; --mute:rgba(255,243,226,.72);
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"P052","Book Antiqua","URW Bookman",Georgia,serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --gut:clamp(18px,3.4vw,56px);
+  /* live palette, written by JS (also drives the CSS fallback sea) */
+  --zen:#2d2350; --mid:#e6708f; --hor:#ffb36b; --sun:#ffa860; --wat:#08162c; --thumbA:#fff; --thumbB:#ffd9a0; --sunY:6%;
+}
+*,*::before,*::after{box-sizing:border-box}
+*{margin:0}
+html,body{height:100%}
+html{background:var(--deep);-webkit-text-size-adjust:100%}
+body{background:transparent;color:var(--cream);font-family:var(--serif);overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--cream);outline-offset:3px;border-radius:8px}
+.sr-only{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ============================================================
+   SCENE
+   ============================================================ */
+.scene{position:relative;height:100vh;height:100dvh;min-height:420px;overflow:hidden;background:linear-gradient(180deg,var(--zen),var(--mid) 46%,var(--hor) 50%,var(--wat) 51%,var(--wat));isolation:isolate}
+#sea{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.scrim{position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:
+    radial-gradient(52% 58% at 12% 22%,rgba(28,12,50,.5),rgba(28,12,50,.18) 55%,rgba(28,12,50,0) 82%),
+    linear-gradient(180deg,rgba(28,12,50,.2) 0%,rgba(28,12,50,0) 16%),
+    linear-gradient(0deg,rgba(10,6,28,.6) 0%,rgba(10,6,28,.26) 16%,rgba(10,6,28,0) 34%)}
+.no-gl #sea{display:none}
+
+/* ---------- CSS fallback sea (only when WebGL is unavailable) ---------- */
+.fb{position:absolute;inset:0;display:none;overflow:hidden}
+.no-gl .fb{display:block}
+.fb-sky{position:absolute;inset:0 0 50% 0;background:
+  radial-gradient(60% 70% at 50% 100%,rgba(255,236,190,.35),transparent 70%),
+  linear-gradient(180deg,var(--zen),var(--mid) 66%,var(--hor))}
+.fb-stars{position:absolute;inset:0 0 50% 0;opacity:var(--night,0);transition:opacity 1s;
+  background:radial-gradient(circle at 12% 18%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 34% 34%,#cfe0ff 0 1px,transparent 1.6px),radial-gradient(circle at 58% 12%,#fff 0 1.2px,transparent 1.8px),radial-gradient(circle at 78% 30%,#fff 0 1px,transparent 1.6px),radial-gradient(circle at 90% 14%,#ffe9c8 0 1px,transparent 1.6px),radial-gradient(circle at 22% 62%,#fff 0 .9px,transparent 1.5px),radial-gradient(circle at 70% 58%,#cfe0ff 0 .9px,transparent 1.5px),radial-gradient(circle at 46% 74%,#fff 0 .9px,transparent 1.5px)}
+.fb-moon{position:absolute;left:64%;top:13%;width:min(6vw,64px);aspect-ratio:1;border-radius:50%;opacity:var(--night,0);transition:opacity 1s;background:radial-gradient(circle at 36% 34%,#fffdf2,#dfe4f2 55%,#aab4d2);box-shadow:0 0 40px 10px rgba(170,190,255,.35),0 0 120px 40px rgba(120,150,255,.16)}
+.fb-sun{position:absolute;left:56%;bottom:calc(50% + var(--sunY));width:min(26vw,300px);aspect-ratio:1;transform:translate(-50%,50%);border-radius:50%;opacity:var(--sunvis,1);background:radial-gradient(circle,#fff 0 5%,#fff6dc 8%,var(--sun) 14%,rgba(255,170,100,.32) 34%,rgba(255,170,100,0) 68%)}
+.fb-sea{position:absolute;inset:50% 0 0 0;background:linear-gradient(180deg,var(--hor) 0%,var(--mid) 9%,var(--wat) 44%,var(--wat) 100%);overflow:hidden}
+.fb-sea::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(6,4,20,.5));pointer-events:none}
+.fb-wv{position:absolute;left:-340px;right:-340px;background-repeat:repeat;animation:fbdrift linear infinite;will-change:transform;-webkit-mask-image:linear-gradient(180deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(180deg,transparent,#000 22%,#000 78%,transparent)}
+.fb-wv.a{--loop:76px;top:0;height:24%;background-image:radial-gradient(ellipse 30px 3px at 50% 50%,rgba(255,240,215,.34),transparent 72%),radial-gradient(ellipse 16px 2px at 25% 50%,rgba(255,225,190,.26),transparent 72%);background-size:76px 9px,38px 7px;animation-duration:22s}
+.fb-wv.b{--loop:150px;top:20%;height:34%;background-image:radial-gradient(ellipse 60px 5px at 50% 50%,rgba(255,232,205,.26),transparent 72%),radial-gradient(ellipse 30px 4px at 25% 50%,rgba(255,210,175,.2),transparent 72%);background-size:150px 20px,75px 15px;animation-duration:30s;animation-direction:reverse}
+.fb-wv.c{--loop:320px;top:50%;height:50%;background-image:radial-gradient(ellipse 130px 10px at 50% 50%,rgba(255,225,200,.16),transparent 72%),radial-gradient(ellipse 60px 8px at 25% 50%,rgba(255,200,170,.12),transparent 72%);background-size:320px 46px,160px 34px;animation-duration:42s}
+@keyframes fbdrift{to{transform:translateX(var(--loop))}}
+.fb-glint{position:absolute;left:56%;top:0;bottom:0;width:36%;transform:translateX(-50%);clip-path:polygon(47% 0,53% 0,86% 100%,14% 100%);animation:glint 3.4s ease-in-out infinite alternate;
+  background:linear-gradient(180deg,rgba(255,214,150,.9),rgba(255,190,120,.5) 42%,rgba(255,170,110,0) 96%),repeating-linear-gradient(180deg,rgba(255,255,255,.4) 0 2px,transparent 2px 9px);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(90deg,transparent,#000 30%,#000 70%,transparent);opacity:var(--sunvis,1)}
+@keyframes glint{from{transform:translateX(-50%) scaleX(.92)}to{transform:translateX(-50%) scaleX(1.06)}}
+.fb-glint.moon{left:64%;opacity:var(--night,0);width:30%;background:linear-gradient(180deg,rgba(220,232,255,.85),rgba(180,200,255,.4) 42%,rgba(160,180,255,0) 96%),repeating-linear-gradient(180deg,rgba(255,255,255,.4) 0 2px,transparent 2px 9px)}
+.fb-swell{position:absolute;left:-10%;right:-10%;bottom:-8%;height:26%;background:radial-gradient(ellipse 60% 50% at 50% 50%,rgba(255,236,210,.42),rgba(255,236,210,0) 70%);opacity:0;animation:fbswell 7.5s cubic-bezier(.3,.6,.3,1) forwards}
+@keyframes fbswell{0%{opacity:0;transform:translateY(0) scaleY(1.5)}12%{opacity:.85}100%{opacity:0;transform:translateY(-230%) scaleY(.12)}}
+
+/* ============================================================
+   OVERLAY
+   ============================================================ */
+.ui{position:absolute;inset:0;z-index:2;display:grid;grid-template-rows:auto 1fr auto;padding:clamp(16px,3vh,32px) var(--gut) clamp(16px,3.4vh,34px);pointer-events:none;--px:0;--py:0}
+.ui > *{pointer-events:auto}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;font:500 .68rem/1.5 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--mute);pointer-events:none}
+.top b{display:block;font-weight:600;color:var(--cream);letter-spacing:.34em}
+.top .r{text-align:right}
+.top .tick{font-variant-numeric:tabular-nums;color:var(--cream)}
+
+.quote-wrap{align-self:start;padding-top:clamp(20px,6.5vh,84px);pointer-events:none;transform:translate3d(calc(var(--px)*-14px),calc(var(--py)*-9px),0)}
+figure.quote{max-width:min(100%,9.2em);font-size:clamp(2.35rem,min(7vw,12.4vh),7.6rem)}
+blockquote{font-weight:300;line-height:1.02;letter-spacing:-.022em;color:var(--cream);text-shadow:0 2px 34px rgba(60,20,70,.62),0 1px 3px rgba(30,10,40,.4)}
+blockquote em{font-style:italic;letter-spacing:-.03em;color:#fff}
+.w{display:inline-block;opacity:0;transform:translateY(.32em);filter:blur(10px);animation:wordin 1.5s var(--ease) forwards;animation-delay:calc(.35s + var(--i)*.11s)}
+@keyframes wordin{to{opacity:1;transform:none;filter:blur(0)}}
+figcaption{margin-top:clamp(14px,2.4vh,26px);font:500 clamp(.62rem,1.1vw,.74rem)/1.6 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--mute);text-shadow:0 1px 14px rgba(30,10,40,.7);opacity:0;animation:fadein 1.6s ease 2s forwards}
+figcaption::before{content:"";display:inline-block;width:38px;height:1px;background:currentColor;vertical-align:middle;margin-right:14px;opacity:.7}
+@keyframes fadein{to{opacity:1}}
+
+.bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:20px 30px;flex-wrap:wrap}
+.readout{font:500 .68rem/1.9 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--mute);text-shadow:0 1px 12px rgba(10,4,24,.8);pointer-events:none}
+.readout b{font-weight:500;color:var(--cream)}
+.readout .n{font-variant-numeric:tabular-nums}
+.dial{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.dial-row{display:flex;align-items:center;gap:14px;padding:10px 18px 10px 16px;border-radius:999px;background:linear-gradient(160deg,rgba(255,243,226,.14),rgba(255,243,226,.05));border:1px solid rgba(255,243,226,.22);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);box-shadow:0 18px 50px -20px rgba(10,4,30,.7),inset 0 1px 0 rgba(255,255,255,.2)}
+.dial label{font:500 .66rem/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;color:var(--cream)}
+.ico{width:20px;height:20px;flex:none;color:var(--cream);opacity:.85}
+.track-wrap{position:relative;display:flex;flex-direction:column;gap:2px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:min(320px,40vw);min-width:150px;height:30px;background:transparent;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:linear-gradient(90deg,#fff0cc 0%,#ffb36b 20%,#e6708f 42%,#6a4a86 62%,#263a6e 80%,#0a1440 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+input[type=range]::-moz-range-track{height:6px;border-radius:6px;background:linear-gradient(90deg,#fff0cc 0%,#ffb36b 20%,#e6708f 42%,#6a4a86 62%,#263a6e 80%,#0a1440 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin-top:-9px;border-radius:50%;border:0;background:radial-gradient(circle at 35% 30%,var(--thumbA),var(--thumbB) 62%,rgba(0,0,0,.25));box-shadow:0 0 0 4px rgba(255,255,255,.16),0 0 22px 2px var(--thumbB),0 4px 12px rgba(0,0,0,.4);transition:transform .25s var(--ease)}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;border:0;background:radial-gradient(circle at 35% 30%,var(--thumbA),var(--thumbB) 62%,rgba(0,0,0,.25));box-shadow:0 0 0 4px rgba(255,255,255,.16),0 0 22px 2px var(--thumbB),0 4px 12px rgba(0,0,0,.4)}
+input[type=range]:active::-webkit-slider-thumb{transform:scale(1.15)}
+input[type=range]:focus-visible{outline-offset:6px}
+.marks{display:flex;justify-content:space-between;font:500 .54rem/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:rgba(255,243,226,.55);padding:0 2px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 15px;border-radius:999px;border:1px solid rgba(255,243,226,.28);background:rgba(255,243,226,.06);font:500 .62rem/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--cream);cursor:pointer;transition:background .3s,border-color .3s}
+.chip:hover{background:rgba(255,243,226,.16);border-color:rgba(255,243,226,.55)}
+.chip i{width:8px;height:8px;border-radius:50%;background:rgba(255,243,226,.35);transition:background .3s,box-shadow .3s}
+.chip[aria-pressed="true"] i{background:#ffd9a0;box-shadow:0 0 10px 2px rgba(255,200,120,.7)}
+.btnrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.hint{font:500 .58rem/1.4 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:rgba(255,243,226,.6);text-shadow:0 1px 10px rgba(10,4,24,.8);text-align:right;pointer-events:none}
+.ring{position:absolute;z-index:1;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:1px solid rgba(255,243,226,.75);pointer-events:none;opacity:0}
+.ring.go{animation:ripple 1.3s var(--ease) 1}
+@keyframes ripple{0%{opacity:.85;transform:scale(1) scaleY(.42)}100%{opacity:0;transform:scale(15) scaleY(.42)}}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:760px){
+  .top .r{display:none}
+  figure.quote{max-width:min(100%,8.6em);font-size:clamp(2.2rem,min(11vw,8.4vh),3.6rem)}
+  .marks{display:none}
+  .bottom{flex-direction:column;align-items:stretch;gap:12px}
+  .dial{align-items:stretch}
+  .dial-row{justify-content:space-between;padding:8px 14px}
+  input[type=range]{width:100%;min-width:0;flex:1}
+  .track-wrap{flex:1;min-width:0}
+  .btnrow{justify-content:space-between}
+  .hint{text-align:left;display:none}
+  .readout{font-size:.6rem;line-height:1.7}
+}
+@media (max-height:520px) and (orientation:landscape){
+  .bottom{flex-wrap:nowrap}
+  figure.quote{font-size:clamp(1.8rem,9vh,3.4rem)}
+  .marks{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .w{animation-duration:.01s;animation-delay:0s;filter:none;transform:none}
+  figcaption{animation-duration:.01s;animation-delay:0s}
+  .fb-wv,.fb-glint{animation:none}
+  .fb-swell{animation-duration:.01s}
+  .ring.go{animation-duration:.01s}
+}
+</style>
+</head>
+<body>
+<main class="scene" id="scene">
+  <canvas id="sea" aria-hidden="true"></canvas>
+  <div class="fb" id="fb" aria-hidden="true">
+    <div class="fb-sky"></div><div class="fb-stars"></div><div class="fb-moon"></div><div class="fb-sun"></div>
+    <div class="fb-sea" id="fbSea"><div class="fb-wv a"></div><div class="fb-wv b"></div><div class="fb-wv c"></div><div class="fb-glint"></div><div class="fb-glint moon"></div></div>
+  </div>
+  <div class="scrim" aria-hidden="true"></div>
+  <span class="ring" id="ring" aria-hidden="true"></span>
+
+  <div class="ui" id="ui">
+    <header class="top">
+      <div><b>Golden Swell</b>Field log Nº 46 · open water</div>
+      <div class="r">Local time <span class="tick" id="clock">18:42</span><br>Sun <span class="tick" id="altTxt">+5.5°</span> · Az <span class="tick">262°</span></div>
+    </header>
+
+    <div class="quote-wrap">
+      <figure class="quote">
+        <blockquote><p><span class="w" style="--i:0">The</span> <span class="w" style="--i:1">sea</span> <span class="w" style="--i:2">does</span> <span class="w" style="--i:3">not</span> <span class="w" style="--i:4"><em>reward</em></span> <span class="w" style="--i:5">those</span> <span class="w" style="--i:6">who</span> <span class="w" style="--i:7">are</span> <span class="w" style="--i:8">in</span> <span class="w" style="--i:9">a</span> <span class="w" style="--i:10"><em>hurry.</em></span></p></blockquote>
+        <figcaption>a fisherman’s proverb, invented</figcaption>
+      </figure>
+    </div>
+
+    <footer class="bottom">
+      <div class="readout" role="group" aria-label="Sea state">
+        Wind <b class="n" id="wind">11</b> kn <b>WSW</b><br>
+        Swell <b class="n" id="swell">1.8</b> m @ <b class="n">9</b> s<br>
+        <span id="phase">Golden hour</span>
+      </div>
+      <div class="dial">
+        <p class="hint" id="hint">Click the water to send a swell · move to look around</p>
+        <div class="dial-row">
+          <label for="sun">Sun</label>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/></svg>
+          <div class="track-wrap">
+            <input type="range" id="sun" min="0" max="1000" value="380" step="1" aria-valuetext="Golden hour, sun 6 degrees above the horizon">
+            <div class="marks" aria-hidden="true"><span>Golden</span><span>Sunset</span><span>Blue hour</span><span>Moonlit</span></div>
+          </div>
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2Z"/></svg>
+        </div>
+        <div class="btnrow">
+          <button type="button" class="chip" id="drift" aria-pressed="true"><i></i>Drift</button>
+          <button type="button" class="chip" id="swellBtn"><i></i>Send a swell</button>
+          <button type="button" class="chip" id="soundBtn" aria-pressed="false"><i></i>Sound</button>
+        </div>
+      </div>
+    </footer>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var doc = document, root = doc.documentElement;
+  var mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  var RM = !!(mq && mq.matches);
+  function $(s) { return doc.querySelector(s); }
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+  function mix(a, b, t) { return a + (b - a) * t; }
+  function sstep(a, b, x) { var t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); }
+
+  var canvas = $('#sea'), scene = $('#scene'), ui = $('#ui');
+
+  /* ------------------------------------------------------------
+     Palette keyframes by sun altitude (degrees, sRGB hex)
+     ------------------------------------------------------------ */
+  var KF = [
+    { a: 24,  zen: '#4f7ccd', mid: '#a7b9dc', hor: '#ffe3b4', sun: '#fff0d0', wat: '#0b2a3a' },
+    { a: 12,  zen: '#3f5aa8', mid: '#e1a3b2', hor: '#ffd29a', sun: '#ffdca8', wat: '#0a2436' },
+    { a: 5,   zen: '#35306f', mid: '#e58a9f', hor: '#ffbb78', sun: '#ffc07a', wat: '#091d33' },
+    { a: 0,   zen: '#2d2350', mid: '#e6708f', hor: '#ffb36b', sun: '#ffa860', wat: '#08162c' },
+    { a: -4,  zen: '#221c52', mid: '#b25a86', hor: '#f48f6e', sun: '#ff8a5c', wat: '#08132a' },
+    { a: -8,  zen: '#141a48', mid: '#5a4b8f', hor: '#c7688a', sun: '#e8607a', wat: '#060f24' },
+    { a: -12, zen: '#0b1236', mid: '#2a3b7c', hor: '#5b6fb0', sun: '#b060a0', wat: '#050b1e' },
+    { a: -18, zen: '#060a24', mid: '#111f52', hor: '#23387a', sun: '#6070c0', wat: '#040820' },
+    { a: -26, zen: '#03051a', mid: '#0a1440', hor: '#142a62', sun: '#4050a0', wat: '#030618' }
+  ];
+  function hexToRgb(h) { var n = parseInt(h.slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; }
+  KF.forEach(function (k) { ['zen', 'mid', 'hor', 'sun', 'wat'].forEach(function (c) { k[c + 'V'] = hexToRgb(k[c]); }); });
+  var pal = { zen: [0, 0, 0], mid: [0, 0, 0], hor: [0, 0, 0], sun: [0, 0, 0], wat: [0, 0, 0] };
+  function palette(alt) {
+    var i = 0;
+    if (alt >= KF[0].a) { i = 0; }
+    else if (alt <= KF[KF.length - 1].a) { i = KF.length - 2; }
+    else { while (i < KF.length - 2 && alt < KF[i + 1].a) i++; }
+    var A = KF[i], B = KF[i + 1], t = clamp((A.a - alt) / (A.a - B.a), 0, 1);
+    t = t * t * (3 - 2 * t);
+    ['zen', 'mid', 'hor', 'sun', 'wat'].forEach(function (c) {
+      var a = A[c + 'V'], b = B[c + 'V'], o = pal[c];
+      o[0] = mix(a[0], b[0], t); o[1] = mix(a[1], b[1], t); o[2] = mix(a[2], b[2], t);
+    });
+  }
+  function css(v) { return 'rgb(' + Math.round(v[0] * 255) + ',' + Math.round(v[1] * 255) + ',' + Math.round(v[2] * 255) + ')'; }
+  function setLin(loc, v) { gl.uniform3f(loc, Math.pow(v[0], 2.2), Math.pow(v[1], 2.2), Math.pow(v[2], 2.2)); }
+
+  /* ------------------------------------------------------------
+     Shaders
+     ------------------------------------------------------------ */
+  var VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}';
+  var FS = [
+'uniform vec2 uRes;uniform float uTime;uniform float uAlt;uniform vec2 uCam;uniform float uRoll;uniform float uCamH;',
+'uniform vec3 uZen;uniform vec3 uMid;uniform vec3 uHor;uniform vec3 uSunCol;uniform vec3 uWater;',
+'uniform float uSunVis;uniform float uNight;uniform float uAmp;uniform float uHi;uniform vec4 uSw[3];',
+'vec3 sunDir;vec3 moonDir;',
+'const float LO=-1.15;',
+'float hash21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}',
+'float vnoise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.0-2.0*f);',
+' float a=hash21(i);float b=hash21(i+vec2(1.0,0.0));float c=hash21(i+vec2(0.0,1.0));float d=hash21(i+vec2(1.0,1.0));',
+' return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}',
+'float fbm(vec2 p){float s=0.0;float a=0.5;for(int i=0;i<4;i++){s+=a*vnoise(p);p=p*2.03+vec2(17.1,9.2);a*=0.5;}return s;}',
+
+/* ---- waves: sharpened sines (exp(sin-1)), analytic gradient, band-limited by pixel footprint ---- */
+'float waves(vec2 p,float fp,int n,out vec2 g,out float lost){',
+' float h=0.0;g=vec2(0.0);lost=0.0;',
+' for(int i=0;i<8;i++){',
+'  float fi=float(i);',
+'  float k=0.13655*exp2(fi*0.8625);',
+'  float a0=uAmp*0.85*exp2(-fi);',
+'  float w=1.0-smoothstep(0.35,1.3,k*fp);',
+'  float sl=a0*k*0.54;',
+'  if(i>=n||w<0.004){lost+=sl*sl;continue;}',
+'  float ang=3.14159+0.9*sin(fi*2.399+1.0)*(0.30+0.11*fi);',
+'  vec2 d=vec2(sin(ang),cos(ang));',
+'  float ph=k*dot(d,p)-sqrt(9.81*k)*uTime+fi*1.7;',
+'  if(i>0)ph+=(vnoise(p*(0.03+0.028*fi)+vec2(fi*5.3,fi*2.1))-0.5)*2.6;',
+'  float a=a0*w;',
+'  float e=exp(sin(ph)-1.0);',
+'  h+=a*(e-0.466);',
+'  g+=a*e*cos(ph)*k*d;',
+'  lost+=(1.0-w)*(1.0-w)*sl*sl;',
+' }',
+' return h;}',
+
+/* ---- click swells: travelling Ricker wavelets ---- */
+'float swells(vec2 p,out vec2 g){',
+' float h=0.0;g=vec2(0.0);',
+' for(int i=0;i<3;i++){',
+'  vec4 s=uSw[i];',
+'  if(s.x<0.0)continue;',
+'  float age=s.x;',
+'  float zc=7.0+age*22.0;',
+'  float sig=5.5+age*0.8;',
+'  float u=(p.y-zc)/sig;',
+'  float env=exp(-0.5*u*u);',
+'  float amp=s.y*exp(-age*0.085)*smoothstep(0.0,0.6,age);',
+'  float sx=42.0+age*3.0;',
+'  float lx=p.x-s.z;',
+'  float lat=exp(-0.5*lx*lx/(sx*sx));',
+'  float wv=(1.0-u*u)*env;',
+'  h+=amp*wv*lat;',
+'  g.y+=amp*lat*((u*u*u-3.0*u)*env)/sig;',
+'  g.x+=amp*wv*lat*(-lx/(sx*sx));',
+' }',
+' return h;}',
+'float Hgt(vec2 p,float fp){vec2 g;float l;float h=waves(p,fp,2,g,l);vec2 g2;return h+swells(p,g2)*(1.0-smoothstep(200.0,900.0,fp*40.0));}',
+
+/* ---- stars ---- */
+'vec3 starField(vec3 rd){',
+' vec2 uv=vec2(atan(rd.x,rd.z),asin(clamp(rd.y,0.0,1.0)))*vec2(90.0,90.0);',
+' vec2 id=floor(uv);vec2 fr=fract(uv)-0.5;float h=hash21(id);',
+' float st=step(0.977,h);',
+' vec2 off=(vec2(hash21(id+3.7),hash21(id+9.1))-0.5)*0.6;',
+' float br=(1.0-smoothstep(0.0,0.13,length(fr-off)))*(0.35+0.65*hash21(id+1.3));',
+' float tw=0.72+0.28*sin(uTime*(1.5+h*5.0)+h*80.0);',
+' vec3 sc=mix(vec3(0.75,0.85,1.0),vec3(1.0,0.86,0.72),hash21(id+5.5));',
+' vec3 c=sc*br*st*tw*2.4;',
+' vec2 uv2=vec2(atan(rd.x,rd.z),asin(clamp(rd.y,0.0,1.0)))*vec2(210.0,210.0);',
+' vec2 id2=floor(uv2);vec2 fr2=fract(uv2)-0.5;float h2=hash21(id2+11.0);',
+' c+=vec3(0.8,0.88,1.0)*step(0.984,h2)*(1.0-smoothstep(0.0,0.2,length(fr2)))*0.6;',
+' float band=exp(-pow(dot(rd,normalize(vec3(0.80,0.35,-0.45)))*3.6,2.0));',
+' float dust=0.35+0.9*fbm(rd.xz*vec2(5.0,9.0)/(rd.y+0.5)+vec2(3.0,1.0));',
+' c+=vec3(0.30,0.36,0.62)*band*dust*0.16;',
+' return c;}',
+
+/* ---- sky (also used for reflections) ---- */
+'vec3 sky(vec3 rd,float disc){',
+' float e=max(rd.y,0.0);',
+' float h=pow(e,0.62);',
+' vec3 c=mix(uHor,uMid,smoothstep(0.0,0.24,h));',
+' c=mix(c,uZen,smoothstep(0.20,0.80,h));',
+' float sd=max(dot(rd,sunDir),0.0);',
+' float sv=uSunVis;',
+' c+=uSunCol*sv*(0.05*pow(sd,4.0)+0.15*pow(sd,26.0)+0.45*pow(sd,340.0));',
+' vec2 az=normalize(rd.xz+vec2(1e-4));',
+' float side=max(dot(az,normalize(sunDir.xz)),0.0);',
+' c+=uHor*0.55*pow(1.0-e,10.0)*pow(side,3.0)*sv;',
+' float cov=0.0;',
+' if(e>0.01){',
+'  vec2 cp=rd.xz/(e+0.14);',
+'  vec2 q=vec2(cp.x*0.22,cp.y*1.6)+vec2(uTime*0.004,0.0);',
+'  float base=fbm(q*1.3+4.0);',
+'  float band=smoothstep(0.46,0.80,base);',
+'  float wisp=smoothstep(0.52,0.86,fbm(vec2(cp.x*0.10,cp.y*3.4)+vec2(uTime*0.006,7.0)));',
+'  cov=band*smoothstep(0.02,0.16,e)*(1.0-smoothstep(0.26,0.62,e));',
+'  wisp*=smoothstep(0.02,0.2,e)*0.45;',
+'  float lit=clamp(0.20+1.35*pow(sd,2.2)+0.5*(1.0-h)*sv,0.0,1.0);',
+'  vec3 cshadow=mix(uZen,uMid,0.5)*0.78;',
+'  vec3 clit=mix(uMid,uSunCol,0.55)*1.15+uHor*0.25;',
+'  vec3 cc=mix(cshadow,clit,lit);',
+'  cc+=uSunCol*0.35*pow(sd,6.0)*(1.0-cov)*sv;',
+'  c=mix(c,cc,clamp(cov*0.82+wisp,0.0,0.9));',
+' }',
+' c+=mix(uSunCol,vec3(1.0),0.7)*sv*disc*9.0*smoothstep(0.99979,0.99988,sd);',
+' if(uNight>0.01){',
+'  float sv2=uNight*smoothstep(0.0,0.18,e)*(1.0-cov*0.85);',
+'  c+=starField(rd)*sv2;',
+'  float md=dot(rd,moonDir);',
+'  c+=vec3(0.55,0.68,1.0)*uNight*(0.30*pow(max(md,0.0),60.0)+0.07*pow(max(md,0.0),8.0));',
+'  if(md>0.9990){',
+'   vec3 mt=normalize(cross(moonDir,vec3(0.0,1.0,0.0)));vec3 mb=cross(mt,moonDir);',
+'   vec2 mp=vec2(dot(rd,mt),dot(rd,mb))/0.030;',
+'   float r2=dot(mp,mp);',
+'   if(r2<1.0){',
+'    vec3 nn=vec3(mp,sqrt(1.0-r2));',
+'    float lit2=smoothstep(-0.15,0.45,dot(nn,normalize(vec3(0.55,0.30,0.78))));',
+'    float m=fbm(mp*2.6+5.0);',
+'    vec3 mc=mix(vec3(0.50,0.56,0.70),vec3(0.98,0.97,0.92),smoothstep(0.36,0.62,m));',
+'    float edge=1.0-smoothstep(0.90,1.0,r2);',
+'    c=mix(c,mc*(0.18+0.95*lit2)*2.3,edge*uNight);',
+'   }',
+'  }',
+' }',
+' return c;}',
+
+/* ---- ocean: regula-falsi height-field intersection, analytic normals, fresnel sky reflection ---- */
+'vec3 ocean(vec3 ro,vec3 rd,float pixAng){',
+' float el=max(-rd.y,0.02);',
+' float fk=pixAng*mix(1.0,1.0/el,0.4);',
+' float ta=max((ro.y-uHi)/(-rd.y),0.0);',
+' float tb=min((ro.y-LO)/(-rd.y),9000.0);',
+' float fa=ro.y+rd.y*ta-Hgt(ro.xz+rd.xz*ta,ta*fk);',
+' float fb=ro.y+rd.y*tb-Hgt(ro.xz+rd.xz*tb,tb*fk);',
+' float t=tb;',
+' if(fb<0.0&&fa>0.0){',
+'  for(int i=0;i<5;i++){',
+'   t=ta+(tb-ta)*fa/(fa-fb-1e-5);',
+'   float fm=ro.y+rd.y*t-Hgt(ro.xz+rd.xz*t,t*fk);',
+'   if(fm>0.0){ta=t;fa=fm;}else{tb=t;fb=fm;}',
+'  }',
+' }',
+' vec3 p=ro+rd*t;',
+' float fp=t*fk;',
+' float lost;vec2 g1;float h=waves(p.xz,fp,8,g1,lost);',
+' vec2 g2;float hs=swells(p.xz,g2);',
+' vec2 g=g1+g2;h+=hs;',
+' vec3 n=normalize(vec3(-g.x,1.0,-g.y));',
+' vec3 V=-rd;',
+' float ndv=clamp(dot(n,V),0.0,1.0);',
+' float fres=0.05+0.95*pow(1.0-ndv,4.5);',
+' vec3 R=reflect(rd,n);R.y=abs(R.y);',
+' vec3 refl=sky(R,0.0);',
+' float hn=clamp(h/(uAmp*0.9)*0.5+0.5,0.0,1.0);',
+' float back=pow(max(dot(rd,sunDir),0.0),4.0);',
+' vec3 body=uWater*(0.6+1.2*hn)+uHor*0.028+vec3(0.05,0.17,0.14)*uSunVis*pow(hn,2.0)*(0.25+2.2*back);',
+' vec3 col=mix(body,refl,fres);',
+' float shin=min(1.0/(0.0014+lost*0.35),700.0);',
+' float sd=max(dot(R,sunDir),0.0);',
+' float md=max(dot(R,moonDir),0.0);',
+' float gI=0.25+0.75*sqrt(shin/700.0);',
+' float glit=(pow(sd,shin)*10.0+pow(sd,90.0)*0.8)*gI;',
+' float mglit=(pow(md,shin)*6.0+pow(md,90.0)*0.4)*gI;',
+' float gk=0.3+0.7*fres;',
+' col+=uSunCol*glit*gk*uSunVis;',
+' col+=vec3(0.72,0.84,1.0)*mglit*gk*uNight*0.9;',
+' float slope=length(g);',
+' float crest=smoothstep(0.55,0.95,hn)*smoothstep(0.05,0.22,slope);',
+' float fn=fbm(p.xz*1.6+vec2(0.0,uTime*0.35));',
+' float foam=crest*smoothstep(0.35,0.75,fn)*(1.0-smoothstep(40.0,260.0,t))*0.55;',
+' foam+=smoothstep(0.7,1.7,hs)*0.7*(1.0-smoothstep(80.0,600.0,t));',
+' vec3 foamCol=vec3(0.30,0.32,0.38)*(0.25+0.75*uNight*0.0+0.0)+uSunCol*0.55*uSunVis+uHor*0.30+vec3(0.10,0.12,0.18)*uNight;',
+' col=mix(col,foamCol,clamp(foam,0.0,0.8));',
+' float fog=1.0-exp(-t*0.00042);',
+' vec3 hz=sky(normalize(vec3(rd.x,0.0,rd.z)),0.0)*0.93;',
+' col=mix(col,hz,fog);',
+' return col;}',
+
+'void main(){',
+' sunDir=vec3(sin(0.13)*cos(uAlt),sin(uAlt),cos(0.13)*cos(uAlt));',
+' moonDir=normalize(vec3(0.27,0.31,0.90));',
+' vec2 uv=(2.0*gl_FragCoord.xy-uRes)/uRes.y;',
+' float aspect=uRes.x/uRes.y;',
+' float vfov=mix(1.36,1.0,smoothstep(0.55,1.25,aspect));',
+' float focal=1.0/tan(vfov*0.5);',
+' float yaw=uCam.x;float pitch=uCam.y;',
+' vec3 f=normalize(vec3(sin(yaw)*cos(pitch),sin(pitch),cos(yaw)*cos(pitch)));',
+' vec3 r=normalize(cross(vec3(0.0,1.0,0.0),f));',
+' vec3 u=cross(f,r);',
+' float cr=cos(uRoll);float sr=sin(uRoll);',
+' vec2 uvr=vec2(cr*uv.x-sr*uv.y,sr*uv.x+cr*uv.y);',
+' vec3 rd=normalize(uvr.x*r+uvr.y*u+focal*f);',
+' vec3 ro=vec3(0.0,uCamH,0.0);',
+' float pixAng=2.0/(uRes.y*focal);',
+' vec3 col;',
+' if(rd.y>=0.0){col=sky(rd,1.0);}',
+' else{col=ocean(ro,rd,pixAng);}',
+' vec3 tt=max(col-0.8,vec3(0.0));',
+' col=min(col,vec3(0.8))+0.2*(1.0-exp(-tt/0.2));',
+' col=pow(col,vec3(1.0/2.2));',
+' col*=1.0-0.30*dot(uv*0.5,uv*0.5);',
+' col+=(hash21(gl_FragCoord.xy+fract(uTime)*97.0)-0.5)/255.0;',
+' gl_FragColor=vec4(col,1.0);',
+'}'
+  ].join('\n');
+
+  /* ------------------------------------------------------------
+     WebGL setup (guarded)
+     ------------------------------------------------------------ */
+  var gl = null, prog = null, U = {}, software = false, glOK = false;
+  function compile(type, src) {
+    var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn('Shader compile: ' + gl.getShaderInfoLog(s)); gl.deleteShader(s); return null; }
+    return s;
+  }
+  function initGL() {
+    try {
+      gl = canvas.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'high-performance' }) || canvas.getContext('experimental-webgl');
+    } catch (e) { gl = null; }
+    if (!gl) return false;
+    try {
+      var hp = gl.getShaderPrecisionFormat && gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+      var pre = (hp && hp.precision > 0) ? 'precision highp float;\n' : 'precision mediump float;\n';
+      var vs = compile(gl.VERTEX_SHADER, VS), fs = compile(gl.FRAGMENT_SHADER, pre + FS);
+      if (!vs || !fs) return false;
+      prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs);
+      gl.bindAttribLocation(prog, 0, 'p'); gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { console.warn('Program link: ' + gl.getProgramInfoLog(prog)); return false; }
+      gl.useProgram(prog);
+      var buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+      ['uRes', 'uTime', 'uAlt', 'uCam', 'uRoll', 'uCamH', 'uZen', 'uMid', 'uHor', 'uSunCol', 'uWater', 'uSunVis', 'uNight', 'uAmp', 'uHi', 'uSw'].forEach(function (n) { U[n] = gl.getUniformLocation(prog, n); });
+      try {
+        var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+        var rn = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : '';
+        software = /swiftshader|llvmpipe|software|softpipe/i.test(rn);
+      } catch (e2) { software = false; }
+      return true;
+    } catch (e) { console.warn('WebGL init failed: ' + e); return false; }
+  }
+  glOK = initGL();
+  if (!glOK) { root.classList.add('no-gl'); }
+  canvas.addEventListener('webglcontextlost', function (e) { e.preventDefault(); glOK = false; root.classList.add('no-gl'); }, false);
+
+  /* ------------------------------------------------------------
+     Sizing with an adaptive render scale
+     ------------------------------------------------------------ */
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var baseScale = software ? 0.5 : (dpr > 1 ? 0.75 : 1);   // brief: 0.75 when DPR > 1
+  var scale = baseScale, minScale = software ? 0.34 : 0.4;
+  var forced = parseFloat((/[?&]scale=([\d.]+)/.exec(window.location.search) || [])[1]);
+  if (forced > 0.1 && forced <= 2) { baseScale = scale = minScale = forced; }
+  var cw = 0, ch = 0;
+  function resize() {
+    var r = scene.getBoundingClientRect();
+    var w = Math.max(2, Math.floor(r.width * dpr * scale)), h = Math.max(2, Math.floor(r.height * dpr * scale));
+    if (w !== cw || h !== ch) { cw = w; ch = h; canvas.width = w; canvas.height = h; if (gl && glOK) gl.viewport(0, 0, w, h); }
+  }
+  if (window.ResizeObserver) { new ResizeObserver(resize).observe(scene); } else { window.addEventListener('resize', resize); }
+  resize();
+
+  /* ------------------------------------------------------------
+     State: time of day, camera, swells
+     ------------------------------------------------------------ */
+  var slider = $('#sun'), driftBtn = $('#drift'), swellBtn = $('#swellBtn');
+  var ALT_HI = 22, ALT_LO = -26;
+  function vToAlt(v) { return ALT_HI - (ALT_HI - ALT_LO) * (v / 1000); }
+  function altToV(a) { return Math.round((ALT_HI - a) / (ALT_HI - ALT_LO) * 1000); }
+  var alt = 5.5, auto = true, driftPh = Math.asin((5.5 - 5) / 7), tsim = 0;
+  var target = alt;
+  var cam = { yaw: 0, pitch: -0.028, ty: 0, tp: -0.028 };
+  var ptr = { x: 0.5, y: 0.5, on: false, last: -1e9 };
+  var SW = [{ t0: -99, amp: 0, x0: 0 }, { t0: -99, amp: 0, x0: 0 }, { t0: -99, amp: 0, x0: 0 }];
+  var swArr = new Float32Array(12);
+
+  slider.value = String(altToV(alt));
+  slider.addEventListener('input', function () {
+    auto = false; setDrift(false);
+    target = vToAlt(+slider.value);
+  });
+  function setDrift(on) {
+    auto = on; driftBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    if (on) { driftPh = Math.asin(clamp((alt - 5) / 7, -1, 1)); }
+  }
+  driftBtn.addEventListener('click', function () { setDrift(!auto); });
+
+  function sendSwell(nx) {
+    if (!glOK) {
+      var band = doc.createElement('div'); band.className = 'fb-swell';
+      band.addEventListener('animationend', function () { if (band.parentNode) band.parentNode.removeChild(band); });
+      $('#fbSea').appendChild(band);
+    }
+    var k = 0, oldest = 1e9;
+    for (var i = 0; i < 3; i++) { if (tsim - SW[i].t0 > 15) { k = i; oldest = -1; break; } if (SW[i].t0 < oldest) { oldest = SW[i].t0; k = i; } }
+    SW[k].t0 = tsim; SW[k].amp = 1.9 + Math.random() * 0.4; SW[k].x0 = (nx - 0.5) * 30;
+  }
+  var ringEl = $('#ring');
+  function ripple(x, y) {
+    ringEl.style.left = x + 'px'; ringEl.style.top = y + 'px';
+    ringEl.classList.remove('go'); void ringEl.offsetWidth; ringEl.classList.add('go');
+  }
+  canvas.addEventListener('pointerdown', function (e) {
+    var r = scene.getBoundingClientRect();
+    sendSwell((e.clientX - r.left) / r.width);
+    ripple(e.clientX - r.left, e.clientY - r.top);
+  });
+  swellBtn.addEventListener('click', function () { sendSwell(0.5 + (Math.random() - 0.5) * 0.4); var r = scene.getBoundingClientRect(); ripple(r.width * 0.5, r.height * 0.78); });
+  window.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target && e.target.tagName;
+    if ((e.key === 's' || e.key === 'S') && t !== 'INPUT' && t !== 'TEXTAREA') { sendSwell(0.5 + (Math.random() - 0.5) * 0.4); var r = scene.getBoundingClientRect(); ripple(r.width * 0.5, r.height * 0.78); }
+  });
+  window.addEventListener('pointermove', function (e) {
+    var r = scene.getBoundingClientRect();
+    ptr.x = clamp((e.clientX - r.left) / r.width, 0, 1); ptr.y = clamp((e.clientY - r.top) / r.height, 0, 1);
+    ptr.last = performance.now();
+  }, { passive: true });
+
+  /* ------------------------------------------------------------
+     UI text + CSS variables
+     ------------------------------------------------------------ */
+  var elClock = $('#clock'), elAlt = $('#altTxt'), elPhase = $('#phase'), elWind = $('#wind'), elSwell = $('#swell');
+  function phaseName(a) {
+    if (a > 14) return 'Golden light';
+    if (a > 6) return 'Golden hour';
+    if (a > 0.5) return 'Low sun';
+    if (a > -3) return 'Sunset';
+    if (a > -8) return 'Afterglow';
+    if (a > -14) return 'Blue hour';
+    if (a > -21) return 'Dusk';
+    return 'Moonlit night';
+  }
+  function fmtClock(a) {
+    var m = Math.round(19 * 60 + 12 - a * 4.3); m = (m + 1440) % 1440;
+    return ('0' + Math.floor(m / 60)).slice(-2) + ':' + ('0' + (m % 60)).slice(-2);
+  }
+  var uiT = -1e9, lastPhase = '', lastVT = '';
+  function updateUI(now) {
+    if (now - uiT < 220) return; uiT = now;
+    elClock.textContent = fmtClock(alt);
+    elAlt.textContent = (alt >= 0 ? '+' : '−') + Math.abs(alt).toFixed(1) + '°';
+    var ph = phaseName(alt);
+    if (ph !== lastPhase) { elPhase.textContent = ph; lastPhase = ph; }
+    var vt = ph + ', sun ' + Math.abs(Math.round(alt)) + ' degrees ' + (alt >= 0 ? 'above' : 'below') + ' the horizon';
+    if (vt !== lastVT) { slider.setAttribute('aria-valuetext', vt); lastVT = vt; }
+    var w = 11 + Math.round(Math.sin(now * 0.0003) * 1.4);
+    elWind.textContent = String(w);
+    var s = 1.8;
+    for (var i = 0; i < 3; i++) { var age = tsim - SW[i].t0; if (age > 0 && age < 16) s += SW[i].amp * Math.exp(-age * 0.1) * sstep(0, 0.8, age) * 0.55; }
+    elSwell.textContent = s.toFixed(1);
+    var st = root.style;
+    st.setProperty('--zen', css(pal.zen)); st.setProperty('--mid', css(pal.mid)); st.setProperty('--hor', css(pal.hor)); st.setProperty('--sun', css(pal.sun)); st.setProperty('--wat', css(pal.wat));
+    var night = sstep(-4, -16, alt);
+    st.setProperty('--thumbA', night > 0.5 ? '#f4f6ff' : '#fffaf0');
+    st.setProperty('--thumbB', night > 0.5 ? '#9db4f0' : '#ffc27a');
+    st.setProperty('--sunY', (alt * 1.4).toFixed(1) + '%');
+    st.setProperty('--night', night.toFixed(2));
+    st.setProperty('--sunvis', sstep(-9, -1.5, alt).toFixed(2));
+  }
+
+  /* ------------------------------------------------------------
+     Frame loop
+     ------------------------------------------------------------ */
+  var last = 0, raf = 0, ema = 16, slow = 0, fast = 0, running = false;
+  var swU = swArr;
+  function draw(now, dt) {
+    /* time of day */
+    if (auto) {
+      driftPh += dt * (RM ? 0.012 : 0.026);
+      target = 5 + 7 * Math.sin(driftPh);
+      slider.value = String(altToV(alt));
+    }
+    alt += (target - alt) * (1 - Math.exp(-dt * (auto ? 3.0 : 2.2)));
+    palette(alt);
+    var sunVis = sstep(-9, -1.5, alt), night = sstep(-4, -16, alt);
+    /* camera */
+    var idle = (now - ptr.last) > 4000;
+    var tyaw = idle ? Math.sin(now * 0.00011) * 0.03 : (ptr.x - 0.5) * 0.2;
+    var tpit = -0.028 + (idle ? Math.sin(now * 0.00009 + 1) * 0.006 : (0.5 - ptr.y) * 0.07);
+    if (RM) { tyaw *= 0.3; tpit = -0.028; }
+    var k = 1 - Math.exp(-dt * 2.4);
+    cam.yaw += (tyaw - cam.yaw) * k; cam.pitch += (tpit - cam.pitch) * k;
+    var bob = RM ? 0 : (0.10 * Math.sin(tsim * 0.83) + 0.05 * Math.sin(tsim * 1.71 + 1.0));
+    var roll = RM ? 0 : 0.006 * Math.sin(tsim * 0.57);
+    ui.style.setProperty('--px', ((ptr.x - 0.5) * 2).toFixed(3)); ui.style.setProperty('--py', ((ptr.y - 0.5) * 2).toFixed(3));
+    for (var i = 0; i < 3; i++) {
+      var age = tsim - SW[i].t0; var on = age >= 0 && age < 15;
+      swU[i * 4] = on ? age : -1; swU[i * 4 + 1] = SW[i].amp; swU[i * 4 + 2] = SW[i].x0; swU[i * 4 + 3] = 0;
+    }
+    if (!glOK) return;
+    gl.uniform2f(U.uRes, cw, ch);
+    gl.uniform1f(U.uTime, tsim);
+    gl.uniform1f(U.uAlt, alt * Math.PI / 180);
+    gl.uniform2f(U.uCam, cam.yaw, cam.pitch + bob * 0.004);
+    gl.uniform1f(U.uRoll, roll);
+    gl.uniform1f(U.uCamH, 2.6 + bob);
+    setLin(U.uZen, pal.zen); setLin(U.uMid, pal.mid); setLin(U.uHor, pal.hor); setLin(U.uSunCol, pal.sun); setLin(U.uWater, pal.wat);
+    gl.uniform1f(U.uSunVis, sunVis);
+    gl.uniform1f(U.uNight, night);
+    var hi = 2.2; for (var q = 0; q < 3; q++) { var ag = tsim - SW[q].t0; if (ag > 0 && ag < 15) hi += SW[q].amp * Math.exp(-ag * 0.085); }
+    gl.uniform1f(U.uAmp, 1.0);
+    gl.uniform1f(U.uHi, hi);
+    gl.uniform4fv(U.uSw, swU);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  function frame(now) {
+    raf = 0;
+    if (doc.hidden) { running = false; return; }
+    raf = requestAnimationFrame(frame);
+    var dt = Math.min(0.05, (now - last) / 1000 || 0.016), raw = now - last; last = now;
+    tsim += dt * (RM ? 0.4 : 1);
+    draw(now, dt);
+    updateUI(now);
+    /* adaptive resolution */
+    ema = ema * 0.9 + raw * 0.1;
+    if (raw > (software ? 400 : 38)) { slow++; fast = 0; } else if (raw < 20) { fast++; slow = 0; } else { slow = 0; fast = 0; }
+    if (slow >= (software ? 2 : 12) && scale > minScale + 0.01) { scale = Math.max(minScale, scale * 0.84); slow = 0; resize(); }
+    else if (fast >= 150 && scale < baseScale - 0.01) { scale = Math.min(baseScale, scale * 1.12); fast = 0; resize(); }
+  }
+  function start() { if (!raf && !doc.hidden) { last = performance.now(); raf = requestAnimationFrame(frame); running = true; } }
+  doc.addEventListener('visibilitychange', function () { if (!doc.hidden) start(); });
+  window.__swell = { get scale() { return scale; }, get software() { return software; }, jump: function (s) { tsim += s; } };
+
+  /* ------------------------------------------------------------
+     Opt-in sea sound: looped brown noise, slow swash LFOs (starts on click only)
+     ------------------------------------------------------------ */
+  var soundBtn = $('#soundBtn'), au = null;
+  function buildAudio() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    var ctx = new AC(), n = ctx.sampleRate * 4, buf = ctx.createBuffer(2, n, ctx.sampleRate);
+    for (var c = 0; c < 2; c++) { var d = buf.getChannelData(c), last = 0; for (var i = 0; i < n; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.2; } }
+    var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 650; lp.Q.value = 0.5;
+    var swash = ctx.createGain(); swash.gain.value = 0.55;
+    var master = ctx.createGain(); master.gain.value = 0;
+    var l1 = ctx.createOscillator(); l1.frequency.value = 0.09; var d1 = ctx.createGain(); d1.gain.value = 320; l1.connect(d1); d1.connect(lp.frequency);
+    var l2 = ctx.createOscillator(); l2.frequency.value = 0.13; var d2 = ctx.createGain(); d2.gain.value = 0.35; l2.connect(d2); d2.connect(swash.gain);
+    src.connect(lp); lp.connect(swash); swash.connect(master); master.connect(ctx.destination);
+    src.start(); l1.start(); l2.start();
+    return { ctx: ctx, master: master, lp: lp };
+  }
+  soundBtn.addEventListener('click', function () {
+    try {
+      if (!au) au = buildAudio();
+      if (!au) return;
+      var on = soundBtn.getAttribute('aria-pressed') !== 'true';
+      soundBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (au.ctx.state === 'suspended') au.ctx.resume();
+      au.master.gain.setTargetAtTime(on ? 0.16 : 0, au.ctx.currentTime, 0.6);
+    } catch (e) { /* audio unavailable */ }
+  });
+  swellBtn.addEventListener('click', function () { try { if (au && soundBtn.getAttribute('aria-pressed') === 'true') { var t = au.ctx.currentTime; au.master.gain.setTargetAtTime(0.24, t, 0.15); au.master.gain.setTargetAtTime(0.16, t + 1.2, 0.9); } } catch (e) { } });
+  canvas.addEventListener('pointerdown', function () { try { if (au && soundBtn.getAttribute('aria-pressed') === 'true') { var t = au.ctx.currentTime; au.master.gain.setTargetAtTime(0.24, t, 0.15); au.master.gain.setTargetAtTime(0.16, t + 1.2, 0.9); } } catch (e) { } });
+
+  // first frame immediately so there is never a blank canvas
+  palette(alt); draw(performance.now(), 0.016); updateUI(performance.now());
+  start();
+})();
+</script>
+</body>
+</html>

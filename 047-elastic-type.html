@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#efe9dd">
+<meta name="description" content="Elastic Words — a poem about motion and stillness in which every letter is a spring. Push, pull, swirl, shock and swallow the type.">
+<title>Elastic Words — a poem on springs</title>
+<style>
+:root{
+  --bone:#efe9dd; --ink:#141210; --red:#e63b2e; --mute:rgba(20,18,16,.58); --hair:rgba(20,18,16,.16);
+  --heavy:"Arial Black",Impact,"Helvetica Neue","Nimbus Sans","Liberation Sans",Arial,sans-serif;
+  --didone:"Bodoni 72","Bodoni MT",Didot,"Didot LT STD","Playfair Display","Times New Roman","Nimbus Roman",serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --gut:clamp(16px,3vw,44px);
+}
+*,*::before,*::after{box-sizing:border-box}
+*{margin:0}
+html,body{height:100%}
+html{background:var(--bone)}
+body{background:var(--bone);color:var(--ink);font-family:var(--mono);overflow:hidden;-webkit-font-smoothing:antialiased}
+.sr-only{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--red);outline-offset:3px;border-radius:4px}
+
+.stage{position:fixed;inset:0;height:100vh;height:100dvh}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:none}
+.grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.5}
+.vign{position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 100% at 50% 45%,transparent 60%,rgba(80,60,30,.13))}
+
+.bar{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 var(--gut);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;z-index:3}
+.top{top:0;height:46px;pointer-events:none}
+.top b{font-weight:700;letter-spacing:.3em}
+.top span{color:var(--mute)}
+.bottom{bottom:0;min-height:64px;padding-top:10px;padding-bottom:12px;background:linear-gradient(0deg,var(--bone) 62%,rgba(239,233,221,0));flex-wrap:wrap;row-gap:10px}
+.ctl{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.lbl{color:var(--mute);font-size:.6rem}
+.seg{position:relative;display:inline-flex;border:1px solid var(--ink);border-radius:999px;padding:3px}
+.seg button{position:relative;z-index:1;min-height:32px;padding:0 14px;border:0;background:transparent;border-radius:999px;cursor:pointer;font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;transition:color .3s}
+.seg button[aria-pressed="true"]{color:var(--bone)}
+.seg .pill{position:absolute;z-index:0;top:3px;bottom:3px;left:3px;width:60px;border-radius:999px;background:var(--ink);transition:transform .45s var(--ease),width .45s var(--ease)}
+.stiff{display:flex;align-items:center;gap:12px}
+.stiff output{min-width:2.4em;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:clamp(110px,16vw,190px);height:28px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--ink)}
+input[type=range]::-moz-range-track{height:2px;background:var(--ink)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-8px;border-radius:50%;background:var(--red);border:2px solid var(--bone);box-shadow:0 0 0 1px var(--ink)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--red);border:2px solid var(--bone);box-shadow:0 0 0 1px var(--ink)}
+.hint{color:var(--mute);font-size:.6rem;letter-spacing:.16em;text-align:right;line-height:1.7}
+.hint b{color:var(--ink);font-weight:600}
+.reset{min-height:32px;padding:0 12px;border:1px solid var(--hair);border-radius:999px;background:transparent;cursor:pointer;font-size:.6rem;letter-spacing:.16em;text-transform:uppercase}
+.reset:hover{border-color:var(--ink)}
+.mark{position:absolute;width:14px;height:14px;pointer-events:none;z-index:2;border:0 solid var(--ink);opacity:.5}
+.mark.tl{left:var(--gut);top:50px;border-width:1px 0 0 1px}
+.mark.tr{right:var(--gut);top:50px;border-width:1px 1px 0 0}
+@media (max-width:720px){
+  .top span{display:none}
+  .hint{display:none}
+  .bottom{justify-content:center}
+  .seg button{padding:0 11px;letter-spacing:.12em}
+}
+@media (prefers-reduced-motion:reduce){.seg .pill{transition:none}}
+</style>
+</head>
+<body>
+<main class="stage" id="stage">
+  <canvas id="c" aria-hidden="true"></canvas>
+  <svg class="grain" width="100%" height="100%" aria-hidden="true" focusable="false"><filter id="gr" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7" result="n"/><feColorMatrix type="matrix" values="0 0 0 0 .55  0 0 0 0 .5  0 0 0 0 .42  0 0 0 .16 0"/></filter><rect width="100%" height="100%" filter="url(#gr)"/></svg>
+  <div class="vign" aria-hidden="true"></div>
+  <span class="mark tl" aria-hidden="true"></span><span class="mark tr" aria-hidden="true"></span>
+
+  <header class="top bar"><b>Elastic Words</b><span>a poem that pushes back · Nº 47</span></header>
+
+  <article class="sr-only" aria-label="The poem">
+    <h1>Elastic Words</h1>
+    <p>Still water<br>is only a held note.<br>Touch it,<br>and the whole pond<br>remembers<br>it was always a bell.<br>Every leaving<br>is only a loan.<br>Every rest<br>is a spring, coiled small.<br>Go far.<br>Come back ringing.</p>
+  </article>
+
+  <footer class="bottom bar">
+    <div class="ctl">
+      <span class="lbl" id="fieldLbl">Field</span>
+      <div class="seg" role="group" aria-labelledby="fieldLbl" id="seg">
+        <span class="pill" aria-hidden="true" id="pill"></span>
+        <button type="button" data-m="0" aria-pressed="true">Repel</button>
+        <button type="button" data-m="1" aria-pressed="false">Attract</button>
+        <button type="button" data-m="2" aria-pressed="false">Swirl</button>
+      </div>
+      <div class="stiff"><label class="lbl" for="stiff">Stiffness</label><input type="range" id="stiff" min="0" max="100" value="46"><output id="stiffOut" for="stiff">46</output></div>
+      <button type="button" class="reset" id="reset">Breathe</button>
+    </div>
+    <p class="hint">Click <b>shockwave</b> · hold <b>black hole</b> · type any <b>letter</b> to drop it</p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var doc = document;
+  var mq = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  var RM = !!(mq && mq.matches);
+  function $(s) { return doc.querySelector(s); }
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+  var POEM = ['Still water', 'is only a held note.', 'Touch it,', 'and the whole pond', 'remembers', 'it was always a bell.', 'Every leaving', 'is only a loan.', 'Every rest', 'is a spring, coiled small.', 'Go far.', 'Come back ringing.'];
+  var HEAVY = '"Arial Black",Impact,"Helvetica Neue","Nimbus Sans","Liberation Sans",Arial,sans-serif';
+  var DIDONE = '"Bodoni 72","Bodoni MT",Didot,"Didot LT STD","Playfair Display","Times New Roman","Nimbus Roman",serif';
+
+  var canvas = $('#c'), ctx = canvas.getContext('2d');
+  var trail = doc.createElement('canvas'), tctx = trail.getContext('2d');
+  var W = 0, H = 0, dpr = 1;
+  var topH = 46, botH = 70;
+
+  /* ---------------- state ---------------- */
+  var letters = [];               // {ch, style, size, hx, hy, x, y, vx, vy, rot, vr, sc, adv, kv, delay, born}
+  var rows = [];
+  var mode = 0, K = 150, C = 3.4;
+  var ptr = { x: -999, y: -999, sx: -999, sy: -999, down: false, inside: false, touch: false, t0: 0 };
+  var waves = [], bh = { on: false, x: 0, y: 0, charge: 0, r: 0 };
+  var bodies = [];
+  var idleT = 0, lastMove = -1e9, lastT = 0, moving = false;
+  var COLS = [];
+  for (var i = 0; i <= 32; i++) { var f = i / 32; COLS.push('rgb(' + Math.round(20 + (230 - 20) * f) + ',' + Math.round(18 + (59 - 18) * f) + ',' + Math.round(16 + (46 - 16) * f) + ')'); }
+
+  function setStiff(v) { K = 55 + 480 * Math.pow(v / 100, 1.7); C = 2 * 0.15 * Math.sqrt(K); }
+  setStiff(46);
+
+  /* ---------------- layout ---------------- */
+  function fontFor(style, px) { return style ? ('italic 400 ' + px + 'px ' + DIDONE) : ('900 ' + px + 'px ' + HEAVY); }
+  function wordW(txt, style) { ctx.font = fontFor(style, 100); return ctx.measureText(txt).width / 100; }
+
+  function buildRows(maxEm, from, to) {
+    var out = [];
+    POEM.forEach(function (line, li) {
+      if (li < from || li >= to) return;
+      var style = li % 2;          // 0 heavy caps, 1 didone italic
+      var txt = style ? line : line.toUpperCase();
+      var words = txt.split(' '), cur = '';
+      words.forEach(function (w) {
+        var t = cur ? cur + ' ' + w : w;
+        if (cur && wordW(t, style) > maxEm) { out.push({ text: cur, style: style, line: li }); cur = w; } else cur = t;
+      });
+      if (cur) out.push({ text: cur, style: style, line: li });
+    });
+    return out;
+  }
+
+  function evaluate(maxEm, Wc, Hc, from, to) {
+    var rs = buildRows(maxEm, from, to), S = 0, fs = [], chars = 0, wsum = 0;
+    rs.forEach(function (r) {
+      var w = wordW(r.text, r.style), f = Wc / w; r.w = w; fs.push(f); S += f * (r.style ? 0.98 : 0.88);
+    });
+    // cap the biggest rows so they do not swamp the block
+    var sorted = fs.slice().sort(function (a, b) { return a - b; }), med = sorted[sorted.length >> 1];
+    S = 0;
+    rs.forEach(function (r, i) { r.f = Math.min(fs[i], med * 1.55); S += r.f * (r.style ? 0.98 : 0.88); });
+    var k = Math.min(1, Hc / S);
+    rs.forEach(function (r) { r.f *= k; chars += r.text.length; wsum += r.f * r.text.length; });
+    return { rows: rs, score: wsum / chars, S: S * k };
+  }
+
+  function layout() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    var compact = W < 720;
+    topH = 46; botH = compact ? 92 : 70;
+    var mx = Math.max(16, W * 0.035), Wt = W - mx * 2, Hc = H - topH - botH - 14;
+    var cols = (W / H > 1.15) ? 2 : 1, gap = cols === 2 ? W * 0.05 : 0, Wc = (Wt - gap) / cols;
+    var first = letters.length === 0, li = 0;
+    for (var col = 0; col < cols; col++) {
+      var from = cols === 2 ? col * 6 : 0, to = cols === 2 ? from + 6 : POEM.length;
+      var best = null;
+      for (var m = 5; m <= 34; m += 1) {
+        var e = evaluate(m, Wc, Hc, from, to);
+        if (!best || e.score > best.score * 1.015) best = e;
+      }
+      var colX = mx + col * (Wc + gap);
+      var y = topH + 8 + Math.max(0, (Hc - best.S) / 2);
+      best.rows.forEach(function (r) {
+        var f = r.f, lh = f * (r.style ? 0.98 : 0.88);
+        ctx.font = fontFor(r.style, f);
+        var tw = ctx.measureText(r.text).width, x0 = colX + (Wc - tw) / 2, base = y + lh * (r.style ? 0.78 : 0.86);
+        for (var i = 0; i < r.text.length; i++) {
+          var ch = r.text.charAt(i);
+          if (ch === ' ') continue;
+          var pre = ctx.measureText(r.text.slice(0, i)).width, adv = ctx.measureText(ch).width;
+          var hx = x0 + pre + adv / 2, hy = base;
+          var L = letters[li];
+          if (!L) {
+            L = { ch: ch, x: hx, y: hy, vx: 0, vy: 0, rot: 0, vr: 0, sc: 1, kv: 0.9 + Math.random() * 0.22, delay: 0, born: 0 };
+            letters.push(L);
+            if (first && !RM) { L.x = hx + (Math.random() - 0.5) * W * 0.4; L.y = -Math.random() * H * 0.6 - 80; L.rot = (Math.random() - 0.5) * 3; L.born = 1; L.delay = 0.15 + li * 0.012 + r.line * 0.08; }
+          } else { L.x += hx - L.hx; L.y += hy - L.hy; }
+          L.ch = ch; L.style = r.style; L.size = f; L.hx = hx; L.hy = hy; L.adv = adv; L.rad = f * (r.style ? 0.3 : 0.36);
+          li++;
+        }
+        y += lh;
+      });
+    }
+    letters.length = li;
+    trail.width = canvas.width; trail.height = canvas.height;
+  }
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    layout();
+  }
+  var rzT = 0;
+  window.addEventListener('resize', function () { clearTimeout(rzT); rzT = setTimeout(resize, 90); });
+
+  /* ---------------- input ---------------- */
+  function pos(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  canvas.addEventListener('pointermove', function (e) {
+    var p = pos(e); ptr.x = p.x; ptr.y = p.y; ptr.inside = true; ptr.touch = e.pointerType === 'touch'; lastMove = performance.now();
+    if (ptr.down) { var dx = p.x - ptr.dx, dy = p.y - ptr.dy; if (dx * dx + dy * dy > 900 && !bh.on) { ptr.moved = true; } if (bh.on) { bh.x = p.x; bh.y = p.y; } }
+  });
+  canvas.addEventListener('pointerleave', function () { if (!ptr.down) { ptr.inside = false; } });
+  canvas.addEventListener('pointerdown', function (e) {
+    var p = pos(e); ptr.x = p.x; ptr.y = p.y; ptr.dx = p.x; ptr.dy = p.y; ptr.down = true; ptr.moved = false; ptr.inside = true; ptr.touch = e.pointerType === 'touch'; ptr.t0 = performance.now();
+    try { canvas.setPointerCapture(e.pointerId); } catch (er) { }
+  });
+  function release() {
+    if (!ptr.down) return;
+    ptr.down = false;
+    var held = (performance.now() - ptr.t0) / 1000;
+    if (bh.on) {
+      var ch = bh.charge;
+      for (var i = 0; i < letters.length; i++) {
+        var L = letters[i], dx = L.x - bh.x, dy = L.y - bh.y, d = Math.sqrt(dx * dx + dy * dy) + 1, R = 520 + 240 * ch;
+        if (d < R) { var f = (1 - d / R); f = 0.35 + f * 0.65; var s = (900 + 1500 * ch) * f; L.vx += dx / d * s; L.vy += dy / d * s; L.vr += (Math.random() - 0.5) * 24 * f; }
+      }
+      waves.push({ x: bh.x, y: bh.y, t: 0, amp: 1.2 + ch, blow: true });
+      bh.on = false;
+    } else if (held < 0.24) {
+      waves.push({ x: ptr.x, y: ptr.y, t: 0, amp: 1, blow: false });
+    }
+    if (ptr.touch) ptr.inside = false;
+  }
+  window.addEventListener('pointerup', release);
+  window.addEventListener('pointercancel', release);
+  window.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target && e.target.tagName;
+    if (t === 'INPUT' && e.key.length === 1) { return; }
+    if (e.key.length === 1 && /\S/.test(e.key) && !e.repeat) { spawn(e.key); }
+    else if (e.key === ' ' && t !== 'BUTTON') { e.preventDefault(); breathe(); }
+  });
+  function spawn(ch) {
+    if (bodies.length > 26) bodies.shift();
+    var size = clamp(Math.min(W, H) * 0.16, 64, 150) * (0.8 + Math.random() * 0.35), style = Math.random() < 0.5 ? 0 : 1;
+    ctx.font = fontFor(style, size);
+    var up = style ? ch : ch.toUpperCase();
+    bodies.push({ ch: up, style: style, size: size, x: W * (0.12 + Math.random() * 0.76), y: -size, vx: (Math.random() - 0.5) * 240, vy: 60, rot: (Math.random() - 0.5) * 1.2, vr: (Math.random() - 0.5) * 6, r: size * 0.34, m: (size / 90) * (size / 90) * 3, life: 16 });
+  }
+  function breathe() { waves.push({ x: W / 2, y: H / 2, t: 0, amp: 0.8, blow: false }); }
+  $('#reset').addEventListener('click', breathe);
+
+  var seg = $('#seg'), pill = $('#pill'), sbtn = seg.querySelectorAll('button');
+  function place() { var b = sbtn[mode]; pill.style.width = b.offsetWidth + 'px'; pill.style.transform = 'translateX(' + (b.offsetLeft - 3) + 'px)'; }
+  Array.prototype.forEach.call(sbtn, function (b) {
+    b.addEventListener('click', function () { mode = +b.getAttribute('data-m'); Array.prototype.forEach.call(sbtn, function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); }); place(); });
+  });
+  var st = $('#stiff'), so = $('#stiffOut');
+  st.addEventListener('input', function () { so.textContent = st.value; setStiff(+st.value); });
+
+  /* ---------------- physics ---------------- */
+  var FIELD_R = 160;
+  function step(dt, now) {
+    var R = ptr.touch ? 180 : FIELD_R, R2 = R * R;
+    var fieldOn = ptr.inside && (!ptr.touch || ptr.down) && !bh.on;
+    var rm = RM ? 0.6 : 1;
+    // black hole charge
+    if (ptr.down && !bh.on && !ptr.moved && (now - ptr.t0) > 230) { bh.on = true; bh.x = ptr.x; bh.y = ptr.y; bh.charge = 0; }
+    if (bh.on) bh.charge = Math.min(1, bh.charge + dt / 2.2);
+    for (var w = waves.length - 1; w >= 0; w--) { waves[w].t += dt; if (waves[w].t > 1.7) waves.splice(w, 1); }
+    var breath = RM ? 0 : 1;
+    for (var i = 0; i < letters.length; i++) {
+      var L = letters[i];
+      if (L.born) { L.delay -= dt; if (L.delay > 0) continue; L.born = 0; }
+      var k = K * L.kv, c = C * (0.9 + (L.kv - 0.9));
+      var dxh = L.x - L.hx, dyh = L.y - L.hy;
+      var ax, ay, dx, dy, d2, d, f, nx, ny;
+      var bhInf = 0;
+      if (bh.on) { dx = bh.x - L.x; dy = bh.y - L.y; d = Math.sqrt(dx * dx + dy * dy) + 1; var Rb = 420 + 200 * bh.charge; if (d < Rb) bhInf = 1 - d / Rb; }
+      var kk = k * (1 - 0.94 * bhInf * bhInf * (0.4 + 0.6 * bh.charge));
+      ax = -kk * dxh - c * L.vx; ay = -kk * dyh - c * L.vy;
+      // breathing
+      ax += Math.sin(now * 0.0011 + L.hx * 0.01) * 14 * breath; ay += Math.cos(now * 0.0009 + L.hy * 0.012 + L.hx * 0.006) * 14 * breath;
+      if (fieldOn) {
+        dx = L.x - ptr.x; dy = L.y - ptr.y; d2 = dx * dx + dy * dy;
+        if (d2 < R2) {
+          d = Math.sqrt(d2) + 0.001; f = 1 - d / R; f = f * f; nx = dx / d; ny = dy / d;
+          var A = k * 1.0 * 150 * rm;
+          if (mode === 0) { ax += nx * f * A; ay += ny * f * A; }
+          else if (mode === 1) { var s = f * A * 0.85; ax -= nx * s; ay -= ny * s; if (d < 46) { ax += nx * A * 0.4 * (1 - d / 46); ay += ny * A * 0.4 * (1 - d / 46); } }
+          else { ax += (-ny * 0.95 + nx * 0.15) * f * A; ay += (nx * 0.95 + ny * 0.15) * f * A; }
+        }
+      }
+      if (bh.on) {
+        dx = bh.x - L.x; dy = bh.y - L.y; d = Math.sqrt(dx * dx + dy * dy) + 1;
+        var g = (2600 + 5200 * bh.charge) * (1 / (1 + d / 90));
+        ax += dx / d * g + (-dy / d) * g * 0.35; ay += dy / d * g + (dx / d) * g * 0.35;
+        if (d < 60) { L.vx *= 0.96; L.vy *= 0.96; }
+      }
+      for (var w2 = 0; w2 < waves.length; w2++) {
+        var wv = waves[w2]; dx = L.x - wv.x; dy = L.y - wv.y; d = Math.sqrt(dx * dx + dy * dy) + 1;
+        var rr = 40 + wv.t * 1250, band = (d - rr) / 95; if (band > 3 || band < -3) continue;
+        var e = Math.exp(-band * band) * Math.exp(-wv.t * 1.9) * wv.amp * rm;
+        ax += dx / d * e * 9000; ay += dy / d * e * 9000;
+      }
+      L.vx += ax * dt; L.vy += ay * dt; L.x += L.vx * dt; L.y += L.vy * dt;
+      var tgt = clamp(L.vx * 0.0016 - L.vy * 0.0005, -0.7, 0.7) * (1 + (L.kv - 0.9) * 2);
+      var ar = -95 * (L.rot - tgt) - 7 * L.vr;
+      L.vr += ar * dt; L.rot += L.vr * dt;
+      var target = 1; if (bhInf > 0) { var dd = Math.sqrt((bh.x - L.x) * (bh.x - L.x) + (bh.y - L.y) * (bh.y - L.y)); target = clamp(dd / 130, 0.12, 1); if (dd < 60) L.vr += 40 * dt; }
+      L.sc += (target - L.sc) * Math.min(1, dt * 12);
+    }
+    // falling glyph bodies
+    var floorY = H - botH + 6, grav = 1900 * Math.max(0.6, H / 900);
+    for (var b = bodies.length - 1; b >= 0; b--) {
+      var B = bodies[b]; B.life -= dt; if (B.life <= 0) { bodies.splice(b, 1); continue; }
+      B.vy += grav * dt; B.vx *= 0.9995; B.x += B.vx * dt; B.y += B.vy * dt; B.rot += B.vr * dt;
+      if (B.x < B.r) { B.x = B.r; B.vx = Math.abs(B.vx) * 0.6; } else if (B.x > W - B.r) { B.x = W - B.r; B.vx = -Math.abs(B.vx) * 0.6; }
+      if (B.y > floorY - B.r) { B.y = floorY - B.r; if (B.vy > 0) B.vy = -B.vy * 0.5; B.vx *= 0.985; B.vr *= 0.97; if (Math.abs(B.vy) < 40) B.vy = 0; }
+      for (var j = 0; j < letters.length; j++) {
+        var Lj = letters[j]; if (Lj.born && Lj.delay > 0) continue;
+        dx = Lj.x - B.x; dy = Lj.y - B.y; d = Math.sqrt(dx * dx + dy * dy);
+        var md = B.r + Lj.rad;
+        if (d < md && d > 0.01) {
+          nx = dx / d; ny = dy / d; var ov = md - d, mL = (Lj.size / 90) * (Lj.size / 90) * 1.0, wB = mL / (B.m + mL), wL = 1 - wB;
+          B.x -= nx * ov * wB; B.y -= ny * ov * wB; Lj.x += nx * ov * wL; Lj.y += ny * ov * wL;
+          var rvx = Lj.vx - B.vx, rvy = Lj.vy - B.vy, vn = rvx * nx + rvy * ny;
+          if (vn < 0) { var jn = -(1.5) * vn / (1 / B.m + 1 / mL); B.vx -= jn * nx / B.m; B.vy -= jn * ny / B.m; Lj.vx += jn * nx / mL; Lj.vy += jn * ny / mL; B.vr += (rvx * -ny + rvy * nx) * 0.02; }
+        }
+      }
+    }
+  }
+
+  /* ---------------- drawing ---------------- */
+  function drawGlyph(g, ch, style, size, x, y, rot, sc, vx, vy, m) {
+    var sp = Math.sqrt(vx * vx + vy * vy), s = clamp(sp * 0.00075, 0, 0.42), ang = Math.atan2(vy, vx);
+    g.save(); g.translate(x, y);
+    if (s > 0.01) { g.rotate(ang); g.scale(1 + s, 1 / (1 + s * 0.55)); g.rotate(-ang); }
+    g.rotate(rot); if (sc !== 1) g.scale(sc, sc);
+    g.font = fontFor(style, size); g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    var cap = size * (style ? 0.24 : 0.36);
+    if (!style) { g.lineWidth = size * 0.022; g.lineJoin = 'round'; g.strokeText(ch, 0, cap); }
+    g.fillText(ch, 0, cap);
+    g.restore();
+  }
+  function draw(now) {
+    var cx = ctx;
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cx.clearRect(0, 0, W, H);
+    // trail layer (soft motion blur)
+    tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    tctx.globalCompositeOperation = 'destination-out'; tctx.fillStyle = 'rgba(0,0,0,0.2)'; tctx.fillRect(0, 0, W, H);
+    tctx.globalCompositeOperation = 'source-over';
+    moving = false;
+    var i, L, sp, m, col;
+    for (i = 0; i < letters.length; i++) {
+      L = letters[i]; if (L.born && L.delay > 0) continue;
+      sp = Math.sqrt(L.vx * L.vx + L.vy * L.vy);
+      if (sp > 70) {
+        moving = true; tctx.globalAlpha = clamp(sp / 1400, 0, 0.32); tctx.fillStyle = tctx.strokeStyle = COLS[32];
+        drawGlyph(tctx, L.ch, L.style, L.size, L.x - L.vx * 0.012, L.y - L.vy * 0.012, L.rot, L.sc, L.vx, L.vy);
+      }
+    }
+    tctx.globalAlpha = 1;
+    if (!moving && (now - lastMove) > 1500 && waves.length === 0) tctx.clearRect(0, 0, W, H);
+    cx.drawImage(trail, 0, 0, W, H);
+    // waves rings
+    for (i = 0; i < waves.length; i++) {
+      var wv = waves[i], a = Math.exp(-wv.t * 2.2) * 0.5;
+      cx.strokeStyle = 'rgba(230,59,46,' + a.toFixed(3) + ')'; cx.lineWidth = wv.blow ? 2 : 1.4;
+      cx.beginPath(); cx.arc(wv.x, wv.y, 40 + wv.t * 1250, 0, 6.2832); cx.stroke();
+    }
+    // letters
+    cx.textAlign = 'center';
+    for (i = 0; i < letters.length; i++) {
+      L = letters[i]; if (L.born && L.delay > 0) continue;
+      sp = Math.sqrt(L.vx * L.vx + L.vy * L.vy);
+      var disp = Math.sqrt((L.x - L.hx) * (L.x - L.hx) + (L.y - L.hy) * (L.y - L.hy));
+      m = clamp(sp / 420 + disp / 240, 0, 1); col = COLS[Math.round(m * 32)];
+      cx.fillStyle = col; cx.strokeStyle = col;
+      drawGlyph(cx, L.ch, L.style, L.size, L.x, L.y, L.rot, L.sc, L.vx, L.vy);
+    }
+    for (i = 0; i < bodies.length; i++) {
+      var B = bodies[i]; sp = Math.sqrt(B.vx * B.vx + B.vy * B.vy); m = clamp(sp / 500 + Math.abs(B.vr) / 12, 0, 1);
+      col = COLS[Math.round(m * 32)]; cx.fillStyle = col; cx.strokeStyle = col;
+      cx.globalAlpha = clamp(B.life / 2, 0, 1);
+      drawGlyph(cx, B.ch, B.style, B.size, B.x, B.y, B.rot, 1, B.vx, B.vy);
+      cx.globalAlpha = 1;
+    }
+    // black hole
+    if (bh.on) {
+      var rr = 12 + 26 * bh.charge;
+      cx.strokeStyle = 'rgba(230,59,46,.55)'; cx.lineWidth = 1.5;
+      for (var q = 0; q < 3; q++) { cx.beginPath(); cx.arc(bh.x, bh.y, rr + 14 + q * 16 + Math.sin(now * 0.006 + q) * 3, 0, 6.2832); cx.globalAlpha = 0.5 - q * 0.14; cx.stroke(); }
+      cx.globalAlpha = 1; cx.fillStyle = '#0b0908'; cx.beginPath(); cx.arc(bh.x, bh.y, rr, 0, 6.2832); cx.fill();
+      cx.strokeStyle = '#e63b2e'; cx.lineWidth = 2; cx.beginPath(); cx.arc(bh.x, bh.y, rr + 2, 0, 6.2832); cx.stroke();
+    }
+    // field cursor
+    if (ptr.inside && (!ptr.touch || ptr.down) && !bh.on) {
+      ptr.sx += (ptr.x - ptr.sx) * 0.35; ptr.sy += (ptr.y - ptr.sy) * 0.35;
+      if (ptr.sx < -900) { ptr.sx = ptr.x; ptr.sy = ptr.y; }
+      var R = ptr.touch ? 180 : FIELD_R;
+      cx.lineWidth = 1; cx.strokeStyle = mode === 0 ? 'rgba(230,59,46,.7)' : 'rgba(20,18,16,.6)';
+      if (mode === 2) cx.setLineDash([4, 6]); else if (mode === 1) cx.setLineDash([1, 5]); else cx.setLineDash([]);
+      cx.beginPath(); cx.arc(ptr.sx, ptr.sy, R, 0, 6.2832); cx.stroke(); cx.setLineDash([]);
+      cx.fillStyle = mode === 0 ? '#e63b2e' : '#141210'; cx.beginPath(); cx.arc(ptr.x, ptr.y, ptr.down ? 5 : 3.2, 0, 6.2832); cx.fill();
+    } else { ptr.sx = -999; }
+  }
+
+  var raf = 0, acc = 0;
+  function frame(t) {
+    raf = requestAnimationFrame(frame);
+    if (doc.hidden) return;
+    var dt = Math.min(1 / 30, (t - lastT) / 1000 || 0.016); lastT = t;
+    acc += dt; var h = 1 / 120, n = 0;
+    while (acc >= h && n < 5) { step(h, t); acc -= h; n++; }
+    draw(t);
+  }
+  doc.addEventListener('visibilitychange', function () { lastT = performance.now(); acc = 0; });
+
+  resize(); place();
+  window.addEventListener('load', place);
+  lastT = performance.now();
+  raf = requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

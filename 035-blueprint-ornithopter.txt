@@ -1,0 +1,23 @@
+==================== PROMPT ====================
+Draw an SVG engineering blueprint "ORNITHOPTER Mk.IV — Wing linkage & fuselage, sheet 3 of 7". Blueprint blue #0c3c8c background with a faint grid (minor 10px, major 50px), line art in white/cyan (#dff3ff, #7fd0ff): a fictional human-powered flapping-wing aircraft in side view and top view — fuselage frame, crank and pedal drive, gearbox, connecting rods, twin wing spars with ribs and membranes, tail; dimension lines with arrowheads, section marks (A–A), numbered callout balloons with leaders, a bill-of-materials table, a title block bottom-right (company, scale 1:20, drawn by, date), a revision triangle, hatch patterns for section cuts, dash-dot centre-lines, handwritten-style notes, a coffee-ring stain and paper creases. Animation: lines draw themselves in stages (frame, linkages, dimensions) with stagger; then the mechanism animates — the crank rotates and the wings flap with correct crank-rocker kinematics computed from trigonometry, wing tips sweeping in the top view. Controls: a "Crank RPM" slider and Play/Pause; hovering BOM rows highlights the matching part via ids. Type: technical capitals in monospace with tight tracking. Palette: blueprint blue, white, cyan and one rare orange revision cloud #ffb36b.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Ornithopter Mk.IV Blueprint
+
+==================== DESCRIPTION ====================
+A single 1600x1100 SVG drawing sheet from the fictional workshop Kittiwake & Drake: side elevation (fuselage truss, recumbent pilot with pedalling legs, chain drive, pylon-head gearbox, tail), plan view with tapered twin-spar wings, ribs and fabric membrane, and Section A-A showing the counter-rotating crank gears, connecting rods and rocker levers. It carries dimension lines with arrowheads, numbered balloons, a twelve-row bill of materials, revision table, title block, zone marks, general notes, hand-written notes, a centre-of-gravity symbol, an orange revision cloud with a triangle tag, paper creases, vignette and a faint coffee ring. Lines draw themselves in stages, then the mechanism runs.
+
+==================== TECHNIQUES ====================
+- Staged stroke-dashoffset draw-on with pathLength normalisation and per-stage stagger; dash-dot centre-lines fade in so their pattern survives
+- Real four-bar crank-rocker: circle-circle intersection solved with trigonometry each frame, tabulated over the crank angle; the wing flap angle is the rocker angle, giving a natural quick downstroke (166 degrees of crank) and slower upstroke (194 degrees)
+- Five-segment flexible wing with phase lag, projected to plan and side views; tip trace polylines plotted every 2 degrees of crank angle
+- Meshing gear pair generated as tooth paths, counter-rotating with correct phase
+- Two-bone inverse kinematics for the pilot's legs, animated chain with dash offset
+- JS-built dimension groups, balloons and a scalloped revision cloud; SVG patterns for grid, hatch and fabric
+- Paper noise tile drawn on a tiny canvas; crease gradients, vignette and coffee-ring gradient
+- Viewbox pan and zoom (wheel, drag, pinch, double-click) with fly-to view chips
+
+==================== INTERACTION ====================
+The sheet draws itself, then the mechanism ramps up to the chosen speed. The Crank RPM slider (4-60) changes the speed live; the Play/Pause button (or Space) starts and stops it, and a readout shows crank RPM, pedal RPM, beat frequency and flap angle. Hover, focus or tap a bill-of-materials row (or a balloon) to highlight that part in every view and dim the rest. Drag to pan, wheel or pinch to zoom, double-click to zoom or reset, or use the Sheet, Side, Plan, Section A-A and BOM chips (keys + - 0 also work). A tall phone starts on the two main views. With prefers-reduced-motion the sheet appears fully drawn and the mechanism starts paused.

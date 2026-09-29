@@ -1,0 +1,25 @@
+==================== PROMPT ====================
+Build an interactive snow globe "Winter, 1924": a glass sphere on a carved wooden base with a brass plaque, sitting on a burgundy fabric-draped table lit by a warm lamp. Inside the globe, a tiny alpine village at night is drawn in SVG — snow-covered rooftops with glowing yellow windows, a church steeple, pine trees, a lamppost with a halo, a frozen pond with a skating figure, chimney smoke. Snow: ~400 flakes on a canvas clipped to the globe circle, simulated with drag and settling; press-and-drag (or shake with pointer velocity / device motion) shakes the globe — flakes are accelerated by the globe's motion relative to the glass, swirl in vortex noise and slowly settle, accumulating as a soft drift on the village floor. The globe wobbles and tilts in 3D while dragged and returns with spring physics. Glass: highlights, rim light, slight edge magnification, and a warm caustic glow spilling on the base. Palette: night blue #16224a, frost #cfe6ff, lamp amber #ffb84d, mahogany #4a2416, brass #c69c4f, cloth burgundy #5a1d2a. Type: engraved plaque text in serif small caps "WINTER · 1924 · Val d'Argent"; a handwritten-style hint "Shake me" that fades. Clicking the church rings a bell tone (WebAudio) and there is a music-box lullaby toggle, default off.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Winter, 1924 Snow Globe
+
+==================== DESCRIPTION ====================
+A warm-lit parlour scene: a brass-shaded lamp glows at the left, bokeh garland lights twinkle on a papered wall, and a burgundy cloth drapes the table edge with a gold braid. On it stands a snow globe on a carved mahogany base with a brass plaque engraved "Winter · 1924 · Val d'Argent". Inside the glass, an SVG alpine village at night: moon and stars, snowy peaks, snow-capped houses with glowing windows, a church with a swinging bell, pines, a picket fence, a lamppost with a pulsing halo, a frozen pond with a skater gliding in ovals and smoke curling from chimneys. About 400 flakes fall on two canvases, behind and in front of the village, and pile into a soft drift on the ground. A handwritten "Shake me" hint fades after the first interaction.
+
+==================== TECHNIQUES ====================
+- Layered globe: sky SVG, back snow canvas, village SVG, front snow canvas, glass overlay, all clipped to a circle for depth
+- 400 flakes with per-flake depth, terminal velocity, drag toward a swirling flow field, glass-wall reflection and a vortex spin term
+- Fictitious force: flakes accelerate opposite to the globe's spring acceleration, so shaking flings them and they lag behind the glass
+- Settling flakes add gaussian mounds to a 100-column height field rendered as a soft drift; shaking re-suspends them
+- Spring-driven 3D rig (translate, rotateX/Y/Z) with underdamped return, plus a tilt that also skews gravity
+- Glass built from radial gradients, rim light, crescent highlight and warm bounce light; caustic glow on the table that shifts opposite to the tilt and flickers
+- CSS-only carved wood base with moulding, brass plaque with small-caps engraving effect, drape folds from stacked repeating gradients
+- SVG animation: skater on an ellipse computed in JS, chimney smoke puffs, halo pulse
+- WebAudio inharmonic-partial church bell with a strike transient, and a convolver-reverbed music box playing Silent Night (opt-in)
+- Film grain from a tiny canvas, vignette, devicemotion shake support
+
+==================== INTERACTION ====================
+Press and drag the globe: it follows the pointer with spring physics, tilts and wobbles, and the snow whirls up; release and it springs home while the flakes slowly settle into the drift. The Shake button or a device shake gives an impulse. Click or tap the church (also keyboard-focusable) to ring its bell with a swinging animation. The Lullaby toggle (off by default) plays a music-box tune at modest volume. "Shake me" fades away after the first shake. With prefers-reduced-motion the agitation decays faster and the twinkling is stilled.

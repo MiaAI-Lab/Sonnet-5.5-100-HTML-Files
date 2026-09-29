@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hour of Words — a word clock</title>
+<meta name="description" content="A luxurious word clock: the current time spelled in light on a matte slab, with a ring of seconds, corner minute dots and three finishes.">
+<style>
+:root{
+  --bg1:#1a1b1d;--bg2:#050506;--slab:#101112;--off:#2a2b2d;--on:#f6ecd4;--glow:rgba(246,236,212,.55);--aura:246,236,212;--ink:#a8a293;--ink2:#e9e1cc;--led:#f6ecd4;--ledoff:#2c2d30;
+  --serif:"Bodoni 72","Bodoni MT",Didot,"Didot LT STD","Playfair Display","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --sans:"Helvetica Neue",Helvetica,"Avenir Next",Arial,"Nimbus Sans","Liberation Sans",sans-serif;
+  --w:min(92vw,calc(100vh - 250px),760px);--w:min(92vw,calc(100dvh - 250px),760px);
+}
+body[data-theme="ember"]{--bg1:#1b0d0a;--bg2:#050202;--slab:#0b0605;--off:#2b1613;--on:#ff5a36;--glow:rgba(255,90,54,.62);--aura:255,90,54;--ink:#a2655a;--ink2:#ff9a7f;--led:#ff5a36;--ledoff:#2b1613}
+body[data-theme="paper"]{--bg1:#ddd4c0;--bg2:#b6ab93;--slab:#efe8d8;--off:#d6ccb7;--on:#2b2a30;--glow:rgba(0,0,0,0);--aura:255,251,238;--ink:#6d6656;--ink2:#2f2c26;--led:#2b2a30;--ledoff:#c9bfa8}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;overflow:hidden;color:var(--ink);font-family:var(--sans);
+  background:radial-gradient(120% 90% at 50% 38%,var(--bg1),var(--bg2));transition:background .9s;height:100vh;height:100dvh}
+.stage{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(16px,3vh,30px)}
+.ringbox{position:relative;width:calc(var(--w) + 44px);height:calc(var(--w) + 44px);display:flex;align-items:center;justify-content:center}
+.ring{position:absolute;inset:0;pointer-events:none}
+.ring i{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:var(--ledoff);transition:background .5s,box-shadow .5s,transform .5s}
+.ring i.on{background:var(--led);opacity:.6}
+.ring i.hd{background:var(--led);opacity:1;transform:scale(1.7);box-shadow:0 0 8px 1px var(--glow)}
+.ring i.tr{background:var(--led);opacity:.85;box-shadow:0 0 5px var(--glow)}
+.clock{position:relative;width:var(--w);height:var(--w)}
+.frame{position:absolute;inset:0;padding:2.7%;border-radius:2.2%;
+  background:linear-gradient(135deg,#f4f6f8 0%,#a3aab1 16%,#e3e7ea 30%,#7b8289 48%,#cfd4d8 64%,#8b9298 82%,#dfe3e6 100%);
+  box-shadow:0 30px 60px -18px rgba(0,0,0,.7),0 2px 0 rgba(255,255,255,.55) inset,0 -3px 5px rgba(0,0,0,.35) inset,0 0 0 1px rgba(0,0,0,.4)}
+.frame::before{content:"";position:absolute;inset:1.2%;border-radius:1.6%;pointer-events:none;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.14) 0 1px,rgba(0,0,0,.05) 1px 2px);mix-blend-mode:overlay;opacity:.8}
+.slab{position:relative;width:100%;height:100%;border-radius:1.2%;background:var(--slab);overflow:hidden;outline:none;cursor:pointer;
+  box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 3px 14px rgba(0,0,0,.65),inset 0 -1px 0 rgba(255,255,255,.05);transition:background .9s}
+.slab::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:radial-gradient(130% 100% at 30% 0,rgba(255,255,255,.07),transparent 55%),repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px)}
+body[data-theme="paper"] .slab::after{opacity:.7;background:radial-gradient(130% 100% at 30% 0,rgba(255,255,255,.5),transparent 55%),repeating-linear-gradient(0deg,rgba(0,0,0,.02) 0 1px,transparent 1px 3px)}
+.slab:focus-visible{box-shadow:0 0 0 3px var(--on),inset 0 3px 14px rgba(0,0,0,.65)}
+.aura{position:absolute;left:0;top:0;width:70%;height:70%;margin:-35% 0 0 -35%;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(var(--aura),.2),rgba(var(--aura),.07) 45%,transparent 70%);will-change:transform}
+.grid{position:absolute;inset:4.2% 4.6%;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(10,1fr);z-index:1}
+.c{display:flex;align-items:center;justify-content:center;font-weight:400;line-height:1;text-transform:uppercase;color:var(--off);
+  transition:color 1.5s ease,text-shadow 1.5s ease;text-shadow:none}
+.c.on{color:var(--on);text-shadow:0 0 .35em var(--glow),0 0 1em var(--glow)}
+.c.pop{animation:pop 1.3s ease-out both}
+@keyframes pop{0%{transform:scale(1)}30%{transform:scale(1.22)}100%{transform:scale(1)}}
+body[data-theme="paper"] .c{text-shadow:0 1px 0 rgba(255,255,255,.85),0 -1px 0 rgba(0,0,0,.06)}
+body[data-theme="paper"] .c.on{text-shadow:0 1px 0 rgba(255,255,255,.9),0 -1px 0 rgba(0,0,0,.4),0 0 .5px rgba(0,0,0,.5)}
+.dot{position:absolute;width:1.5%;height:1.5%;border-radius:50%;background:var(--off);z-index:2;transition:background 1.2s,box-shadow 1.2s}
+.dot.on{background:var(--on);box-shadow:0 0 .9em var(--glow)}
+.d0{left:1.6%;top:1.6%}.d1{right:1.6%;top:1.6%}.d2{right:1.6%;bottom:1.6%}.d3{left:1.6%;bottom:1.6%}
+.refl{position:absolute;left:0;top:calc(100% + 8px);width:100%;height:100%;transform:scaleY(-1);opacity:.17;pointer-events:none;
+  -webkit-mask-image:linear-gradient(to top,rgba(0,0,0,.95),transparent 42%);mask-image:linear-gradient(to top,rgba(0,0,0,.95),transparent 42%);filter:blur(1.2px)}
+.refl .slab{cursor:default}
+.date{margin:0;font-family:var(--serif);font-variant:small-caps;text-transform:lowercase;letter-spacing:.38em;font-size:clamp(12px,1.5vw,16px);color:var(--ink2);text-align:center;padding-left:.38em;position:relative;z-index:2}
+.themes{display:flex;gap:4px;padding:4px;border-radius:30px;background:rgba(127,127,127,.12);border:1px solid rgba(127,127,127,.22);position:relative;z-index:2}
+.themes button{cursor:pointer;font:500 10.5px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;padding:9px 14px;border-radius:24px;border:0;background:transparent;color:var(--ink);transition:background .3s,color .3s}
+.themes button[aria-pressed="true"]{background:var(--on);color:var(--slab)}
+.themes button:focus-visible,.dial button:focus-visible{outline:2px solid var(--on);outline-offset:2px}
+body[data-theme="paper"] .themes button[aria-pressed="true"]{color:#efe8d8}
+.hint{margin:0;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--ink);opacity:.7;position:relative;z-index:2}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* dial */
+.scrim{position:fixed;inset:0;z-index:5;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .4s}
+.scrim.on{opacity:1;pointer-events:auto}
+.dial{position:fixed;left:50%;top:50%;z-index:6;width:min(320px,90vw);padding:22px 22px 18px;border-radius:26px;transform:translate(-50%,-46%) scale(.96);opacity:0;pointer-events:none;
+  background:linear-gradient(160deg,#2a2c2f,#141517);border:1px solid rgba(255,255,255,.12);box-shadow:0 40px 80px -20px #000,inset 0 1px 0 rgba(255,255,255,.12);color:#e9e1cc;text-align:center;transition:opacity .4s,transform .4s}
+body[data-theme="paper"] .dial{background:linear-gradient(160deg,#f6f0e2,#e2d9c4);color:#2b2a30;border-color:rgba(0,0,0,.12)}
+.dial.on{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+.dial svg{display:block;width:230px;height:230px;margin:0 auto;touch-action:none;cursor:grab}
+.dial .trk{fill:none;stroke:rgba(127,127,127,.35);stroke-width:2}
+.dial .tk{stroke:rgba(127,127,127,.6);stroke-width:1.4}
+.dial .arc{fill:none;stroke:var(--on);stroke-width:3;stroke-linecap:round}
+body[data-theme="paper"] .dial .arc{stroke:#c9482a}
+.dial .knob{fill:var(--on);stroke:rgba(0,0,0,.4);stroke-width:1.5;filter:drop-shadow(0 0 6px var(--glow))}
+body[data-theme="paper"] .dial .knob{fill:#c9482a}
+.dial .rd{position:relative;margin-top:-142px;height:100px;pointer-events:none}
+.dial .tm{font-size:34px;font-weight:200;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.dial .ph{margin-top:4px;font-family:var(--serif);font-size:15px;font-style:italic;letter-spacing:.02em;padding:0 34px;line-height:1.3}
+.dial .row{display:flex;justify-content:center;gap:8px;margin-top:70px}
+.dial button{cursor:pointer;font:500 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;padding:10px 15px;border-radius:20px;border:1px solid rgba(127,127,127,.4);background:transparent;color:inherit}
+.dial button:hover{background:rgba(127,127,127,.18)}
+@media (max-width:520px){.themes button{padding:9px 9px;font-size:9.5px;letter-spacing:.1em}.hint{display:none}.ringbox{width:calc(var(--w) + 30px);height:calc(var(--w) + 30px)}}
+@media (prefers-reduced-motion:reduce){.c,.dot,.ring i,.dial,.scrim{transition-duration:.01s}.c.pop{animation:none}}
+</style>
+</head>
+<body data-theme="ivory">
+<main class="stage">
+  <div class="ringbox" id="ringbox">
+    <div class="ring" id="ring" aria-hidden="true"></div>
+    <div class="clock" id="clock">
+      <div class="frame" id="frame">
+        <div class="slab" id="slab" role="button" tabindex="0" aria-label="Word clock. Activate to set the time.">
+          <div class="aura" id="aura"></div>
+          <div class="grid" id="grid" aria-hidden="true"></div>
+          <i class="dot d0"></i><i class="dot d1"></i><i class="dot d2"></i><i class="dot d3"></i>
+        </div>
+      </div>
+      <div class="refl" id="refl" aria-hidden="true"></div>
+    </div>
+  </div>
+  <p class="date" id="date">&nbsp;</p>
+  <div class="themes" role="group" aria-label="Finish">
+    <button type="button" data-t="ivory" aria-pressed="true">Ivory on Graphite</button>
+    <button type="button" data-t="ember" aria-pressed="false">Ember</button>
+    <button type="button" data-t="paper" aria-pressed="false">Paper</button>
+  </div>
+  <p class="hint">Click the plate · arrow keys move five minutes</p>
+  <p class="sr" id="live" aria-live="polite"></p>
+</main>
+<div class="scrim" id="scrim"></div>
+<div class="dial" id="dial" role="dialog" aria-label="Set the time" aria-hidden="true">
+  <svg id="dsvg" viewBox="0 0 230 230" role="img" aria-label="Drag the knob around the dial to change the time">
+    <circle class="trk" cx="115" cy="115" r="92"/>
+    <g id="dtk"></g>
+    <path class="arc" id="darc" d=""/>
+    <circle class="knob" id="dknob" r="11" cx="115" cy="23"/>
+  </svg>
+  <div class="rd"><div class="tm" id="dtm">12:00</div><div class="ph" id="dph"></div></div>
+  <div class="row"><button type="button" id="dm5">−5 min</button><button type="button" id="dlive">Live</button><button type="button" id="dp5">+5 min</button><button type="button" id="ddone">Done</button></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i)};
+var PI=Math.PI,TAU=PI*2,sin=Math.sin,cos=Math.cos;
+var RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+/* ---------- the letter matrix: 11 columns x 10 rows, '.' is filler ---------- */
+var ROWS=['IT.IS.HALF.','QUARTERTEN.','TWENTYFIVE.','PAST.TO.ONE','FOURFIVETWO','SEVENELEVEN','EIGHTTHREE.','SIXNINETEN.','..TWELVE...','..OCLOCK...'];
+var PH={IT:[0,0,1],IS:[0,3,4],HALF:[0,6,9],QUARTER:[1,0,6],TENM:[1,7,9],TWENTY:[2,0,5],FIVEM:[2,6,9],PAST:[3,0,3],TO:[3,5,6],
+  H1:[3,8,10],H2:[4,8,10],H3:[6,5,9],H4:[4,0,3],H5:[4,4,7],H6:[7,0,2],H7:[5,0,4],H8:[6,0,4],H9:[7,3,6],H10:[7,7,9],H11:[5,5,10],H12:[8,2,7],OCLOCK:[9,2,7]};
+var HW=['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+var FILL='ABCDEGHKLMOPRSUWY',rnd=mulberry(1961);
+var grid=$('grid'),cells=[],html='',r,c,ch,i;
+for(r=0;r<10;r++)for(c=0;c<11;c++){ch=ROWS[r].charAt(c);if(ch==='.')ch=FILL.charAt(Math.floor(rnd()*FILL.length));html+='<span class="c">'+ch+'</span>'}
+grid.innerHTML=html;cells=[].slice.call(grid.children);
+/* reflection: a clone of the whole frame, kept in sync */
+var refl=$('refl'),fr=$('frame').cloneNode(true);
+[].forEach.call(fr.querySelectorAll('[id]'),function(n){n.removeAttribute('id')});
+fr.querySelector('.slab').removeAttribute('tabindex');fr.querySelector('.slab').removeAttribute('role');fr.querySelector('.slab').removeAttribute('aria-label');
+refl.appendChild(fr);
+var cells2=[].slice.call(fr.querySelectorAll('.c')),dots=[].slice.call($('slab').querySelectorAll('.dot')),dots2=[].slice.call(fr.querySelectorAll('.dot'));
+
+/* ---------- what the clock says ---------- */
+function phrase(h24,m){
+  var i5=Math.floor(m/5),hh=h24%12;if(i5>=7)hh=(hh+1)%12;if(hh===0)hh=12;
+  var keys=['IT','IS'],w=['it','is'];
+  var mid={1:[['FIVEM'],['five'],'PAST'],2:[['TENM'],['ten'],'PAST'],3:[['QUARTER'],['a quarter'],'PAST'],4:[['TWENTY'],['twenty'],'PAST'],5:[['TWENTY','FIVEM'],['twenty five'],'PAST'],
+    6:[['HALF'],['half'],'PAST'],7:[['TWENTY','FIVEM'],['twenty five'],'TO'],8:[['TWENTY'],['twenty'],'TO'],9:[['QUARTER'],['a quarter'],'TO'],10:[['TENM'],['ten'],'TO'],11:[['FIVEM'],['five'],'TO']};
+  if(i5===0){keys.push('H'+hh,'OCLOCK');w.push(HW[hh],"o'clock")}
+  else{var d=mid[i5];keys=keys.concat(d[0]);keys.push(d[2]);keys.push('H'+hh);w.push(d[1][0],d[2].toLowerCase(),HW[hh])}
+  return {keys:keys,text:w.join(' ')};
+}
+function spell(keys){var s='',k,p,j;for(k=0;k<keys.length;k++){p=PH[keys[k]];for(j=p[1];j<=p[2];j++)s+=ROWS[p[0]].charAt(j)}return s}
+
+/* ---------- state ---------- */
+var offMs=0,cur=null,curDots=-1,glowX=.5,glowY=.5,tgX=.5,tgY=.5;
+var aura=$('aura'),ring=$('ring'),leds=[];
+function nowDate(){return new Date(Date.now()+offMs)}
+function apply(keys,animate){
+  var on={},k,p,j,idx,n=0,sx=0,sy=0;
+  for(k=0;k<keys.length;k++){p=PH[keys[k]];for(j=p[1];j<=p[2];j++){idx=p[0]*11+j;on[idx]=1;sx+=j+.5;sy+=p[0]+.5;n++}}
+  var chg=[],cxm=0,cym=0;
+  for(idx=0;idx<110;idx++){var was=cells[idx].classList.contains('on'),is=!!on[idx];if(was!==is){chg.push(idx);cxm+=idx%11;cym+=Math.floor(idx/11)}}
+  if(chg.length){cxm/=chg.length;cym/=chg.length}
+  for(i=0;i<chg.length;i++){
+    idx=chg[i];var dx=idx%11-cxm,dy=Math.floor(idx/11)-cym,d=Math.sqrt(dx*dx+dy*dy)*(RM||!animate?0:95);
+    var isOn=!!on[idx],a=cells[idx],b=cells2[idx];
+    a.style.transitionDelay=b.style.transitionDelay=d+'ms';
+    a.classList.toggle('on',isOn);b.classList.toggle('on',isOn);
+    if(isOn&&animate&&!RM){a.style.animationDelay=d+'ms';a.classList.remove('pop');void a.offsetWidth;a.classList.add('pop')}
+  }
+  if(n){tgX=sx/n/11;tgY=sy/n/10}
+}
+function setDots(n){
+  if(n===curDots)return;curDots=n;
+  for(var i=0;i<4;i++){dots[i].classList.toggle('on',i<n);dots2[i].classList.toggle('on',i<n)}
+}
+var lastMin=-1,lastKeys='';
+function tickTime(force){
+  var d=nowDate(),h=d.getHours(),m=d.getMinutes(),key=h+':'+m;
+  if(key===lastMin&&!force)return;
+  var first=lastMin===-1;lastMin=key;
+  var ph=phrase(h,m);
+  apply(ph.keys,!first);setDots(m%5);
+  if(ph.text!==lastKeys){lastKeys=ph.text;$('live').textContent=ph.text;$('dph').textContent=ph.text.charAt(0).toUpperCase()+ph.text.slice(1)}
+  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],mons=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  $('date').textContent=days[d.getDay()]+' · '+d.getDate()+' '+mons[d.getMonth()]+' '+d.getFullYear();
+  $('dtm').textContent=(h%12===0?12:h%12)+':'+(m<10?'0':'')+m;
+  syncDial(d);
+}
+
+/* ---------- second ring: 60 tiny LEDs around the frame ---------- */
+function ringPoint(s,half,rad){
+  /* s in [0,1) clockwise from top centre along a rounded square of half-size 'half' and corner radius 'rad' */
+  var straight=2*(half-rad),arc=PI/2*rad,per=4*straight+4*arc,d=s*per,x,y;
+  /* start at top centre: half of the top straight goes first */
+  d+=straight/2;
+  var seg=[straight,arc,straight,arc,straight,arc,straight,arc],k=0;
+  d=d%per;
+  while(d>seg[k]){d-=seg[k];k=(k+1)%8}
+  var t=d/seg[k];
+  switch(k){
+    case 0:x=-half+rad+t*straight;y=-half;break;
+    case 1:x=half-rad+sin(t*PI/2)*rad;y=-half+rad-cos(t*PI/2)*rad;break;
+    case 2:x=half;y=-half+rad+t*straight;break;
+    case 3:x=half-rad+cos(t*PI/2)*rad;y=half-rad+sin(t*PI/2)*rad;break;
+    case 4:x=half-rad-t*straight;y=half;break;
+    case 5:x=-half+rad-sin(t*PI/2)*rad;y=half-rad+cos(t*PI/2)*rad;break;
+    case 6:x=-half;y=half-rad-t*straight;break;
+    default:x=-half+rad-cos(t*PI/2)*rad;y=-half+rad-sin(t*PI/2)*rad;
+  }
+  return [x,y];
+}
+function layoutRing(){
+  var box=$('ringbox'),w=box.clientWidth,half=w/2-6,rad=Math.min(26,half*.09),html='',i;
+  if(!leds.length){for(i=0;i<60;i++)html+='<i></i>';ring.innerHTML=html;leds=[].slice.call(ring.children)}
+  for(i=0;i<60;i++){var p=ringPoint(i/60,half,rad);leds[i].style.left=(w/2+p[0])+'px';leds[i].style.top=(w/2+p[1])+'px'}
+}
+var lastSecKey=-1;
+function updateRing(now){
+  var d=nowDate(),s=d.getSeconds(),ms=d.getMilliseconds(),key=s*4+Math.floor(ms/250);
+  if(key===lastSecKey)return;lastSecKey=key;
+  for(var i=0;i<60;i++){
+    var cls='';
+    if(i===s)cls='hd';else if(i<s){cls=(s-i<=4)?'tr':'on'}
+    if(leds[i].className!==cls)leds[i].className=cls;
+  }
+}
+
+/* ---------- the time dial ---------- */
+var dial=$('dial'),scrim=$('scrim'),dsvg=$('dsvg'),dragging=false;
+(function(){var s='',i,a,x1,y1,x2,y2;for(i=0;i<12;i++){a=i/12*TAU;x1=115+sin(a)*100;y1=115-cos(a)*100;x2=115+sin(a)*(i%3===0?108:104);y2=115-cos(a)*(i%3===0?108:104);s+='<line class="tk" x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'"/>'}$('dtk').innerHTML=s})();
+function syncDial(d){
+  var mins=(d.getHours()%12)*60+d.getMinutes(),a=mins/720*TAU,x=115+sin(a)*92,y=115-cos(a)*92;
+  var kn=$('dknob');kn.setAttribute('cx',x.toFixed(1));kn.setAttribute('cy',y.toFixed(1));
+  var big=a>PI?1:0;$('darc').setAttribute('d','M115 23A92 92 0 '+big+' 1 '+x.toFixed(1)+' '+y.toFixed(1));
+}
+function openDial(){dial.classList.add('on');scrim.classList.add('on');dial.setAttribute('aria-hidden','false');$('ddone').focus()}
+function closeDial(){dial.classList.remove('on');scrim.classList.remove('on');dial.setAttribute('aria-hidden','true');$('slab').focus()}
+function setFromAngle(ev){
+  var r=dsvg.getBoundingClientRect(),x=ev.clientX-(r.left+r.width/2),y=ev.clientY-(r.top+r.height/2);
+  var a=Math.atan2(x,-y);if(a<0)a+=TAU;
+  var M=Math.round(a/TAU*720)%720,real=new Date(),R=(real.getHours()%12)*60+real.getMinutes();
+  var off=M-R;while(off>360)off-=720;while(off<=-360)off+=720;
+  offMs=off*60000;tickTime(true);
+}
+dsvg.addEventListener('pointerdown',function(e){dragging=true;try{dsvg.setPointerCapture(e.pointerId)}catch(_){}setFromAngle(e)});
+dsvg.addEventListener('pointermove',function(e){if(dragging)setFromAngle(e)});
+dsvg.addEventListener('pointerup',function(){dragging=false});dsvg.addEventListener('pointercancel',function(){dragging=false});
+$('slab').addEventListener('click',openDial);
+$('slab').addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();openDial()}});
+scrim.addEventListener('click',closeDial);$('ddone').addEventListener('click',closeDial);
+$('dlive').addEventListener('click',function(){offMs=0;tickTime(true)});
+function nudge(min){offMs+=min*60000;tickTime(true)}
+$('dm5').addEventListener('click',function(){nudge(-5)});$('dp5').addEventListener('click',function(){nudge(5)});
+window.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&dial.classList.contains('on')){closeDial();return}
+  if(e.key==='ArrowRight'||e.key==='ArrowUp'){nudge(e.shiftKey?1:5);e.preventDefault()}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowDown'){nudge(e.shiftKey?-1:-5);e.preventDefault()}
+});
+
+/* ---------- finishes ---------- */
+var themeBtns=[].slice.call(document.querySelectorAll('.themes button'));
+function setTheme(t,save){
+  document.body.setAttribute('data-theme',t);
+  themeBtns.forEach(function(b){b.setAttribute('aria-pressed',b.getAttribute('data-t')===t?'true':'false')});
+  if(save){try{localStorage.setItem('hour-of-words',t)}catch(e){}}
+}
+themeBtns.forEach(function(b){b.addEventListener('click',function(){setTheme(b.getAttribute('data-t'),true)})});
+try{var st=localStorage.getItem('hour-of-words');if(st==='ember'||st==='paper'||st==='ivory')setTheme(st,false)}catch(e){}
+
+/* ---------- letter size follows the slab ---------- */
+function fit(){
+  var w=$('slab').clientWidth,fs=w*.94/11*.5;
+  grid.style.fontSize=fs+'px';cells2.length&&(fr.querySelector('.grid').style.fontSize=fs+'px');
+  layoutRing();
+}
+window.addEventListener('resize',fit);
+if(window.ResizeObserver)new ResizeObserver(fit).observe($('slab'));
+
+/* ---------- loop ---------- */
+var last=0;
+function frame(now){
+  requestAnimationFrame(frame);
+  if(document.hidden)return;
+  var dt=Math.min(.05,(now-last)/1000||.016);last=now;
+  tickTime(false);updateRing(now);
+  var k=1-Math.exp(-dt*(RM?6:1.6));glowX+=(tgX-glowX)*k;glowY+=(tgY-glowY)*k;
+  var slab=$('slab'),w=slab.clientWidth,h=slab.clientHeight;
+  var bx=Math.sin(now*.00035)*w*.012,by=Math.cos(now*.0003)*h*.012;
+  aura.style.transform='translate3d('+(glowX*w+bx).toFixed(1)+'px,'+(glowY*h+by).toFixed(1)+'px,0)';
+}
+fit();tickTime(true);
+requestAnimationFrame(function(n){last=n;requestAnimationFrame(frame)});
+})();
+</script>
+</body>
+</html>

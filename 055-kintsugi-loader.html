@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kintsugi · a bowl mended with gold</title>
+<meta name="description" content="Kintsugi: a loading sequence in which a broken black-glaze bowl is gathered and its cracks are filled with liquid gold.">
+<style>
+:root { --paper: #efe6d6; --char: #1d1c1a; --gold: #d4a537; --hi: #ffe28a; --clay: #8c6f57; --ink: #2a2622;
+  --serif: "Bodoni 72", "Bodoni MT", Didot, "Didot LT STD", "Playfair Display", "Iowan Old Style", "Palatino Linotype", P052, Palatino, Georgia, serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: var(--paper); color: var(--ink); }
+body { min-height: 100vh; min-height: 100dvh; font-family: var(--serif); overflow-x: hidden;
+  background: radial-gradient(120% 90% at 40% 35%, #f4ecdd 0%, var(--paper) 55%, #e3d8c4 100%); }
+.grain { position: fixed; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: multiply; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; padding: 0; }
+.top { position: fixed; left: clamp(18px, 4vw, 48px); top: clamp(16px, 3.4vh, 34px); font-size: 12px; letter-spacing: .32em; font-variant-caps: all-small-caps; text-transform: lowercase; color: var(--clay); }
+.top b { color: var(--ink); font-weight: 600; }
+.foot { position: fixed; left: 0; right: 0; bottom: clamp(14px, 3vh, 30px); text-align: center; font-size: 13px; font-style: italic; color: var(--clay); letter-spacing: .03em; }
+kbd { font: inherit; font-style: normal; border: 1px solid rgba(140,111,87,.5); border-radius: 4px; padding: 0 .4em; }
+main { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: center; gap: clamp(8px, 3vw, 48px); padding: 70px clamp(18px, 5vw, 80px) 70px; max-width: 1280px; margin: 0 auto; }
+.stage { position: relative; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.stage:focus-visible { outline: 2px solid var(--gold); outline-offset: 8px; border-radius: 12px; }
+svg.bowl { width: 100%; height: auto; display: block; overflow: visible; }
+.read { position: relative; }
+.pct { display: flex; align-items: baseline; font-weight: 300; font-size: clamp(88px, 15vw, 190px); line-height: .9; letter-spacing: -.03em; color: var(--ink); font-variant-numeric: lining-nums tabular-nums; margin: 0; }
+.pct small { font-size: .28em; margin-left: .08em; color: var(--clay); letter-spacing: 0; font-style: italic; }
+.rule { height: 1px; width: min(320px, 70%); margin: 14px 0 16px; background: linear-gradient(90deg, var(--clay), transparent); position: relative; }
+.rule i { position: absolute; left: 0; top: -1px; height: 3px; width: calc(var(--p, 0) * 100%); background: linear-gradient(90deg, var(--gold), var(--hi)); box-shadow: 0 0 8px rgba(212,165,55,.7); transition: none; }
+.status { position: relative; height: 2.2em; font-size: clamp(17px, 2.1vw, 22px); font-style: italic; color: var(--clay); margin: 0; }
+.status span { position: absolute; left: 0; top: 0; opacity: 0; transform: translateY(6px); transition: opacity .7s, transform .7s; white-space: nowrap; }
+.status span.on { opacity: 1; transform: none; }
+.done { position: absolute; left: 0; top: 0; right: 0; pointer-events: none; opacity: 0; }
+.done h1 { margin: 0; font-weight: 400; font-size: clamp(54px, 8.6vw, 112px); letter-spacing: .01em; line-height: 1; font-style: italic; color: var(--ink); }
+.done h1 span { background: linear-gradient(100deg, #8f6a1c 0%, var(--gold) 25%, var(--hi) 50%, var(--gold) 75%, #8f6a1c 100%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 3.6s ease-in-out infinite; }
+.done p { margin: 12px 0 18px; font-size: clamp(16px, 2vw, 20px); font-style: italic; color: var(--clay); }
+@keyframes shine { 0% { background-position: 100% 0; } 60%, 100% { background-position: 0 0; } }
+.replay { pointer-events: auto; display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 22px 0 16px; border-radius: 999px; border: 1px solid var(--clay); background: transparent; color: var(--ink); font: inherit; font-size: 13px; letter-spacing: .24em; font-variant-caps: all-small-caps; text-transform: lowercase; cursor: pointer; transition: background .3s, color .3s, border-color .3s; }
+.replay:hover { background: var(--char); color: var(--paper); border-color: var(--char); }
+.replay:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.replay svg { width: 16px; height: 16px; }
+body.finished .status, body.finished .rule { opacity: 0; transition: opacity .6s; }
+body.finished .done { opacity: 1; transition: opacity 1.2s .5s; }
+body.finished .pct { opacity: 0; transition: opacity .8s; }
+.pulse { position: absolute; left: 50%; top: 42%; width: 10px; height: 10px; margin: -5px; border-radius: 50%; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, rgba(255,240,190,.9), rgba(255,226,138,.35) 40%, transparent 70%); mix-blend-mode: screen; }
+.pulse.go { animation: pulse 1.6s cubic-bezier(.2,.7,.2,1); }
+@keyframes pulse { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(90); } }
+.steam path { fill: none; stroke: #b9aa93; stroke-width: 5; stroke-linecap: round; opacity: 0; filter: url(#soft); }
+body.finished .steam path { animation: steam 5s ease-in-out infinite; }
+body.finished .steam path:nth-child(2) { animation-delay: 1.6s; }
+body.finished .steam path:nth-child(3) { animation-delay: 3.1s; }
+@keyframes steam { 0% { opacity: 0; stroke-dashoffset: 200; transform: translateY(20px); } 25% { opacity: .55; } 100% { opacity: 0; stroke-dashoffset: 0; transform: translateY(-60px); } }
+.gleam { opacity: 0; }
+body.finished .gleam { animation: gleam 2.4s ease-in-out .3s 1 both; }
+@keyframes gleam { 0% { opacity: 1; transform: translateX(-620px); } 100% { opacity: 1; transform: translateX(620px); } }
+@media (max-width: 820px) {
+  main { grid-template-columns: minmax(0, 1fr); align-content: center; padding: 64px 20px 76px; gap: 0; text-align: center; }
+  .pct { justify-content: center; font-size: clamp(76px, 24vw, 130px); }
+  .rule { margin-left: auto; margin-right: auto; }
+  .status span { left: 50%; transform: translate(-50%, 6px); }
+  .status span.on { transform: translate(-50%, 0); }
+  .done { text-align: center; }
+  .foot { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .done h1 span { animation: none; } body.finished .steam path { animation-duration: 12s; } }
+</style>
+</head>
+<body>
+<svg class="grain" width="100%" height="100%" aria-hidden="true"><filter id="fibre"><feTurbulence type="fractalNoise" baseFrequency=".9 .04" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .55  0 0 0 0 .45  0 0 0 0 .35  0 0 0 .16 0"/></filter><rect width="100%" height="100%" filter="url(#fibre)"/></svg>
+<p class="top"><b>Kintsugi</b> · the art of golden repair</p>
+
+<main>
+  <div class="stage" id="stage" role="button" tabindex="0" aria-label="The bowl. Activate to hurry the gold along.">
+    <svg class="bowl" id="svg" viewBox="0 0 600 500" role="img" aria-label="A black-glaze bowl broken into pieces that slide together as gold fills the cracks">
+      <defs>
+        <linearGradient id="glaze" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34322e"/><stop offset=".45" stop-color="#1d1c1a"/><stop offset="1" stop-color="#0f0e0d"/></linearGradient>
+        <radialGradient id="inside" cx=".42" cy=".3" r=".8"><stop offset="0" stop-color="#2b2926"/><stop offset=".6" stop-color="#151413"/><stop offset="1" stop-color="#0b0a09"/></radialGradient>
+        <linearGradient id="rimg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4a4640"/><stop offset=".5" stop-color="#2a2825"/><stop offset="1" stop-color="#3b3833"/></linearGradient>
+        <radialGradient id="sheen" cx=".28" cy=".35" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        <linearGradient id="goldg" gradientUnits="userSpaceOnUse" x1="60" y1="60" x2="540" y2="420"><stop offset="0" stop-color="#b8862a"/><stop offset=".3" stop-color="#e2b850"/><stop offset=".55" stop-color="#d4a537"/><stop offset=".8" stop-color="#f0cf78"/><stop offset="1" stop-color="#b8862a"/></linearGradient>
+        <linearGradient id="band" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff8d8" stop-opacity="0"/><stop offset=".5" stop-color="#fff8d8" stop-opacity=".95"/><stop offset="1" stop-color="#fff8d8" stop-opacity="0"/></linearGradient>
+        <radialGradient id="shadow"><stop offset="0" stop-color="#3a2f22" stop-opacity=".55"/><stop offset=".6" stop-color="#3a2f22" stop-opacity=".2"/><stop offset="1" stop-color="#3a2f22" stop-opacity="0"/></radialGradient>
+        <filter id="glazeTex" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="7" result="n"/><feColorMatrix in="n" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .12 0" result="s"/><feComposite in="s" in2="SourceGraphic" operator="in"/></filter>
+        <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.4"/></filter>
+        <g id="bowlArt">
+          <path id="outline" d="M0 0"/>
+        </g>
+        <clipPath id="outClip"><path id="outClipP" d="M0 0"/></clipPath>
+      </defs>
+      <ellipse id="shd" cx="300" cy="418" rx="180" ry="26" fill="url(#shadow)"/>
+      <g id="pieces"></g>
+      <g id="goldLayer"></g>
+      <g class="gleamWrap" id="gleamWrap" opacity="1"></g>
+      <g class="steam" id="steam" transform="translate(300 116)"><path d="M-70 30 C-100 0 -40 -20 -70 -60 S-40 -110 -70 -140" stroke-dasharray="200"/><path d="M0 34 C-30 4 30 -22 0 -64 S30 -114 0 -150" stroke-dasharray="200"/><path d="M70 30 C40 0 100 -24 70 -58 S100 -106 70 -136" stroke-dasharray="200"/></g>
+      <g id="sparks"></g>
+    </svg>
+    <div class="pulse" id="pulse"></div>
+  </div>
+
+  <section class="read" aria-live="polite">
+    <p class="pct" id="pct"><span id="num">0</span><small>%</small></p>
+    <div class="rule" id="rule"><i></i></div>
+    <p class="status" id="status">
+      <span class="on">Gathering the pieces</span><span>Warming the lacquer</span><span>Dusting with gold</span><span>Wabi-sabi is not a flaw</span>
+    </p>
+    <div class="done" id="done">
+      <h1><span>Restored</span></h1>
+      <p>Whole again, and more itself for the seams.</p>
+      <button class="replay" id="replay" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4v4.5h4.5"/></svg>Replay</button>
+    </div>
+  </section>
+</main>
+<p class="foot">Click the bowl to hurry the gold &nbsp;·&nbsp; press <kbd>R</kbd> to begin again</p>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const ss = t => t * t * (3 - 2 * t);
+const outBack = t => { const c = 1.5; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+
+/* ---------- the bowl silhouette (convex) ---------- */
+const CX = 300, RY0 = 130, RX = 210, RYE = 50;
+function outlinePts() {
+  const pts = [];
+  for (let i = 0; i <= 40; i++) { const a = Math.PI + i / 40 * Math.PI; pts.push([CX + Math.cos(a) * RX, RY0 + Math.sin(a) * RYE]); }      // upper half of the rim
+  const prof = y => RX * Math.pow(Math.max(0, 1 - Math.pow((y - RY0) / 262, 2)), .5) * 1;
+  const right = []; for (let y = RY0; y <= 372; y += 12) right.push([CX + prof(y), y]);
+  right.push([CX + 92, 386]);
+  for (const p of right) pts.push(p);
+  for (let i = right.length - 1; i >= 0; i--) pts.push([2 * CX - right[i][0], right[i][1]]);
+  // lower half of the rim is hidden inside the bowl, so the silhouette is: upper arc + sides + foot
+  return pts;
+}
+function clipPoly(poly, a, b, c) {           // keep a*x + b*y <= c
+  const out = [];
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length], dp = a * p[0] + b * p[1] - c, dq = a * q[0] + b * q[1] - c;
+    if (dp <= 0) out.push(p);
+    if ((dp < 0 && dq > 0) || (dp > 0 && dq < 0)) { const t = dp / (dp - dq); out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]); }
+  }
+  return out;
+}
+const inside = (poly, x, y) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a[1] > y) !== (b[1] > y) && x < (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; };
+function segDist(px, py, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], t = clamp(((px - a[0]) * dx + (py - a[1]) * dy) / (dx * dx + dy * dy || 1), 0, 1); return Math.hypot(px - a[0] - dx * t, py - a[1] - dy * t); }
+
+/* ---------- build one fracture ---------- */
+let S = null;
+function build(seed) {
+  const rnd = mulberry(seed), OUT = outlinePts();
+  const n = 6 + ((rnd() * 4) | 0), seeds = [];
+  let tries = 0;
+  while (seeds.length < n && tries++ < 900) {
+    const x = 80 + rnd() * 440, y = 80 + rnd() * 300;
+    if (!inside(OUT, x, y)) continue;
+    if (seeds.every(s => Math.hypot(s[0] - x, s[1] - y) > 92)) seeds.push([x, y]);
+  }
+  const cells = seeds.map((s, i) => {
+    let poly = OUT.slice();
+    seeds.forEach((t, j) => { if (i === j) return; const a = t[0] - s[0], b = t[1] - s[1], c = (t[0] * t[0] + t[1] * t[1] - s[0] * s[0] - s[1] * s[1]) / 2; poly = clipPoly(poly, a, b, c); });
+    return poly;
+  });
+  // jagged edges, shared between neighbours
+  const key = p => Math.round(p[0] * 2) + ',' + Math.round(p[1] * 2);
+  const cache = new Map(), seamList = [];
+  function jag(p, q) {
+    const kp = key(p), kq = key(q), fwd = kp < kq, k = fwd ? kp + '|' + kq : kq + '|' + kp;
+    if (!cache.has(k)) {
+      const a = fwd ? p : q, b = fwd ? q : p, r = mulberry(k.length * 977 + Math.round(a[0] * 31 + a[1] * 17 + b[0] * 13));
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      const onOut = OUT.some((o, i) => segDist(mx, my, o, OUT[(i + 1) % OUT.length]) < 1.6) && OUT.some((o, i) => segDist(a[0], a[1], o, OUT[(i + 1) % OUT.length]) < 1.6) && OUT.some((o, i) => segDist(b[0], b[1], o, OUT[(i + 1) % OUT.length]) < 1.6);
+      const L = Math.hypot(b[0] - a[0], b[1] - a[1]), pts = [a];
+      if (!onOut && L > 14) {
+        const m = Math.max(3, Math.round(L / 20)), nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
+        for (let i = 1; i < m; i++) { const t = i / m, d = (r() - .5) * Math.min(18, L * .22) * (i % 2 ? 1 : .6); pts.push([lerp(a[0], b[0], t) + nx * d, lerp(a[1], b[1], t) + ny * d]); }
+      }
+      pts.push(b);
+      cache.set(k, { pts, onOut });
+      if (!onOut) seamList.push({ key: k, pts, pieces: [] });
+    }
+    const e = cache.get(k); return fwd ? e.pts : e.pts.slice().reverse();
+  }
+  const pieces = cells.map((poly, i) => {
+    let path = [];
+    for (let v = 0; v < poly.length; v++) { const seg = jag(poly[v], poly[(v + 1) % poly.length]); path = path.concat(seg.slice(0, -1)); }
+    const c = path.reduce((s, p) => [s[0] + p[0] / path.length, s[1] + p[1] / path.length], [0, 0]);
+    return { path, c, i };
+  });
+  // which pieces touch each seam
+  for (const sm of seamList) {
+    const mid = sm.pts[Math.floor(sm.pts.length / 2)];
+    sm.pieces = pieces.filter(p => p.path.some(q => Math.hypot(q[0] - sm.pts[0][0], q[1] - sm.pts[0][1]) < 1.2) && p.path.some(q => Math.hypot(q[0] - sm.pts[sm.pts.length - 1][0], q[1] - sm.pts[sm.pts.length - 1][1]) < 1.2)).map(p => p.i);
+    sm.mid = mid;
+  }
+  return { rnd, OUT, pieces, seams: seamList.filter(s => s.pieces.length) };
+}
+
+/* ---------- draw ---------- */
+const svg = $('#svg'), piecesG = $('#pieces'), goldG = $('#goldLayer'), sparksG = $('#sparks'), gleamWrap = $('#gleamWrap');
+const dStr = pts => 'M' + pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L') + 'Z';
+function taper(pts, wmax) {         // filled ribbon with tapered ends along a polyline
+  const L = [], R = []; let total = 0; const cum = [0];
+  for (let i = 1; i < pts.length; i++) { total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); cum.push(total); }
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
+    const t = cum[i] / total, w = Math.max(.5, wmax * Math.pow(Math.sin(Math.PI * clamp(t, .0, 1)), .55) * (.85 + .3 * Math.sin(i * 2.3)));
+    L.push([pts[i][0] + nx * w, pts[i][1] + ny * w]); R.push([pts[i][0] - nx * w, pts[i][1] - ny * w]);
+  }
+  return dStr(L.concat(R.reverse()));
+}
+let pieceEls = [], seamEls = [];
+function render(seed) {
+  S = build(seed);
+  piecesG.textContent = ''; goldG.textContent = ''; gleamWrap.textContent = '';
+  const defs = svg.querySelector('defs');
+  defs.querySelectorAll('.dyn').forEach(e => e.remove());
+  // shared bowl artwork
+  const art = $('#bowlArt'); art.textContent = '';
+  el('path', { d: dStr(S.OUT), fill: 'url(#glaze)' }, art);
+  el('path', { d: dStr(S.OUT), fill: '#fff', filter: 'url(#glazeTex)', opacity: .9 }, art);
+  el('ellipse', { cx: CX, cy: RY0, rx: RX, ry: RYE, fill: 'url(#rimg)' }, art);
+  el('ellipse', { cx: CX, cy: RY0 + 3, rx: RX - 14, ry: RYE - 9, fill: 'url(#inside)' }, art);
+  el('ellipse', { cx: CX, cy: RY0, rx: RX - 2, ry: RYE - 1, fill: 'none', stroke: 'rgba(255,255,255,.28)', 'stroke-width': 1.4 }, art);
+  el('ellipse', { cx: CX - 44, cy: RY0 + 96, rx: 74, ry: 118, fill: 'url(#sheen)', transform: 'rotate(18 ' + (CX - 44) + ' ' + (RY0 + 96) + ')' }, art);
+  el('path', { d: 'M' + (CX - 178) + ' ' + (RY0 + 34) + ' C ' + (CX - 176) + ' ' + (RY0 + 110) + ' ' + (CX - 130) + ' ' + (RY0 + 190) + ' ' + (CX - 70) + ' ' + (RY0 + 228), fill: 'none', stroke: 'rgba(255,255,255,.2)', 'stroke-width': 5, 'stroke-linecap': 'round', filter: 'url(#soft)' }, art);
+  el('ellipse', { cx: CX, cy: 386, rx: 92, ry: 10, fill: '#0a0908' }, art);
+  // pieces
+  pieceEls = S.pieces.map(p => {
+    const cp = el('clipPath', { id: 'c' + p.i, class: 'dyn' }, defs); el('path', { d: dStr(p.path) }, cp);
+    const g = el('g', {}, piecesG), inner = el('g', { 'clip-path': 'url(#c' + p.i + ')' }, g);
+    el('use', { href: '#bowlArt' }, inner);
+    el('path', { d: dStr(p.path), fill: 'none', stroke: '#8c6f57', 'stroke-width': 1.6, 'stroke-linejoin': 'round', opacity: .9 }, g);
+    const ang = Math.atan2(p.c[1] - 240, p.c[0] - CX), dist = 26 + S.rnd() * 44;
+    return { g, p, dx: Math.cos(ang) * dist * 1.25, dy: Math.sin(ang) * dist * .9 - 8, rot: (S.rnd() - .5) * 15, ph: S.rnd() * 6.28 };
+  });
+  // seams: schedule in a random order
+  const order = S.seams.map((s, i) => i).sort(() => S.rnd() - .5), ns = order.length;
+  const gm = el('mask', { id: 'gmask', class: 'dyn' }, defs);
+  seamEls = S.seams.map((sm, idx) => {
+    const k = order.indexOf(idx), st = .2 + k / ns * .72, len = Math.min(1 - st, .78 / ns * 1.7);
+    const mk = el('mask', { id: 'm' + idx, class: 'dyn', maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: 600, height: 500 }, defs);
+    const path = el('path', { d: 'M' + sm.pts.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L'), fill: 'none', stroke: '#fff', 'stroke-width': 26, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, mk);
+    const L = path.getTotalLength(); path.setAttribute('stroke-dasharray', L); path.setAttribute('stroke-dashoffset', L);
+    const g = el('g', { mask: 'url(#m' + idx + ')' }, goldG);
+    const body = taper(sm.pts, 4.4);
+    el('path', { d: body, fill: '#7a5514', transform: 'translate(.9 1.2)', opacity: .7 }, g);
+    el('path', { d: body, fill: 'url(#goldg)' }, g);
+    el('path', { d: taper(sm.pts, 1.5), fill: '#ffe28a', transform: 'translate(-.6 -.8)', opacity: .9 }, g);
+    el('path', { d: body, fill: '#fff', mask: undefined, opacity: 0 }, g);
+    el('path', { d: body, fill: '#fff' }, gm);
+    return { sm, path, L, st, en: st + len, lastP: 0 };
+  });
+  // gleam sweep clipped to the seam bodies
+  const gg = el('g', { mask: 'url(#gmask)' }, gleamWrap);
+  const band = el('rect', { x: -60, y: 40, width: 120, height: 420, fill: 'url(#band)', transform: 'skewX(-22)', class: 'gleam' }, gg);
+  // join times
+  pieceEls.forEach(pe => { let j = 1; seamEls.forEach(se => { if (se.sm.pieces.includes(pe.p.i)) j = Math.min(j, se.st); }); pe.join = j; pe.st = Math.max(0, j - .3); pe.en = Math.max(.08, j + .02); });
+  // steam sits above the rim
+}
+
+/* ---------- sparkles ---------- */
+const SP = []; for (let i = 0; i < 70; i++) { const p = el('path', { d: 'M0 -1 L.22 -.22 L1 0 L.22 .22 L0 1 L-.22 .22 L-1 0 L-.22 -.22Z', fill: '#fff3b8', opacity: 0 }, sparksG); SP.push({ p, life: 0, max: 1, x: 0, y: 0, vx: 0, vy: 0, s: 1, r: 0 }); }
+let spI = 0;
+function spark(x, y, n, big) {
+  for (let i = 0; i < n; i++) {
+    const s = SP[spI++ % SP.length], a = Math.random() * 6.28, v = (big ? 60 : 24) * (.3 + Math.random());
+    s.x = x; s.y = y; s.vx = Math.cos(a) * v; s.vy = Math.sin(a) * v - 10; s.life = 0; s.max = .5 + Math.random() * .7; s.s = (big ? 5 : 3.4) * (.5 + Math.random()); s.r = Math.random() * 60;
+  }
+}
+function stepSparks(dt) {
+  for (const s of SP) {
+    if (s.life >= s.max) { if (s.p.getAttribute('opacity') !== '0') s.p.setAttribute('opacity', 0); continue; }
+    s.life += dt; const k = s.life / s.max; s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 40 * dt; s.vx *= .97;
+    const sc = s.s * (1 - k * .7) * (1 + .25 * Math.sin(s.life * 30));
+    s.p.setAttribute('transform', 'translate(' + s.x.toFixed(1) + ' ' + s.y.toFixed(1) + ') rotate(' + (s.r + k * 90).toFixed(0) + ') scale(' + sc.toFixed(2) + ')');
+    s.p.setAttribute('opacity', (1 - k).toFixed(2));
+  }
+}
+
+/* ---------- progress: a load that stalls and bursts ---------- */
+let keys = [], TOTAL = 9, time = 0, boost = 0, running = false, finished = false;
+function makeKeys() {
+  const r = Math.random, K = [[0, 0]]; let t = 0, p = 0;
+  const steps = [[.5, .1], [.7, 0], [1.3, .16], [.4, .0], [1.1, .19], [.6, .0], [1.0, .2], [.7, .01], [.9, .18], [.7, 0], [.8, .13], [.5, .03]];
+  const totalP = steps.reduce((s, a) => s + a[1], 0), totalT = steps.reduce((s, a) => s + a[0], 0);
+  for (const [dt, dp] of steps) { t += dt / totalT * TOTAL * (.9 + r() * .2); p += dp / totalP; K.push([t, Math.min(1, p)]); }
+  K[K.length - 1][0] = Math.max(K[K.length - 1][0], TOTAL); K[K.length - 1][1] = 1; return K;
+}
+function progressAt(t) {
+  if (t <= 0) return 0;
+  for (let i = 1; i < keys.length; i++) if (t <= keys[i][0]) { const a = keys[i - 1], b = keys[i], k = (t - a[0]) / (b[0] - a[0]); return lerp(a[1], b[1], ss(clamp(k, 0, 1))); }
+  return 1;
+}
+const numEl = $('#num'), ruleEl = $('#rule'), statusEls = Array.from(document.querySelectorAll('#status span'));
+let curStatus = 0;
+function setStatus(i) { if (i === curStatus) return; statusEls[curStatus].classList.remove('on'); statusEls[i].classList.add('on'); curStatus = i; }
+
+function apply(p, T) {
+  const pr = clamp(p, 0, 1);
+  numEl.textContent = Math.floor(pr * 100);
+  ruleEl.style.setProperty('--p', pr);
+  setStatus(pr < .2 ? 0 : pr < .5 ? 1 : pr < .88 ? 2 : 3);
+  for (const pe of pieceEls) {
+    const k = clamp((pr - pe.st) / (pe.en - pe.st), 0, 1), e = 1 - (k >= 1 ? 1 : outBack(k) > 1.0 ? outBack(k) : outBack(k)), idle = (1 - Math.min(1, k)) * (RM ? 0 : 1);
+    const ox = pe.dx * e + Math.sin(T * .9 + pe.ph) * 3 * idle, oy = pe.dy * e + Math.cos(T * .7 + pe.ph) * 3.5 * idle, ro = pe.rot * e + Math.sin(T * .6 + pe.ph) * 1.2 * idle;
+    pe.g.setAttribute('transform', 'translate(' + ox.toFixed(2) + ' ' + oy.toFixed(2) + ') rotate(' + ro.toFixed(2) + ' ' + pe.p.c[0].toFixed(1) + ' ' + pe.p.c[1].toFixed(1) + ')');
+  }
+  let lead = null;
+  for (const se of seamEls) {
+    const k = clamp((pr - se.st) / (se.en - se.st), 0, 1), kk = ss(k);
+    se.path.setAttribute('stroke-dashoffset', (se.L * (1 - kk)).toFixed(1));
+    if (k > 0 && k < 1) { const pt = se.path.getPointAtLength(se.L * kk); lead = pt; if (Math.random() < .55) spark(pt.x, pt.y, 1, false); }
+  }
+  const sh = $('#shd'), tight = 1 - Math.min(1, pr * 1.1);
+  sh.setAttribute('rx', 180 + 26 * tight * 0 + 0); sh.setAttribute('ry', 26 + 6 * tight);
+  return lead;
+}
+
+/* ---------- run / finish ---------- */
+let last = 0, T = 0;
+function start() {
+  finished = false; running = true; time = 0; boost = 0;
+  document.body.classList.remove('finished'); $('#pulse').classList.remove('go');
+  TOTAL = RM ? 3.6 : 9; keys = makeKeys();
+  render((Math.random() * 1e9) | 0);
+  apply(0, 0);
+}
+function finish() {
+  finished = true; running = false; apply(1, T);
+  document.body.classList.add('finished');
+  const pu = $('#pulse'); pu.classList.remove('go'); void pu.offsetWidth; pu.classList.add('go');
+  const b = svg.getBoundingClientRect(); const stg = $('#stage').getBoundingClientRect();
+  pu.style.left = ((b.left - stg.left) + b.width * .5) + 'px'; pu.style.top = ((b.top - stg.top) + b.height * .5) + 'px';
+  for (const se of seamEls) spark(se.sm.mid[0], se.sm.mid[1], 2, true);
+  const g = gleamWrap.querySelector('.gleam'); g.style.animation = 'none'; void g.getBoundingClientRect(); g.style.animation = '';
+  for (let i = 0; i < 3; i++) setTimeout(() => seamEls.forEach(se => spark(se.sm.pts[(Math.random() * se.sm.pts.length) | 0][0], se.sm.pts[0][1], 0, false)), 0);
+}
+function frame(now) {
+  requestAnimationFrame(frame);
+  if (document.hidden) { last = now; return; }
+  const dt = Math.min(.05, (now - last) / 1000); last = now; T += dt;
+  if (running) {
+    boost = Math.max(0, boost - dt);
+    time += dt * (boost > 0 ? 3.2 : 1);
+    const p = progressAt(time), lead = apply(p, T);
+    if (lead) { /* glowing head of the liquid gold */ }
+    if (time >= TOTAL && p >= 1) finish();
+  } else if (finished) {
+    if (Math.random() < .06 && seamEls.length) { const se = seamEls[(Math.random() * seamEls.length) | 0], pt = se.sm.pts[(Math.random() * se.sm.pts.length) | 0]; spark(pt[0], pt[1], 1, false); }
+    for (const pe of pieceEls) { /* settled */ }
+  }
+  stepSparks(dt);
+}
+function hurry(e) {
+  if (!running) return;
+  boost = 1.3;
+  const r = svg.getBoundingClientRect(), x = ((e && e.clientX != null ? e.clientX : r.left + r.width / 2) - r.left) / r.width * 600, y = ((e && e.clientY != null ? e.clientY : r.top + r.height / 2) - r.top) / r.height * 500;
+  spark(x, y, 16, true);
+}
+$('#stage').addEventListener('pointerdown', hurry);
+$('#stage').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hurry(); } });
+$('#replay').addEventListener('click', start);
+addEventListener('keydown', e => { if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey) start(); });
+
+start();
+requestAnimationFrame(t => { last = t; requestAnimationFrame(frame); });
+})();
+</script>
+</body>
+</html>

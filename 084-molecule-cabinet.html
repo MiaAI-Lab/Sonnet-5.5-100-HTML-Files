@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecule Cabinet — a curio cabinet of schematic molecules</title>
+<meta name="description" content="Six molecules in a glass-fronted cabinet: water, methane, ethanol, benzene, caffeine and buckminsterfullerene, drawn as shaded ball-and-stick models you can turn, zoom and measure.">
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --cream:#f7f3ea; --walnut:#5b4030; --brass:#b8862b; --glass:#dfeeee;
+  --ink:#2d2118; --soft:#6d5a48; --faint:#9b8a76;
+  --wall1:#e4dac5; --wall2:#efe8d9;
+  --c:#3d4148; --h:#f4f1ea; --o:#e63946; --n:#3a5bd9;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --brassg:linear-gradient(180deg,#f0d896 0%,#d7ae5a 22%,#b8862b 55%,#8c6218 100%);
+}
+*{box-sizing:border-box}
+html{background:var(--wall2)}
+body{margin:0;min-height:100vh;min-height:100dvh;color:var(--ink);font-family:var(--serif);-webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(120% 90% at 50% 0%,rgba(255,255,255,.7),transparent 60%),
+    repeating-linear-gradient(90deg,rgba(91,64,48,.028) 0 1px,transparent 1px 5px),
+    linear-gradient(180deg,var(--wall2),var(--wall1))}
+button{font:inherit;color:inherit}
+sub{font-size:.68em;line-height:0;vertical-align:baseline;position:relative;top:.28em}
+
+.wrap{max-width:1380px;margin:0 auto;padding:clamp(14px,2.4vw,30px) clamp(12px,2.6vw,34px) 30px}
+/* ============ HEADER ============ */
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:clamp(12px,1.8vw,20px)}
+.top h1{margin:0;font:italic 500 clamp(30px,3.6vw,50px)/1 var(--serif);letter-spacing:.005em;color:var(--walnut)}
+.top h1 span{font-style:normal;font-variant:small-caps;letter-spacing:.14em;font-size:.42em;display:block;color:var(--brass);margin-bottom:7px;font-weight:600}
+.top p{margin:0;max-width:34ch;font:italic 400 15px/1.5 var(--serif);color:var(--soft);text-align:right}
+.top p em{font:400 11px/1.4 var(--mono);font-style:normal;letter-spacing:.08em;color:var(--faint);display:block;margin-top:5px}
+
+/* ============ CABINET ============ */
+.cab{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(300px,.8fr);gap:clamp(14px,2vw,26px);align-items:start}
+.case{position:relative;border-radius:16px;padding:clamp(12px,1.5vw,20px);
+  background:
+    radial-gradient(60% 40% at 20% 15%,rgba(255,220,170,.16),transparent 70%),
+    repeating-linear-gradient(91deg,rgba(0,0,0,.075) 0 2px,transparent 2px 9px),
+    repeating-linear-gradient(88deg,rgba(255,225,190,.05) 0 1px,transparent 1px 13px),
+    linear-gradient(150deg,#6d4b38,#553a2b 55%,#46301f);
+  box-shadow:inset 0 0 0 1px rgba(255,220,170,.22),inset 0 2px 0 rgba(255,235,205,.25),inset 0 -14px 30px rgba(0,0,0,.32),0 34px 60px -26px rgba(60,38,18,.7),0 6px 14px rgba(60,38,18,.25)}
+.case .plate{position:absolute;left:50%;top:-14px;transform:translateX(-50%);padding:6px 22px 7px;border-radius:5px;background:var(--brassg);color:#3a2708;
+  font:600 11px/1 var(--mono);letter-spacing:.3em;text-transform:uppercase;box-shadow:0 2px 0 #6f4d10,0 8px 14px rgba(60,38,18,.35),inset 0 1px 0 rgba(255,255,255,.6);white-space:nowrap;z-index:3}
+.glassbox{position:relative;height:clamp(300px,45vh,540px);border-radius:8px;overflow:hidden;
+  background:
+    radial-gradient(70% 60% at 50% 42%,#fffdf7,rgba(255,253,247,0) 70%),
+    linear-gradient(rgba(91,64,48,.055) 1px,transparent 1px) 0 0/34px 34px,
+    linear-gradient(90deg,rgba(91,64,48,.055) 1px,transparent 1px) 0 0/34px 34px,
+    linear-gradient(180deg,#f9f5ec,#efe8d8);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.35),inset 0 10px 30px rgba(60,38,18,.28),inset 0 -40px 60px -30px rgba(91,64,48,.22)}
+#main{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;outline:none}
+#main.drag{cursor:grabbing}
+#main.hot{cursor:pointer}
+#main:focus-visible{box-shadow:inset 0 0 0 3px rgba(184,134,43,.8)}
+.glass{position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(115deg,rgba(255,255,255,.55) 0,rgba(255,255,255,.18) 9%,rgba(255,255,255,0) 22%),
+    linear-gradient(115deg,transparent 46%,rgba(255,255,255,.22) 50%,transparent 58%),
+    linear-gradient(180deg,rgba(223,238,238,.28),rgba(223,238,238,.06) 40%,rgba(223,238,238,.22));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),inset 0 0 40px rgba(223,238,238,.5)}
+.cn{position:absolute;width:26px;height:26px;z-index:2;pointer-events:none}
+.cn::before,.cn::after{content:"";position:absolute;background:var(--brassg);border-radius:1px;box-shadow:0 1px 2px rgba(0,0,0,.4)}
+.cn::before{left:0;top:0;width:100%;height:5px}.cn::after{left:0;top:0;width:5px;height:100%}
+.cn.tl{left:6px;top:6px}
+.cn.tr{right:6px;top:6px;transform:scaleX(-1)}
+.cn.bl{left:6px;bottom:6px;transform:scaleY(-1)}
+.cn.br{right:6px;bottom:6px;transform:scale(-1)}
+.style{position:absolute;left:12px;bottom:12px;z-index:2;display:flex;gap:0;border-radius:99px;padding:3px;background:rgba(247,243,234,.82);border:1px solid rgba(91,64,48,.28);box-shadow:0 4px 12px rgba(60,38,18,.18);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.style button{appearance:none;border:0;background:none;cursor:pointer;height:34px;padding:0 15px;border-radius:99px;font:600 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--soft);transition:background .3s,color .3s}
+.style button:hover{color:var(--ink)}
+.style button[aria-pressed="true"]{background:var(--walnut);color:#f7ecd6;box-shadow:0 1px 0 rgba(255,255,255,.25) inset}
+.style button:focus-visible,.jar:focus-visible{outline:2px solid var(--brass);outline-offset:3px}
+.hintline{position:absolute;right:16px;bottom:16px;z-index:2;font:400 10.5px/1.4 var(--mono);letter-spacing:.06em;color:var(--faint);text-align:right;pointer-events:none;background:rgba(247,243,234,.6);padding:3px 8px;border-radius:4px}
+.tip{position:absolute;left:0;top:0;z-index:4;pointer-events:none;opacity:0;transform:translate(-999px,-999px);padding:7px 12px 8px;border-radius:5px;background:var(--brassg);color:#33230a;
+  box-shadow:0 2px 0 #6f4d10,0 10px 18px rgba(60,38,18,.35),inset 0 1px 0 rgba(255,255,255,.55);transition:opacity .18s;white-space:nowrap}
+.tip b{display:block;font:600 14px/1.2 var(--serif);letter-spacing:.02em}
+.tip span{font:500 10px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase}
+
+/* shelf of jars */
+.shelf{position:relative;margin-top:clamp(18px,2.4vw,30px);padding:22px clamp(10px,1.4vw,18px) 0;border-radius:12px 12px 6px 6px;
+  background:
+    radial-gradient(60% 50% at 30% 0%,rgba(255,255,255,.55),transparent 70%),
+    linear-gradient(180deg,#f2ecdf,#e8dfcc);
+  box-shadow:inset 0 0 0 1px rgba(91,64,48,.18),inset 0 8px 20px rgba(91,64,48,.12)}
+.shelf h2{position:absolute;left:18px;top:-9px;margin:0;padding:3px 12px 4px;border-radius:3px;background:var(--brassg);color:#3a2708;font:600 9.5px/1 var(--mono);letter-spacing:.26em;text-transform:uppercase;box-shadow:0 2px 0 #6f4d10,0 5px 10px rgba(60,38,18,.25)}
+.jars{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:clamp(8px,1.2vw,16px);padding-bottom:16px}
+.jar{appearance:none;background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative}
+.jar .lid{width:46%;height:13px;margin-bottom:-2px;border-radius:5px 5px 2px 2px;position:relative;z-index:2;transition:transform .45s var(--ease);
+  background:repeating-linear-gradient(90deg,rgba(0,0,0,.08) 0 1px,transparent 1px 4px),linear-gradient(180deg,#c9a06c,#a97e4a 60%,#86603a)}
+.jar .glassjar{position:relative;width:100%;aspect-ratio:.9;border-radius:22px 22px 12px 12px;overflow:hidden;
+  background:linear-gradient(160deg,rgba(255,255,255,.75),rgba(223,238,238,.6) 40%,rgba(200,224,225,.55));
+  border:2px solid rgba(255,255,255,.75);box-shadow:0 0 0 2px rgba(91,64,48,.42),inset 0 -12px 22px rgba(120,160,165,.28),inset 8px 0 14px rgba(255,255,255,.55),0 10px 16px -6px rgba(60,38,18,.4);transition:box-shadow .3s,transform .45s var(--ease)}
+.jar .glassjar::after{content:"";position:absolute;left:9%;top:8%;width:10%;height:60%;border-radius:99px;background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,0));pointer-events:none}
+.jar canvas{position:absolute;inset:0;width:100%;height:100%}
+.jar .lab{margin-top:9px;width:92%;padding:5px 4px 6px;border-radius:3px;background:var(--brassg);color:#33230a;box-shadow:0 2px 0 #6f4d10,0 5px 8px rgba(60,38,18,.28),inset 0 1px 0 rgba(255,255,255,.5);transition:transform .3s var(--ease)}
+.jar .lab b{display:block;font:600 clamp(12px,1.15vw,15px)/1.1 var(--serif);letter-spacing:.01em;white-space:nowrap}
+.jar .lab i{display:block;font:500 8.5px/1.3 var(--mono);letter-spacing:.14em;text-transform:uppercase;font-style:normal;margin-top:2px;opacity:.75}
+.jar:hover .lid{transform:translateY(-6px) rotate(-3deg)}
+.jar:hover .glassjar{transform:translateY(-2px)}
+.jar[aria-pressed="true"] .glassjar{box-shadow:0 0 0 2px var(--brass),0 0 0 6px rgba(184,134,43,.28),inset 0 -12px 22px rgba(120,160,165,.28),inset 8px 0 14px rgba(255,255,255,.55),0 14px 22px -6px rgba(60,38,18,.5)}
+.jar[aria-pressed="true"] .lab{transform:translateY(-2px);box-shadow:0 2px 0 #6f4d10,0 0 0 2px rgba(255,255,255,.7),0 8px 14px rgba(60,38,18,.35),inset 0 1px 0 rgba(255,255,255,.6)}
+.shelf::after{content:"";position:absolute;left:-6px;right:-6px;bottom:-11px;height:12px;border-radius:2px;
+  background:repeating-linear-gradient(91deg,rgba(0,0,0,.08) 0 2px,transparent 2px 9px),linear-gradient(180deg,#75533d,#4f3627);box-shadow:0 8px 12px rgba(60,38,18,.35),inset 0 1px 0 rgba(255,225,190,.35)}
+
+/* ============ INFO CARD ============ */
+.side{display:flex;flex-direction:column;gap:14px}
+.card{position:relative;padding:22px 22px 20px;border-radius:6px;background:
+  radial-gradient(90% 60% at 20% 0%,rgba(255,255,255,.8),transparent 70%),
+  repeating-linear-gradient(180deg,rgba(91,64,48,.028) 0 1px,transparent 1px 4px),var(--cream);
+  box-shadow:0 0 0 1px rgba(91,64,48,.2),0 0 0 6px var(--cream),0 0 0 7px rgba(184,134,43,.6),0 22px 34px -14px rgba(60,38,18,.45)}
+.card .kicker{display:flex;justify-content:space-between;font:500 10px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--brass);margin-bottom:12px}
+.card h2{margin:0;font:italic 500 clamp(28px,2.6vw,38px)/1.05 var(--serif);color:var(--walnut)}
+.card .formula{margin:6px 0 14px;font:500 clamp(24px,2.3vw,32px)/1.1 var(--serif);letter-spacing:.02em;color:var(--ink)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid rgba(91,64,48,.25);border-bottom:1px solid rgba(91,64,48,.25);margin-bottom:14px}
+.stats div{padding:10px 0 11px}
+.stats div+div{padding-left:14px;border-left:1px solid rgba(91,64,48,.2)}
+.stats dt{font:500 9.5px/1 var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+.stats dd{margin:0;font:500 19px/1 var(--mono);letter-spacing:-.02em;color:var(--ink)}
+.stats dd small{font:500 10.5px/1 var(--mono);color:var(--soft);letter-spacing:.04em;margin-left:4px}
+.fact{margin:0;font:italic 400 15.5px/1.55 var(--serif);color:var(--soft);text-wrap:pretty}
+.fact::first-letter{font:600 2.2em/.8 var(--serif);float:left;padding:.08em .1em 0 0;color:var(--brass);font-style:normal}
+.sel{margin-top:16px;padding:14px 14px 12px;border-radius:5px;background:rgba(223,238,238,.55);border:1px solid rgba(91,64,48,.18);min-height:118px}
+.sel h3{margin:0 0 8px;font:500 9.5px/1 var(--mono);letter-spacing:.24em;text-transform:uppercase;color:var(--soft)}
+.sel p{margin:0;font:400 13.5px/1.5 var(--serif);color:var(--ink)}
+.sel ul{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:3px 14px;font:500 12px/1.5 var(--mono);color:var(--ink)}
+.sel li span{color:var(--soft)}
+.sel li b{font-weight:600;color:var(--walnut)}
+.foot{margin-top:14px;font:400 11px/1.5 var(--mono);letter-spacing:.04em;color:var(--faint)}
+
+@media (max-width:1020px){
+  .cab{grid-template-columns:1fr}
+  .top p{text-align:left}
+  .jars{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:22px}
+  .glassbox{height:clamp(300px,62vw,520px)}
+  .hintline{display:none}
+}
+@media (max-width:520px){
+  .case .plate{font-size:9.5px;letter-spacing:.2em;padding:6px 14px 7px}
+  .style{left:8px;bottom:8px}
+  .style button{padding:0 11px;font-size:9.5px;height:36px}
+  .card{padding:18px 16px 16px}
+  .jar .lab i{display:none}
+}
+@media (prefers-reduced-motion:reduce){.jar .lid,.jar .glassjar,.jar .lab{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1><span>Cabinet No. 7</span>Molecule Cabinet</h1>
+    <p>Six small things everything is made of, kept under glass. Turn them, weigh them, measure them.<em>schematic &middot; coordinates approximate, in &aring;ngstr&ouml;ms</em></p>
+  </header>
+
+  <main class="cab">
+    <section aria-label="Specimen display">
+      <div class="case">
+        <span class="plate">Specimen &middot; <span id="plateName">Water</span></span>
+        <div class="glassbox" id="glassbox">
+          <canvas id="main" tabindex="0" role="img" aria-label="Interactive 3D molecule. Drag to rotate, scroll or pinch to zoom, click an atom to measure its bonds. Arrow keys rotate, plus and minus zoom."></canvas>
+          <div class="glass" aria-hidden="true"></div>
+          <div class="style" role="group" aria-label="Drawing style" id="styleSeg">
+            <button type="button" data-s="ball" aria-pressed="true">Ball &amp; stick</button>
+            <button type="button" data-s="space" aria-pressed="false">Space-filling</button>
+            <button type="button" data-s="wire" aria-pressed="false">Wireframe</button>
+          </div>
+          <div class="hintline" aria-hidden="true">drag &middot; scroll to zoom &middot; click an atom</div>
+          <div class="tip" id="tip" role="tooltip"><b id="tipN">Oxygen</b><span id="tipZ">Z 8</span></div>
+        </div>
+        <i class="cn tl" aria-hidden="true"></i><i class="cn tr" aria-hidden="true"></i><i class="cn bl" aria-hidden="true"></i><i class="cn br" aria-hidden="true"></i>
+      </div>
+
+      <div class="shelf">
+        <h2>Specimen jars</h2>
+        <div class="jars" id="jars" role="group" aria-label="Choose a molecule"></div>
+      </div>
+    </section>
+
+    <aside class="side" aria-label="Specimen card">
+      <article class="card" aria-live="polite">
+        <div class="kicker"><span id="cardNo">Specimen 01 / 06</span><span>schematic</span></div>
+        <h2 id="cName">Water</h2>
+        <div class="formula" id="cForm">H<sub>2</sub>O</div>
+        <dl class="stats">
+          <div><dt>Molar mass</dt><dd><span id="cMass">18.015</span><small>g/mol</small></dd></div>
+          <div><dt>Atoms &middot; bonds</dt><dd><span id="cAtoms">3</span><small>&middot;</small><span id="cBonds">2</span></dd></div>
+        </dl>
+        <p class="fact" id="cFact"></p>
+        <div class="sel" id="sel">
+          <h3>Measure</h3>
+          <p>Click any atom to read its element, the lengths of its bonds and the angles between them.</p>
+        </div>
+      </article>
+      <p class="foot">Geometry is schematic: bond lengths and angles are rounded from typical values, drawn for looking, not for computing.</p>
+    </aside>
+  </main>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+var TAU=Math.PI*2,D2R=Math.PI/180;
+function clamp(v,a,b){return v<a?a:v>b?b:v}
+function lerp(a,b,t){return a+(b-a)*t}
+function easeOutBack(t){var c1=1.5,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)}
+
+/* ================= elements ================= */
+var EL={
+  H:{name:'Hydrogen',z:1,vdw:1.2,rgb:[244,241,234]},
+  C:{name:'Carbon',z:6,vdw:1.7,rgb:[74,78,88]},
+  N:{name:'Nitrogen',z:7,vdw:1.55,rgb:[58,91,217]},
+  O:{name:'Oxygen',z:8,vdw:1.52,rgb:[230,57,70]}
+};
+function mix(a,b,t){return [lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)]}
+function css(c){return 'rgb('+Math.round(c[0])+','+Math.round(c[1])+','+Math.round(c[2])+')'}
+Object.keys(EL).forEach(function(k){
+  var e=EL[k],rgb=e.rgb,light=k==='H';
+  e.dark=css(mix(rgb,[20,18,26],light?.42:.5));e.main=css(rgb);e.hi=css(mix(rgb,[255,255,255],.5));e.mid=css(mix(rgb,[20,18,26],light?.18:.26));
+  var S=256,c=document.createElement('canvas');c.width=c.height=S;var g=c.getContext('2d');
+  var gr=g.createRadialGradient(S*.36,S*.32,S*.02,S*.5,S*.5,S*.52);
+  gr.addColorStop(0,css(mix(rgb,[255,255,255],.6)));gr.addColorStop(.26,css(mix(rgb,[255,255,255],.2)));gr.addColorStop(.58,css(rgb));
+  gr.addColorStop(.86,css(mix(rgb,[16,14,24],light?.32:.46)));gr.addColorStop(1,css(mix(rgb,[10,8,16],light?.55:.72)));
+  g.fillStyle=gr;g.beginPath();g.arc(S/2,S/2,S/2-1.5,0,TAU);g.fill();
+  g.save();g.beginPath();g.arc(S/2,S/2,S/2-1.5,0,TAU);g.clip();
+  var g2=g.createRadialGradient(S*.72,S*.82,0,S*.72,S*.82,S*.36);g2.addColorStop(0,'rgba(255,236,210,.30)');g2.addColorStop(1,'rgba(255,236,210,0)');g.fillStyle=g2;g.fillRect(0,0,S,S);
+  g.restore();
+  var g3=g.createRadialGradient(S*.34,S*.29,0,S*.34,S*.29,S*.17);g3.addColorStop(0,'rgba(255,255,255,.95)');g3.addColorStop(.45,'rgba(255,255,255,.45)');g3.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle=g3;g.beginPath();g.arc(S*.34,S*.29,S*.17,0,TAU);g.fill();
+  e.spr=c;
+});
+
+/* ================= the six specimens (angstroms, schematic) ================= */
+function vsub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]]}
+function vlen(a){return Math.hypot(a[0],a[1],a[2])}
+function vnorm(a){var l=vlen(a)||1;return [a[0]/l,a[1]/l,a[2]/l]}
+function vcross(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]]}
+function addMethylH(atoms,bonds,ci,from){
+  var c=atoms[ci].slice(1),d=vnorm(vsub(c,atoms[from].slice(1))),ref=Math.abs(d[2])<.9?[0,0,1]:[0,1,0],u=vnorm(vcross(d,ref)),v=vcross(d,u);
+  for(var k=0;k<3;k++){var a=k*TAU/3+.5,dir=[d[0]*.334+.943*(Math.cos(a)*u[0]+Math.sin(a)*v[0]),d[1]*.334+.943*(Math.cos(a)*u[1]+Math.sin(a)*v[1]),d[2]*.334+.943*(Math.cos(a)*u[2]+Math.sin(a)*v[2])];
+    atoms.push(['H',c[0]+1.09*dir[0],c[1]+1.09*dir[1],c[2]+1.09*dir[2]]);bonds.push([ci,atoms.length-1,1])}
+}
+function molWater(){
+  var t=104.5/2*D2R,d=.9572;
+  return {id:'water',name:'Water',formula:'H<sub>2</sub>O',short:'H<sub>2</sub>O',mass:'18.015',
+    fact:'Bent at 104.5°, water is lopsided: oxygen hoards the electrons, which is why it clings, climbs the inside of a straw and makes ice float.',
+    atoms:[['O',0,0,0],['H',d*Math.sin(t),d*Math.cos(t),0],['H',-d*Math.sin(t),d*Math.cos(t),0]],bonds:[[0,1,1],[0,2,1]]};
+}
+function molMethane(){
+  var a=.6288,atoms=[['C',0,0,0],['H',a,a,a],['H',a,-a,-a],['H',-a,a,-a],['H',-a,-a,a]];
+  return {id:'methane',name:'Methane',formula:'CH<sub>4</sub>',short:'CH<sub>4</sub>',mass:'16.04',
+    fact:'The simplest hydrocarbon. Its four hydrogens point to the corners of a tetrahedron, every angle exactly 109.5°, the shape of the pyramid of a stacked cannonball.',
+    atoms:atoms,bonds:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]]};
+}
+function molEthanol(){
+  var atoms=[['C',-1.52,0,0],['C',0,0,0],['O',.44,1.36,0],['H',1.39,1.42,.12],
+    ['H',.377,-.518,.883],['H',.377,-.518,-.883],['H',-1.884,1.028,0],['H',-1.884,-.514,.89],['H',-1.884,-.514,-.89]];
+  return {id:'ethanol',name:'Ethanol',formula:'C<sub>2</sub>H<sub>5</sub>OH',short:'C<sub>2</sub>H<sub>5</sub>OH',mass:'46.07',
+    fact:'One end of the molecule loves water, the other loves oil. That split personality is why ethanol dissolves flavours, perfumes and, as anyone knows, a good deal of sense.',
+    atoms:atoms,bonds:[[0,1,1],[1,2,1],[2,3,1],[1,4,1],[1,5,1],[0,6,1],[0,7,1],[0,8,1]]};
+}
+function molBenzene(){
+  var atoms=[],bonds=[],i,R=1.397,RH=2.48;
+  for(i=0;i<6;i++){var a=i*60*D2R+Math.PI/6;atoms.push(['C',R*Math.cos(a),R*Math.sin(a),0])}
+  for(i=0;i<6;i++){var a2=i*60*D2R+Math.PI/6;atoms.push(['H',RH*Math.cos(a2),RH*Math.sin(a2),0])}
+  for(i=0;i<6;i++){bonds.push([i,(i+1)%6,i%2?1:2]);bonds.push([i,6+i,1])}
+  return {id:'benzene',name:'Benzene',formula:'C<sub>6</sub>H<sub>6</sub>',short:'C<sub>6</sub>H<sub>6</sub>',mass:'78.11',
+    fact:'Kekul&eacute; said he dreamed of a snake biting its own tail. In truth all six carbon bonds are identical, 1.40 Å, each one part single and part double.',
+    atoms:atoms,bonds:bonds};
+}
+function molCaffeine(){
+  var P=[['N',-1.212,.7],['C',-1.212,-.7],['N',0,-1.4],['C',1.212,-.7],['C',1.212,.7],['C',0,1.4],['N',2.543,1.133],['C',3.366,0],['N',2.543,-1.133],
+    ['O',-2.269,-1.31],['O',0,2.62],['C',-2.485,1.435],['C',0,-2.87],['C',2.997,2.531],['H',4.446,0]],atoms=[],bonds,i;
+  for(i=0;i<P.length;i++)atoms.push([P[i][0],P[i][1],P[i][2],.06*Math.sin(i*2.3)+.03*Math.cos(i*4.1)]);
+  bonds=[[0,1,1],[1,2,1],[2,3,1],[3,4,2],[4,5,1],[5,0,1],[4,6,1],[6,7,1],[7,8,2],[8,3,1],[1,9,2],[5,10,2],[0,11,1],[2,12,1],[6,13,1],[7,14,1]];
+  addMethylH(atoms,bonds,11,0);addMethylH(atoms,bonds,12,2);addMethylH(atoms,bonds,13,6);
+  return {id:'caffeine',name:'Caffeine',formula:'C<sub>8</sub>H<sub>10</sub>N<sub>4</sub>O<sub>2</sub>',short:'C<sub>8</sub>H<sub>10</sub>N<sub>4</sub>O<sub>2</sub>',mass:'194.19',
+    fact:'Caffeine fits the same lock as adenosine, the molecule that tells your brain it is tired. It does not give energy; it just hides the tiredness note behind a key.',
+    atoms:atoms,bonds:bonds};
+}
+function molC60(){
+  var phi=(1+Math.sqrt(5))/2,base=[],atoms=[],bonds=[],i,j,s=.71;
+  var seeds=[[0,1,3*phi],[1,2+phi,2*phi],[phi,2,2*phi+1]];
+  seeds.forEach(function(v){
+    for(var sx=-1;sx<=1;sx+=2)for(var sy=-1;sy<=1;sy+=2)for(var sz=-1;sz<=1;sz+=2){
+      var p=[v[0]*sx,v[1]*sy,v[2]*sz];
+      if((v[0]===0&&sx>0)||(v[1]===0&&sy>0)||(v[2]===0&&sz>0))continue;
+      base.push(p,[p[1],p[2],p[0]],[p[2],p[0],p[1]]);
+    }
+  });
+  base.forEach(function(p){var dup=false;for(var k=0;k<atoms.length;k++){if(Math.abs(atoms[k][1]-p[0]*s)+Math.abs(atoms[k][2]-p[1]*s)+Math.abs(atoms[k][3]-p[2]*s)<1e-4){dup=true;break}}if(!dup)atoms.push(['C',p[0]*s,p[1]*s,p[2]*s])});
+  var nb=[];for(i=0;i<atoms.length;i++)nb.push([]);
+  for(i=0;i<atoms.length;i++)for(j=i+1;j<atoms.length;j++){var d=Math.hypot(atoms[i][1]-atoms[j][1],atoms[i][2]-atoms[j][2],atoms[i][3]-atoms[j][3]);if(Math.abs(d-1.42)<.06){nb[i].push(j);nb[j].push(i);bonds.push([i,j,1])}}
+  // hexagon-hexagon edges (no pentagon through them) carry the double bonds
+  bonds.forEach(function(b){
+    var a=b[0],c=b[1],inPent=false;
+    nb[c].forEach(function(x){if(x===a||inPent)return;nb[a].forEach(function(y){if(y===c||y===x||inPent)return;nb[x].forEach(function(z){if(z!==c&&z!==a&&nb[y].indexOf(z)>=0)inPent=true})})});
+    b[2]=inPent?1:2;
+  });
+  return {id:'c60',name:'Buckminsterfullerene',formula:'C<sub>60</sub>',short:'C<sub>60</sub>',mass:'720.66',
+    fact:'Twelve pentagons and twenty hexagons make a hollow cage of sixty carbons, the pattern of a football and of Fuller&rsquo;s domes. Sixty atoms, one molecule, all curvature.',
+    atoms:atoms,bonds:bonds};
+}
+var MOLS=[molWater(),molMethane(),molEthanol(),molBenzene(),molCaffeine(),molC60()];
+
+/* ================= per-molecule precomputation ================= */
+MOLS.forEach(function(m){
+  var n=m.atoms.length,cx=0,cy=0,cz=0,i;
+  m.na=n;m.nb=m.bonds.length;
+  m.ax=new Float32Array(n);m.ay=new Float32Array(n);m.az=new Float32Array(n);m.el=[];
+  m.atoms.forEach(function(a){cx+=a[1];cy+=a[2];cz+=a[3]});cx/=n;cy/=n;cz/=n;
+  var rad=0;
+  m.atoms.forEach(function(a,k){m.ax[k]=a[1]-cx;m.ay[k]=a[2]-cy;m.az[k]=a[3]-cz;m.el.push(EL[a[0]]);rad=Math.max(rad,Math.hypot(m.ax[k],m.ay[k],m.az[k])+EL[a[0]].vdw*.35)});
+  m.bl=new Float32Array(m.nb);m.bonds.forEach(function(b,k){m.bl[k]=Math.hypot(m.ax[b[0]]-m.ax[b[1]],m.ay[b[0]]-m.ay[b[1]],m.az[b[0]]-m.az[b[1]])});
+  m.rad=rad;m.nbr=[];for(i=0;i<n;i++)m.nbr.push([]);
+  m.bonds.forEach(function(b){m.nbr[b[0]].push(b[1]);m.nbr[b[1]].push(b[0])});
+  // perpendicular offset for double bonds: within the local plane
+  m.perp=new Float32Array(m.nb*3);
+  m.bonds.forEach(function(b,k){
+    var a=b[0],c=b[1],d=vnorm([m.ax[c]-m.ax[a],m.ay[c]-m.ay[a],m.az[c]-m.az[a]]),ref=null;
+    var cand=m.nbr[a].concat(m.nbr[c]);
+    for(var q=0;q<cand.length&&!ref;q++){var t=cand[q];if(t===a||t===c)continue;var r=[m.ax[t]-m.ax[a],m.ay[t]-m.ay[a],m.az[t]-m.az[a]],pr=vsub(r,[d[0]*(r[0]*d[0]+r[1]*d[1]+r[2]*d[2]),d[1]*(r[0]*d[0]+r[1]*d[1]+r[2]*d[2]),d[2]*(r[0]*d[0]+r[1]*d[1]+r[2]*d[2])]);if(vlen(pr)>.2)ref=vnorm(pr)}
+    var p=ref||vnorm(vcross(d,Math.abs(d[2])<.9?[0,0,1]:[0,1,0]));
+    // a double bond sits beside the bond, in the plane of its neighbours
+    m.perp[3*k]=p[0];m.perp[3*k+1]=p[1];m.perp[3*k+2]=p[2];
+  });
+});
+
+/* ================= view state: rotation + buffers ================= */
+function makeView(m){
+  var n=m.na,nb=m.nb,ni=n+2*nb;
+  return {m:m,R:[1,0,0,0,1,0,0,0,1],X:new Float32Array(n),Y:new Float32Array(n),Z:new Float32Array(n),SX:new Float32Array(n),SY:new Float32Array(n),SR:new Float32Array(n),SP:new Float32Array(n),
+    key:new Float32Array(ni),order:new Uint16Array(ni),yaw:0};
+}
+function mmul(A,B){var r=new Array(9);for(var i=0;i<3;i++)for(var j=0;j<3;j++)r[3*i+j]=A[3*i]*B[j]+A[3*i+1]*B[3+j]+A[3*i+2]*B[6+j];return r}
+var _rx=[1,0,0,0,1,0,0,0,1],_ry=[1,0,0,0,1,0,0,0,1];
+function spin(v,ax,ay){
+  var c=Math.cos(ax),s=Math.sin(ax);_rx[4]=c;_rx[5]=-s;_rx[7]=s;_rx[8]=c;
+  c=Math.cos(ay);s=Math.sin(ay);_ry[0]=c;_ry[2]=s;_ry[6]=-s;_ry[8]=c;
+  v.R=mmul(_rx,mmul(_ry,v.R));v.yaw+=ay;
+}
+
+/* ================= render one molecule ================= */
+var DP=22,CREAM='#f7f3ea',BRASS='rgba(184,134,43,.9)',LX=-.55,LY=-.75;
+function renderMol(c,v,cx,cy,scale,st,o){
+  var m=v.m,n=m.na,nb=m.nb,R=v.R,i,k,X=v.X,Y=v.Y,Z=v.Z,SX=v.SX,SY=v.SY,SR=v.SR,SP=v.SP;
+  var hov=o.hover,sel=o.sel,mini=o.mini,pop=o.pop;
+  for(i=0;i<n;i++){
+    var x=m.ax[i],y=m.ay[i],z=m.az[i];
+    var rx=R[0]*x+R[1]*y+R[2]*z,ry=R[3]*x+R[4]*y+R[5]*z,rz=R[6]*x+R[7]*y+R[8]*z;
+    X[i]=rx;Y[i]=ry;Z[i]=rz;
+    var p=DP/(DP-rz)*pop;SP[i]=p;
+    SX[i]=cx+rx*scale*p;SY[i]=cy-ry*scale*p;SR[i]=m.el[i].vdw*st.atom*scale*p;
+  }
+  var ni=n+2*nb,key=v.key,order=v.order;
+  for(i=0;i<n;i++){key[i]=Z[i];order[i]=i}
+  for(k=0;k<nb;k++){var b=m.bonds[k],a=b[0],d=b[1];
+    key[n+2*k]=Z[a]*.75+Z[d]*.25;key[n+2*k+1]=Z[d]*.75+Z[a]*.25;order[n+2*k]=n+2*k;order[n+2*k+1]=n+2*k+1}
+  order.sort(function(p,q){return key[p]-key[q]});
+  var bt=st.bond*scale,zmin=-m.rad,zr=2*m.rad;
+  c.lineCap='butt';
+  for(var oi=0;oi<ni;oi++){
+    var id=order[oi];
+    if(id<n){
+      var e=m.el[id],r=SR[id];if(r<.6)continue;
+      var fog=clamp((.5-Z[id]/zr)*.3,0,.22);
+      c.drawImage(e.spr,SX[id]-r,SY[id]-r,r*2,r*2);
+      if(fog>.01){c.globalAlpha=fog;c.fillStyle=CREAM;c.beginPath();c.arc(SX[id],SY[id],r,0,TAU);c.fill();c.globalAlpha=1}
+      if(!mini&&id===sel){
+        c.strokeStyle=BRASS;c.lineWidth=2.2;c.setLineDash([5,5]);c.lineDashOffset=-o.t*14;c.beginPath();c.arc(SX[id],SY[id],r+6,0,TAU);c.stroke();c.setLineDash([]);
+      }else if(!mini&&id===hov){c.strokeStyle='rgba(184,134,43,.65)';c.lineWidth=2;c.beginPath();c.arc(SX[id],SY[id],r+5,0,TAU);c.stroke()}
+    }else if(bt>.15){
+      var h=(id-n)&1,bk=(id-n)>>1,b2=m.bonds[bk],a1=h?b2[1]:b2[0],a2=h?b2[0]:b2[1];
+      var x1=SX[a1],y1=SY[a1],x2=(SX[a1]+SX[a2])*.5,y2=(SY[a1]+SY[a2])*.5;
+      if(key[id]>Z[a1]&&st.atom>.15){var L3=m.bl[bk]*.5,te=Math.min(.92,(m.el[a1].vdw*st.atom)/L3);x1+=(x2-x1)*te;y1+=(y2-y1)*te}
+      var dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy);
+      if(len<.5)continue;
+      var nx=-dy/len,ny=dx/len,sh=nx*LX+ny*LY,w=bt*SP[a1],e2=m.el[a1],ord=b2[2];
+      var lit=(hov>=0&&(a1===hov||a2===hov))||(sel>=0&&(a1===sel||a2===sel));
+      var offs=ord===2?1:0,wd=ord===2?w*.62:w,sep=ord===2?(st.sep*scale*SP[a1]):0;
+      for(var q=0;q<(ord===2?2:1);q++){
+        var so=ord===2?(q?sep:-sep):0,px=v.R[0]*m.perp[3*bk]+v.R[1]*m.perp[3*bk+1]+v.R[2]*m.perp[3*bk+2],py=v.R[3]*m.perp[3*bk]+v.R[4]*m.perp[3*bk+1]+v.R[5]*m.perp[3*bk+2];
+        var ox=px*so,oy=-py*so;
+        var X1=x1+ox,Y1=y1+oy,X2=x2+ox,Y2=y2+oy;
+        if(lit&&!mini){c.strokeStyle=BRASS;c.lineWidth=wd+4;c.beginPath();c.moveTo(X1,Y1);c.lineTo(X2,Y2);c.stroke()}
+        c.strokeStyle=e2.dark;c.lineWidth=wd;c.beginPath();c.moveTo(X1,Y1);c.lineTo(X2,Y2);c.stroke();
+        c.strokeStyle=e2.mid;c.lineWidth=wd*.72;var s1=sh*wd*.12;c.beginPath();c.moveTo(X1+nx*s1,Y1+ny*s1);c.lineTo(X2+nx*s1,Y2+ny*s1);c.stroke();
+        if(!mini||wd>2.5){c.strokeStyle=e2.hi;c.globalAlpha=.55;c.lineWidth=Math.max(.8,wd*.2);var s2=sh*wd*.24;c.beginPath();c.moveTo(X1+nx*s2,Y1+ny*s2);c.lineTo(X2+nx*s2,Y2+ny*s2);c.stroke();c.globalAlpha=1}
+      }
+    }
+  }
+}
+
+/* ================= main viewer ================= */
+var cvs=$('#main'),ctx=cvs.getContext('2d'),box=$('#glassbox'),tip=$('#tip');
+var W=0,H=0,DPR=1;
+var S={cur:0,view:null,zoom:1,zTarget:1,styleName:'ball',atomS:.3,bondS:.13,sepS:.085,idle:0,vx:0,vy:0,drag:false,hover:-1,sel:-1,t:0,swap:1,pointers:{},pinch0:0,pinchZ0:1,moved:0,px:0,py:0,inside:false};
+var STYLES={ball:{atom:.3,bond:.13,sep:.085},space:{atom:1,bond:0,sep:0},wire:{atom:.085,bond:.04,sep:.075}};
+function resize(){
+  var r=box.getBoundingClientRect();W=Math.max(200,r.width);H=Math.max(200,r.height);DPR=Math.min(2,window.devicePixelRatio||1);
+  cvs.width=Math.round(W*DPR);cvs.height=Math.round(H*DPR);
+}
+if(window.ResizeObserver)new ResizeObserver(resize).observe(box);
+window.addEventListener('resize',resize);
+resize();
+
+function setMol(i,instant){
+  S.cur=i;var m=MOLS[i];S.view=makeView(m);
+  spin(S.view,-.35,.55);S.sel=-1;S.hover=-1;S.swap=instant?1:0;S.zTarget=1;S.idle=0;S.vx=S.vy=0;
+  $('#plateName').textContent=m.name;$('#cName').textContent=m.name;$('#cForm').innerHTML=m.formula;$('#cMass').textContent=m.mass;
+  $('#cAtoms').textContent=m.na;$('#cBonds').textContent=m.nb;$('#cFact').innerHTML=m.fact;
+  $('#cardNo').textContent='Specimen 0'+(i+1)+' / 06';
+  [].forEach.call(document.querySelectorAll('.jar'),function(b,k){b.setAttribute('aria-pressed',k===i?'true':'false')});
+  showSel(-1);
+}
+function fmt2(v){return v.toFixed(2)}
+function angleDeg(m,c,a,b){
+  var u=[m.ax[a]-m.ax[c],m.ay[a]-m.ay[c],m.az[a]-m.az[c]],w=[m.ax[b]-m.ax[c],m.ay[b]-m.ay[c],m.az[b]-m.az[c]];
+  return Math.acos(clamp((u[0]*w[0]+u[1]*w[1]+u[2]*w[2])/(vlen(u)*vlen(w)),-1,1))/D2R;
+}
+function bondLen(m,a,b){return Math.hypot(m.ax[a]-m.ax[b],m.ay[a]-m.ay[b],m.az[a]-m.az[b])}
+function showSel(i){
+  var el=$('#sel'),m=MOLS[S.cur];
+  if(i<0){el.innerHTML='<h3>Measure</h3><p>Click any atom to read its element, the lengths of its bonds and the angles between them.</p>';return}
+  var e=m.el[i],nb=m.nbr[i],li='',ang='',j,k;
+  for(j=0;j<nb.length;j++)li+='<li><span>'+m.atoms[i][0]+'–'+m.atoms[nb[j]][0]+(nb.length>3?nb[j]+1:'')+'</span> <b>'+fmt2(bondLen(m,i,nb[j]))+' Å</b></li>';
+  var cnt=0;
+  for(j=0;j<nb.length;j++)for(k=j+1;k<nb.length&&cnt<6;k++){ang+='<li><span>'+m.atoms[nb[j]][0]+'–'+m.atoms[i][0]+'–'+m.atoms[nb[k]][0]+'</span> <b>'+angleDeg(m,i,nb[j],nb[k]).toFixed(1)+'°</b></li>';cnt++}
+  el.innerHTML='<h3>Selected atom</h3><p><b style="font-weight:600">'+e.name+'</b> &middot; atomic number '+e.z+' &middot; '+nb.length+' bond'+(nb.length===1?'':'s')+'</p>'+
+    (li?'<ul aria-label="Bond lengths">'+li+'</ul>':'')+(ang?'<ul aria-label="Bond angles">'+ang+'</ul>':'');
+}
+
+/* pointer: rotate, pinch-zoom, hover, click */
+function ptrPos(e){var r=cvs.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]}
+function pickAt(px,py){
+  var v=S.view,m=v.m,best=-1,bz=-1e9;
+  for(var i=0;i<m.na;i++){var dx=v.SX[i]-px,dy=v.SY[i]-py,r=Math.max(9,v.SR[i]);if(dx*dx+dy*dy<r*r&&v.Z[i]>bz){bz=v.Z[i];best=i}}
+  return best;
+}
+cvs.addEventListener('pointerdown',function(e){
+  var p=ptrPos(e);S.pointers[e.pointerId]={x:p[0],y:p[1]};
+  try{cvs.setPointerCapture(e.pointerId)}catch(_){}
+  var ids=Object.keys(S.pointers);
+  if(ids.length===1){S.drag=true;S.moved=0;S.vx=S.vy=0;cvs.classList.add('drag');S.idle=0}
+  else if(ids.length===2){var a=S.pointers[ids[0]],b=S.pointers[ids[1]];S.pinch0=Math.hypot(a.x-b.x,a.y-b.y);S.pinchZ0=S.zTarget}
+});
+cvs.addEventListener('pointermove',function(e){
+  var p=ptrPos(e),pt=S.pointers[e.pointerId];S.px=p[0];S.py=p[1];S.inside=true;
+  if(pt){
+    var ids=Object.keys(S.pointers),dx=p[0]-pt.x,dy=p[1]-pt.y;pt.x=p[0];pt.y=p[1];
+    if(ids.length>=2){var a=S.pointers[ids[0]],b=S.pointers[ids[1]],d=Math.hypot(a.x-b.x,a.y-b.y);if(S.pinch0>0)S.zTarget=clamp(S.pinchZ0*d/S.pinch0,.55,3.2);S.moved+=99}
+    else{S.moved+=Math.abs(dx)+Math.abs(dy);spin(S.view,dy*.0085,dx*.0085);S.vx=S.vx*.5+dx*.0085*60*.5;S.vy=S.vy*.5+dy*.0085*60*.5;S.idle=0}
+  }
+});
+function pend(e){
+  var had=S.pointers[e.pointerId];delete S.pointers[e.pointerId];
+  if(!had)return;
+  if(Object.keys(S.pointers).length===0){
+    S.drag=false;cvs.classList.remove('drag');
+    if(S.moved<6&&e.type==='pointerup'){var p=ptrPos(e),i=pickAt(p[0],p[1]);S.sel=i;showSel(i);S.idle=0}
+    S.vx=clamp(S.vx,-9,9);S.vy=clamp(S.vy,-9,9);
+  }
+}
+cvs.addEventListener('pointerup',pend);cvs.addEventListener('pointercancel',pend);
+cvs.addEventListener('pointerleave',function(){S.inside=false;S.hover=-1;tip.style.opacity=0});
+cvs.addEventListener('wheel',function(e){e.preventDefault();S.zTarget=clamp(S.zTarget*Math.exp(-e.deltaY*.0012),.55,3.2)},{passive:false});
+cvs.addEventListener('dblclick',function(){S.zTarget=1;S.vx=S.vy=0;S.view.R=[1,0,0,0,1,0,0,0,1];spin(S.view,-.35,.55)});
+cvs.addEventListener('keydown',function(e){
+  var k=e.key,a=.12;
+  if(k==='ArrowLeft'){spin(S.view,0,-a);S.idle=0}else if(k==='ArrowRight'){spin(S.view,0,a);S.idle=0}
+  else if(k==='ArrowUp'){spin(S.view,-a,0);S.idle=0}else if(k==='ArrowDown'){spin(S.view,a,0);S.idle=0}
+  else if(k==='+'||k==='='){S.zTarget=clamp(S.zTarget*1.12,.55,3.2)}else if(k==='-'||k==='_'){S.zTarget=clamp(S.zTarget/1.12,.55,3.2)}
+  else if(k==='Escape'){S.sel=-1;showSel(-1)}else return;
+  e.preventDefault();
+});
+window.addEventListener('keydown',function(e){
+  if(e.target===cvs||e.altKey||e.ctrlKey||e.metaKey)return;
+  if(e.key==='['||e.key===']'){setMol((S.cur+(e.key===']'?1:MOLS.length-1))%MOLS.length)}
+  else if(e.key==='1')setStyle('ball');else if(e.key==='2')setStyle('space');else if(e.key==='3')setStyle('wire');
+});
+
+/* style control */
+function setStyle(name){S.styleName=name;[].forEach.call(document.querySelectorAll('#styleSeg button'),function(b){b.setAttribute('aria-pressed',b.dataset.s===name?'true':'false')})}
+$('#styleSeg').addEventListener('click',function(e){var b=e.target.closest('button');if(b)setStyle(b.dataset.s)});
+
+/* specimen jars with mini spinning previews */
+var jarsEl=$('#jars'),jars=[];
+MOLS.forEach(function(m,i){
+  var b=document.createElement('button');b.type='button';b.className='jar';b.setAttribute('aria-pressed',i===0?'true':'false');
+  b.setAttribute('aria-label','Show '+m.name);
+  b.innerHTML='<span class="lid" aria-hidden="true"></span><span class="glassjar"><canvas aria-hidden="true"></canvas></span><span class="lab"><b>'+m.short+'</b><i>'+(m.id==='c60'?'fullerene':m.name)+'</i></span>';
+  b.addEventListener('click',function(){setMol(i)});
+  jarsEl.appendChild(b);
+  var cv=b.querySelector('canvas'),v=makeView(m);spin(v,-.3,i*1.1);
+  jars.push({cv:cv,c:cv.getContext('2d'),v:v,w:0,h:0,ph:i*1.7});
+});
+function sizeJars(){
+  var dpr=Math.min(2,window.devicePixelRatio||1);
+  jars.forEach(function(j){var r=j.cv.getBoundingClientRect();j.w=r.width;j.h=r.height;j.cv.width=Math.max(2,Math.round(r.width*dpr));j.cv.height=Math.max(2,Math.round(r.height*dpr));j.dpr=dpr});
+}
+sizeJars();
+if(window.ResizeObserver)new ResizeObserver(sizeJars).observe(jarsEl);
+
+/* ================= frame loop ================= */
+var last=0,frameN=0,ST={atom:.3,bond:.13,sep:.085},MINI={atom:.3,bond:.13,sep:.085};
+function drawTurntable(c,v,cx,cy,scale){
+  var m=v.m,rr=Math.max(m.rad*scale*1.05,40),ry=rr*.2,y0=cy+m.rad*scale*.98+ry*.4;
+  c.save();c.translate(cx,y0);
+  var g=c.createRadialGradient(0,0,rr*.1,0,0,rr*1.1);g.addColorStop(0,'rgba(91,64,48,.22)');g.addColorStop(1,'rgba(91,64,48,0)');
+  c.fillStyle=g;c.beginPath();c.ellipse(0,0,rr*1.1,ry*1.15,0,0,TAU);c.fill();
+  c.lineWidth=1.4;c.strokeStyle='rgba(184,134,43,.85)';c.beginPath();c.ellipse(0,0,rr,ry,0,0,TAU);c.stroke();
+  c.lineWidth=.8;c.strokeStyle='rgba(184,134,43,.5)';c.beginPath();c.ellipse(0,0,rr*.86,ry*.86,0,0,TAU);c.stroke();
+  c.strokeStyle='rgba(125,88,30,.7)';c.lineWidth=1;
+  for(var k=0;k<72;k++){var a=k*TAU/72-v.yaw,ca=Math.cos(a),sa=Math.sin(a),l=(k%6===0)?1:.94;c.beginPath();c.moveTo(ca*rr*.86,sa*ry*.86);c.lineTo(ca*rr*(k%6===0?1.05:1),sa*ry*(k%6===0?1.05:1));c.stroke()}
+  c.restore();
+}
+function frame(now){
+  requestAnimationFrame(frame);
+  if(document.hidden){last=now;return}
+  var dt=Math.min(.05,(now-(last||now))/1000);last=now;S.t+=dt;frameN++;
+  var sty=STYLES[S.styleName],k=1-Math.exp(-dt*7);
+  ST.atom+=(sty.atom-ST.atom)*k;ST.bond+=(sty.bond-ST.bond)*k;ST.sep+=(sty.sep-ST.sep)*k;
+  // inertia + idle auto-rotate
+  var v=S.view;
+  if(!S.drag){
+    if(Math.abs(S.vx)>.02||Math.abs(S.vy)>.02){spin(v,S.vy*dt,S.vx*dt);var d=Math.exp(-2.6*dt);S.vx*=d;S.vy*=d;S.idle=0}
+    else{S.idle+=dt;if(S.idle>2.2)spin(v,Math.sin(S.t*.3)*.02*dt*8,(reduce?.05:.28)*dt)}
+  }
+  S.zoom+=(S.zTarget-S.zoom)*Math.min(1,dt*9);
+  if(S.swap<1)S.swap=Math.min(1,S.swap+dt/.75);
+  var pop=S.swap<1?easeOutBack(S.swap):1;
+  var c=ctx;c.setTransform(DPR,0,0,DPR,0,0);c.clearRect(0,0,W,H);
+  var m=v.m,cx=W/2,cy=H*.47,base=Math.min(W*1.02,H*1.1)/2/(m.rad+.7),scale=base*S.zoom;
+  drawTurntable(c,v,cx,cy,scale*pop);
+  // hover pick (after positions exist from the previous frame)
+  if(S.inside&&!S.drag&&Object.keys(S.pointers).length===0){
+    var h=pickAt(S.px,S.py);
+    if(h!==S.hover){S.hover=h;cvs.classList.toggle('hot',h>=0)}
+    if(h>=0){var e=m.el[h];$('#tipN').textContent=e.name;$('#tipZ').textContent='Atomic no. '+e.z+' · '+m.nbr[h].length+' bonds';
+      var tx=clamp(v.SX[h]+v.SR[h]+14,6,W-190),ty=clamp(v.SY[h]-v.SR[h]-46,6,H-70);tip.style.transform='translate('+tx.toFixed(0)+'px,'+ty.toFixed(0)+'px)';tip.style.opacity=1}
+    else tip.style.opacity=0;
+  }else if(S.drag||!S.inside){if(S.hover>=0){S.hover=-1}tip.style.opacity=0}
+  renderMol(c,v,cx,cy,scale,ST,{hover:S.hover,sel:S.sel,mini:false,t:S.t,pop:pop});
+  // selected atom: measurements drawn on the glass
+  if(S.sel>=0){
+    var i=S.sel,nb=m.nbr[i],f='500 11px ui-monospace,Menlo,Consolas,monospace';c.font=f;c.textAlign='center';c.textBaseline='middle';
+    for(var j=0;j<nb.length&&j<8;j++){
+      var q=nb[j],mx=(v.SX[i]+v.SX[q])/2,my=(v.SY[i]+v.SY[q])/2;if(Math.hypot(v.SX[i]-v.SX[q],v.SY[i]-v.SY[q])<58)continue;var txt=bondLen(m,i,q).toFixed(2)+' Å',tw=c.measureText(txt).width;
+      c.fillStyle='rgba(247,243,234,.92)';c.strokeStyle='rgba(184,134,43,.8)';c.lineWidth=1;
+      var bx=mx-tw/2-6,by=my-9;c.beginPath();c.roundRect?c.roundRect(bx,by,tw+12,18,9):c.rect(bx,by,tw+12,18);c.fill();c.stroke();
+      c.fillStyle='#4a3420';c.fillText(txt,mx,my+.5);
+    }
+    if(nb.length>=2){
+      var pairs=0;
+      for(var a=0;a<nb.length&&pairs<4;a++)for(var b2=a+1;b2<nb.length&&pairs<4;b2++){
+        var ux=v.SX[nb[a]]-v.SX[i],uy=v.SY[nb[a]]-v.SY[i],wx=v.SX[nb[b2]]-v.SX[i],wy=v.SY[nb[b2]]-v.SY[i],lu=Math.hypot(ux,uy)||1,lw=Math.hypot(wx,wy)||1;
+        var bx2=ux/lu+wx/lw,by2=uy/lu+wy/lw,bl=Math.hypot(bx2,by2);if(bl<.25)continue;bx2/=bl;by2/=bl;
+        var rr=v.SR[i]+34,px=v.SX[i]+bx2*rr,py=v.SY[i]+by2*rr,t2=angleDeg(m,i,nb[a],nb[b2]).toFixed(1)+'°',tw2=c.measureText(t2).width;
+        c.fillStyle='rgba(247,243,234,.9)';c.fillRect(px-tw2/2-4,py-8,tw2+8,16);c.fillStyle='rgba(58,91,217,.95)';c.font=f;c.fillText(t2,px,py);pairs++;
+      }
+    }
+  }
+  // jars: slow spin, refreshed at ~30 fps
+  if(!(frameN&1)||reduce&&frameN%6===0){
+    for(var jn=0;jn<jars.length;jn++){
+      var J=jars[jn];if(!J.w)continue;
+      var jc=J.c;jc.setTransform(J.dpr,0,0,J.dpr,0,0);jc.clearRect(0,0,J.w,J.h);
+      if(!reduce)spin(J.v,Math.sin(S.t*.5+J.ph)*.004,.014+.004*jn*.2);
+      var jm=J.v.m,js=Math.min(J.w,J.h)*.44/(jm.rad+.6);
+      renderMol(jc,J.v,J.w/2,J.h*.5+Math.sin(S.t*1.1+J.ph)*J.h*.012,js,MINI,{hover:-1,sel:-1,mini:true,t:S.t,pop:1});
+    }
+  }
+}
+setMol(0,true);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

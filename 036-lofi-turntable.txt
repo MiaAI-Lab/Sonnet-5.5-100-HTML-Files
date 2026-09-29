@@ -1,0 +1,22 @@
+==================== PROMPT ====================
+Design "Rainy Sunday Records", a cozy lo-fi turntable player. Scene: a wooden desk at golden hour with a cream-and-walnut turntable and a spinning vinyl record (fine concentric grooves, a light sheen sweeping as it rotates, a colourful centre label whose title rotates with it), a draggable tonearm you lift and place on the record (or press Play), a small speaker with a pulsing cone, a mug with steam wisps, a potted plant, a lamp glow, and a window with rain streaks in the corner. Music generated live with WebAudio: warm Rhodes-ish chords (detuned triangle/sine with soft attack and tremolo through a low-pass), a dusty drum pattern (kick/snare with noise), a mellow bassline, vinyl crackle (random short noise clicks) and tape wobble via a slow pitch LFO. Four tracks (chord progressions in different keys and tempos with names like "Umbrella Weather" and "Tea for Two AM") selectable by tapping record sleeves lined up on the desk; a volume knob and a Rain toggle mixing filtered-noise rain. Palette: brown #7b4b2a / #c98b4b, cream #f4e7cf, sage #8fa58a, tangerine #f08a3c, window blue #4b6a8a. Type: rounded friendly serif/sans plus handwritten-style labels. Audio starts on the first gesture; keep volume modest.
+
+TECHNICAL REQUIREMENTS: Deliver one completely self-contained, standalone HTML5 file with all CSS inline in a <style> tag and all JavaScript inline in a <script> tag. No external dependencies of any kind: no CDN, no external fonts (system font stacks only), no external images, no external SVG files, no libraries, no network requests. It must work by simply opening the file in a browser, fully offline. It must be responsive from 360px phones to large desktops, validate as standard HTML5, respect prefers-reduced-motion, support mouse and touch input, and run without console errors. Hand-craft it as a premium, award-worthy piece of digital art with real, evocative copy (no lorem ipsum), a disciplined palette, careful typography, polished motion and delightful details.
+
+==================== TITLE ====================
+Rainy Sunday Records
+
+==================== DESCRIPTION ====================
+An illustrated golden-hour desk scene: a cream-and-walnut turntable drawn in squashed perspective with a spinning record (grooves, sweeping sheen, coloured centre label with curved rotating text), a brass-and-cream tonearm, a walnut speaker whose cone pulses to the real bass of the music, a mug with steam, a swaying plant, a lamp, a curtained window with animated rain and a sunlight-through-panes patch on the desk, floating dust motes, and four record sleeves with hand-drawn covers. The lo-fi music is synthesised live: Rhodes-style chords, dusty drums, a mellow bass, occasional melody notes, vinyl crackle, tape wobble and optional filtered-noise rain, across four tracks in different keys and tempos.
+
+==================== TECHNIQUES ====================
+- 1600x900 (landscape) or 900x1600 (portrait) design stage scaled to the window with extended wall and desk backgrounds
+- Wood grain drawn once on a small canvas; layered gradients, blend-mode light beams and a lamp/evening toggle
+- Turntable as SVG in a flattened plane; arm angle from pointer via getScreenCTM inverse; needle radius decides where the groove starts
+- WebAudio: detuned triangle/sine Rhodes with a bell partial, low-pass and tremolo character, kick, snare and hats from noise, bass, swing timing, random melody, looping vinyl crackle buffer, modulated delay as tape wobble, filtered-noise rain with droplet ticks, compressor and capped master gain
+- Look-ahead scheduler with per-playback gain sessions so stopping silences instantly
+- Analyser-driven speaker cone and equaliser
+- Canvas rain streaks and sliding droplets on the window; drifting dust motes
+
+==================== INTERACTION ====================
+Press the round Play button or click the record, or drag the tonearm onto the record (dropping further in starts later in the music); lift it off to stop. Tap a sleeve (or press 1-4) to swap the record and start it. Drag the speaker knob vertically or use arrows or wheel for volume (modest by default, remembered). The Rain switch (or R) mixes rain sound and intensifies the window rain. Click the lamp to switch between golden hour and late evening. Audio starts only after a first gesture. With prefers-reduced-motion the record spins slowly and rain, dust and steam are calmed.

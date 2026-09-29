@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Structure / Rhythm — Festival of Sound Design, Basel 2026</title>
+<meta name="description" content="An interactive Swiss-style poster for a fictional sound-design festival in Basel: a visible 12-column grid, a rotating ring system synchronised to real seconds, and four preset layouts.">
+<style>
+/* ============ tokens ============ */
+:root{
+  --paper:#f4f2ee; --ink:#0b0b0b; --red:#e4002b; --grey:#6d6b66; --hair:#d0cdc6; --bi:#e9e7e3;
+  --bl:20px; --m:40px; --S:13px; --M:calc(var(--bl) * 1.4); --cap:.716; --rl:calc(var(--bl) * .3);
+  --L:calc(var(--bl) * 5.585); --Llh:6; --tk:5; --rows:45;
+  --dd:clamp(28px,2.7vw,44px);
+  --mech:cubic-bezier(.76,0,.16,1); --out:cubic-bezier(.16,1,.3,1);
+  --sans:"Helvetica Neue",Helvetica,"Nimbus Sans",Arial,"Liberation Sans",system-ui,sans-serif;
+  color-scheme:light;
+}
+:root.inv{ --paper:#0b0b0b; --ink:#f4f2ee; --grey:#98968f; --hair:#282826; --bi:#fffdf9; color-scheme:dark; }
+@media (max-width:1199px){ :root{ --bl:18px; --m:32px; --L:min(calc(var(--bl) * 5.585),10.4vw); } }
+@media (max-width:899px){ :root{ --bl:16px; --m:24px; } }
+
+/* ============ base ============ */
+*{ box-sizing:border-box }
+html{ background:var(--paper); -webkit-text-size-adjust:100% }
+body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); font-size:var(--S); line-height:var(--bl);
+  font-weight:400; min-height:100vh; min-height:100dvh; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+::selection{ background:var(--red); color:#fff }
+button{ font:inherit; color:inherit; letter-spacing:inherit; margin:0; border-radius:0; -webkit-appearance:none; appearance:none; }
+:focus-visible{ outline:2px solid var(--red); outline-offset:2px }
+.sr{ position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
+
+/* ============ the sheet: 12 columns x baseline rows ============ */
+.sheet{ position:relative; isolation:isolate; overflow:hidden; background:var(--paper);
+  display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); grid-template-rows:repeat(var(--rows),var(--bl));
+  align-content:start; padding:0 var(--m); height:calc(var(--rows) * var(--bl)); min-height:100vh; min-height:100dvh;
+  transition:grid-template-columns .85s var(--out); }
+.sheet>*{ min-width:0 }
+
+/* hairline columns + ruler numerals */
+.col{ grid-row:1 / -1; position:relative; z-index:0; pointer-events:none }
+.col::before,.col.last::after{ content:""; position:absolute; top:0; bottom:calc(var(--bl) * -2); width:1px; background:var(--hair);
+  transform-origin:50% 0; animation:draw 1.3s var(--mech) backwards; animation-delay:calc(var(--i) * 70ms + 120ms); }
+.col::before{ left:0 }
+.col.last::after{ right:0; animation-delay:1000ms }
+.col b{ position:absolute; top:0; left:0; padding-left:7px; font-weight:400; line-height:var(--bl); color:var(--grey);
+  font-variant-numeric:tabular-nums; transition:color .25s; animation:fade .9s ease backwards; animation-delay:calc(var(--i) * 70ms + 500ms); }
+.col.on b{ color:var(--red) }
+@keyframes draw{ from{ transform:scaleY(0) } }
+@keyframes fade{ from{ opacity:0 } }
+
+/* ============ blocks ============ */
+.blk{ position:relative; z-index:3; animation:wipe 1s var(--mech) backwards; animation-delay:var(--ad,.5s);
+  grid-column:1 / -1; }
+@keyframes wipe{ from{ clip-path:inset(0 0 100% 0); translate:0 calc(var(--bl) * 3) } to{ clip-path:inset(-1em); translate:0 0 } }
+@keyframes iris{ from{ clip-path:circle(0% at 50% 50%) } to{ clip-path:circle(80% at 50% 50%) } }
+@keyframes rise{ from{ translate:0 55% } to{ translate:0 0 } }
+@keyframes spin{ to{ transform:rotate(360deg) } }
+
+/* meta strip */
+.b-meta{ --ad:.45s; grid-column:var(--meta-c); grid-row:var(--meta-r); align-self:start; height:calc(var(--bl) * 2 + var(--rl));
+  display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); border-bottom:1px solid var(--ink); }
+@supports (grid-template-columns:subgrid){ .b-meta{ grid-template-columns:subgrid } }
+.mi{ grid-column:span var(--mspan,3); padding-left:10px; min-width:0; white-space:nowrap; overflow:hidden }
+.mi b{ display:block; font-weight:700 }
+.mi>span{ display:block; color:var(--grey) }
+.lay{ display:flex; align-items:baseline; gap:0; height:var(--bl) }
+.lay .lab{ margin-right:8px }
+.lay button{ height:calc(var(--bl) - 4px); min-width:calc(var(--bl) - 2px); padding:0 5px; margin:0 2px 0 0; border:1px solid var(--ink); background:transparent; color:var(--ink);
+  line-height:calc(var(--bl) - 6px); cursor:pointer; font-variant-numeric:tabular-nums; transition:background .2s,color .2s; }
+.lay button:hover{ background:var(--ink); color:var(--paper) }
+.lay button[aria-pressed="true"]{ background:var(--red); border-color:var(--red); color:#fff }
+.lay .tk{ margin-left:6px }
+.lay .nm{ margin-left:8px; color:var(--grey); overflow:hidden; text-overflow:ellipsis }
+
+/* title */
+.b-title{ --ad:.6s; grid-column:var(--title-c); grid-row:var(--title-r); align-self:start; margin:0; padding-left:6px;
+  font-size:var(--L); line-height:calc(var(--Llh) * var(--bl)); font-weight:700; letter-spacing:-.045em; white-space:nowrap; }
+.b-title .ln{ display:block }
+.b-title .sl{ font-style:normal; color:var(--red); letter-spacing:-.02em }
+
+/* lede */
+.b-lede{ --ad:.85s; grid-column:var(--lede-c); grid-row:var(--lede-r); align-self:start; margin:0; padding-left:10px;
+  width:min(16.6em,100%); font-size:var(--M); line-height:calc(var(--bl) * 2); letter-spacing:-.012em; text-wrap:pretty;
+  transition:opacity .5s ease .4s,visibility 0s; }
+
+/* schedule */
+.b-sched{ --ad:.95s; grid-column:var(--sched-c); grid-row:var(--sched-r); align-self:start; transition:opacity .5s ease .4s,visibility 0s; }
+.sh{ display:flex; align-items:baseline; gap:14px; height:var(--bl); margin-bottom:var(--bl); padding:0 10px; white-space:nowrap }
+.sh h2{ margin:0; font-size:inherit; line-height:inherit; font-weight:700; letter-spacing:0 }
+.days{ display:flex; gap:12px; margin-right:auto }
+.days button{ height:var(--bl); padding:0; border:0; background:none; color:var(--grey); cursor:pointer; font-variant-numeric:tabular-nums; }
+.days button:hover{ color:var(--ink) }
+.days button[aria-pressed="true"]{ color:var(--ink); text-decoration:underline; text-decoration-color:var(--red); text-decoration-thickness:2px; text-underline-offset:4px }
+.cnt{ color:var(--grey); font-variant-numeric:tabular-nums }
+.tw{ position:relative }
+.bar{ position:absolute; left:0; right:0; top:0; height:var(--bl); background:var(--red); opacity:0; pointer-events:none; z-index:0;
+  transition:transform .5s var(--mech),height .3s var(--mech),opacity .25s ease; }
+.tw.hot .bar{ opacity:1 }
+.tb{ position:relative; z-index:1; width:100%; border-collapse:separate; border-spacing:0; table-layout:fixed; font-variant-numeric:tabular-nums }
+.c1,.c2{ width:11% } .c3{ width:58% } .c4{ width:20% }
+.tb th,.tb td{ height:var(--bl); padding:0; line-height:var(--bl); text-align:left; font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-bottom:1px solid var(--hair) }
+.tb th{ color:var(--grey); border-bottom-color:var(--ink) }
+.tb th:first-child,.tb td:first-child{ padding-left:10px }
+.tb th:last-child,.tb td:last-child{ padding-right:10px }
+.tb tbody tr{ cursor:pointer; transition:color .2s ease; animation:row .7s var(--mech) backwards; animation-delay:calc(var(--k,0) * 40ms) }
+.tb tbody tr.on{ color:var(--paper) }
+.tb tbody tr.on td{ border-bottom-color:transparent }
+.tb td b{ font-weight:700 }
+.tb .n button{ display:inline-block; padding:0; border:0; background:none; cursor:pointer; font-weight:700; font-variant-numeric:tabular-nums; line-height:inherit }
+.tb .n button::before{ content:""; display:inline-block; width:8px; height:8px; margin-right:6px; border:1px solid currentColor; vertical-align:baseline; transition:background .2s,border-color .2s }
+.tb .n button[aria-pressed="true"]::before{ background:var(--red); border-color:var(--red) }
+.tb tbody tr.on .n button[aria-pressed="true"]::before{ background:var(--paper); border-color:var(--paper) }
+@keyframes row{ from{ clip-path:inset(0 100% 0 0); opacity:0 } to{ clip-path:inset(0); opacity:1 } }
+.fn{ margin:var(--bl) 0 0; padding:0 10px; color:var(--grey) }
+
+/* ============ numerals: a window cropped by the page edge ============ */
+.b-num{ grid-column:var(--num-c); grid-row:var(--num-r); margin:var(--num-wm); z-index:1; overflow:hidden; display:flex;
+  justify-content:var(--num-jc); align-items:var(--num-ai); pointer-events:none; user-select:none; }
+.nt{ flex:none; display:block; font-size:var(--ns); line-height:.74; font-weight:700; letter-spacing:-.06em; white-space:nowrap;
+  color:var(--ink); -webkit-text-stroke:.028em var(--ink); margin:var(--nt-mg); animation:rise 1.15s var(--mech) .55s backwards; }
+.nt.re{ animation:rise .9s var(--mech) both }
+.nt span{ display:inline-block }
+
+/* ============ ring system ============ */
+.b-rings{ --ad:.75s; animation-name:iris; animation-duration:1.4s; grid-column:var(--rings-c); grid-row:var(--rings-r);
+  width:var(--rd); height:var(--rd); justify-self:center; align-self:start; z-index:2; mix-blend-mode:difference; color:var(--bi); pointer-events:none; }
+.rs{ position:absolute; inset:0 }
+.rg{ position:absolute; left:0; top:0; width:100%; height:100%; overflow:visible; fill:none; stroke:var(--bi); }
+.rg.spin{ animation:spin var(--p) linear infinite; animation-delay:var(--d,0s); will-change:transform }
+.rg.rev{ animation-direction:reverse }
+.lb{ position:absolute; font-variant-numeric:tabular-nums; line-height:var(--bl); color:var(--bi); white-space:nowrap }
+.l0{ left:50%; top:calc(var(--bl) * -1.35); transform:translateX(-50%) }
+.l1{ right:calc(var(--bl) * -1.55); top:50%; transform:translateY(-50%) }
+.l2{ left:50%; bottom:calc(var(--bl) * -1.35); transform:translateX(-50%) }
+.l3{ left:calc(var(--bl) * -1.55); top:50%; transform:translateY(-50%) }
+.rc{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-weight:700; font-variant-numeric:tabular-nums; line-height:var(--bl); color:var(--bi) }
+
+/* overlay that follows the rings: red hot tick, elapsed arc, the disc */
+.ov{ position:absolute; left:0; top:0; z-index:4; pointer-events:none; transform-origin:0 0; width:10px; height:10px; animation:fade 1s ease 1.6s backwards; }
+.ovs{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; fill:none }
+.ovs path,.ovs line{ stroke:var(--red) }
+.disc{ position:absolute; left:50%; top:0; width:calc(var(--dd) + 14px); height:calc(var(--dd) + 14px); margin:calc((var(--dd) + 14px) / -2) 0 0 calc((var(--dd) + 14px) / -2);
+  padding:0; border:0; background:none; cursor:pointer; pointer-events:auto; }
+.disc::before{ content:""; position:absolute; left:7px; top:7px; right:7px; bottom:7px; border-radius:50%; background:var(--red); transition:transform .35s var(--mech); }
+.disc:hover::before,.disc:focus-visible::before{ transform:scale(1.22) }
+.disc:active::before{ transform:scale(.92) }
+.disc.beat::before{ transform:scale(1.4); transition-duration:.08s }
+.tip{ position:absolute; left:calc(100% - 4px); top:50%; margin-top:calc(var(--bl) / -2); height:var(--bl); padding:0 8px; background:var(--ink); color:var(--paper);
+  line-height:var(--bl); white-space:nowrap; opacity:0; transform:translateX(-6px); transition:opacity .3s ease,transform .4s var(--mech); pointer-events:none }
+.disc:hover .tip,.disc:focus-visible .tip,.disc.hint .tip{ opacity:1; transform:none }
+
+/* vertical text, diagonal rule, baseline overlay */
+.vt{ position:absolute; z-index:5; left:calc(var(--m) / 2 - var(--bl) / 2); bottom:calc(var(--bl) * 2); margin:0; writing-mode:vertical-rl; transform:rotate(180deg);
+  white-space:nowrap; line-height:var(--bl); letter-spacing:.14em; text-transform:uppercase; font-size:calc(var(--S) - 2px); font-weight:700;
+  color:var(--bi); mix-blend-mode:difference; pointer-events:none; animation:fade 1.2s ease 1.2s backwards; }
+.vt i{ display:inline-block; width:7px; height:7px; background:currentColor; margin-bottom:.9em }
+.diag{ position:absolute; inset:0; width:100%; height:100%; z-index:2; pointer-events:none; opacity:0; clip-path:inset(0 100% 0 0); transition:clip-path 1s var(--mech),opacity .3s ease }
+.diag line{ stroke:var(--red); stroke-width:1.5 }
+.blo{ position:absolute; inset:0; width:100%; height:100%; z-index:20; pointer-events:none; opacity:0; transition:opacity .3s ease }
+.sheet.show-bl .blo{ opacity:1 }
+
+/* ============ rigorous baselines: every line of type sits on the baseline grid ============ */
+
+/* ============ layout presets (desktop) ============ */
+.sheet[data-layout="grid"]{
+  --meta-c:1 / 13; --meta-r:2 / 4; --mspan:3;
+  --title-c:1 / 7; --title-r:5 / 17;
+  --lede-c:1 / 5; --lede-r:18 / 30;
+  --sched-c:1 / 6; --sched-r:-14 / -2;
+  --num-c:1 / 13; --num-r:1 / -1; --num-wm:0 calc(-1 * var(--m)); --num-jc:flex-end; --num-ai:flex-end; --nt-mg:0 -.1em -.16em 0; --ns:min(58vw,96vh);
+  --rings-c:7 / 13; --rings-r:6 / 40; --rd:min(42vw,66vh);
+}
+.sheet[data-layout="stack"]{
+  --meta-c:1 / 13; --meta-r:2 / 4; --mspan:3;
+  --title-c:1 / 13; --title-r:5 / 13; --L:min(9.6vw,calc(var(--bl) * 9)); --Llh:8; --tk:6;
+  --lede-c:1 / 5; --lede-r:39 / 51;
+  --sched-c:6 / 13; --sched-r:39 / 51;
+  --num-c:1 / 7; --num-r:14 / 37; --num-wm:0 0 0 calc(-1 * var(--m)); --num-jc:flex-start; --num-ai:flex-end; --nt-mg:0 0 0 -.05em; --ns:min(43vw,70vh);
+  --rings-c:8 / 13; --rings-r:14 / 37; --rd:min(33vw,56vh);
+}
+.sheet[data-layout="diagonal"]{
+  --meta-c:1 / 13; --meta-r:2 / 4; --mspan:3;
+  --title-c:1 / 7; --title-r:5 / 17;
+  --lede-c:9 / 13; --lede-r:5 / 17;
+  --sched-c:1 / 5; --sched-r:-14 / -2;
+  --num-c:1 / 13; --num-r:1 / -1; --num-wm:0 calc(-1 * var(--m)); --num-jc:flex-end; --num-ai:flex-end; --nt-mg:0 -.14em -.1em 0; --ns:min(60vw,98vh);
+  --rings-c:4 / 10; --rings-r:13 / 43; --rd:min(40vw,64vh);
+}
+.sheet[data-layout="poster"]{
+  --meta-c:5 / 13; --meta-r:2 / 4; --mspan:2;
+  --title-c:8 / 13; --title-r:-14 / -2;
+  --lede-c:1 / 5; --lede-r:18 / 30;
+  --sched-c:1 / 6; --sched-r:-14 / -2;
+  --num-c:1 / 6; --num-r:1 / -1; --num-wm:0 0 0 calc(-1 * var(--m)); --num-jc:flex-start; --num-ai:flex-end; --nt-mg:0 0 -.09em -.06em; --ns:min(84vh,50vw);
+  --rings-c:1 / 10; --rings-r:1 / -1; --rd:min(84vh,58vw);
+}
+.sheet[data-layout="poster"] .nt span{ display:block }
+.sheet[data-layout="poster"] .b-rings{ align-self:end; margin-bottom:calc(var(--bl) * 2) }
+.sheet[data-layout="poster"] .lay .nm{ display:none }
+.sheet[data-layout="poster"] .b-lede,.sheet[data-layout="poster"] .b-sched{ opacity:0; visibility:hidden; pointer-events:none; transition:opacity .45s ease,visibility 0s linear .45s }
+.sheet[data-layout="stack"] .b-title .ln{ display:inline }
+.sheet[data-layout="diagonal"] .diag{ opacity:1; clip-path:inset(0) }
+
+@media (max-width:1100px){ .c1{ width:14% } .c2{ width:13% } .c3{ width:50% } .c4{ width:23% } }
+@media (max-width:1000px){
+  .lay .nm,.lay .lab{ display:none }
+  .sheet[data-layout="grid"]{ --sched-c:1 / 7 }
+}
+
+/* ============ small screens: one column, art overlapped ============ */
+@media (max-width:760px){
+  :root{ --bl:16px; --m:16px; --S:12px; --M:calc(var(--bl) * 1.25); --L:min(19.5vw,86px); --Llh:5; --tk:4; --dd:38px; }
+  .sheet{ --rows:8; height:auto; min-height:100dvh; transition:none;
+    grid-template-rows:var(--bl) auto auto auto auto auto auto calc(var(--bl) * 4); }
+  .b-meta{ grid-template-columns:repeat(2,minmax(0,1fr)); height:auto; row-gap:calc(var(--bl) * .5); padding-bottom:calc(var(--bl) * 1.5); margin-bottom:0 }
+  .mi{ grid-column:auto; height:auto; padding-left:6px }
+  .mi-ctl{ grid-column:1 / -1; height:auto; margin-top:var(--bl) }
+  .mi-ctl>span.lay{ height:auto; flex-wrap:wrap; row-gap:8px }
+  .lay button{ height:40px; min-width:40px; line-height:38px; padding:0 8px; margin-right:4px }
+  .lay .nm{ display:none }
+  .lay .lab{ display:inline }
+  .b-title{ margin-top:calc(var(--bl) * 3) }
+  .b-lede{ margin-top:calc(var(--bl) * 2); width:auto; padding-left:6px; line-height:calc(var(--bl) * 2) }
+  .b-sched{ align-self:start; margin-top:calc(var(--bl) * 3) }
+  .c1{ width:15% } .c2{ width:14% } .c3{ width:49% } .c4{ width:22% }
+  .tb th,.tb td{ height:calc(var(--bl) * 2); line-height:calc(var(--bl) * 2); vertical-align:middle; padding-bottom:0 }
+  .tb td{ white-space:normal; line-height:var(--bl); padding:calc(var(--bl) * .5) 0 }
+  .tb td:first-child{ padding-left:6px } .tb td:last-child,.tb th:last-child{ padding-right:6px }
+  .tb th:first-child{ padding-left:6px }
+  .tb .n button{ height:calc(var(--bl) * 2); min-width:36px }
+  .bar{ height:calc(var(--bl) * 2) }
+  .days button{ height:calc(var(--bl) * 2) }
+  .sh{ height:calc(var(--bl) * 2); margin-bottom:0; align-items:center; padding:0 6px }
+  .fn{ margin-top:var(--bl) }
+  .vt{ display:none }
+  .col b{ padding-left:4px }
+  .sheet .lb{ display:none }
+  .sheet[data-layout] .b-meta{ --meta-c:1 / -1; --meta-r:2; }
+  .sheet[data-layout] .b-title{ --title-c:1 / -1; --title-r:3; }
+  .sheet[data-layout="grid"]{
+    --num-c:1 / -1; --num-r:4; --num-wm:0 calc(-1 * var(--m)); --num-jc:flex-end; --num-ai:flex-end; --nt-mg:0 -.15em -.1em 0; --ns:min(80vw,420px);
+    --rings-c:1 / -1; --rings-r:4; --rd:min(calc(100vw - 2 * var(--m)),520px);
+    --lede-c:1 / -1; --lede-r:6; --sched-c:1 / -1; --sched-r:7;
+  }
+  .sheet[data-layout="stack"]{
+    --L:min(19.5vw,86px); --Llh:5; --tk:4;
+    --num-c:1 / -1; --num-r:4; --num-wm:0 calc(-1 * var(--m)); --num-jc:flex-start; --num-ai:flex-end; --nt-mg:0 0 -.1em -.05em; --ns:min(84vw,440px);
+    --rings-c:1 / -1; --rings-r:5; --rd:min(calc(100vw - 2 * var(--m)),520px);
+    --lede-c:1 / -1; --lede-r:6; --sched-c:1 / -1; --sched-r:7;
+  }
+  .sheet[data-layout="stack"] .b-title .ln{ display:block }
+  .sheet[data-layout="stack"] .b-rings{ margin-top:calc(var(--bl) * 2) }
+  .sheet[data-layout="diagonal"]{
+    --num-c:1 / -1; --num-r:5; --num-wm:0 calc(-1 * var(--m)) 0 calc(-1 * var(--m)); --num-jc:flex-start; --num-ai:flex-end; --nt-mg:0 0 -.1em -.06em; --ns:min(70vw,380px);
+    --rings-c:1 / -1; --rings-r:4; --rd:min(calc(70vw),400px);
+    --lede-c:1 / -1; --lede-r:6; --sched-c:1 / -1; --sched-r:7;
+  }
+  .sheet[data-layout="diagonal"] .b-rings{ justify-self:end; margin-top:calc(var(--bl) * 2) }
+  .sheet[data-layout="diagonal"] .b-lede{ margin-left:22%; }
+  .sheet[data-layout="poster"]{
+    --num-c:1 / -1; --num-r:4; --num-wm:0 calc(-1 * var(--m)); --num-jc:flex-start; --num-ai:flex-end; --nt-mg:0 0 -.09em -.06em; --ns:min(88vw,460px);
+    --rings-c:1 / -1; --rings-r:4; --rd:min(calc(100vw - 2 * var(--m)),520px);
+    --lede-c:1 / -1; --lede-r:8; --sched-c:1 / -1; --sched-r:8;
+  }
+  .sheet[data-layout="poster"] .b-rings{ justify-self:end; align-self:center }
+  .sheet[data-layout="poster"] .b-lede,.sheet[data-layout="poster"] .b-sched{ max-height:0; margin:0; overflow:hidden }
+  .b-num{ min-height:0 }
+  .sheet .diag{ display:none }
+}
+
+@media (prefers-reduced-motion:reduce){
+  .col::before,.col.last::after,.col b,.blk,.nt,.vt,.ov,.tb tbody tr{ animation:none !important }
+  .sheet,.bar,.diag{ transition:none !important }
+  .rg.spin{ animation:none !important }
+}
+
+</style>
+</head>
+<body>
+<main class="sheet" id="sheet" data-layout="grid">
+
+  <!-- 12 visible grid hairlines with ruler numerals -->
+  <span class="col" style="--i:0;grid-column:1" aria-hidden="true"><b>01</b></span>
+  <span class="col" style="--i:1;grid-column:2" aria-hidden="true"><b>02</b></span>
+  <span class="col" style="--i:2;grid-column:3" aria-hidden="true"><b>03</b></span>
+  <span class="col" style="--i:3;grid-column:4" aria-hidden="true"><b>04</b></span>
+  <span class="col" style="--i:4;grid-column:5" aria-hidden="true"><b>05</b></span>
+  <span class="col" style="--i:5;grid-column:6" aria-hidden="true"><b>06</b></span>
+  <span class="col" style="--i:6;grid-column:7" aria-hidden="true"><b>07</b></span>
+  <span class="col" style="--i:7;grid-column:8" aria-hidden="true"><b>08</b></span>
+  <span class="col" style="--i:8;grid-column:9" aria-hidden="true"><b>09</b></span>
+  <span class="col" style="--i:9;grid-column:10" aria-hidden="true"><b>10</b></span>
+  <span class="col" style="--i:10;grid-column:11" aria-hidden="true"><b>11</b></span>
+  <span class="col last" style="--i:11;grid-column:12" aria-hidden="true"><b>12</b></span>
+
+  <!-- giant numerals, cropped by the page edge -->
+  <div class="b-num" aria-hidden="true"><span class="nt"><span>2</span><span>6</span></span></div>
+
+  <!-- ring system: many thin strokes, turning at different speeds -->
+  <div class="blk b-rings" id="rings" aria-hidden="true">
+    <div class="rs" id="rs"></div>
+    <span class="lb l0">00</span><span class="lb l1">15</span><span class="lb l2">30</span><span class="lb l3">45</span>
+    <span class="rc" id="rc">00</span>
+  </div>
+
+  <!-- red overlay: hot tick, elapsed arc and the disc (kept out of the blend) -->
+  <div class="ov" id="ov">
+    <svg class="ovs" viewBox="0 0 1000 1000" aria-hidden="true">
+      <path id="arc" stroke-width="2.2" d="M500 134"/>
+      <line id="hot" stroke-width="4" x1="500" y1="22" x2="500" y2="52"/>
+    </svg>
+    <button class="disc" id="disc" type="button" aria-pressed="false" aria-label="Invert colours (key I)"><span class="tip" aria-hidden="true">Click · invert</span></button>
+  </div>
+
+  <header class="blk b-meta">
+    <div class="mi"><b>Festival of Sound Design</b><span>Basel, 12–15 November 2026</span></div>
+    <div class="mi"><b>Halle Rheinbogen</b><span>Studio Klybeck · Aula am Rhein</span></div>
+    <div class="mi"><b>Day pass CHF 28</b><span>Festival pass CHF 89</span></div>
+    <div class="mi mi-ctl"><b>Basel <time id="clock">00:00:00</time></b>
+      <span class="lay"><span class="lab">Layout</span><button type="button" data-l="grid" aria-pressed="true" aria-label="Layout 1: grid" title="1 · Grid">1</button><button type="button" data-l="stack" aria-pressed="false" aria-label="Layout 2: stack" title="2 · Stack">2</button><button type="button" data-l="diagonal" aria-pressed="false" aria-label="Layout 3: diagonal" title="3 · Diagonal">3</button><button type="button" data-l="poster" aria-pressed="false" aria-label="Layout 4: poster" title="4 · Poster">4</button><button class="tk" id="tick" type="button" aria-pressed="false" aria-label="Metronome tick, off" title="M · Metronome">Tick</button><span class="nm" id="lname" aria-live="polite">Grid</span></span></div>
+  </header>
+
+  <h1 class="blk b-title"><span class="ln">Structure<i class="sl">/</i></span><span class="ln">Rhythm</span></h1>
+
+  <p class="blk b-lede"><span class="ln">Four days on the grid: twelve columns, sixty seconds, one pulse.</span> <span class="ln">Composers, engineers and typographers measure sound the way others measure space.</span></p>
+
+  <section class="blk b-sched" aria-labelledby="sch-h">
+    <div class="sh">
+      <h2 id="sch-h">Programme</h2>
+      <div class="days" role="group" aria-label="Choose a day">
+        <button type="button" data-d="0" aria-pressed="true">Thu 12</button>
+        <button type="button" data-d="1" aria-pressed="false">Fri 13</button>
+        <button type="button" data-d="2" aria-pressed="false">Sat 14</button>
+        <button type="button" data-d="3" aria-pressed="false">Sun 15</button>
+      </div>
+      <span class="cnt" id="cnt" aria-live="polite">0 marked</span>
+    </div>
+    <div class="tw" id="tw">
+      <span class="bar" id="bar" aria-hidden="true"></span>
+      <table class="tb">
+        <caption class="sr">Programme for the selected day, times are Basel time</caption>
+        <colgroup><col class="c1"><col class="c2"><col class="c3"><col class="c4"></colgroup>
+        <thead><tr><th scope="col">No.</th><th scope="col">Time</th><th scope="col">Session</th><th scope="col">Room</th></tr></thead>
+        <tbody id="tbody">
+          <tr style="--k:0"><td class="n"><button type="button" aria-pressed="false" aria-label="Mark session 01">01</button></td><td>10:00</td><td><b>Opening</b> The Grid as Instrument</td><td>Halle 1</td></tr>
+          <tr style="--k:1"><td class="n"><button type="button" aria-pressed="false" aria-label="Mark session 02">02</button></td><td>11:15</td><td><b>Workshop</b> Metronomes for Architects</td><td>Studio 3</td></tr>
+          <tr style="--k:2"><td class="n"><button type="button" aria-pressed="false" aria-label="Mark session 03">03</button></td><td>13:30</td><td><b>Lecture</b> Silence, Measured in Hertz</td><td>Aula</td></tr>
+          <tr style="--k:3"><td class="n"><button type="button" aria-pressed="false" aria-label="Mark session 04">04</button></td><td>15:00</td><td><b>Listening</b> Twelve Speakers, One Line</td><td>Halle 2</td></tr>
+          <tr style="--k:4"><td class="n"><button type="button" aria-pressed="false" aria-label="Mark session 05">05</button></td><td>17:30</td><td><b>Panel</b> Who Owns the Beat?</td><td>Foyer</td></tr>
+          <tr style="--k:5"><td class="n"><button type="button" aria-pressed="false" aria-label="Mark session 06">06</button></td><td>20:00</td><td><b>Concert</b> Rhythm for Twelve Columns</td><td>Halle 1</td></tr>
+          <tr style="--k:6"><td class="n"><button type="button" aria-pressed="false" aria-label="Mark session 07">07</button></td><td>22:30</td><td><b>Late set</b> Structure After Dark</td><td>Keller</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="fn">Illustrative programme. Sessions, rooms and prices are fictional.</p>
+  </section>
+
+  <p class="vt" aria-hidden="true"><i></i> Structure / Rhythm — Festival of Sound Design — Basel 12–15 Nov 2026</p>
+
+  <svg class="diag" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><line x1="41.7" y1="41.7" x2="100" y2="100" vector-effect="non-scaling-stroke"/></svg>
+  <svg class="blo" aria-hidden="true"><defs><pattern id="blp" width="16" height="20" patternUnits="userSpaceOnUse"><rect id="blr" x="0" y="19" width="16" height="1" fill="#e4002b" fill-opacity=".55"/></pattern></defs><rect width="100%" height="100%" fill="url(#blp)"/></svg>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const doc = document, root = doc.documentElement;
+  const $ = (s, r) => (r || doc).querySelector(s);
+  const $$ = (s, r) => Array.from((r || doc).querySelectorAll(s));
+  const NS = 'http://www.w3.org/2000/svg';
+  const pad = n => (n < 10 ? '0' : '') + n;
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+  /* progressive enhancement CSS that the HTML validator does not know yet */
+  (function () {
+    const css = '::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}::view-transition-old(root){z-index:1}::view-transition-new(root){z-index:2}' +
+      '@supports (text-box:trim-start cap alphabetic){.col b{ padding-top:calc(var(--bl) - var(--cap) * 1em);} .mi{ padding-top:calc(var(--bl) - var(--cap) * 1em);} .b-title{ padding-top:calc(var(--bl) * var(--tk) - var(--cap) * 1em);} .b-lede{ padding-top:calc(var(--bl) * 2 - var(--cap) * 1em);} .sh{ align-items:flex-end } .sh h2,.sh .cnt,.days button{} .days button{ height:auto; position:relative } .days button::after{ content:""; position:absolute; inset:-8px -6px } .tb th,.tb td{ vertical-align:bottom; padding-bottom:calc(var(--rl) - 1px);} .tw{ margin-top:var(--rl) } .fn{ margin:0; padding-top:calc(var(--bl) * 2 - var(--rl) - var(--cap) * 1em);} .col b,.mi,.b-title,.b-lede{text-box:trim-start cap alphabetic}.sh h2,.sh .cnt,.days button,.tb th,.tb td,.fn{text-box:trim-both cap alphabetic}}' +
+      '@media (max-width:760px){.tb th,.tb td{text-box:normal}}';
+    const st = doc.createElement('style'); st.textContent = css; doc.head.appendChild(st);
+  })();
+
+  const sheet = $('#sheet'), rings = $('#rings'), rs = $('#rs'), ov = $('#ov'), disc = $('#disc');
+  const arc = $('#arc'), hot = $('#hot'), rc = $('#rc'), clockEl = $('#clock'), numT = $('.nt');
+  const mqReduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const mqDesk = matchMedia('(min-width: 761px)');
+  const mqFine = matchMedia('(hover: hover) and (pointer: fine)');
+  let reduce = mqReduce.matches;
+  try { mqReduce.addEventListener('change', e => { reduce = e.matches; }); } catch (e) { /* older engines */ }
+  let layout = 'grid';
+
+  /* ---------- sizing: rows on a baseline unit that divides the viewport exactly ---------- */
+  const MIN_ROWS = { grid: 44, stack: 52, diagonal: 44, poster: 44 };
+  function size() {
+    if (!mqDesk.matches) {
+      sheet.style.removeProperty('--rows'); root.style.removeProperty('--bl');
+      updatePattern(); return;
+    }
+    root.style.removeProperty('--bl');
+    const base = parseFloat(getComputedStyle(root).getPropertyValue('--bl')) || 20;
+    const h = window.innerHeight, fr = Math.floor(h / base);
+    const bl = fr >= MIN_ROWS.grid ? h / fr : Math.max(16, h / MIN_ROWS.grid);
+    root.style.setProperty('--bl', bl.toFixed(3) + 'px');
+    sheet.style.setProperty('--rows', Math.max(MIN_ROWS[layout], fr));
+    updatePattern();
+  }
+  function updatePattern() {
+    const bl = parseFloat(getComputedStyle(root).getPropertyValue('--bl')) || 20;
+    const p = $('#blp'), r = $('#blr');
+    if (p && r) { p.setAttribute('height', bl); r.setAttribute('y', bl - 1); }
+  }
+
+  /* ---------- the ring system ---------- */
+  const RINGS = [
+    { k: 'dial' },
+    { k: 'line', r: [446], sw: 1.2 },
+    { k: 'ticks', r: 424, w: 26, n: 240, d: 1.3, p: 120 },
+    { k: 'line', r: [401, 396, 391], sw: 1.1 },
+    { k: 'ticks', r: 366, w: 38, n: 168, d: 1.5, p: -60 },
+    { k: 'line', r: [338], sw: 1.2 },
+    { k: 'ticks', r: 312, w: 28, n: 120, d: 2, p: 30 },
+    { k: 'ticks', r: 272, w: 5, n: 96, d: 5, p: -20 },
+    { k: 'ticks', r: 246, w: 30, n: 84, d: 1.4, p: 15 },
+    { k: 'line', r: [222, 217], sw: 1.1 },
+    { k: 'ticks', r: 194, w: 24, n: 60, d: 3.2, p: -12 },
+    { k: 'line', r: [166], sw: 1.2 },
+    { k: 'ticks', r: 138, w: 26, n: 36, d: 4.6, p: 10 },
+    { k: 'line', r: [104, 62], sw: 1.2 }
+  ];
+  const R0 = 366; /* the disc orbits this ring */
+  function svgEl(tag, attrs) {
+    const e = doc.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function layer(cls) {
+    const s = svgEl('svg', { viewBox: '0 0 1000 1000', 'aria-hidden': 'true', class: cls });
+    rs.appendChild(s); return s;
+  }
+  function buildRings() {
+    const now = Date.now() / 1000;
+    const stat = layer('rg');
+    RINGS.forEach(c => {
+      if (c.k === 'dial') {
+        let major = '', minor = '';
+        for (let i = 0; i < 60; i++) {
+          const a = i * Math.PI / 30, s = Math.sin(a), co = Math.cos(a), big = i % 5 === 0;
+          const r1 = 480, r2 = big ? 438 : 460;
+          const seg = 'M' + (500 + r1 * s).toFixed(2) + ' ' + (500 - r1 * co).toFixed(2) +
+                      'L' + (500 + r2 * s).toFixed(2) + ' ' + (500 - r2 * co).toFixed(2);
+          if (big) major += seg; else minor += seg;
+        }
+        stat.appendChild(svgEl('path', { d: minor, 'stroke-width': 1.4 }));
+        stat.appendChild(svgEl('path', { d: major, 'stroke-width': 3 }));
+      } else if (c.k === 'line') {
+        c.r.forEach(r => stat.appendChild(svgEl('circle', { cx: 500, cy: 500, r: r, 'stroke-width': c.sw })));
+      } else {
+        /* a band of hairline ticks: one dashed circle, one element, hundreds of strokes */
+        const s = layer('rg spin' + (c.p < 0 ? ' rev' : ''));
+        const P = Math.abs(c.p), per = 2 * Math.PI * c.r / c.n;
+        s.appendChild(svgEl('circle', { cx: 500, cy: 500, r: c.r, 'stroke-width': c.w, 'stroke-dasharray': c.d + ' ' + (per - c.d).toFixed(3) }));
+        s.style.setProperty('--p', P + 's');
+        s.style.setProperty('--d', (-(now % P)).toFixed(3) + 's'); /* phase locked to the wall clock */
+      }
+    });
+  }
+
+  /* ---------- clock, second hand, disc, overlay sync ---------- */
+  let fmt = null;
+  try { fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Zurich', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }); } catch (e) { fmt = null; }
+  function baselTime() {
+    try { if (fmt) return fmt.format(new Date()); } catch (e) { /* fall through */ }
+    const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+  function arcPath(ang) {
+    if (ang < 0.004) return 'M500 ' + (500 - R0);
+    const x = 500 + R0 * Math.sin(ang), y = 500 - R0 * Math.cos(ang);
+    return 'M500 ' + (500 - R0) + 'A' + R0 + ' ' + R0 + ' 0 ' + (ang > Math.PI ? 1 : 0) + ' 1 ' + x.toFixed(2) + ' ' + y.toFixed(2);
+  }
+  let lastSec = -1, lastOv = '';
+  function syncOverlay() {
+    const w = rings.offsetWidth, h = rings.offsetHeight;
+    const key = w + '|' + h + '|' + rings.offsetLeft + '|' + rings.offsetTop + '|' + rings.style.transform;
+    if (key === lastOv) return;
+    lastOv = key;
+    ov.style.width = w + 'px'; ov.style.height = h + 'px';
+    ov.style.left = rings.offsetLeft + 'px'; ov.style.top = rings.offsetTop + 'px';
+    ov.style.transform = rings.style.transform;
+  }
+
+  /* ---------- opt-in metronome (WebAudio, only after a click / key) ---------- */
+  let ac = null, tickOn = false;
+  const tickBtn = $('#tick');
+  function ensureAudio() {
+    if (ac) return ac;
+    try { const C = window.AudioContext || window.webkitAudioContext; if (C) ac = new C(); } catch (e) { ac = null; }
+    return ac;
+  }
+  function click(accent) {
+    if (!ac) return;
+    try {
+      if (ac.state === 'suspended') ac.resume();
+      const t = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'triangle'; o.frequency.value = accent ? 660 : 1320;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(accent ? 0.16 : 0.09, t + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+      o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.09);
+    } catch (e) { /* audio is optional */ }
+  }
+  function toggleTick() {
+    if (!tickOn && !ensureAudio()) { tickBtn.setAttribute('aria-label', 'Metronome unavailable'); return; }
+    tickOn = !tickOn;
+    tickBtn.setAttribute('aria-pressed', String(tickOn));
+    tickBtn.setAttribute('aria-label', 'Metronome tick, ' + (tickOn ? 'on' : 'off'));
+    if (tickOn) click(true);
+  }
+
+  function onSecond(sec) {
+    rc.textContent = pad(sec);
+    clockEl.textContent = baselTime();
+    const a = sec * Math.PI / 30, s = Math.sin(a), c = Math.cos(a);
+    hot.setAttribute('x1', (500 + 488 * s).toFixed(2)); hot.setAttribute('y1', (500 - 488 * c).toFixed(2));
+    hot.setAttribute('x2', (500 + 430 * s).toFixed(2)); hot.setAttribute('y2', (500 - 430 * c).toFixed(2));
+    if (tickOn) {
+      click(sec % 5 === 0);
+      disc.classList.add('beat');
+      setTimeout(() => disc.classList.remove('beat'), 110);
+    }
+  }
+
+  /* ---------- FLIP tweens: blocks slide into place with a mechanical ease ---------- */
+  let tweens = [];
+  const ease = t => (t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2);
+  function stepTweens(now) {
+    if (!tweens.length) return;
+    let alive = 0;
+    tweens.forEach(tw => {
+      const k = clamp((now - tw.t0) / tw.dur, 0, 1);
+      if (k >= 1) { tw.el.style.transform = ''; tw.el.style.willChange = ''; return; }
+      alive++;
+      const e = 1 - ease(k);
+      tw.el.style.transform = 'translate(' + (tw.dx * e).toFixed(2) + 'px,' + (tw.dy * e).toFixed(2) + 'px)' +
+        (tw.s !== 1 ? ' scale(' + (1 + (tw.s - 1) * e).toFixed(4) + ')' : '');
+    });
+    if (!alive) tweens = [];
+  }
+
+  /* ---------- frame loop ---------- */
+  let raf = 0;
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    stepTweens(now);
+    const ms = Date.now() % 60000;
+    const t = reduce ? Math.floor(ms / 1000) * 1000 : ms;
+    const ang = t / 60000 * Math.PI * 2;
+    disc.style.left = ((500 + R0 * Math.sin(ang)) / 10).toFixed(3) + '%';
+    disc.style.top = ((500 - R0 * Math.cos(ang)) / 10).toFixed(3) + '%';
+    arc.setAttribute('d', arcPath(ang));
+    syncOverlay();
+    const sec = Math.floor(ms / 1000);
+    if (sec !== lastSec) { lastSec = sec; onSecond(sec); }
+  }
+  function start() { if (!raf) raf = requestAnimationFrame(frame); }
+  function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+  doc.addEventListener('visibilitychange', () => { if (doc.hidden) stop(); else start(); });
+
+  /* ---------- programme table: four days, a red bar that slides to the hovered row ---------- */
+  const DAYS = [
+    [['Opening', 'The Grid as Instrument', '10:00', 'Halle 1'], ['Workshop', 'Metronomes for Architects', '11:15', 'Studio 3'],
+     ['Lecture', 'Silence, Measured in Hertz', '13:30', 'Aula'], ['Listening', 'Twelve Speakers, One Line', '15:00', 'Halle 2'],
+     ['Panel', 'Who Owns the Beat?', '17:30', 'Foyer'], ['Concert', 'Rhythm for Twelve Columns', '20:00', 'Halle 1'],
+     ['Late set', 'Structure After Dark', '22:30', 'Keller']],
+    [['Walk', 'The Rhine at Dawn, Recorded', '09:30', 'Pier 4'], ['Talk', 'Kerning the Kick Drum', '11:00', 'Aula'],
+     ['Lunch', 'Tape Loops from Alpine Huts', '12:30', 'Café'], ['Workshop', 'Modular Grids, Modular Synths', '14:00', 'Studio 3'],
+     ['Screening', 'The Sound of Timetables', '16:00', 'Kino'], ['Concert', 'Sixty Seconds, Sixty Speakers', '19:00', 'Halle 1'],
+     ['Late set', 'Polyrhythm for Trams', '22:00', 'Keller']],
+    [['Masterclass', 'Foley for Typography', '10:00', 'Studio 1'], ['Lecture', 'Rhythm Is a Baseline', '11:30', 'Aula'],
+     ['Listening', 'Room Tone, Fourteen Cities', '14:00', 'Halle 2'], ['Panel', 'Loudness, Politely', '15:30', 'Foyer'],
+     ['Demo', 'The Pendulum Orchestra', '17:00', 'Halle 1'], ['Concert', 'Interference Patterns', '20:30', 'Halle 1'],
+     ['Late set', 'Moiré After Midnight', '23:00', 'Keller']],
+    [['Brunch', 'Small Forms, Slow Beats', '10:30', 'Café'], ['Workshop', 'Drawing with Frequencies', '12:00', 'Studio 3'],
+     ['Lecture', 'A Short History of the Click', '13:30', 'Aula'], ['Panel', 'What Repeats, Remains', '15:00', 'Halle 1'],
+     ['Award', 'The Golden Sine', '16:30', 'Halle 1'], ['Finale', 'One Pulse, Twelve Columns', '18:00', 'Halle 1'],
+     ['Party', 'Off the Grid', '20:00', 'Keller']]
+  ];
+  const tw = $('#tw'), bar = $('#bar'), tbody = $('#tbody'), cnt = $('#cnt');
+  const dayBtns = $$('.days button');
+  const marked = new Set();
+  let day = 0, curRow = null;
+
+  function renderDay(d) {
+    tbody.innerHTML = DAYS[d].map((r, i) => {
+      const key = d + '-' + i, n = pad(i + 1);
+      return '<tr style="--k:' + i + '" data-key="' + key + '"><td class="n"><button type="button" aria-pressed="' + marked.has(key) +
+        '" aria-label="Mark session ' + n + ': ' + r[0] + ', ' + r[1] + '">' + n + '</button></td><td>' + r[2] +
+        '</td><td><b>' + r[0] + '</b> ' + r[1] + '</td><td>' + r[3] + '</td></tr>';
+    }).join('');
+  }
+  function moveBar(tr) {
+    if (curRow && curRow !== tr) curRow.classList.remove('on');
+    curRow = tr; tr.classList.add('on');
+    const y = tr.getBoundingClientRect().top - tw.getBoundingClientRect().top;
+    bar.style.height = tr.offsetHeight + 'px';
+    bar.style.transform = 'translateY(' + y.toFixed(2) + 'px)';
+    tw.classList.add('hot');
+  }
+  function hideBar() {
+    tw.classList.remove('hot');
+    if (curRow) { curRow.classList.remove('on'); curRow = null; }
+  }
+  tw.addEventListener('pointerover', e => { const tr = e.target.closest('tbody tr'); if (tr && tw.contains(tr)) moveBar(tr); });
+  tw.addEventListener('pointerleave', () => { if (!tw.contains(doc.activeElement) || !doc.activeElement.matches(':focus-visible')) hideBar(); });
+  tw.addEventListener('focusin', e => { const tr = e.target.closest('tbody tr'); if (tr && e.target.matches(':focus-visible')) moveBar(tr); });
+  tw.addEventListener('focusout', () => { if (!tw.matches(':hover')) hideBar(); });
+  tw.addEventListener('click', e => {
+    const tr = e.target.closest('tbody tr'); if (!tr) return;
+    const b = $('.n button', tr), key = tr.getAttribute('data-key');
+    if (marked.has(key)) marked.delete(key); else marked.add(key);
+    b.setAttribute('aria-pressed', String(marked.has(key)));
+    cnt.textContent = marked.size + ' marked';
+  });
+  dayBtns.forEach(b => b.addEventListener('click', () => {
+    const d = +b.dataset.d; if (d === day) return;
+    day = d; dayBtns.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    hideBar(); renderDay(d);
+  }));
+
+  /* ---------- columns lean toward the pointer (CSS grid-template-columns transition) ---------- */
+  const cols = $$('.col');
+  let colQ = -2, padL = 40;
+  function setCols(p, instant) {
+    const q = p == null ? -1 : Math.round(p * 24);
+    if (q === colQ) return;
+    colQ = q;
+    const pp = q / 24;
+    let s = '';
+    for (let i = 0; i < 12; i++) {
+      const w = q < 0 ? 1 : 1 + 0.5 * Math.exp(-Math.pow(((i + 0.5) / 12 - pp) / 0.15, 2));
+      s += (i ? ' ' : '') + 'minmax(0,' + w.toFixed(3) + 'fr)';
+    }
+    if (instant) sheet.style.transition = 'none';
+    sheet.style.gridTemplateColumns = s;
+    if (instant) { void sheet.offsetWidth; sheet.style.transition = ''; }
+    const on = q < 0 ? -1 : clamp(Math.floor(pp * 12), 0, 11);
+    cols.forEach((c, i) => c.classList.toggle('on', i === on));
+  }
+  window.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse' || !mqDesk.matches || reduce) return;
+    const r = sheet.getBoundingClientRect();
+    setCols(clamp((e.clientX - r.left - padL) / (r.width - 2 * padL), 0, 1));
+  }, { passive: true });
+  doc.documentElement.addEventListener('mouseleave', () => setCols(null));
+
+  /* ---------- presets: 1 grid · 2 stack · 3 diagonal · 4 poster ---------- */
+  const NAMES = { grid: 'Grid', stack: 'Stack', diagonal: 'Diagonal', poster: 'Poster' };
+  const layBtns = $$('.lay button[data-l]');
+  const lname = $('#lname');
+  const flipEls = [$('.b-meta'), $('.b-title'), $('.b-lede'), $('.b-sched'), rings];
+  function setLayout(name) {
+    if (name === layout || !NAMES[name]) return;
+    if (window.scrollY > 0) window.scrollTo(0, 0);
+    const first = flipEls.map(e => e.getBoundingClientRect());
+    flipEls.forEach(e => { e.style.transform = ''; e.style.transformOrigin = '0 0'; });
+    layout = name;
+    sheet.setAttribute('data-layout', name);
+    layBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.l === name)));
+    lname.textContent = NAMES[name];
+    size();
+    hideBar();
+    const last = flipEls.map(e => e.getBoundingClientRect());
+    numT.classList.remove('re'); void numT.offsetWidth; numT.classList.add('re');
+    tweens = [];
+    if (!reduce) {
+      const t0 = performance.now();
+      flipEls.forEach((e, i) => {
+        const a = first[i], b = last[i];
+        const s = (e === rings && b.width > 1) ? a.width / b.width : 1;
+        const dx = a.left - b.left, dy = a.top - b.top;
+        if (Math.abs(dx) + Math.abs(dy) + Math.abs(s - 1) < 0.5) return;
+        e.style.willChange = 'transform';
+        e.style.transform = 'translate(' + dx.toFixed(2) + 'px,' + dy.toFixed(2) + 'px)' + (s !== 1 ? ' scale(' + s.toFixed(4) + ')' : '');
+        tweens.push({ el: e, dx: dx, dy: dy, s: s, t0: t0 + i * 60, dur: 900 });
+      });
+    }
+    lastOv = '';
+  }
+  layBtns.forEach(b => b.addEventListener('click', () => setLayout(b.dataset.l)));
+
+  /* ---------- invert: the red disc opens a circle across the page ---------- */
+  const tip = $('.tip', disc);
+  function toggleInvert() {
+    const next = !root.classList.contains('inv');
+    const apply = () => {
+      root.classList.toggle('inv', next);
+      disc.setAttribute('aria-pressed', String(next));
+      tip.textContent = next ? 'Click · restore' : 'Click · invert';
+    };
+    if (reduce || !doc.startViewTransition) { apply(); return; }
+    const r = disc.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    const rad = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    try {
+      const vt = doc.startViewTransition(apply);
+      vt.ready.then(() => {
+        root.animate({ clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + rad + 'px at ' + x + 'px ' + y + 'px)'] },
+          { duration: 950, easing: 'cubic-bezier(.76,0,.16,1)', pseudoElement: '::view-transition-new(root)' });
+      }).catch(() => {});
+    } catch (err) { apply(); }
+  }
+  disc.addEventListener('click', toggleInvert);
+  tickBtn.addEventListener('click', toggleTick);
+
+  addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key;
+    if (k === '1') setLayout('grid');
+    else if (k === '2') setLayout('stack');
+    else if (k === '3') setLayout('diagonal');
+    else if (k === '4') setLayout('poster');
+    else if (k === 'i' || k === 'I') toggleInvert();
+    else if (k === 'b' || k === 'B') sheet.classList.toggle('show-bl');
+    else if (k === 'm' || k === 'M') toggleTick();
+  });
+
+  let rt = 0;
+  addEventListener('resize', () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => {
+      size(); padL = parseFloat(getComputedStyle(sheet).paddingLeft) || 0;
+      if (!mqDesk.matches) { colQ = -2; setCols(null, true); }
+      lastOv = '';
+    }, 80);
+  });
+
+  /* ---------- go ---------- */
+  buildRings();
+  size();
+  padL = parseFloat(getComputedStyle(sheet).paddingLeft) || 0;
+  setCols(null, true);
+  setTimeout(() => disc.classList.add('hint'), 2600);
+  setTimeout(() => disc.classList.remove('hint'), 7800);
+  start();
+})();
+</script>
+</body>
+</html>

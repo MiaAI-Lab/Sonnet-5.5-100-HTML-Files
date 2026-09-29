@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lunar Almanac — Phases of the Month</title>
+<style>
+:root{
+  --night:#0b1026;
+  --night-2:#121938;
+  --night-3:#1a2350;
+  --silver:#d9dde8;
+  --silver-dim:#8e96b0;
+  --cream:#f2ead3;
+  --rust:#b5563a;
+  --rust-hi:#e0805f;
+  --line:rgba(217,221,232,.16);
+  --serif:"Bodoni 72","Bodoni MT",Didot,"Didot LT STD","Playfair Display","Times New Roman",serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--night)}
+body{margin:0;min-height:100vh;min-height:100dvh;color:var(--silver);font-family:var(--serif);
+  background:radial-gradient(90% 70% at 50% 24%,#1a2352 0%,#111838 45%,#0b1026 80%);background-color:var(--night);overflow-x:hidden;position:relative}
+#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.page{position:relative;z-index:1;max-width:1320px;margin:0 auto;padding:clamp(16px,3vw,38px) clamp(16px,3.4vw,48px) 0}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;
+  border-bottom:1px solid var(--line);padding-bottom:16px}
+h1{margin:0;font-weight:400;font-variant:small-caps;letter-spacing:.3em;font-size:clamp(22px,3.6vw,42px);line-height:1.05;color:var(--cream);text-transform:lowercase}
+h1 small{display:block;font-size:.3em;letter-spacing:.5em;color:var(--silver-dim);margin-top:.9em;font-variant:small-caps}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper .mon{min-width:11.5em;text-align:center;font-variant:small-caps;letter-spacing:.24em;font-size:clamp(14px,1.6vw,18px);color:var(--cream)}
+.mon span{font-family:var(--mono);letter-spacing:.14em;color:var(--silver-dim);font-size:.82em}
+.btn{appearance:none;font:inherit;cursor:pointer;color:var(--silver);background:rgba(217,221,232,.05);border:1px solid var(--line);border-radius:999px;
+  min-width:44px;min-height:44px;padding:0 18px;font-variant:small-caps;letter-spacing:.22em;font-size:14px;transition:background .2s,border-color .2s,color .2s}
+.btn:hover{background:rgba(217,221,232,.13);border-color:rgba(217,221,232,.4);color:#fff}
+.btn:focus-visible,.day:focus-visible,input[type=range]:focus-visible,.ph:focus-visible{outline:2px solid var(--rust-hi);outline-offset:3px}
+.btn.today{border-color:var(--rust);color:var(--rust-hi)}
+.btn.today:hover{background:rgba(181,86,58,.2)}
+main{display:grid;grid-template-columns:minmax(250px,320px) minmax(0,1fr) minmax(280px,360px);gap:clamp(18px,2.6vw,40px);align-items:start;padding:clamp(18px,3vw,36px) 0}
+.side{display:flex;flex-direction:column;gap:22px}
+.card{border:1px solid var(--line);border-radius:4px;padding:18px 20px;background:linear-gradient(180deg,rgba(26,35,80,.55),rgba(14,19,46,.55));backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.eyebrow{font-variant:small-caps;letter-spacing:.32em;font-size:12px;color:var(--silver-dim);margin:0 0 12px;text-transform:lowercase}
+.facts{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.facts li{display:flex;justify-content:space-between;gap:12px;align-items:baseline;border-bottom:1px dotted rgba(217,221,232,.14);padding-bottom:8px;font-size:15px}
+.facts li:last-child{border:0;padding-bottom:0}
+.facts span:first-child{font-variant:small-caps;letter-spacing:.14em;color:var(--silver-dim)}
+.facts b{font-family:var(--mono);font-weight:400;color:var(--cream);font-size:14px;text-align:right}
+.moonname{font-style:italic;color:var(--cream);font-size:clamp(20px,2.2vw,26px);margin:0 0 4px}
+.moonnote{margin:0;color:var(--silver-dim);font-size:14px;line-height:1.55}
+.phases{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.phases li{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;font-size:15px}
+.phases .pn{font-variant:small-caps;letter-spacing:.14em}
+.phases .pd{font-family:var(--mono);font-size:13px;color:var(--cream)}
+.phases .pd i{font-style:normal;color:var(--silver-dim)}
+.stage{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:0}
+.moonwrap{position:relative;width:min(100%,clamp(280px,46vw,600px),calc(100vh - 300px));aspect-ratio:1;min-width:250px}
+.moonwrap canvas{position:absolute;inset:8%;width:84%;height:84%;display:block}
+.moonwrap svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.bigdate{text-align:center}
+.bigdate .d{font-family:var(--mono);letter-spacing:.24em;color:var(--silver-dim);font-size:clamp(12px,1.3vw,14px);text-transform:uppercase}
+.bigdate .p{font-size:clamp(28px,4.2vw,52px);font-style:italic;color:var(--cream);margin:.1em 0 0;line-height:1.1;font-weight:400}
+.flip{width:min(100%,540px);margin-top:6px;text-align:center}
+.flip label{display:block;font-variant:small-caps;letter-spacing:.3em;font-size:12px;color:var(--silver-dim);margin-bottom:6px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:32px;background:transparent;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--rust),var(--silver-dim) 50%,var(--rust));border-radius:2px}
+input[type=range]::-moz-range-track{height:2px;background:linear-gradient(90deg,var(--rust),var(--silver-dim) 50%,var(--rust));border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;margin-top:-10px;background:radial-gradient(circle at 35% 30%,#fff8e2,#e6d9b0 60%,#a99a70);border:0;box-shadow:0 0 14px rgba(242,234,211,.6)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff8e2,#e6d9b0 60%,#a99a70);border:0;box-shadow:0 0 14px rgba(242,234,211,.6)}
+.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.gh{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--silver-dim);text-align:center;padding-bottom:6px;text-transform:uppercase}
+.day{appearance:none;font:inherit;color:var(--silver);background:transparent;border:1px solid transparent;border-radius:8px;padding:5px 0 3px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:2px;min-height:48px;transition:background .2s,border-color .2s;position:relative}
+.day svg{width:min(30px,72%);height:auto;display:block}
+.day .n{font-family:var(--mono);font-size:11px;color:var(--silver-dim);line-height:1}
+.day:hover{background:rgba(217,221,232,.09)}
+.day.sel{background:rgba(242,234,211,.1);border-color:rgba(242,234,211,.45)}
+.day.sel .n{color:var(--cream)}
+.day.today{border-color:var(--rust)}
+.day.today .n{color:var(--rust-hi)}
+.day.today::after{content:"";position:absolute;top:3px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--rust-hi)}
+.empty{visibility:hidden}
+.fmn{display:flex;gap:14px;align-items:center}
+.fmn .fm{font-size:22px;font-style:italic;color:var(--cream);line-height:1.15}
+.fmn p{margin:2px 0 0;color:var(--silver-dim);font-size:13px;line-height:1.5}
+.ph{appearance:none;font:inherit;background:transparent;border:0;color:inherit;text-align:left;cursor:pointer;padding:0;display:contents}
+.ridge{position:relative;height:clamp(150px,20vw,270px);margin-top:clamp(10px,3vw,40px);z-index:1}
+.ridge svg{position:absolute;left:0;bottom:0;width:100%;height:100%;overflow:visible}
+.wolf{cursor:pointer}
+.wolf:focus-visible{outline:none}
+.wolf:focus-visible .wolfbody{stroke:var(--rust-hi);stroke-width:2}
+#head{transition:transform 1.1s cubic-bezier(.3,.8,.2,1);transform-box:fill-box;transform-origin:90% 85%}
+.howl #head{transform:rotate(38deg)}
+.awoo{position:absolute;right:clamp(110px,23vw,360px);bottom:clamp(120px,18vw,240px);font-style:italic;color:var(--cream);font-size:clamp(14px,1.6vw,18px);letter-spacing:.2em;opacity:0;transition:opacity 1s;pointer-events:none;text-shadow:0 0 14px rgba(242,234,211,.6)}
+.howl+.awoo,.awoo.on{opacity:.9}
+.foot{position:relative;z-index:2;text-align:center;font-variant:small-caps;letter-spacing:.24em;color:var(--silver-dim);font-size:11px;padding:0 16px 18px;margin-top:-6px}
+@media (max-width:1040px){
+  main{grid-template-columns:minmax(0,1fr);}
+  .stage{order:1}.side.left{order:2}.side.right{order:3}
+  .moonwrap{width:min(92vw,520px,calc(100vh - 220px))}
+}
+@media (max-width:560px){
+  header{flex-direction:column;align-items:flex-start}
+  .stepper{width:100%;justify-content:space-between}
+  .stepper .mon{min-width:0;flex:1}
+  .card{padding:16px 14px}
+  .day{min-height:46px}
+}
+@media (prefers-reduced-motion:reduce){#head{transition:none}.awoo{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+<div class="page">
+  <header>
+    <h1>Lunar Almanac<small>The moon, computed from the synodic month</small></h1>
+    <div class="stepper" role="group" aria-label="Month">
+      <button class="btn" id="prev" type="button" aria-label="Previous month">&#8592;</button>
+      <div class="mon" id="monlabel" aria-live="polite">--</div>
+      <button class="btn" id="next" type="button" aria-label="Next month">&#8594;</button>
+      <button class="btn today" id="today" type="button">Today</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="side left" aria-label="Moon details">
+      <div class="card">
+        <p class="eyebrow">Moon on this date</p>
+        <p class="moonname" id="pname">--</p>
+        <p class="moonnote" id="pnote">--</p>
+      </div>
+      <div class="card">
+        <p class="eyebrow">The numbers</p>
+        <ul class="facts">
+          <li><span>Moon age</span><b id="fAge">--</b></li>
+          <li><span>Illumination</span><b id="fIll">--</b></li>
+          <li><span>Next full moon</span><b id="fNext">--</b></li>
+          <li><span>Distance</span><b id="fDist">--</b></li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Full moon of the month</p>
+        <div class="fmn"><div><div class="fm" id="fmName">--</div><p id="fmNote">--</p></div></div>
+      </div>
+    </section>
+
+    <section class="stage" aria-label="Moon disc">
+      <div class="moonwrap" id="moonwrap">
+        <svg viewBox="0 0 600 600" aria-hidden="true">
+          <circle cx="300" cy="300" r="292" fill="none" stroke="rgba(217,221,232,.12)"/>
+          <g id="ringTicks"></g>
+          <circle id="ageDot" r="6" fill="#b5563a" stroke="#f2ead3" stroke-width="1.2"/>
+        </svg>
+        <canvas id="moon" width="900" height="900" role="img" aria-label="The moon drawn at the chosen date's phase"></canvas>
+      </div>
+      <div class="bigdate"><div class="d" id="bdate">--</div><h2 class="p" id="bphase">--</h2></div>
+      <div class="flip">
+        <label for="year">Flip through the year</label>
+        <input id="year" type="range" min="0" max="364" step="1" value="0" aria-label="Day of the year, scrub through the whole year">
+      </div>
+    </section>
+
+    <section class="side right" aria-label="Month calendar of phases">
+      <div class="card">
+        <p class="eyebrow">The month, one moon a day</p>
+        <div class="grid" id="grid" role="group" aria-label="Days of the month"></div>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Primary phases (approx.)</p>
+        <ul class="phases" id="phaseList"></ul>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="ridge" aria-hidden="false">
+  <svg viewBox="0 0 1600 260" preserveAspectRatio="xMidYMax slice" role="img" aria-label="A wolf on a ridge; click it to make it howl">
+    <defs>
+      <linearGradient id="ridgeG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#151d47"/><stop offset="1" stop-color="#070a1c"/></linearGradient>
+    </defs>
+    <path d="M0 260V192C120 178 210 156 330 172C430 186 470 152 580 144C700 136 760 178 880 180C1010 182 1090 138 1220 130C1340 122 1440 156 1600 148V260Z" fill="url(#ridgeG)"/>
+    <g id="pines" fill="#0a0f26"></g>
+    <g id="wolf" class="wolf" tabindex="0" role="button" aria-label="Wolf on the ridge. Activate to make it howl" transform="translate(1160 -8) scale(.85)">
+      <g class="wolfbody" fill="#03050f">
+        <path d="M100 72C88 90 80 120 82 150L78 172L104 172L108 150C120 158 132 164 140 172L172 172C176 150 170 120 152 100C140 88 126 78 116 70Z"/>
+        <path d="M172 172C190 170 200 158 198 142C192 152 182 158 168 158Z"/>
+      </g>
+      <g id="head" fill="#03050f">
+        <path d="M110 66C102 56 88 54 74 58L52 66C48 68 48 72 52 74L74 74C86 76 98 82 112 86Z"/>
+        <path d="M96 60L98 40L110 60Z"/>
+      </g>
+    </g>
+  </svg>
+  <div class="awoo" id="awoo" aria-hidden="true">Awooooo&hellip;</div>
+</div>
+<div class="foot">Illustrative computation from mean lunations &middot; phases approximate to the day</div>
+
+<script>
+(function(){
+'use strict';
+var SYN=29.530588853, EPOCH=2451550.1;
+var reduce=false;
+try{ var mq=window.matchMedia('(prefers-reduced-motion: reduce)'); reduce=mq.matches; if(mq.addEventListener) mq.addEventListener('change',function(e){reduce=e.matches;}); }catch(e){}
+function $(i){return document.getElementById(i);}
+function clamp(x,a,b){return x<a?a:(x>b?b:x);}
+function jdOf(d){ return d.getTime()/864e5+2440587.5; }
+function ageOfJD(jd){ return (((jd-EPOCH)%SYN)+SYN)%SYN; }
+function illumOf(age){ return (1-Math.cos(2*Math.PI*age/SYN))/2; }
+var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var FULLNAMES=['Wolf Moon','Snow Moon','Worm Moon','Pink Moon','Flower Moon','Strawberry Moon','Buck Moon','Sturgeon Moon','Harvest Moon','Hunter’s Moon','Beaver Moon','Cold Moon'];
+var FULLNOTES=['Named for wolves howling in the deep of winter.','Heavy snows; the coldest weeks of the year.','Earthworms stir as the ground softens.','Wild ground phlox blooms across the hills.','Flowers everywhere; planting time.','The short strawberry harvest of early summer.','Bucks grow their new antlers.','Sturgeon run thick in the great lakes.','The full moon nearest the equinox lets the harvest run late.','Time to hunt and fill the larder.','Beavers make ready for winter.','The long cold nights of the year’s end.'];
+function phaseName(a){
+  if(a<1.0||a>SYN-1.0) return 'New Moon'; if(a<6.4) return 'Waxing Crescent'; if(a<8.4) return 'First Quarter';
+  if(a<13.4) return 'Waxing Gibbous'; if(a<16.1) return 'Full Moon'; if(a<21.1) return 'Waning Gibbous';
+  if(a<23.1) return 'Last Quarter'; return 'Waning Crescent';
+}
+var PHNOTE={'New Moon':'The moon sits between Earth and Sun; its dark face is turned toward us.','Waxing Crescent':'A thin silver sliver grows in the evening sky after sunset.','First Quarter':'Half the disc is lit; the moon stands high at dusk.','Waxing Gibbous':'More than half lit and swelling toward full; it rises in the afternoon.','Full Moon':'Fully lit, rising as the sun sets and sailing all night.','Waning Gibbous':'Past full, it rises later each evening and lingers into morning.','Last Quarter':'The other half is lit; the moon rules the early morning sky.','Waning Crescent':'A last fine crescent before dawn as the cycle closes.'};
+function fmtDate(d,long){
+  var o={weekday:long?'long':undefined,day:'numeric',month:long?'long':'short',year:long?'numeric':undefined};
+  try{ return d.toLocaleDateString(undefined,o); }catch(e){ return d.toDateString(); }
+}
+function distKm(jd){ return 385001-20905*Math.cos(2*Math.PI*(jd-2451562.2)/27.554550); }
+
+/* ---------- moon phase path (unit radius r), centred at origin, lit on the right when waxing ---------- */
+function litPath(age,r){
+  var k=Math.cos(2*Math.PI*age/SYN), rx=Math.abs(k)*r, waxing=age<SYN/2;
+  var sweep=k>=0?0:1; /* terminator bulges right for crescents, left for gibbous */
+  var d='M0 '+(-r)+'A'+r+' '+r+' 0 0 1 0 '+r+'A'+rx.toFixed(3)+' '+r+' 0 0 '+sweep+' 0 '+(-r)+'Z';
+  return {d:d,flip:!waxing};
+}
+function miniMoon(age,uid){
+  var lp=litPath(age,20);
+  return '<svg viewBox="-22 -22 44 44" aria-hidden="true"><circle r="20" fill="#161d44" stroke="rgba(217,221,232,.22)" stroke-width=".8"/>'+
+    '<path d="'+lp.d+'" fill="#f2ead3"'+(lp.flip?' transform="scale(-1 1)"':'')+'/></svg>';
+}
+
+/* ---------- moon texture ---------- */
+var tex=document.createElement('canvas'), TS=1024; tex.width=tex.height=TS;
+(function(){
+  var c=tex.getContext('2d'), R=TS/2, i;
+  function rnd(seed){ var s=seed|0; return function(){ s=(s*1664525+1013904223)|0; return ((s>>>8)&0xffff)/65536; }; }
+  var r=rnd(11);
+  var g=c.createRadialGradient(R*.9,R*.85,R*.1,R,R,R);
+  g.addColorStop(0,'#f6efd9'); g.addColorStop(.7,'#e9dfc0'); g.addColorStop(1,'#c9bd9b');
+  c.fillStyle=g; c.fillRect(0,0,TS,TS);
+  /* maria */
+  var maria=[[.36,.36,.19,.14,.5],[.5,.34,.11,.09,.3],[.6,.44,.1,.08,.2],[.72,.36,.06,.05,0],[.28,.54,.16,.2,.2],[.46,.52,.1,.09,.1],[.55,.6,.14,.1,.5],[.42,.7,.1,.06,.3],[.66,.55,.05,.05,0]];
+  maria.forEach(function(m){
+    c.save(); c.translate(m[0]*TS,m[1]*TS); c.rotate(m[4]); c.scale(m[2]*TS,m[3]*TS);
+    var mg=c.createRadialGradient(0,0,0,0,0,1); mg.addColorStop(0,'rgba(104,98,86,.66)'); mg.addColorStop(.6,'rgba(116,108,94,.46)'); mg.addColorStop(1,'rgba(130,122,104,0)');
+    c.fillStyle=mg; c.beginPath(); c.arc(0,0,1,0,7); c.fill(); c.restore();
+  });
+  /* ray system from a Tycho-like crater */
+  var tx=.44*TS, ty=.86*TS;
+  for(i=0;i<34;i++){ var a=r()*Math.PI*2, L=TS*(.14+r()*.38); c.strokeStyle='rgba(255,252,240,'+(.05+r()*.09)+')'; c.lineWidth=1+r()*3; c.beginPath(); c.moveTo(tx,ty); c.lineTo(tx+Math.cos(a)*L,ty+Math.sin(a)*L); c.stroke(); }
+  /* craters */
+  function crater(x,y,rad,depth){
+    var cg=c.createRadialGradient(x,y,0,x,y,rad);
+    cg.addColorStop(0,'rgba(96,88,72,'+(.28*depth)+')'); cg.addColorStop(.8,'rgba(110,102,84,'+(.14*depth)+')'); cg.addColorStop(.92,'rgba(255,252,238,'+(.2*depth)+')'); cg.addColorStop(1,'rgba(255,252,238,0)');
+    c.fillStyle=cg; c.beginPath(); c.arc(x,y,rad,0,7); c.fill();
+    c.strokeStyle='rgba(70,62,50,'+(.16*depth)+')'; c.lineWidth=Math.max(1,rad*.05); c.beginPath(); c.arc(x+rad*.05,y+rad*.05,rad*.86,Math.PI*.9,Math.PI*1.7); c.stroke();
+  }
+  for(i=0;i<520;i++){
+    var a2=r()*Math.PI*2, d2=Math.sqrt(r())*R*.96, x=R+Math.cos(a2)*d2, y=R+Math.sin(a2)*d2;
+    var rad=Math.pow(r(),3)*R*.07+R*.006; crater(x,y,rad,.6+r()*.7);
+  }
+  crater(tx,ty,R*.045,1.6); crater(.31*TS,.22*TS,R*.06,1.1); crater(.62*TS,.24*TS,R*.05,1.1); crater(.18*TS,.5*TS,R*.05,.9);
+  /* fine grain */
+  for(i=0;i<5200;i++){ c.fillStyle='rgba('+(r()<.5?'80,72,58':'255,250,235')+','+(.03+r()*.06)+')'; var s=1+r()*2.4; c.fillRect(r()*TS,r()*TS,s,s); }
+})();
+
+/* ---------- big moon rendering ---------- */
+var mv=$('moon'), mc=mv.getContext('2d'), MS=900, shade=document.createElement('canvas'); shade.width=shade.height=MS; var sc=shade.getContext('2d');
+var haloEl=null;
+function drawMoon(age,time,glow){
+  var R=MS*.5-24, cx=MS/2, cy=MS/2;
+  mc.setTransform(1,0,0,1,0,0); mc.clearRect(0,0,MS,MS);
+  var ill=illumOf(age);
+  /* halo */
+  var hg=mc.createRadialGradient(cx,cy,R*.9,cx,cy,MS*.5);
+  hg.addColorStop(0,'rgba(242,234,211,'+(.1+.26*ill+glow*.2)+')'); hg.addColorStop(.35,'rgba(200,210,240,'+(.05+.1*ill)+')'); hg.addColorStop(1,'rgba(200,210,240,0)');
+  mc.fillStyle=hg; mc.fillRect(0,0,MS,MS);
+  /* textured disc with libration */
+  var lx=Math.sin(time*.23)*R*.018+Math.sin(age*.4)*R*.012, ly=Math.cos(time*.17)*R*.014, rot=Math.sin(time*.11)*.012;
+  mc.save(); mc.beginPath(); mc.arc(cx,cy,R,0,7); mc.clip();
+  mc.translate(cx+lx,cy+ly); mc.rotate(rot); mc.scale(1.04,1.04); mc.drawImage(tex,-R,-R,2*R,2*R); mc.restore();
+  /* limb darkening */
+  var lg=mc.createRadialGradient(cx-R*.12,cy-R*.1,R*.35,cx,cy,R);
+  lg.addColorStop(0,'rgba(0,0,0,0)'); lg.addColorStop(.75,'rgba(20,16,10,.12)'); lg.addColorStop(1,'rgba(20,16,10,.62)');
+  mc.fillStyle=lg; mc.beginPath(); mc.arc(cx,cy,R,0,7); mc.fill();
+  /* shadow of the terminator */
+  var k=Math.cos(2*Math.PI*age/SYN), rx=Math.abs(k)*R, waxing=age<SYN/2;
+  sc.setTransform(1,0,0,1,0,0); sc.clearRect(0,0,MS,MS);
+  sc.save(); sc.translate(cx,cy); if(!waxing) sc.scale(-1,1);
+  sc.fillStyle='rgba(6,9,26,.93)';
+  sc.beginPath(); sc.arc(0,0,R+2,0,7);
+  /* lit region as a hole */
+  sc.moveTo(0,-R); sc.arc(0,0,R,-Math.PI/2,Math.PI/2,false);
+  if(k>=0) sc.ellipse(0,0,rx,R,0,Math.PI/2,-Math.PI/2,true); else sc.ellipse(0,0,rx,R,0,Math.PI/2,-Math.PI/2,false);
+  sc.closePath(); sc.fill('evenodd'); sc.restore();
+  mc.save(); mc.beginPath(); mc.arc(cx,cy,R,0,7); mc.clip();
+  try{ mc.filter='blur('+(MS*.006)+'px)'; }catch(e){}
+  mc.drawImage(shade,0,0);
+  mc.restore(); try{ mc.filter='none'; }catch(e){}
+  /* earthshine tint on the dark side */
+  var es=mc.createRadialGradient(cx,cy,0,cx,cy,R);
+  es.addColorStop(0,'rgba(70,90,160,.07)'); es.addColorStop(1,'rgba(70,90,160,.15)');
+  mc.globalCompositeOperation='screen'; mc.fillStyle=es; mc.beginPath(); mc.arc(cx,cy,R,0,7); mc.fill(); mc.globalCompositeOperation='source-over';
+  /* rim */
+  mc.strokeStyle='rgba(242,234,211,'+(.08+.14*ill)+')'; mc.lineWidth=1.5; mc.beginPath(); mc.arc(cx,cy,R,0,7); mc.stroke();
+}
+
+/* ---------- state ---------- */
+var today=new Date(); today.setHours(12,0,0,0);
+var sel=new Date(today), view={y:today.getFullYear(),m:today.getMonth()}, hover=null;
+var jdShown=jdOf(sel), jdTarget=jdShown;
+function noon(y,m,d){ var x=new Date(y,m,d,12,0,0,0); return x; }
+function sameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
+
+/* ring ticks */
+(function(){
+  var s='',i;
+  for(i=0;i<30;i++){
+    var a=i/29.530588853*Math.PI*2-Math.PI/2, r1=i%5===0?278:284, r2=292;
+    s+='<line x1="'+(300+r1*Math.cos(a)).toFixed(1)+'" y1="'+(300+r1*Math.sin(a)).toFixed(1)+'" x2="'+(300+r2*Math.cos(a)).toFixed(1)+'" y2="'+(300+r2*Math.sin(a)).toFixed(1)+'" stroke="rgba(217,221,232,'+(i%5===0?.5:.22)+')" stroke-width="'+(i%5===0?1.6:1)+'"/>';
+  }
+  $('ringTicks').innerHTML=s;
+})();
+var ageDot=$('ageDot');
+
+/* ---------- month grid ---------- */
+var gridEl=$('grid');
+function buildGrid(){
+  var y=view.y,m=view.m, first=new Date(y,m,1), dim=new Date(y,m+1,0).getDate();
+  var startDow=(first.getDay()+6)%7, s='',i;
+  var dn=['Mo','Tu','We','Th','Fr','Sa','Su'];
+  for(i=0;i<7;i++) s+='<div class="gh" aria-hidden="true">'+dn[i]+'</div>';
+  for(i=0;i<startDow;i++) s+='<div class="empty"></div>';
+  for(i=1;i<=dim;i++){
+    var d=noon(y,m,i), age=ageOfJD(jdOf(d));
+    s+='<button type="button" class="day" data-d="'+i+'" aria-label="'+fmtDate(d,true)+', '+phaseName(age)+', '+Math.round(illumOf(age)*100)+'% lit">'+miniMoon(age)+'<span class="n">'+i+'</span></button>';
+  }
+  gridEl.innerHTML=s;
+  $('monlabel').innerHTML=MONTHS[m]+' <span>'+y+'</span>';
+  markGrid(); buildPhases();
+}
+function markGrid(){
+  var btns=gridEl.querySelectorAll('.day');
+  for(var i=0;i<btns.length;i++){
+    var d=parseInt(btns[i].getAttribute('data-d'),10), dt=noon(view.y,view.m,d);
+    btns[i].classList.toggle('sel',sameDay(dt,sel));
+    btns[i].classList.toggle('today',sameDay(dt,today));
+    if(sameDay(dt,sel)) btns[i].setAttribute('aria-current','date'); else btns[i].removeAttribute('aria-current');
+  }
+}
+gridEl.addEventListener('pointerover',function(e){
+  var b=e.target.closest&&e.target.closest('.day'); if(!b||e.pointerType==='touch') return;
+  hover=noon(view.y,view.m,parseInt(b.getAttribute('data-d'),10)); retarget();
+});
+gridEl.addEventListener('pointerleave',function(){ hover=null; retarget(); });
+gridEl.addEventListener('focusin',function(e){ var b=e.target.closest&&e.target.closest('.day'); if(b){ hover=noon(view.y,view.m,parseInt(b.getAttribute('data-d'),10)); retarget(); } });
+gridEl.addEventListener('focusout',function(){ hover=null; retarget(); });
+gridEl.addEventListener('click',function(e){
+  var b=e.target.closest&&e.target.closest('.day'); if(!b) return;
+  select(noon(view.y,view.m,parseInt(b.getAttribute('data-d'),10)),false); hover=null;
+});
+
+/* ---------- primary phases ---------- */
+var PHN=[['New Moon',0],['First Quarter',.25],['Full Moon',.5],['Last Quarter',.75]];
+function buildPhases(){
+  var ms=new Date(view.y,view.m,1,0,0,0), me=new Date(view.y,view.m+1,1,0,0,0);
+  var k0=Math.floor((jdOf(ms)-EPOCH)/SYN)-1, out=[],k,q;
+  for(k=k0;k<=k0+3;k++){
+    for(q=0;q<4;q++){
+      var jd=EPOCH+SYN*(k+PHN[q][1]), d=new Date((jd-2440587.5)*864e5);
+      if(d>=ms&&d<me) out.push({n:PHN[q][0],d:d,q:q});
+    }
+  }
+  out.sort(function(a,b){return a.d-b.d;});
+  var s='',i;
+  for(i=0;i<out.length;i++){
+    var o=out[i], age=SYN*PHN[o.q][1]+.001;
+    var hh=o.d.getHours(), mm=o.d.getMinutes();
+    s+='<li>'+miniMoonSmall(age)+'<span class="pn">'+o.n+'</span><span class="pd">'+fmtDate(o.d,false)+' <i>'+(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+mm+'</i></span></li>';
+  }
+  $('phaseList').innerHTML=s||'<li><span></span><span class="pn">No primary phase</span><span></span></li>';
+  var full=out.filter(function(o){return o.q===2;})[0];
+  if(full){ $('fmName').textContent=FULLNAMES[view.m]; $('fmNote').textContent=FULLNOTES[view.m]+' Falls on '+fmtDate(full.d,true)+'.'; }
+  else { $('fmName').textContent=FULLNAMES[view.m]; $('fmNote').textContent='No full moon falls inside this calendar month; the name waits for the next one.'; }
+}
+function miniMoonSmall(age){ return miniMoon(age).replace('<svg ','<svg width="30" height="30" '); }
+
+/* ---------- selection ---------- */
+var yearEl=$('year');
+function dayOfYear(d){ return Math.floor((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(d.getFullYear(),0,1))/864e5); }
+function setViewFor(d){ if(d.getFullYear()!==view.y||d.getMonth()!==view.m){ view.y=d.getFullYear(); view.m=d.getMonth(); buildGrid(); } }
+function select(d,fromSlider){
+  sel=new Date(d.getFullYear(),d.getMonth(),d.getDate(),12,0,0,0);
+  setViewFor(sel); markGrid();
+  var yl=(new Date(sel.getFullYear(),11,31)-new Date(sel.getFullYear(),0,1))/864e5;
+  yearEl.max=String(Math.round(yl)); if(!fromSlider) yearEl.value=String(dayOfYear(sel));
+  retarget();
+}
+function retarget(){ jdTarget=jdOf(hover||sel); shownDate=hover||sel; infoUpdate(); }
+var shownDate=sel;
+$('prev').addEventListener('click',function(){ view.m--; if(view.m<0){view.m=11;view.y--;} buildGrid(); stepSel(); });
+$('next').addEventListener('click',function(){ view.m++; if(view.m>11){view.m=0;view.y++;} buildGrid(); stepSel(); });
+function stepSel(){
+  /* move the selection to the same day number in the newly shown month */
+  var dim=new Date(view.y,view.m+1,0).getDate(), dd=Math.min(sel.getDate(),dim);
+  sel=noon(view.y,view.m,dd); markGrid();
+  var yl=(new Date(sel.getFullYear(),11,31)-new Date(sel.getFullYear(),0,1))/864e5; yearEl.max=String(Math.round(yl)); yearEl.value=String(dayOfYear(sel));
+  retarget();
+}
+$('today').addEventListener('click',function(){ hover=null; select(new Date(today),false); });
+yearEl.addEventListener('input',function(){
+  var d=new Date(sel.getFullYear(),0,1+parseInt(yearEl.value,10),12,0,0,0); hover=null; select(d,true);
+});
+document.addEventListener('keydown',function(e){
+  var t=e.target, tag=t&&t.tagName;
+  if(tag==='INPUT'||tag==='BUTTON'&&t.classList.contains('day')&&false) return;
+  var d=0;
+  if(e.key==='ArrowLeft') d=-1; else if(e.key==='ArrowRight') d=1;
+  else return;
+  if(tag==='INPUT') return;
+  var n=new Date(sel.getFullYear(),sel.getMonth(),sel.getDate()+d,12,0,0,0);
+  hover=null; select(n,false); e.preventDefault();
+  if(tag==='BUTTON'&&t.classList.contains('day')){ var nb=gridEl.querySelector('.day[data-d="'+n.getDate()+'"]'); if(nb) nb.focus(); }
+});
+
+/* ---------- info panel ---------- */
+var last={};
+function setText(id,v){ if(last[id]!==v){ last[id]=v; $(id).textContent=v; } }
+function infoUpdate(){
+  var d=hover||sel, jd=jdOf(d), age=ageOfJD(jd), ill=illumOf(age);
+  var nm=phaseName(age);
+  setText('pname',nm); setText('pnote',PHNOTE[nm]);
+  setText('bphase',nm); setText('bdate',fmtDate(d,true));
+  setText('fAge',age.toFixed(1)+' days');
+  setText('fIll',Math.round(ill*100)+'%');
+  /* next full moon */
+  var k=Math.ceil((jd-EPOCH)/SYN-.5), jf=EPOCH+SYN*(k+.5);
+  if(jf<jd-.5){ k++; jf=EPOCH+SYN*(k+.5); }
+  var dd=jf-jd, fd=new Date((jf-2440587.5)*864e5);
+  var nf=(dd<.5?'tonight':(Math.round(dd)===1?'in 1 day':'in '+Math.round(dd)+' days'))+' · '+fmtDate(fd,false);
+  setText('fNext',nf);
+  setText('fDist','≈ '+(Math.round(distKm(jd)/1000)*1000).toLocaleString('en-US')+' km');
+}
+$('fDist').setAttribute('title','Approximate, from a simple orbit model');
+
+/* ---------- wolf ---------- */
+var wolf=$('wolf'), wrap=document.querySelector('.ridge'), awoo=$('awoo'), howlTimer=0, forced=false;
+function howl(on){ wrap.classList.toggle('howl',on); awoo.classList.toggle('on',on); }
+function wolfToggle(){ forced=true; howl(true); clearTimeout(howlTimer); howlTimer=setTimeout(function(){ forced=false; howl(false); },4600); }
+wolf.addEventListener('click',wolfToggle);
+wolf.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); wolfToggle(); } });
+(function(){
+  var g=$('pines'), s='',i,x=0;
+  function rnd(seed){ var q=seed|0; return function(){ q=(q*1664525+1013904223)|0; return ((q>>>8)&0xffff)/65536; }; }
+  var r=rnd(3);
+  for(i=0;i<70;i++){
+    x=r()*1600; if(x>1120&&x<1420) continue;
+    var y=190-Math.sin(x/1600*6.283*1.1)*18+ (r()*8), h=22+r()*34;
+    s+='<path d="M'+(x-h*.28).toFixed(0)+' '+y.toFixed(0)+'L'+x.toFixed(0)+' '+(y-h).toFixed(0)+'L'+(x+h*.28).toFixed(0)+' '+y.toFixed(0)+'Z"/>';
+  }
+  g.innerHTML=s;
+})();
+
+/* ---------- stars ---------- */
+var sv=$('stars'), sx=sv.getContext('2d'), stars=[], SW=0, SH=0, shoot=null, nextShoot=6;
+function resizeStars(){
+  var dpr=Math.min(window.devicePixelRatio||1,2); SW=window.innerWidth; SH=window.innerHeight;
+  sv.width=SW*dpr; sv.height=SH*dpr; sx.setTransform(dpr,0,0,dpr,0,0);
+  var n=Math.min(240,Math.round(SW*SH/6500)); stars=[];
+  var s=7; function r(){ s=(s*1664525+1013904223)|0; return ((s>>>8)&0xffff)/65536; }
+  for(var i=0;i<n;i++) stars.push({x:r()*SW,y:r()*SH,r:.3+r()*1.1,p:r()*6,sp:.6+r()*2.4,a:.25+r()*.6,w:r()<.12});
+}
+window.addEventListener('resize',resizeStars);
+
+/* ---------- loop ---------- */
+var lastT=performance.now(), tAcc=0, howlCheck=0;
+function frame(ts){
+  requestAnimationFrame(frame);
+  if(document.hidden){ lastT=ts; return; }
+  var dt=Math.min(.05,(ts-lastT)/1000); lastT=ts; tAcc+=dt;
+  var diff=jdTarget-jdShown;
+  if(Math.abs(diff)>.0005){ jdShown+=diff*(1-Math.exp(-dt*(reduce?30:5.5))); } else jdShown=jdTarget;
+  var age=ageOfJD(jdShown), ill=illumOf(age);
+  var nearFull=Math.abs(age-SYN/2)<.9;
+  drawMoon(age,reduce?0:tAcc,nearFull?.5+.5*Math.sin(tAcc*1.6):0);
+  var a=age/SYN*Math.PI*2-Math.PI/2;
+  ageDot.setAttribute('cx',(300+285*Math.cos(a)).toFixed(1)); ageDot.setAttribute('cy',(300+285*Math.sin(a)).toFixed(1));
+  /* wolf howls at full moon */
+  howlCheck+=dt;
+  if(!forced&&howlCheck>.5){
+    howlCheck=0;
+    var wantHowl=nearFull&&(Math.floor(tAcc/9)%2===0);
+    if(nearFull){ if(wrap.classList.contains('howl')!==wantHowl) howl(wantHowl); } else if(wrap.classList.contains('howl')) howl(false);
+  }
+  /* stars */
+  sx.clearRect(0,0,SW,SH);
+  for(var i=0;i<stars.length;i++){
+    var s=stars[i], al=s.a*(.55+.45*Math.sin(tAcc*s.sp*(reduce?.2:1)+s.p));
+    sx.fillStyle='rgba('+(s.w?'255,236,214':'226,232,255')+','+al.toFixed(3)+')';
+    sx.beginPath(); sx.arc(s.x,s.y,s.r,0,7); sx.fill();
+  }
+  if(!reduce){
+    nextShoot-=dt;
+    if(nextShoot<=0&&!shoot){ shoot={x:Math.random()*SW*.8+SW*.1,y:Math.random()*SH*.3,l:0}; nextShoot=9+Math.random()*12; }
+    if(shoot){
+      shoot.l+=dt*1.4; var p=shoot.l, ex=shoot.x+p*260, ey=shoot.y+p*120;
+      var g=sx.createLinearGradient(shoot.x+p*260-90,shoot.y+p*120-42,ex,ey); g.addColorStop(0,'rgba(226,232,255,0)'); g.addColorStop(1,'rgba(255,250,235,'+(1-p)+')');
+      sx.strokeStyle=g; sx.lineWidth=1.4; sx.beginPath(); sx.moveTo(shoot.x+p*260-90,shoot.y+p*120-42); sx.lineTo(ex,ey); sx.stroke();
+      if(p>=1) shoot=null;
+    }
+  }
+}
+resizeStars();
+buildGrid(); select(new Date(today),false); jdShown=jdTarget;
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

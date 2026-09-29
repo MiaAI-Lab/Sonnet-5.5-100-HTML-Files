@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daylight — How Much Light Do We Get?</title>
+<meta name="description" content="A year of daylight hours for seven latitudes, from Longyearbyen to Ushuaia, as a line chart that unrolls into a flower.">
+<style>
+:root{--paper:#f6f0e4;--ink:#1f2a44;--ink2:rgba(31,42,68,.68);--hair:rgba(31,42,68,.14);--card:#fbf7ee;
+  --c0:#1f2a44;--c1:#1a8a8a;--c2:#d99a1c;--c3:#d2452e;--c4:#7a3b7d;--c5:#6b8e23;--c6:#4a78b5;
+  --serif:"Bodoni 72","Bodoni MT",Didot,"Didot LT STD","Playfair Display","Times New Roman",serif;
+  --body:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua","URW Bookman",Georgia,serif;
+  --sans:"Helvetica Neue",Helvetica,Arial,"Nimbus Sans","Liberation Sans",sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,"DejaVu Sans Mono",monospace}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.5;min-height:100vh;
+  background-image:var(--tile,none)}
+:focus-visible{outline:3px solid var(--c6);outline-offset:3px}
+.wrap{width:min(1240px,100% - 40px);margin-inline:auto}
+.mast{display:flex;justify-content:space-between;gap:16px;align-items:baseline;padding:22px 0 12px;border-bottom:1px solid var(--ink);font:600 11px/1.2 var(--sans);letter-spacing:.22em;text-transform:uppercase}
+.mast span:last-child{opacity:.6;font-weight:500}
+.hero{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(20px,4vw,56px);align-items:end;padding:clamp(24px,4vw,52px) 0 clamp(18px,2.6vw,30px)}
+h1{margin:0;font:400 clamp(44px,7.6vw,104px)/.92 var(--serif);letter-spacing:-.02em}
+h1 em{font-style:italic;position:relative;white-space:nowrap}
+h1 em::after{content:"";position:absolute;left:-2%;right:-2%;bottom:.06em;height:.16em;background:var(--c2);opacity:.55;z-index:-1;border-radius:.1em}
+.intro p{margin:0 0 .8em;font-size:clamp(16px,1.3vw,19px);max-width:52ch}
+.intro p:first-child::first-letter{font:400 3.1em/.8 var(--serif);float:left;padding:.06em .1em 0 0;color:var(--c3)}
+.grid{display:grid;grid-template-columns:minmax(0,8fr) minmax(280px,3.4fr);gap:24px;align-items:start;padding-bottom:24px}
+.card{background:var(--card);border:1px solid var(--ink);box-shadow:6px 6px 0 rgba(31,42,68,.12);border-radius:2px}
+.bar{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--hair)}
+.tg{display:inline-flex;border:1px solid var(--ink);border-radius:999px;overflow:hidden}
+.tg button{min-height:40px;padding:0 16px;border:0;background:transparent;color:var(--ink);font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;cursor:pointer}
+.tg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{min-height:40px;padding:0 12px;border:1px solid var(--hair);border-radius:999px;background:transparent;color:var(--ink);font:500 12px/1 var(--sans);cursor:pointer}
+.chips button:hover{border-color:var(--ink)}
+.plot{position:relative;padding:8px 8px 4px;touch-action:none;-webkit-user-select:none;user-select:none}
+.plot svg{display:block;width:100%;overflow:visible}
+.plot .scrub{cursor:ew-resize}
+.tip{position:absolute;left:0;top:0;z-index:3;min-width:190px;padding:10px 12px;background:rgba(251,247,238,.96);border:1px solid var(--ink);border-radius:2px;font:500 12px/1.35 var(--sans);pointer-events:none;box-shadow:3px 3px 0 rgba(31,42,68,.14)}
+.tip b{display:block;font:600 11px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px}
+.tip div{display:flex;align-items:center;gap:8px;justify-content:space-between;font-variant-numeric:tabular-nums}
+.tip i{width:10px;height:10px;border-radius:50%;flex:none}
+.tip span:nth-child(2){margin-right:auto}
+.foot{padding:8px 16px 14px;font:500 11.5px/1.5 var(--sans);color:var(--ink2)}
+.side{display:grid;gap:24px}
+.sun{padding:16px;display:grid;justify-items:center;text-align:center;gap:4px}
+.sun .place{font:600 11px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase}
+.sun svg{width:210px;height:210px;overflow:visible}
+.sun .big{font:400 clamp(40px,4vw,54px)/1 var(--serif);font-variant-numeric:tabular-nums}
+.sun .sub{font:500 12px/1.4 var(--sans);color:var(--ink2)}
+.strip{width:100%;margin-top:8px}
+.strip svg{width:100%;height:34px}
+.legend{padding:6px}
+.legend ul{list-style:none;margin:0;padding:0}
+.legend button{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:center;width:100%;min-height:44px;padding:6px 10px;border:0;border-bottom:1px solid var(--hair);background:transparent;color:var(--ink);text-align:left;cursor:pointer;font:500 14px/1.2 var(--sans)}
+.legend li:last-child button{border-bottom:0}
+.legend button:hover,.legend button[aria-pressed="true"]{background:rgba(31,42,68,.06)}
+.legend .sw{width:14px;height:4px;border-radius:2px}
+.legend small{font:500 11px/1 var(--mono);color:var(--ink2)}
+.legend button[aria-pressed="true"] b{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.tablewrap{display:none;padding:8px 16px 16px;overflow-x:auto}
+.tablewrap table{width:100%;border-collapse:collapse;font:500 14px/1.3 var(--sans);font-variant-numeric:tabular-nums}
+.tablewrap caption{text-align:left;font:italic 15px var(--body);padding:6px 0 10px}
+.tablewrap th,.tablewrap td{padding:9px 8px;border-bottom:1px solid var(--hair);text-align:right}
+.tablewrap th:first-child,.tablewrap td:first-child{text-align:left}
+.tablewrap thead th{font:600 10.5px/1.2 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.showtable .plot,.showtable .chips-row{display:none}.showtable .tablewrap{display:block}
+.note{padding:0 0 46px;font:500 12px/1.6 var(--sans);color:var(--ink2);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media (max-width:980px){.hero,.grid{grid-template-columns:minmax(0,1fr)}.side{grid-template-columns:1fr 1fr;align-items:start}}
+@media (max-width:640px){body{font-size:17px}.side{grid-template-columns:1fr}.tg button{padding:0 12px}.mast span:last-child{display:none}}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.001ms!important;animation-duration:.001ms!important}}
+.draw{stroke-dasharray:1;stroke-dashoffset:1}
+.drawn{stroke-dashoffset:0;transition:stroke-dashoffset 1.9s cubic-bezier(.3,.7,.2,1)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="mast"><span>Daylight &middot; a year in seven places</span><span>Computed, not measured</span></div>
+  <header class="hero">
+    <h1>How much <em>light</em> do we get?</h1>
+    <div class="intro">
+      <p>The Earth leans 23.44 degrees, and that lean hands out sunshine unevenly. Near the equator a day is a day: twelve hours, give or take a few minutes, all year. At 78&deg;N the sun simply leaves in autumn and does not come back until the following spring.</p>
+      <p>Drag the marker through the year and watch seven places trade light. Then unroll the chart into a flower: the closer to the equator, the rounder the petal.</p>
+    </div>
+  </header>
+
+  <div class="grid" id="grid">
+    <section class="card" aria-labelledby="chH"><h2 id="chH" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Daylight hours through the year</h2>
+      <div class="bar">
+        <div class="tg" role="group" aria-label="Chart form"><button type="button" id="mLine" aria-pressed="true">Line</button><button type="button" id="mRad" aria-pressed="false">Radial</button></div>
+        <div class="chips chips-row" role="group" aria-label="Jump to a date"><button type="button" data-n="81">Mar equinox</button><button type="button" data-n="172">Jun solstice</button><button type="button" data-n="264">Sep equinox</button><button type="button" data-n="355">Dec solstice</button><button type="button" id="today">Today</button></div>
+        <div class="tg" role="group" aria-label="View"><button type="button" id="vChart" aria-pressed="true">Chart</button><button type="button" id="vTable" aria-pressed="false">Table</button></div>
+      </div>
+      <div class="plot" id="plot">
+        <svg id="svg" role="img" aria-label="Daylight hours across the year for seven latitudes. Use the date slider handle or the table view for exact values."></svg>
+        <div class="tip" id="tip" hidden></div>
+      </div>
+      <div class="tablewrap" id="tablewrap"></div>
+      <div class="foot">Computed with the standard sunrise equation; ignores atmospheric refraction. Illustrative data. Times are local solar time.</div>
+    </section>
+    <aside class="side">
+      <section class="card sun" aria-live="polite" aria-labelledby="sunH"><h2 id="sunH" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Selected place</h2>
+        <div class="place" id="sPlace">London</div>
+        <svg id="sunsvg" viewBox="-105 -105 210 210" aria-hidden="true"></svg>
+        <div class="big" id="sBig">16 h 12 m</div>
+        <div class="sub" id="sSub">Sunrise 03:54 &middot; sunset 20:06</div>
+        <div class="strip"><svg viewBox="0 0 240 34" preserveAspectRatio="none" aria-hidden="true"><rect x="0" y="6" width="240" height="18" fill="rgba(31,42,68,.12)"/><rect id="sStrip" x="60" y="6" width="120" height="18" fill="#d99a1c"/><path d="M0 28v6M60 28v6M120 28v6M180 28v6M240 28v6" stroke="#1f2a44" stroke-width="1"/></svg></div>
+        <div class="sub">0 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 6 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 18 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 24 h</div>
+      </section>
+      <section class="card legend" aria-labelledby="legH"><h2 id="legH" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Places</h2><ul id="legend"></ul></section>
+    </aside>
+  </div>
+  <div class="note"><span>Seven latitudes, 365 days, one equation.</span><span>Declination = 23.44&deg; &middot; sin(2&pi;(284+N)/365)</span></div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const PL = [
+  { n: 'Longyearbyen', lat: 78.2, c: '#1f2a44' }, { n: 'Reykjavík', lat: 64.1, c: '#1a8a8a' }, { n: 'London', lat: 51.5, c: '#d99a1c' },
+  { n: 'New York', lat: 40.7, c: '#d2452e' }, { n: 'Singapore', lat: 1.35, c: '#7a3b7d' }, { n: 'Sydney', lat: -33.9, c: '#6b8e23' }, { n: 'Ushuaia', lat: -54.8, c: '#4a78b5' }
+];
+const D2R = Math.PI / 180;
+function dayLen(lat, N) {
+  const d = 23.44 * D2R * Math.sin(2 * Math.PI * (284 + N) / 365), x = -Math.tan(lat * D2R) * Math.tan(d);
+  return x <= -1 ? 24 : x >= 1 ? 0 : 24 * Math.acos(x) / Math.PI;
+}
+const DATA = PL.map(p => { const a = new Float32Array(366); for (let n = 1; n <= 365; n++) a[n] = dayLen(p.lat, n); return a; });
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], MD = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const CUM = MD.reduce((a, v, i) => (a.push((a[i] || 0) + v), a), [0]);
+const dateOf = n => { n = Math.round(n); let m = 0; while (m < 11 && n > CUM[m + 1]) m++; return (n - CUM[m]) + ' ' + MON[m]; };
+const hm = h => { const t = Math.round(h * 60); return Math.floor(t / 60) + ' h ' + String(t % 60).padStart(2, '0') + ' m'; };
+const clock = h => { const t = Math.round(((h % 24) + 24) % 24 * 60); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
+const EQ = [{ n: 81.25, l: 'Mar equinox' }, { n: 172.25, l: 'Jun solstice' }, { n: 263.5, l: 'Sep equinox' }, { n: 354.75, l: 'Dec solstice' }];
+// polar night / midnight sun spans for Longyearbyen
+const nightDays = [], sunDays = []; for (let n = 1; n <= 365; n++) { if (DATA[0][n] <= 0) nightDays.push(n); if (DATA[0][n] >= 24) sunDays.push(n); }
+
+let mode = 0, mix = 0, sel = 2, hov = -1, N = 172, W = 800, H = 500;
+const svg = $('#svg'), tip = $('#tip'), plot = $('#plot');
+const NS = 'http://www.w3.org/2000/svg';
+
+/* legend */
+const lg = $('#legend');
+PL.forEach((p, i) => { const li = document.createElement('li'); li.innerHTML = '<button type="button" aria-pressed="' + (i === sel) + '"><span class="sw" style="background:' + p.c + '"></span><b>' + p.n + '</b><small>' + (p.lat > 0 ? p.lat + '°N' : -p.lat + '°S') + '</small></button>'; lg.appendChild(li);
+  const b = li.firstChild; b.addEventListener('click', () => { sel = i; syncLegend(); draw(); sun(); }); b.addEventListener('pointerenter', () => { hov = i; draw(); }); b.addEventListener('pointerleave', () => { hov = -1; draw(); }); b.addEventListener('focus', () => { hov = i; draw(); }); b.addEventListener('blur', () => { hov = -1; draw(); }); });
+function syncLegend() { lg.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-pressed', String(i === sel))); }
+
+/* geometry */
+let M = { l: 46, r: 96, t: 34, b: 34 };
+function layout() {
+  W = Math.max(280, plot.clientWidth - 16); const narrow = W < 520;
+  M = narrow ? { l: 34, r: 14, t: 30, b: 30 } : { l: 46, r: 104, t: 38, b: 34 };
+  H = Math.round(clamp(W * (narrow ? .95 : .5), 300, 470));
+  svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H); svg.setAttribute('width', W); svg.setAttribute('height', H);
+}
+const lineXY = (n, h) => [M.l + (n - 1) / 364 * (W - M.l - M.r), M.t + (H - M.t - M.b) * (1 - h / 24)];
+function radGeom() { const cx = W / 2, cy = H / 2 + 6, R = Math.min(W, H) / 2 - 34; return { cx, cy, R }; }
+const radXY = (n, h) => { const g = radGeom(), a = 2 * Math.PI * (n - 1) / 365, r = g.R * h / 24; return [g.cx + Math.sin(a) * r, g.cy - Math.cos(a) * r]; };
+const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+const pos = (n, h) => { const a = lineXY(n, h), b = radXY(n, h), e = ease(mix); return [a[0] + (b[0] - a[0]) * e, a[1] + (b[1] - a[1]) * e]; };
+let drawn = false;
+
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+function draw() {
+  const e = ease(mix); svg.textContent = '';
+  const g = radGeom(), ink = '#1f2a44';
+  // polar night / midnight sun bands
+  const band = (days, col, op, lbl) => {
+    if (!days.length) return; const runs = []; let s = days[0], p = days[0];
+    for (let i = 1; i <= days.length; i++) { if (days[i] !== p + 1) { runs.push([s, p]); s = days[i]; } p = days[i]; }
+    runs.forEach(r => {
+      if (e < .999) { const a = lineXY(r[0] - .5, 0), b = lineXY(r[1] + .5, 0); el('rect', { x: a[0], y: M.t, width: b[0] - a[0], height: H - M.t - M.b, fill: col, opacity: op * (1 - e) }, svg); }
+      if (e > .001) { const a0 = 2 * Math.PI * (r[0] - 1.5) / 365, a1 = 2 * Math.PI * (r[1] - .5) / 365, big = a1 - a0 > Math.PI ? 1 : 0; el('path', { d: 'M' + g.cx + ' ' + g.cy + 'L' + (g.cx + Math.sin(a0) * g.R) + ' ' + (g.cy - Math.cos(a0) * g.R) + 'A' + g.R + ' ' + g.R + ' 0 ' + big + ' 1 ' + (g.cx + Math.sin(a1) * g.R) + ' ' + (g.cy - Math.cos(a1) * g.R) + 'Z', fill: col, opacity: op * e }, svg); }
+    });
+  };
+  band(nightDays, '#1f2a44', .09); band(sunDays, '#d99a1c', .1);
+  // grid
+  [0, 6, 12, 18, 24].forEach(h => {
+    if (e < .999) { const y = lineXY(1, h)[1]; el('line', { x1: M.l, x2: W - M.r, y1: y, y2: y, stroke: ink, 'stroke-opacity': (h === 12 ? .3 : .13) * (1 - e), 'stroke-width': 1 }, svg); const t = el('text', { x: M.l - 8, y: y + 4, 'text-anchor': 'end', 'font-size': 11, fill: ink, 'fill-opacity': .65 * (1 - e), 'font-family': 'ui-monospace,Menlo,monospace' }, svg); t.textContent = h + ' h'; }
+    if (e > .001 && h > 0) { el('circle', { cx: g.cx, cy: g.cy, r: g.R * h / 24, fill: 'none', stroke: ink, 'stroke-opacity': (h === 12 ? .3 : .13) * e }, svg); const t = el('text', { x: g.cx + 4, y: g.cy - g.R * h / 24 - 3, 'font-size': 10, fill: ink, 'fill-opacity': .6 * e, 'font-family': 'ui-monospace,Menlo,monospace' }, svg); t.textContent = h + ' h'; }
+  });
+  // months
+  for (let m = 0; m < 12; m++) {
+    const mid = CUM[m] + MD[m] / 2 + .5;
+    if (e < .999) { const x = lineXY(CUM[m] + 1, 0)[0], xm = lineXY(mid, 0)[0]; el('line', { x1: x, x2: x, y1: H - M.b, y2: H - M.b + 5, stroke: ink, 'stroke-opacity': .3 * (1 - e) }, svg); const t = el('text', { x: xm, y: H - M.b + 20, 'text-anchor': 'middle', 'font-size': 11, fill: ink, 'fill-opacity': .7 * (1 - e), 'font-family': 'Helvetica,Arial,sans-serif' }, svg); t.textContent = W < 520 ? MON[m][0] : MON[m]; }
+    if (e > .001) { const a = 2 * Math.PI * (mid - 1) / 365, r = g.R + 15; const t = el('text', { x: g.cx + Math.sin(a) * r, y: g.cy - Math.cos(a) * r + 4, 'text-anchor': 'middle', 'font-size': 11, fill: ink, 'fill-opacity': .7 * e, 'font-family': 'Helvetica,Arial,sans-serif' }, svg); t.textContent = MON[m][0] + (W < 520 ? '' : MON[m].slice(1)); }
+  }
+  // equinox / solstice markers
+  EQ.forEach(q => { const a = pos(q.n, 0), b = pos(q.n, 24), lab = pos(q.n, 24);
+    if (e < .999) el('line', { x1: a[0], x2: b[0], y1: a[1], y2: b[1], stroke: '#d2452e', 'stroke-opacity': .35 * (1 - e), 'stroke-width': 1 }, svg);
+    if (e > .001) { const s = radXY(q.n, 0), o = radXY(q.n, 24); el('line', { x1: s[0], x2: o[0], y1: s[1], y2: o[1], stroke: '#d2452e', 'stroke-opacity': .3 * e, 'stroke-width': 1 }, svg); }
+    if (W >= 520 || e > .5) { const t = el('text', { x: lab[0] + (e > .5 ? (lab[0] > g.cx ? 6 : -6) : 0), y: lab[1] - (e > .5 ? -12 : 8), 'text-anchor': e > .5 ? (lab[0] > g.cx ? 'start' : 'end') : 'middle', 'font-size': 10, fill: '#d2452e', 'fill-opacity': .85, 'font-family': 'Helvetica,Arial,sans-serif' }, svg); t.textContent = q.l; } });
+  // lines
+  const order = PL.map((_, i) => i).sort((a, b) => (a === sel) - (b === sel));
+  const focus = hov >= 0 ? hov : -1;
+  order.forEach(i => {
+    let d = ''; for (let n = 1; n <= 365; n++) { const p = pos(n, DATA[i][n]); d += (n === 1 ? 'M' : 'L') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }
+    if (e > .5) { const p = pos(1, DATA[i][1]); d += 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + 'Z'; }
+    const dim = focus >= 0 && focus !== i;
+    const path = el('path', { d, fill: 'none', stroke: PL[i].c, 'stroke-width': i === sel || i === focus ? 3 : 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', opacity: dim ? .14 : 1, pathLength: 1 }, svg);
+    if (!drawn) { path.setAttribute('class', 'draw'); requestAnimationFrame(() => requestAnimationFrame(() => { path.style.transitionDelay = (i * .1) + 's'; path.setAttribute('class', 'draw drawn'); })); }
+    // end label + marker
+    if (e < .6 && W >= 520 || (e < .6 && i === sel)) { const p = lineXY(365, DATA[i][365]); el('circle', { cx: p[0], cy: p[1], r: 4, fill: PL[i].c, opacity: (dim ? .2 : 1) * (1 - e * 1.6) }, svg); }
+  });
+  drawn = true;
+  // end labels with simple collision repel (line view)
+  if (e < .6 && W >= 520) {
+    const ys = PL.map((p, i) => ({ i, y: lineXY(365, DATA[i][365])[1] })).sort((a, b) => a.y - b.y);
+    for (let k = 1; k < ys.length; k++) if (ys[k].y - ys[k - 1].y < 15) ys[k].y = ys[k - 1].y + 15;
+    ys.forEach(o => { const t = el('text', { x: W - M.r + 10, y: o.y + 4, 'font-size': 12, fill: PL[o.i].c, opacity: (hov >= 0 && hov !== o.i ? .25 : 1) * (1 - e * 1.7), 'font-family': 'Helvetica,Arial,sans-serif', 'font-weight': o.i === sel ? 700 : 500 }, svg); t.textContent = PL[o.i].n; });
+  }
+  // extremes for the selected series
+  { let mx = 1, mn = 1; for (let n = 1; n <= 365; n++) { if (DATA[sel][n] > DATA[sel][mx]) mx = n; if (DATA[sel][n] < DATA[sel][mn]) mn = n; }
+    [[mx, 'max'], [mn, 'min']].forEach(([n, k]) => { const p = pos(n, DATA[sel][n]); el('circle', { cx: p[0], cy: p[1], r: 5, fill: 'var(--paper)', stroke: PL[sel].c, 'stroke-width': 2 }, svg);
+      const t = el('text', { x: p[0] + (e > .5 ? 8 : 0), y: p[1] + (k === 'max' ? -10 : 18), 'text-anchor': e > .5 ? 'start' : 'middle', 'font-size': 11, fill: PL[sel].c, 'font-family': 'Helvetica,Arial,sans-serif', 'font-weight': 600 }, svg); t.textContent = (k === 'max' ? 'max ' : 'min ') + hm(DATA[sel][n]); }); }
+  // scrubber
+  { const a = pos(N, 0), b = pos(N, 24); const gg = el('g', { class: 'scrub' }, svg);
+    el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: ink, 'stroke-width': 1.5 }, gg);
+    PL.forEach((p, i) => { const q = pos(N, DATA[i][Math.round(N)]); el('circle', { cx: q[0], cy: q[1], r: 4.5, fill: p.c, stroke: '#fbf7ee', 'stroke-width': 1.5, opacity: hov >= 0 && hov !== i ? .25 : 1 }, gg); });
+    const hp = e < .5 ? a : b, hnd = el('g', { id: 'handle', role: 'slider', tabindex: 0, 'aria-label': 'Date', 'aria-valuemin': 1, 'aria-valuemax': 365, 'aria-valuenow': Math.round(N), 'aria-valuetext': dateOf(N) }, gg);
+    el('circle', { cx: hp[0], cy: hp[1], r: 15, fill: 'transparent' }, hnd); el('circle', { cx: hp[0], cy: hp[1], r: 8, fill: ink }, hnd);
+    const t = el('text', { x: hp[0], y: hp[1] + (e < .5 ? 26 : -14), 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 700, fill: ink, 'font-family': 'Helvetica,Arial,sans-serif' }, hnd); t.textContent = dateOf(N);
+    hnd.addEventListener('keydown', ev => { const s = ev.shiftKey ? 30 : 1; let v = N; if (ev.key === 'ArrowRight' || ev.key === 'ArrowUp') v += s; else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowDown') v -= s; else if (ev.key === 'PageUp') v += 30; else if (ev.key === 'PageDown') v -= 30; else if (ev.key === 'Home') v = 1; else if (ev.key === 'End') v = 365; else return; ev.preventDefault(); setN(clamp(v, 1, 365)); $('#handle').focus(); });
+  }
+  placeTip();
+}
+function placeTip() {
+  const rows = PL.map((p, i) => ({ p, i, h: DATA[i][Math.round(N)] })).sort((a, b) => b.h - a.h);
+  tip.hidden = false;
+  tip.innerHTML = '<b>' + dateOf(N) + '</b>' + rows.map(r => '<div><i style="background:' + r.p.c + '"></i><span>' + r.p.n + '</span><span>' + hm(r.h) + '</span></div>').join('');
+  const q = pos(N, 24), e = ease(mix), tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = q[0] + 18, y = e < .5 ? M.t + 8 : 8;
+  if (e < .5 && x + tw > W - M.r) x = q[0] - tw - 18; else if (x + tw > W - 4) x = q[0] - tw - 18; if (x < 4) x = 4;
+  if (e > .5) { const g = radGeom(); x = q[0] > g.cx ? Math.min(W - tw - 4, W * .02) : Math.max(4, W - tw - 4); x = q[0] > g.cx ? 4 : W - tw - 4; y = 8; }
+  if (W < 520) { tip.style.position = 'static'; tip.style.transform = 'none'; tip.style.margin = '6px 8px 8px'; return; }
+  tip.style.position = ''; tip.style.margin = '';
+  tip.style.transform = 'translate(' + (x + 8) + 'px,' + (y + 8) + 'px)';
+}
+function setN(v) { N = v; draw(); sun(); }
+
+/* sun glyph */
+const sunsvg = $('#sunsvg');
+function sun() {
+  const h = DATA[sel][Math.round(N)], f = h / 24, rays = 16, day = f > .002;
+  let s = '<defs><radialGradient id="sg"><stop offset="0" stop-color="#ffe9a8"/><stop offset="1" stop-color="#d99a1c"/></radialGradient></defs>';
+  s += '<circle r="' + (44 + f * 52) + '" fill="#d99a1c" opacity="' + (.06 + f * .3).toFixed(2) + '"/><circle r="' + (36 + f * 30) + '" fill="#d99a1c" opacity="' + (.1 + f * .3).toFixed(2) + '"/>';
+  for (let i = 0; i < rays; i++) { const a = i / rays * 6.283, r0 = 40, r1 = 42 + f * 46 * (i % 2 ? .7 : 1); s += '<line x1="' + (Math.cos(a) * r0).toFixed(1) + '" y1="' + (Math.sin(a) * r0).toFixed(1) + '" x2="' + (Math.cos(a) * r1).toFixed(1) + '" y2="' + (Math.sin(a) * r1).toFixed(1) + '" stroke="#d99a1c" stroke-width="4" stroke-linecap="round" opacity="' + (day ? (.35 + f * .65).toFixed(2) : .1) + '"/>'; }
+  s += '<circle r="32" fill="' + (day ? 'url(#sg)' : '#1f2a44') + '" opacity="' + (day ? (.45 + f * .55).toFixed(2) : .9) + '" style="filter:drop-shadow(0 0 ' + (f * 22).toFixed(0) + 'px rgba(217,154,28,' + (.2 + f * .7).toFixed(2) + '))"/>';
+  sunsvg.innerHTML = s;
+  $('#sPlace').textContent = PL[sel].n + ' · ' + dateOf(N);
+  $('#sBig').textContent = h <= 0 ? 'No sun' : h >= 24 ? '24 h, no night' : hm(h);
+  $('#sSub').textContent = h <= 0 ? 'Polar night: the sun stays below the horizon' : h >= 24 ? 'Midnight sun: the sun never sets' : 'Sunrise ' + clock(12 - h / 2) + ' · sunset ' + clock(12 + h / 2);
+  const r = $('#sStrip'); r.setAttribute('x', String(120 - h * 5)); r.setAttribute('width', String(h * 10));
+  renderTable();
+}
+function renderTable() {
+  const tw = $('#tablewrap'); let s = '<table><caption>Daylight on ' + dateOf(N) + ', and across the year (hours per day)</caption><thead><tr><th scope="col">Place</th><th scope="col">Lat.</th><th scope="col">On ' + dateOf(N) + '</th><th scope="col">Shortest</th><th scope="col">Longest</th></tr></thead><tbody>';
+  PL.forEach((p, i) => { let mn = 24, mx = 0; for (let n = 1; n <= 365; n++) { mn = Math.min(mn, DATA[i][n]); mx = Math.max(mx, DATA[i][n]); } s += '<tr><th scope="row" style="color:' + p.c + '">' + p.n + '</th><td>' + (p.lat > 0 ? p.lat + '°N' : -p.lat + '°S') + '</td><td>' + hm(DATA[i][Math.round(N)]) + '</td><td>' + hm(mn) + '</td><td>' + hm(mx) + '</td></tr>'; });
+  tw.innerHTML = s + '</tbody></table>';
+}
+
+/* modes and pointer */
+let anim = 0;
+function setMode(m) {
+  mode = m; $('#mLine').setAttribute('aria-pressed', String(m === 0)); $('#mRad').setAttribute('aria-pressed', String(m === 1));
+  cancelAnimationFrame(anim); if (reduce) { mix = m; draw(); return; }
+  const from = mix, t0 = performance.now();
+  (function step(now) { const k = clamp((now - t0) / 1100, 0, 1); mix = from + (m - from) * k; draw(); if (k < 1) anim = requestAnimationFrame(step); })(t0);
+}
+$('#mLine').addEventListener('click', () => setMode(0)); $('#mRad').addEventListener('click', () => setMode(1));
+function fromPointer(ev) {
+  const r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) * W / r.width, y = (ev.clientY - r.top) * H / r.height;
+  if (mode === 0) return clamp(1 + (x - M.l) / (W - M.l - M.r) * 364, 1, 365);
+  const g = radGeom(); let a = Math.atan2(x - g.cx, -(y - g.cy)); if (a < 0) a += 2 * Math.PI; return clamp(1 + a / (2 * Math.PI) * 365, 1, 365);
+}
+let drag = false;
+svg.addEventListener('pointerdown', ev => { drag = true; try { svg.setPointerCapture(ev.pointerId); } catch (e) { /* fine */ } setN(fromPointer(ev)); });
+svg.addEventListener('pointermove', ev => { if (drag) setN(fromPointer(ev)); });
+const end = () => { drag = false; }; svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+document.querySelectorAll('.chips button[data-n]').forEach(b => b.addEventListener('click', () => glide(+b.dataset.n)));
+function today() { const d = new Date(), y0 = new Date(d.getFullYear(), 0, 0); return clamp(Math.round((d - y0) / 864e5), 1, 365); }
+$('#today').addEventListener('click', () => glide(today()));
+function glide(to) { if (reduce) { setN(to); return; } const from = N, t0 = performance.now(); (function s(now) { const k = clamp((now - t0) / 900, 0, 1); setN(from + (to - from) * ease(k)); if (k < 1) requestAnimationFrame(s); })(t0); }
+function view(t) { $('#grid').classList.toggle('showtable', t); $('#vChart').setAttribute('aria-pressed', String(!t)); $('#vTable').setAttribute('aria-pressed', String(t)); }
+$('#vChart').addEventListener('click', () => view(false)); $('#vTable').addEventListener('click', () => view(true));
+
+/* paper grain */
+try { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), im = g.createImageData(128, 128); let s = 3; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < im.data.length; i += 4) { const v = r() < .5 ? 255 : 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = Math.round(r() * 7); }
+  g.putImageData(im, 0, 0); document.documentElement.style.setProperty('--tile', 'url("' + c.toDataURL() + '")'); } catch (e) { /* plain */ }
+
+layout(); N = 1; draw(); sun(); renderTable();
+if ('ResizeObserver' in window) new ResizeObserver(() => { const w = plot.clientWidth - 16; if (Math.abs(w - W) > 1) { layout(); draw(); } }).observe(plot);
+const T = today();
+if (reduce) setN(T); else { const t0 = performance.now() + 700; (function s(now) { const k = clamp((now - t0) / 2200, 0, 1); if (now >= t0) setN(1 + (T - 1) * ease(k)); if (k < 1) requestAnimationFrame(s); })(performance.now()); }
+})();
+</script>
+</body>
+</html>
